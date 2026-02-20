@@ -23,11 +23,11 @@
       <div class="container-fluid">
         <div class="card hero-card">
           <h1 class="content-title">League of Legends Build Lab</h1>
-          <p>Set champion level, valid ability ranks, and purchasable Summoner's Rift items to inspect stat changes.</p>
+          <p>Pick a champion, set levels/items/abilities, and evaluate damage, DPS, burst, and target kill pressure.</p>
         </div>
 
         <div class="card section-card">
-          <h2 class="content-title">Champion Setup</h2>
+          <h2 class="content-title">1) Champion & Build Setup</h2>
           <div class="row row-eq-spacing">
             <div class="col-lg-4 col-12">
               <label class="label" for="championSelect">Champion</label>
@@ -37,49 +37,55 @@
               <label class="label" for="championLevel">Level</label>
               <select id="championLevel" class="form-control"></select>
             </div>
-            <div class="col-lg-3 col-12">
+            <div class="col-lg-3 col-12 stat-pill-container">
               <img id="championSplash" class="champion-splash" src="" alt="Champion splash" />
             </div>
           </div>
 
-          <h3>Items (Summoner's Rift purchasable only)</h3>
-          <div id="itemSlots" class="item-slots-grid"></div>
+          <h3>Item Build (6 slots)</h3>
+          <div class="row" id="itemSlots"></div>
 
           <h3>Ability Ranks</h3>
-          <div id="abilityRanks" class="ability-ranks-grid"></div>
-          <p id="abilityRuleHint" class="hint-text"></p>
+          <div class="row" id="abilityRanks"></div>
         </div>
 
         <div class="card section-card">
-          <h2 class="content-title">Calculated Stats</h2>
+          <h2 class="content-title">2) Calculated Stats</h2>
           <div id="statsGrid" class="stats-grid"></div>
         </div>
 
         <div class="card section-card">
-          <h2 class="content-title">Abilities</h2>
+          <h2 class="content-title">3) Damage, CDR, DPS, and Burst</h2>
           <div id="abilityCards" class="ability-grid"></div>
+          <div class="metrics-row">
+            <div class="metric-box"><strong>Ability Haste:</strong> <span id="abilityHaste">0</span></div>
+            <div class="metric-box"><strong>CDR:</strong> <span id="cdrValue">0%</span></div>
+            <div class="metric-box"><strong>Combo Burst:</strong> <span id="comboBurst">0</span></div>
+            <div class="metric-box"><strong>Combo DPS:</strong> <span id="comboDps">0</span></div>
+          </div>
         </div>
 
         <div class="card section-card">
-          <h2 class="content-title">Damage / CDR / DPS / Burst</h2>
-          <p class="hint-text">Feature temporarily disabled until ability data validation is complete.</p>
+          <h2 class="content-title">4) Dummy Target Evaluation</h2>
+          <div class="row row-eq-spacing">
+            <div class="col-lg-2 col-12"><label class="label">HP<input id="dummyHp" class="form-control" type="number" value="2500" /></label></div>
+            <div class="col-lg-2 col-12"><label class="label">Armor<input id="dummyArmor" class="form-control" type="number" value="120" /></label></div>
+            <div class="col-lg-2 col-12"><label class="label">Magic Resist<input id="dummyMr" class="form-control" type="number" value="100" /></label></div>
+          </div>
+          <div class="metrics-row">
+            <div class="metric-box"><strong>Post-mitigation Combo:</strong> <span id="mitigatedCombo">0</span></div>
+            <div class="metric-box"><strong>% Target HP Removed:</strong> <span id="hpRemoved">0%</span></div>
+          </div>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="content-title">5) Build Comparison</h2>
+          <button class="btn btn-primary" onclick="saveCurrentBuild()">Save Current Build Snapshot</button>
+          <div id="buildComparison"></div>
         </div>
       </div>
     </div>
   </div>
-
-  <div class="item-modal hidden" id="itemModal">
-    <div class="item-modal-panel">
-      <div class="item-modal-header">
-        <h3>Select Item</h3>
-        <button class="btn" type="button" onclick="closeItemModal()">Close</button>
-      </div>
-      <input id="itemSearch" class="form-control" type="text" placeholder="Search items" />
-      <div id="itemTagFilters" class="item-tag-filters"></div>
-      <div id="itemModalGrid" class="item-modal-grid"></div>
-    </div>
-  </div>
-
   <script src="JS/app.js"></script>
 </body>
 </html>
