@@ -29,9 +29,7 @@ async function loadCommunityDragonCalcs() {
     const payload = await fetch("https://raw.communitydragon.org/latest/game/items.cdtb.bin.json").then((r) => r.json());
     Object.entries(payload).forEach(([key, value]) => {
       const match = key.match(/^Items\/(\d+)$/);
-      if (match) {
-        ITEM_STATE.cdragonById[match[1]] = value;
-      }
+      if (match) ITEM_STATE.cdragonById[match[1]] = value;
     });
   } catch (error) {
     console.warn("CommunityDragon calc data unavailable", error);
@@ -65,9 +63,12 @@ function resolveDescriptionFormulas(item, descriptionHtml) {
 function statLabel(part) {
   const statId = part.mStat;
   const labels = {
+    0: "AP",
     1: "armor",
     2: "AD",
+    3: "attack speed",
     4: "attack speed",
+    5: "magic resist",
     6: "critical strike chance",
     7: "life steal",
     8: "ability haste",
@@ -76,11 +77,11 @@ function statLabel(part) {
     18: "lethality",
     19: "armor penetration",
     20: "magic penetration",
-    21: "magic pen %",
+    21: "magic penetration",
     29: "target max health",
     30: "bonus health",
     31: "total health",
-    34: "move speed",
+    34: "attack speed",
   };
 
   if (statId === 2) {
@@ -89,7 +90,7 @@ function statLabel(part) {
     return "total AD";
   }
 
-  return labels[statId] || `stat(${statId ?? "?"})`;
+  return labels[statId] || "scaling stat";
 }
 
 function calcRequirementToText(req) {
@@ -117,9 +118,7 @@ function formulaPartToText(part, dataValueMap, calcMap) {
 
     case "StatByNamedDataValueCalculationPart": {
       const val = dataValueMap[part.mDataValue];
-      if (val !== undefined) {
-        return `${(Number(val) * 100).toFixed(Number(val) % 1 ? 1 : 0)}% ${statLabel(part)}`;
-      }
+      if (val !== undefined) return `${(Number(val) * 100).toFixed(Number(val) % 1 ? 1 : 0)}% ${statLabel(part)}`;
       return `${part.mDataValue} × ${statLabel(part)}`;
     }
 
@@ -133,9 +132,7 @@ function formulaPartToText(part, dataValueMap, calcMap) {
 
     case "ByCharLevelBreakpointsCalculationPart": {
       const first = part.mLevel1Value ?? 0;
-      const bps = (part.mBreakpoints || [])
-        .map((bp) => `L${bp.mLevel}: +${bp.mBonusPerLevelAtAndAfter}/lvl`)
-        .join(", ");
+      const bps = (part.mBreakpoints || []).map((bp) => `L${bp.mLevel}: +${bp.mBonusPerLevelAtAndAfter}/lvl`).join(", ");
       return `${first} at L1${bps ? `; ${bps}` : ""}`;
     }
 
@@ -211,14 +208,26 @@ function gameCalculationToText(calcName, calc, calcMap, dataValueMap) {
   return `[${calc.__type || calcName}]`;
 }
 
-
 function prettyCalcName(name) {
   if (!name) return "Calculation";
   if (name.startsWith("{") && name.endsWith("}")) return `Calculation ${name}`;
-  return name
+
+  const transformed = name
     .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/_/g, " ")
-    .replace(/\w/g, (c) => c.toUpperCase());
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  return transformed
+    .replace(/Total AS\b/i, "Total Attack Speed")
+    .replace(/Total On Hit Damage\b/i, "Total On-Hit Damage")
+    .replace(/Dps\b/i, "DPS");
+}
+
+function shouldHideCalcLine(name, text) {
+  if (!name) return true;
+  if (/^Calculation \{[0-9a-f]+\}$/i.test(name)) return true;
+  if (!text || /^\s*[0-9.]+\s*$/.test(text)) return true;
+  return false;
 }
 
 function buildCalculationLines(cItem) {
@@ -239,7 +248,7 @@ function buildDetailedPassiveText(itemId, item) {
   if (!cItem || !cItem.mItemCalculations) return "";
 
   const lines = buildCalculationLines(cItem);
-  const calcLines = lines.map((l) => `<li><strong>${l.name}:</strong> ${l.text || "n/a"}</li>`);
+  const calcLines = lines.filter((l) => !shouldHideCalcLine(l.name, l.text)).map((l) => `<li><strong>${l.name}:</strong> ${l.text || "n/a"}</li>`);
   const dataValueMap = lines[0]?.dataValueMap || {};
 
   const isSpellblade = item.description.toLowerCase().includes("spellblade");
@@ -254,17 +263,6 @@ function buildDetailedPassiveText(itemId, item) {
   }
 
   return `<div><strong>Detailed formula breakdown</strong><ul>${calcLines.join("")}</ul></div>`;
-}
-
-function buildFormulaSection(item) {
-  const effects = Object.entries(item.effect || {})
-    .filter(([, value]) => value !== "0" && value !== 0)
-    .map(([key, value]) => `<li><strong>${key}:</strong> ${value}</li>`)
-    .join("");
-
-  return effects
-    ? `<hr><div><strong>Data Dragon effect values</strong><ul>${effects}</ul></div>`
-    : "";
 }
 
 async function initItemLookup() {
@@ -317,15 +315,10 @@ function applyItemFilters() {
   renderItemGrid();
 
   const stillExists = ITEM_STATE.selectedId && ITEM_STATE.filteredIds.includes(ITEM_STATE.selectedId);
-  if (!stillExists) {
-    ITEM_STATE.selectedId = ITEM_STATE.filteredIds[0] || null;
-  }
+  if (!stillExists) ITEM_STATE.selectedId = ITEM_STATE.filteredIds[0] || null;
 
-  if (ITEM_STATE.selectedId) {
-    showItem(ITEM_STATE.selectedId);
-  } else {
-    clearItemDetails();
-  }
+  if (ITEM_STATE.selectedId) showItem(ITEM_STATE.selectedId);
+  else clearItemDetails();
 }
 
 function renderItemGrid() {
@@ -359,10 +352,9 @@ function showItem(id) {
 
   const resolvedDescription = resolveDescriptionFormulas(item, item.description || "");
   const detailedPassive = buildDetailedPassiveText(id, item);
-  const formulaSection = buildFormulaSection(item);
 
   document.getElementById("itemName").textContent = item.name;
   document.getElementById("itemIcon").src = `https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png`;
   document.getElementById("itemMeta").innerHTML = `<strong>Cost:</strong> ${item.gold.total}g <br><strong>Sell:</strong> ${item.gold.sell}g <br><strong>Tags:</strong> ${(item.tags || []).join(", ")}`;
-  document.getElementById("itemDescription").innerHTML = resolvedDescription + (detailedPassive ? `<hr>${detailedPassive}` : "") + formulaSection;
+  document.getElementById("itemDescription").innerHTML = resolvedDescription + (detailedPassive ? `<hr>${detailedPassive}` : "");
 }
