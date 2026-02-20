@@ -5,6 +5,7 @@
  * - splash
  * - name/lore
  * - passive + Q/W/E/R cards
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
  *
  * Flow:
  * 1) `initChampionLookup` loads latest game version + champion index.
@@ -16,6 +17,11 @@ const CHAMP_STATE = { version: "", champions: {}, selected: "" };
 /**
  * Bootstraps the Champion Lookup page by loading versions/champions and wiring UI events.
  */
+=======
+ */
+const CHAMP_STATE = { version: "", champions: {}, selected: "" };
+
+>>>>>>> main
 async function initChampionLookup() {
   const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
   CHAMP_STATE.version = versions[0];
@@ -32,10 +38,13 @@ async function initChampionLookup() {
   renderChampion(Object.keys(CHAMP_STATE.champions).sort((a, b) => a.localeCompare(b))[0]);
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
 /**
  * Fetches and renders a single champion's detail payload into splash/lore/ability cards.
  * @param {string} name Data Dragon champion key (e.g. "Ahri").
  */
+=======
+>>>>>>> main
 async function renderChampion(name) {
   CHAMP_STATE.selected = name;
   const details = await fetch(`https://ddragon.leagueoflegends.com/cdn/${CHAMP_STATE.version}/data/en_US/champion/${name}.json`).then((r) => r.json());
