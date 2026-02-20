@@ -1,3 +1,13 @@
+/**
+ * Legacy prototype logic (pre-refactor).
+ *
+ * Kept for reference/debugging while new modular pages replace older behavior.
+ *
+ * Legacy flow:
+ * 1) `populateChamp` fills champion dropdown from Data Dragon.
+ * 2) Selection handlers (`champSelect`, `levelSelect`, `abilitySelect`) recompute outputs.
+ * 3) Tooltip helpers resolve stat/formula references for on-page ability text.
+ */
 //for debuging
 var here="here";
 
@@ -22,6 +32,9 @@ var AS=100;
 var stats=[AP,AR,AD,AS];
 var latestVersion;
 
+/**
+ * Loads latest patch champion list and fills the legacy champion selector.
+ */
 async function populateChamp(){
     // Fetch the list of versions
         const versionResponse = await fetch("https://ddragon.leagueoflegends.com/api/versions.json");
@@ -42,6 +55,9 @@ async function populateChamp(){
     }
 }
 
+/**
+ * Reads the first scalar value from a referenced calculations entry.
+ */
 function getValueFromCalculations(calculations, reference) {
   const calculation = calculations[reference];
 
@@ -60,6 +76,9 @@ function getValueFromCalculations(calculations, reference) {
   return null;
 }
 
+/**
+ * Resolves legacy tooltip references and stat formula tokens to concrete values.
+ */
 function replaceReferences(tooltip, abilityValues, lowerCaseSpellCalculations, abilityNo) {
     function statLookup(part){
 
@@ -241,6 +260,9 @@ function replaceReferences(tooltip, abilityValues, lowerCaseSpellCalculations, a
 }
 
 
+/**
+ * Legacy onchange handler that loads selected champion and refreshes page sections.
+ */
 function champSelect(){
     var selector=document.getElementById("champList");
     var img=document.getElementById("thumb")
@@ -348,12 +370,18 @@ fetch(`https://raw.communitydragon.org/latest/game/data/characters/${championNam
 
 }
 
+/**
+ * Legacy level-change handler that recomputes displayed stats/ability outputs.
+ */
 function levelSelect(){
     var levelSelector=document.getElementById("level");
     level=levelSelector.value;
     champSelect();
 }
 
+/**
+ * Legacy ability-rank handler that recomputes tooltip values for each spell.
+ */
 function abilitySelect(){
 
 
@@ -382,6 +410,9 @@ function abilitySelect(){
       }
 }
 
+/**
+ * Computes a deterministic 32-bit hash used by legacy lookup code paths.
+ */
 function hash32Custom(str) {
     const prime = BigInt(16777619);
     const offset = BigInt(2166136261);
@@ -398,6 +429,9 @@ function hash32Custom(str) {
     return hash.toString(16).padStart(8, "0");
 }
 
+/**
+ * Checks whether an object-array contains an entry with the requested variable key.
+ */
 function containsVariable(variableName, objectArray) {
 
 
