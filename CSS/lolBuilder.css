@@ -1,24 +1,69 @@
-.item-icon {
-    width: 50px; /* or any size that fits your design */
-    height: auto;
-    margin: 5px; /* optional, for spacing */
-    cursor: pointer; /* changes the cursor to indicate the icon is clickable */
+body {
+  background: linear-gradient(180deg, #0d1224 0%, #11192e 100%);
 }
 
-/* Style for checkboxes */
-#itemFilters input[type="checkbox"] {
-    width: 20px; /* Increase checkbox size */
-    height: 20px; /* Increase checkbox size */
-    cursor: pointer; /* Changes the cursor to indicate the checkbox is clickable */
-    margin-right: 10px; /* Space between checkbox and label */
-    
+.hero-card,
+.section-card {
+  margin-top: 1rem;
+  border: 1px solid #2c3f65;
+  background: rgba(16, 24, 45, 0.85);
 }
 
-/* Style for labels */
-#itemFilters label {
-    margin-right: 20px; /* Space between label and next checkbox */
-    cursor: pointer; /* Changes the cursor to indicate the label is clickable */
-    font-size: 1.1em; /* Increase font size */
-    display: inline-block; /* Align with checkbox */
-    vertical-align: middle; /* Align text vertically with checkbox */
+.champion-splash {
+  width: 100%;
+  max-height: 140px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #4866a2;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.8rem;
+}
+
+.stat-pill,
+.metric-box {
+  border: 1px solid #35538a;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  background: #182541;
+}
+
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.ability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.8rem;
+}
+
+.ability-card {
+  border: 1px solid #35538a;
+  border-radius: 8px;
+  padding: 0.7rem;
+  background: #182541;
+}
+
+.ability-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  margin: 0.4rem 0;
+}
+
+.ability-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+#buildComparison {
+  overflow-x: auto;
 }
