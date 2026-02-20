@@ -6,6 +6,11 @@
  * - Load CommunityDragon item calculation payloads for richer formula detail.
  * - Convert calculation parts into human-readable text for the RHS detail panel.
  * - Keep UI state for search/filter/selection and render icon grid + details.
+ *
+ * Flow:
+ * 1) `initItemLookup` loads versioned item data + optional CommunityDragon calculations.
+ * 2) Tag/search filters are rendered and user input updates `ITEM_STATE.filteredIds`.
+ * 3) Grid selection calls `showItem` to render full stat/description/calculation details.
  */
 const ITEM_STATE = {
   version: "",
@@ -17,10 +22,16 @@ const ITEM_STATE = {
   cdragonById: {},
 };
 
+/**
+ * Returns true when an item is purchasable and available on Summoner's Rift.
+ */
 function isSummonersRiftItem(item) {
   return item.gold?.purchasable && item.maps?.[11] && !item.requiredAlly;
 }
 
+/**
+ * Deduplicates item entries by normalized name, keeping the highest numeric item id.
+ */
 function dedupeByNameKeepingLatest(itemEntries) {
   const byName = {};
   itemEntries.forEach(([id, item]) => {
@@ -33,6 +44,9 @@ function dedupeByNameKeepingLatest(itemEntries) {
   return Object.values(byName).map(({ id, item }) => [id, item]);
 }
 
+/**
+ * Fetches CommunityDragon item calculations and indexes them by numeric item id.
+ */
 async function loadCommunityDragonCalcs() {
   try {
     const payload = await fetch("https://raw.communitydragon.org/latest/game/items.cdtb.bin.json").then((r) => r.json());
@@ -45,6 +59,9 @@ async function loadCommunityDragonCalcs() {
   }
 }
 
+/**
+ * Resolves a generated tooltip token (e.g. e1/e2) to its value from item effect data.
+ */
 function resolveEffectToken(item, token) {
   if (!item.effect) return null;
   const effect = item.effect;
@@ -62,6 +79,9 @@ function resolveEffectToken(item, token) {
   return null;
 }
 
+/**
+ * Replaces tooltip formula tokens in an item description with resolved numeric values.
+ */
 function resolveDescriptionFormulas(item, descriptionHtml) {
   return descriptionHtml.replace(/{{\s*([^}\s]+)\s*}}/g, (_, token) => {
     const resolved = resolveEffectToken(item, token);
@@ -69,6 +89,9 @@ function resolveDescriptionFormulas(item, descriptionHtml) {
   });
 }
 
+/**
+ * Infers a friendly stat label from a calculation data-value key name.
+ */
 function inferStatFromDataValueName(name) {
   const key = (name || "").toLowerCase();
   if (!key) return null;
@@ -82,6 +105,9 @@ function inferStatFromDataValueName(name) {
   return null;
 }
 
+/**
+ * Builds a readable label for a stats-calculation part using known stat ids or inferred names.
+ */
 function statLabel(part, dataValueName = "") {
   const statId = part?.mStat;
   const labels = {
@@ -116,12 +142,18 @@ function statLabel(part, dataValueName = "") {
   return inferStatFromDataValueName(dataValueName) || "scaling stat";
 }
 
+/**
+ * Converts a calculation requirement object into a user-facing text snippet.
+ */
 function calcRequirementToText(req) {
   if (!req || typeof req !== "object") return "condition";
   if (req.__type === "IsRangedCastRequirement") return "ranged users";
   return req.__type || "condition";
 }
 
+/**
+ * Converts one CommunityDragon formula part into readable text.
+ */
 function formulaPartToText(part, dataValueMap, calcMap) {
   if (!part) return "0";
 
@@ -192,6 +224,9 @@ function formulaPartToText(part, dataValueMap, calcMap) {
   }
 }
 
+/**
+ * Converts a full game calculation entry into a single readable sentence.
+ */
 function gameCalculationToText(calcName, calc, calcMap, dataValueMap) {
   if (!calc || typeof calc !== "object") return "";
 
@@ -231,6 +266,9 @@ function gameCalculationToText(calcName, calc, calcMap, dataValueMap) {
   return `[${calc.__type || calcName}]`;
 }
 
+/**
+ * Normalizes raw calculation keys into a display-friendly title.
+ */
 function prettyCalcName(name) {
   if (!name) return "Calculation";
   if (name.startsWith("{") && name.endsWith("}")) return `Calculation ${name}`;
@@ -246,6 +284,9 @@ function prettyCalcName(name) {
     .replace(/Dps\b/i, "DPS");
 }
 
+/**
+ * Filters out noisy/duplicate calculation lines that are not useful for display.
+ */
 function shouldHideCalcLine(name, text) {
   if (!name) return true;
   if (/^Calculation \{[0-9a-f]+\}$/i.test(name)) return true;
@@ -253,6 +294,9 @@ function shouldHideCalcLine(name, text) {
   return false;
 }
 
+/**
+ * Builds all display-worthy calculation lines for a CommunityDragon item payload.
+ */
 function buildCalculationLines(cItem) {
   const calcMap = cItem.mItemCalculations || {};
   const dataValueMap = {};
@@ -266,6 +310,9 @@ function buildCalculationLines(cItem) {
   });
 }
 
+/**
+ * Builds the final detailed passive/calculation block for an item detail panel.
+ */
 function buildDetailedPassiveText(itemId, item) {
   const cItem = ITEM_STATE.cdragonById[itemId];
   if (!cItem || !cItem.mItemCalculations) return "";
@@ -288,6 +335,9 @@ function buildDetailedPassiveText(itemId, item) {
   return `<div><strong>Detailed formula breakdown</strong><ul>${calcLines.join("")}</ul></div>`;
 }
 
+/**
+ * Initializes Item Lookup: load data, build filters, bind events, and render first state.
+ */
 async function initItemLookup() {
   const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
   ITEM_STATE.version = versions[0];
@@ -308,6 +358,9 @@ async function initItemLookup() {
   applyItemFilters();
 }
 
+/**
+ * Renders tag filter checkboxes into a target container and wires change callbacks.
+ */
 function renderTagFilters(targetId, onChange) {
   const root = document.getElementById(targetId);
   root.innerHTML = Array.from(ITEM_STATE.tags)
@@ -318,10 +371,16 @@ function renderTagFilters(targetId, onChange) {
   root.querySelectorAll(".tag-checkbox").forEach((cb) => cb.addEventListener("change", onChange));
 }
 
+/**
+ * Reads selected tag checkboxes from a filter container and returns normalized tag names.
+ */
 function getSelectedTags(rootId) {
   return new Set(Array.from(document.querySelectorAll(`#${rootId} .tag-checkbox:checked`)).map((cb) => cb.value));
 }
 
+/**
+ * Applies search and tag filters, then updates filtered item ids and rendered results.
+ */
 function applyItemFilters() {
   ITEM_STATE.selectedTags = getSelectedTags("itemFilters");
   const text = document.getElementById("itemSearch").value.trim().toLowerCase();
@@ -344,6 +403,9 @@ function applyItemFilters() {
   else clearItemDetails();
 }
 
+/**
+ * Renders the filtered item icon/button grid and count summary.
+ */
 function renderItemGrid() {
   const grid = document.getElementById("itemGrid");
   document.getElementById("itemCount").textContent = `${ITEM_STATE.filteredIds.length} items`;
@@ -359,6 +421,9 @@ function renderItemGrid() {
     .join("");
 }
 
+/**
+ * Resets the right-side item details panel to an empty state.
+ */
 function clearItemDetails() {
   document.getElementById("itemName").textContent = "No item selected";
   document.getElementById("itemIcon").removeAttribute("src");
@@ -366,6 +431,9 @@ function clearItemDetails() {
   document.getElementById("itemDescription").textContent = "Try changing search or filters.";
 }
 
+/**
+ * Renders the selected item's core stats, description, and detailed calculation text.
+ */
 function showItem(id) {
   const item = ITEM_STATE.items[id];
   if (!item) return;

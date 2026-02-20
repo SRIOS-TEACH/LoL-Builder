@@ -3,6 +3,14 @@
  *
  * NOTE: Active page flows now use focused modules (`builder.js`, `itemLookup.js`,
  * `champLookup.js`). This file is retained for reference while features are migrated.
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+ *
+ * Legacy flow:
+ * 1) `initBuilderApp` wires static inputs and fetches champion/item datasets.
+ * 2) Selection changes trigger `refreshAll` to recompute stats and ability damage estimates.
+ * 3) Optional snapshots are stored by `saveCurrentBuild` and compared in a table view.
+=======
+>>>>>>> main
  */
 const APP_STATE = {
   version: "",
@@ -28,6 +36,12 @@ const STAT_LABELS = {
   ah: "Ability Haste",
 };
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Initializes legacy builder app flow and loads default champion state.
+ */
+=======
+>>>>>>> main
 async function initBuilderApp() {
   wireStaticInputs();
   await loadStaticData();
@@ -36,6 +50,12 @@ async function initBuilderApp() {
   await loadChampion(APP_STATE.championKey);
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Wires static level/dummy-target inputs so any change triggers full refresh.
+ */
+=======
+>>>>>>> main
 function wireStaticInputs() {
   const levelSelect = document.getElementById("championLevel");
   for (let i = 1; i <= 18; i += 1) {
@@ -51,6 +71,12 @@ function wireStaticInputs() {
   });
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Loads patch version, champion catalog, and item catalog for legacy app usage.
+ */
+=======
+>>>>>>> main
 async function loadStaticData() {
   const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
   APP_STATE.version = versions[0];
@@ -60,6 +86,12 @@ async function loadStaticData() {
   APP_STATE.items = itemData.data;
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Renders champion and item selectors and wires change handlers.
+ */
+=======
+>>>>>>> main
 function renderSelectors() {
   const championSelect = document.getElementById("championSelect");
   championSelect.innerHTML = Object.keys(APP_STATE.champions)
@@ -118,6 +150,12 @@ function renderSelectors() {
   });
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Loads full selected champion details then triggers complete UI recomputation.
+ */
+=======
+>>>>>>> main
 async function loadChampion(championKey) {
   const champ = APP_STATE.champions[championKey];
   const champData = await fetch(`https://ddragon.leagueoflegends.com/cdn/${APP_STATE.version}/data/en_US/champion/${championKey}.json`).then((r) => r.json());
@@ -138,10 +176,22 @@ async function loadChampion(championKey) {
   refreshAll();
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Returns a stat value scaled from base + per-level growth at a specific level.
+ */
+=======
+>>>>>>> main
 function calcAtLevel(base, perLevel, level) {
   return base + perLevel * (level - 1);
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Aggregates item-provided flat stats from selected slots.
+ */
+=======
+>>>>>>> main
 function getItemTotals() {
   const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, asPercent: 0, ah: 0 };
   APP_STATE.itemSlots.forEach((id) => {
@@ -159,6 +209,12 @@ function getItemTotals() {
   return totals;
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Combines champion level stats and item totals into a final stat object.
+ */
+=======
+>>>>>>> main
 function computeFinalStats() {
   const base = APP_STATE.championData.stats;
   const item = getItemTotals();
@@ -176,6 +232,12 @@ function computeFinalStats() {
   return stats;
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Renders final computed stats for the selected champion build.
+ */
+=======
+>>>>>>> main
 function renderStats(stats) {
   const grid = document.getElementById("statsGrid");
   grid.innerHTML = Object.entries(stats)
@@ -183,10 +245,22 @@ function renderStats(stats) {
     .join("");
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Converts ability haste into cooldown reduction percentage.
+ */
+=======
+>>>>>>> main
 function cdrFromHaste(ah) {
   return (ah / (100 + ah)) * 100;
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Evaluates one spell calculation part against current stats and spell rank.
+ */
+=======
+>>>>>>> main
 function evaluatePart(part, spell, spellRank, stats) {
   if (!part || typeof part !== "object") return 0;
   if (part.__type === "NumberCalculationPart") return part.mNumber || 0;
@@ -219,6 +293,12 @@ function evaluatePart(part, spell, spellRank, stats) {
   return 0;
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Evaluates spell damage expression parts and returns estimated output text.
+ */
+=======
+>>>>>>> main
 function evaluateSpellDamage(spell, spellRank, stats) {
   if (!spell) return { raw: 0, cd: 0, damageType: "mixed" };
   let raw = 0;
@@ -239,11 +319,23 @@ function evaluateSpellDamage(spell, spellRank, stats) {
   return { raw: Math.max(raw, 0), cd, damageType };
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Applies armor/mr mitigation formula to raw damage.
+ */
+=======
+>>>>>>> main
 function mitigation(amount, resist) {
   if (resist >= 0) return amount * (100 / (100 + resist));
   return amount * (2 - 100 / (100 - resist));
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Renders ability cards with calculated damage snippets versus dummy defenses.
+ */
+=======
+>>>>>>> main
 function renderAbilityCards(stats) {
   const container = document.getElementById("abilityCards");
   const spells = APP_STATE.championDetail?.spells || [];
@@ -276,6 +368,12 @@ function renderAbilityCards(stats) {
   return cards;
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Runs full recomputation pipeline (stats + abilities + comparisons).
+ */
+=======
+>>>>>>> main
 function refreshAll() {
   if (!APP_STATE.championData) return;
   const stats = computeFinalStats();
@@ -309,6 +407,12 @@ function refreshAll() {
   document.getElementById("hpRemoved").textContent = `${((mitigated / dummyHp) * 100).toFixed(1)}%`;
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Captures current build configuration and stores it for comparison table rendering.
+ */
+=======
+>>>>>>> main
 function saveCurrentBuild() {
   const stats = computeFinalStats();
   const burst = Number(document.getElementById("comboBurst").textContent) || 0;
@@ -326,6 +430,12 @@ function saveCurrentBuild() {
   renderBuildComparison();
 }
 
+<<<<<<< codex/expand-website-to-full-league-of-legends-build-tool-35c85b
+/**
+ * Renders side-by-side summary table for saved build snapshots.
+ */
+=======
+>>>>>>> main
 function renderBuildComparison() {
   const root = document.getElementById("buildComparison");
   if (!APP_STATE.savedBuilds.length) {

@@ -6,6 +6,11 @@
  * - Item modal search + tag filtering UX.
  * - Ability-rank validation by level constraints.
  * - Aggregate base+item stats and render summary cards.
+ *
+ * Flow:
+ * 1) `initBuilder` loads patch data, champions, and item catalog.
+ * 2) User selects champion/level/items, then `enforceAbilityRules` keeps ranks valid.
+ * 3) Stat + ability panels are re-rendered from combined champion and item state.
  */
 const BUILDER = {
   version: "",
@@ -20,12 +25,18 @@ const BUILDER = {
   itemTags: new Set(),
 };
 
+/**
+ * Writes a builder status message and toggles error styling when needed.
+ */
 function setStatus(message, isError = false) {
   const el = document.getElementById("builderStatus");
   el.textContent = message;
   el.classList.toggle("status-error", isError);
 }
 
+/**
+ * Initializes Builder page data, selectors, modal wiring, and default render state.
+ */
 async function initBuilder() {
   try {
     setStatus("Loading champion and item data...");
@@ -41,6 +52,9 @@ async function initBuilder() {
   }
 }
 
+/**
+ * Builds level dropdown options and wires level-change refresh behavior.
+ */
 function wireLevelOptions() {
   const level = document.getElementById("builderLevel");
   level.innerHTML = Array.from({ length: 18 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
@@ -53,10 +67,16 @@ function wireLevelOptions() {
   });
 }
 
+/**
+ * Returns true when an item can be bought on Summoner's Rift.
+ */
 function isSummonersRiftItem(item) {
   return item.gold?.purchasable && item.maps?.[11] && !item.requiredAlly;
 }
 
+/**
+ * Loads latest patch metadata, champion index, and item catalog for builder usage.
+ */
 async function loadBuilderData() {
   const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
   BUILDER.version = versions[0];
@@ -72,6 +92,9 @@ async function loadBuilderData() {
   });
 }
 
+/**
+ * Renders champion dropdown options and wires champion-change handling.
+ */
 function renderChampionSelect() {
   const select = document.getElementById("builderChampion");
   const names = Object.keys(BUILDER.champions).sort((a, b) => a.localeCompare(b));
@@ -80,6 +103,9 @@ function renderChampionSelect() {
   setChampion(names[0]);
 }
 
+/**
+ * Loads selected champion details and refreshes splash, stats, abilities, and controls.
+ */
 async function setChampion(name) {
   const details = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion/${name}.json`).then((r) => r.json());
   BUILDER.selectedChampion = name;
@@ -94,6 +120,9 @@ async function setChampion(name) {
   renderStats();
 }
 
+/**
+ * Creates clickable item slot UI for opening the item-selection modal.
+ */
 function renderItemSlots() {
   const root = document.getElementById("itemSlots");
   root.innerHTML = BUILDER.itemSlots
@@ -102,6 +131,9 @@ function renderItemSlots() {
   refreshSlotLabels();
 }
 
+/**
+ * Refreshes item slot labels/icons based on currently selected item ids.
+ */
 function refreshSlotLabels() {
   BUILDER.itemSlots.forEach((id, i) => {
     const text = id ? BUILDER.items[id].name : "Empty";
@@ -109,6 +141,9 @@ function refreshSlotLabels() {
   });
 }
 
+/**
+ * Wires modal search/filter controls and close/cancel interactions.
+ */
 function initItemModal() {
   renderBuilderTagFilters();
   document.getElementById("modalItemSearch").addEventListener("input", renderModalItemGrid);
@@ -120,6 +155,9 @@ function initItemModal() {
   });
 }
 
+/**
+ * Resets modal search text and selected tag filters before re-rendering item grid.
+ */
 function clearModalFilters() {
   document.getElementById("modalItemSearch").value = "";
   document.querySelectorAll(".modal-tag").forEach((cb) => {
@@ -128,6 +166,9 @@ function clearModalFilters() {
   renderModalItemGrid();
 }
 
+/**
+ * Renders modal tag filters derived from current builder item data.
+ */
 function renderBuilderTagFilters() {
   const root = document.getElementById("modalItemFilters");
   root.innerHTML = Array.from(BUILDER.itemTags)
@@ -137,6 +178,9 @@ function renderBuilderTagFilters() {
   root.querySelectorAll(".modal-tag").forEach((cb) => cb.addEventListener("change", renderModalItemGrid));
 }
 
+/**
+ * Opens the item modal for a specific slot and renders available filtered items.
+ */
 function openItemModal(slot) {
   BUILDER.activeSlot = slot;
   document.getElementById("itemModalTitle").textContent = `Select Item for Slot ${slot + 1}`;
@@ -144,11 +188,17 @@ function openItemModal(slot) {
   renderModalItemGrid();
 }
 
+/**
+ * Closes item modal and clears active slot tracking.
+ */
 function closeItemModal() {
   document.getElementById("itemModal").classList.add("hidden");
   BUILDER.activeSlot = null;
 }
 
+/**
+ * Renders modal item candidates after applying current search and tag filters.
+ */
 function renderModalItemGrid() {
   const text = document.getElementById("modalItemSearch").value.trim().toLowerCase();
   const tags = new Set(Array.from(document.querySelectorAll(".modal-tag:checked")).map((cb) => cb.value));
@@ -175,6 +225,9 @@ function renderModalItemGrid() {
       .join("");
 }
 
+/**
+ * Assigns an item id to the active slot, then refreshes labels and computed stats.
+ */
 function setSlotItem(itemId) {
   if (BUILDER.activeSlot === null) return;
   BUILDER.itemSlots[BUILDER.activeSlot] = itemId;
@@ -183,6 +236,9 @@ function setSlotItem(itemId) {
   closeItemModal();
 }
 
+/**
+ * Returns max legal rank for an ability key at the current champion level.
+ */
 function abilityMaxByLevel(level, spellKey) {
   if (spellKey === "r") {
     if (level >= 16) return 3;
@@ -193,6 +249,9 @@ function abilityMaxByLevel(level, spellKey) {
   return Math.min(5, Math.ceil(level / 2));
 }
 
+/**
+ * Clamps ability ranks so totals and per-skill maxima remain legal for the level.
+ */
 function enforceAbilityRules() {
   const totalAllowed = BUILDER.level;
   ["q", "w", "e", "r"].forEach((k) => {
@@ -208,6 +267,9 @@ function enforceAbilityRules() {
   }
 }
 
+/**
+ * Renders ability rank selectors and wires changes through validation and refresh.
+ */
 function renderAbilityControls() {
   const root = document.getElementById("abilityRankControls");
   root.innerHTML = ["q", "w", "e", "r"]
@@ -232,6 +294,9 @@ function renderAbilityControls() {
   document.getElementById("abilityRuleHint").textContent = `At level ${BUILDER.level}: basic abilities max ${abilityMaxByLevel(BUILDER.level, "q")}, R max ${abilityMaxByLevel(BUILDER.level, "r")}, total points available ${BUILDER.level}.`;
 }
 
+/**
+ * Aggregates additive stats from all selected items into a single stats object.
+ */
 function getItemStats() {
   const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0 };
   BUILDER.itemSlots.forEach((id) => {
@@ -249,10 +314,16 @@ function getItemStats() {
   return totals;
 }
 
+/**
+ * Computes level-scaled base stat growth using Riot's per-level scaling formula.
+ */
 function scale(base, perLevel, level) {
   return base + perLevel * (level - 1);
 }
 
+/**
+ * Calculates and renders current champion + item stats into summary cards.
+ */
 function renderStats() {
   if (!BUILDER.championData) return;
   const base = BUILDER.championData.stats;
@@ -274,6 +345,9 @@ function renderStats() {
     .join("");
 }
 
+/**
+ * Renders champion passive and spell cards with current rank highlights.
+ */
 function renderAbilityCards() {
   if (!BUILDER.championData) return;
   const champ = BUILDER.championData;
