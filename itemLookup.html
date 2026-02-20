@@ -1,93 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>League of Legends Item Lookup</title>
-    <link href="/css/halfmoon-variables.css" rel="stylesheet">
-    <link href="/css/lolBuilder.css" rel="stylesheet">
-    <script src="/js/xxhash.js"></script>
-    <script src="/js/LoLBuilder.js"></script>
-    <script src="/js/itemLookup.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Item Lookup</title>
+  <link href="CSS/halfmoon-variables.css" rel="stylesheet">
+  <link href="CSS/lolBuilder.css" rel="stylesheet">
 </head>
-<body class="with-custom-webkit-scrollbars with-custom-css-scrollbars dark-mode" onload="populateItems()">
-    <div class="page-wrapper with-navbar with-transitions">
-
-         <!-- Navbar start -->
+<body class="dark-mode" onload="initItemLookup()">
+  <!-- Page purpose: search/filter SR items and inspect detailed formula output -->
+  <div class="page-wrapper with-navbar with-transitions">
+    <!-- Shared navigation -->
     <nav class="navbar">
-      <!-- Reference: https://www.gethalfmoon.com/docs/navbar -->
-
-      <a href="/" class="navbar-brand">
-        <span style="font-family: Arial, Helvetica, sans-serif">LoL Build Builder</span>
-      </a>
-
-
+      <a href="main.html" class="navbar-brand">LoL Build Builder</a>
       <ul class="navbar-nav d-none d-md-flex">
-        <li class="nav-item mx-20">&nbsp;</li>
-        <li class="nav-item mx-lg-20">&nbsp;</li>
-        <li class="nav-item mx-xl-20">&nbsp;</li>
-        <li class="nav-item active ">
-          <a href="/main.html" class="nav-link">Home</a>
-        </li>
-        <li class="nav-item">
-          <a href="/Builder.html" class="nav-link">Builder</a>
-        </li>
-        <li class="nav-item">
-          <a href="/itemLookup.html" class="nav-link">Item Lookup</a>
-        </li>
-        <li class="nav-item">
-          <a href="/champ.html" class="nav-link">Champ Lookup</a>
-        </li>
+        <li class="nav-item"><a href="main.html" class="nav-link">Home</a></li>
+        <li class="nav-item"><a href="Builder.html" class="nav-link">Builder</a></li>
+        <li class="nav-item active"><a href="itemLookup.html" class="nav-link">Item Lookup</a></li>
+        <li class="nav-item"><a href="champ.html" class="nav-link">Champion Lookup</a></li>
       </ul>
+    </nav>
 
-      <div class="navbar-content d-md-none ml-auto"> <!-- d-md-none = display: none on medium screens and up (width > 768px), ml-auto = margin-left: auto -->
-        <div class="dropdown with-arrow">
-          <button class="btn" data-toggle="dropdown" type="button" id="navbar-dropdown-toggle-btn-1">
-            Menu
-            <i class="fa fa-angle-down" aria-hidden="true"></i>
-          </button>
-          <div class="dropdown-menu dropdown-menu-right w-200 font-size-24" aria-labelledby="navbar-dropdown-toggle-btn-1"> <!-- w-200 = width: 20rem (200px) -->
-              <a href="/" class="dropdown-item">Home</a>
-              <a href="/builds" class="dropdown-item">Builder</a>
-              <a href="/calculator" class="dropdown-item">Item Lookup</a>
-              <a href="/guides" class="dropdown-item">Champ Lookup</a>
+    <!-- Main page content -->
+    <div class="content-wrapper">
+      <div class="container-fluid">
+        <div class="card section-card">
+          <h1 class="content-title">Item Lookup</h1>
+          <div class="row row-eq-spacing">
+            <div class="col-lg-3 col-12">
+              <label class="label">Search
+                <input id="itemSearch" class="form-control" placeholder="Search items" />
+              </label>
+              <div id="itemFilters" class="tag-filters tag-filters-column mt-10"></div>
+            </div>
+
+            <div class="col-lg-6 col-12">
+              <p id="itemCount" class="text-muted"></p>
+              <div id="itemGrid" class="item-icon-grid mt-10"></div>
+            </div>
+
+            <div class="col-lg-3 col-12">
+              <div class="item-detail-panel">
+                <h2 id="itemName">Select an item</h2>
+                <img id="itemIcon" class="item-detail-icon" alt="Item icon" />
+                <div id="itemMeta"></div>
+                <p id="itemDescription"></p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </nav>
-    <!-- Navbar end -->
-
-        <div class="content-wrapper">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <h1 class="content-title">Item Lookup</h1>
-                            <p>Select an item to view its details.</p>
-                                <div id="itemFilters">
-                                <!-- Checkboxes will be populated here -->
-                                </div>
-                            <div class="row" id="itemGrid">
-                                <!-- Item Icons will be populated here -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-12">
-                        <div class="card">
-                            <h2 class="content-title" id="itemName">Item Name</h2>
-                            <p id="itemDescription">Item description and stats will appear here.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Existing Footer Here -->
-
     </div>
-    <script src="/js/halfmoon.min.js"></script>
+  </div>
+  <script src="JS/itemLookup.js"></script>
 </body>
 </html>
