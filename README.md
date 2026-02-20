@@ -11,21 +11,6 @@ The app intentionally validates data and readability first before adding advance
 
 ---
 
-## How to run locally
-From the repository root:
-
-```bash
-python3 -m http.server 8000
-```
-
-Open pages directly:
-- `http://127.0.0.1:8000/main.html`
-- `http://127.0.0.1:8000/champ.html`
-- `http://127.0.0.1:8000/itemLookup.html`
-- `http://127.0.0.1:8000/Builder.html`
-
----
-
 ## File map (what each major file does)
 
 ### HTML entry points
@@ -53,32 +38,3 @@ Open pages directly:
 - **CommunityDragon**: richer item calculation payloads used for readable formula rendering.
 
 ---
-
-## Screenshot/self-test workflow (local, deterministic)
-If browser automation is flaky in your cloud environment, run screenshots locally:
-
-```bash
-npm init -y
-npm install --save-dev playwright
-npx playwright install
-```
-
-Create `screenshot.mjs`:
-
-```js
-import { chromium } from 'playwright';
-
-const browser = await chromium.launch();
-const page = await browser.newPage({ viewport: { width: 1440, height: 2000 } });
-
-await page.goto('http://127.0.0.1:8000/itemLookup.html', { waitUntil: 'networkidle' });
-await page.screenshot({ path: 'itemLookup.png', fullPage: true });
-
-await browser.close();
-```
-
-Run:
-
-```bash
-node screenshot.mjs
-```
