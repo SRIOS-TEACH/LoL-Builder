@@ -1,74 +1,62 @@
-const ITEM_STATE = { version: "", items: {}, filteredIds: [], tags: new Set(), selectedTags: new Set() };
+const LOOKUP_STATE = {
+  version: "",
+  items: [],
+};
 
-function isSummonersRiftItem(item) {
-  return item.gold?.purchasable && item.maps?.[11] && !item.requiredAlly;
-}
+const SR_MAP_ID = 11;
 
 async function initItemLookup() {
   const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
-  ITEM_STATE.version = versions[0];
-  const itemJson = await fetch(`https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/data/en_US/item.json`).then((r) => r.json());
+  LOOKUP_STATE.version = versions[0];
+  const itemJson = await fetch(`https://ddragon.leagueoflegends.com/cdn/${LOOKUP_STATE.version}/data/en_US/item.json`).then((r) => r.json());
 
-  Object.entries(itemJson.data).forEach(([id, item]) => {
-    if (!isSummonersRiftItem(item)) return;
-    ITEM_STATE.items[id] = item;
-    (item.tags || []).forEach((tag) => ITEM_STATE.tags.add(tag));
-  });
+  LOOKUP_STATE.items = Object.entries(itemJson.data)
+    .filter(([, item]) => item.gold?.purchasable && item.maps?.[SR_MAP_ID] && !item.requiredAlly)
+    .map(([id, item]) => ({ id, ...item }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  const search = document.getElementById("itemSearch");
-  search.addEventListener("input", applyItemFilters);
-
-  renderTagFilters("itemFilters", applyItemFilters);
-  applyItemFilters();
-}
-
-function renderTagFilters(targetId, onChange) {
-  const root = document.getElementById(targetId);
-  root.innerHTML = Array.from(ITEM_STATE.tags)
-    .sort((a, b) => a.localeCompare(b))
-    .map((tag) => `<label class="tag-pill"><input type="checkbox" value="${tag}" class="tag-checkbox"> ${tag}</label>`)
+  const tags = [...new Set(LOOKUP_STATE.items.flatMap((item) => item.tags || []))].sort((a, b) => a.localeCompare(b));
+  document.getElementById("lookupTags").innerHTML = tags
+    .map((tag) => `<label><input type="checkbox" value="${tag}" onchange="renderLookupItems()"/> ${tag}</label>`)
     .join("");
 
-  root.querySelectorAll(".tag-checkbox").forEach((cb) => {
-    cb.addEventListener("change", onChange);
+  document.getElementById("lookupSearch").addEventListener("input", renderLookupItems);
+  renderLookupItems();
+}
+
+function renderLookupItems() {
+  const query = document.getElementById("lookupSearch").value.toLowerCase().trim();
+  const tags = Array.from(document.querySelectorAll('#lookupTags input:checked')).map((n) => n.value);
+
+  const filtered = LOOKUP_STATE.items.filter((item) => {
+    const nameMatch = !query || item.name.toLowerCase().includes(query);
+    const tagMatch = !tags.length || tags.every((tag) => item.tags?.includes(tag));
+    return nameMatch && tagMatch;
   });
+
+  document.getElementById("lookupGrid").innerHTML = filtered
+    .map(
+      (item) => `<button type="button" class="item-pick" onclick="showItem('${item.id}')">
+        <img src="https://ddragon.leagueoflegends.com/cdn/${LOOKUP_STATE.version}/img/item/${item.id}.png" alt="${item.name}"/>
+        <span>${item.name}</span>
+      </button>`
+    )
+    .join("");
 }
 
-function getSelectedTags(rootId) {
-  return new Set(Array.from(document.querySelectorAll(`#${rootId} .tag-checkbox:checked`)).map((cb) => cb.value));
-}
+function showItem(itemId) {
+  const item = LOOKUP_STATE.items.find((entry) => entry.id === itemId);
+  if (!item) return;
 
-function applyItemFilters() {
-  ITEM_STATE.selectedTags = getSelectedTags("itemFilters");
-  const text = document.getElementById("itemSearch").value.trim().toLowerCase();
-
-  ITEM_STATE.filteredIds = Object.entries(ITEM_STATE.items)
-    .filter(([, item]) => {
-      const nameOk = !text || item.name.toLowerCase().includes(text);
-      const tagOk = !ITEM_STATE.selectedTags.size || Array.from(ITEM_STATE.selectedTags).every((t) => item.tags?.includes(t));
-      return nameOk && tagOk;
-    })
-    .sort((a, b) => a[1].name.localeCompare(b[1].name))
-    .map(([id]) => id);
-
-  const grid = document.getElementById("itemGrid");
-  grid.innerHTML = ITEM_STATE.filteredIds
-    .map((id) => `<button class="item-button" onclick="showItem('${id}')">
-      <img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png" alt="${ITEM_STATE.items[id].name}">
-      <span>${ITEM_STATE.items[id].name}</span>
-    </button>`)
+  const statLines = Object.entries(item.stats || {})
+    .map(([k, v]) => `<li>${k}: ${v}</li>`)
     .join("");
 
-  if (ITEM_STATE.filteredIds.length && !document.getElementById("itemName").dataset.selected) {
-    showItem(ITEM_STATE.filteredIds[0]);
-  }
-}
-
-function showItem(id) {
-  const item = ITEM_STATE.items[id];
-  document.getElementById("itemName").dataset.selected = id;
   document.getElementById("itemName").textContent = item.name;
-  document.getElementById("itemIcon").src = `https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png`;
-  document.getElementById("itemMeta").innerHTML = `<strong>Cost:</strong> ${item.gold.total}g | <strong>Sell:</strong> ${item.gold.sell}g`;
-  document.getElementById("itemDescription").innerHTML = item.description;
+  document.getElementById("itemDescription").innerHTML = `
+    <img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${LOOKUP_STATE.version}/img/item/${item.id}.png" alt="${item.name}"/>
+    <div>${item.plaintext || item.description}</div>
+    <div><strong>Cost:</strong> ${item.gold?.total || 0}</div>
+    <ul>${statLines || '<li>No explicit stat block</li>'}</ul>
+  `;
 }
