@@ -64,60 +64,166 @@ function resolveDescriptionFormulas(item, descriptionHtml) {
 
 function statLabel(part) {
   if (part.mStat === 0) return "AP";
+  if (part.mStat === 1) return "armor";
   if (part.mStat === 2) {
     if (part.mStatFormula === 1) return "base AD";
     if (part.mStatFormula === 2) return "bonus AD";
     return "total AD";
   }
-  return "stat";
+  if (part.mStat === 3) return "attack speed";
+  if (part.mStat === 5) return "magic resist";
+  if (part.mStat === 12) return "max health";
+  return `stat(${part.mStat ?? "?"})`;
 }
 
-function formulaPartToText(part, dataValueMap) {
+function calcRequirementToText(req) {
+  if (!req || typeof req !== "object") return "condition";
+  if (req.__type === "IsRangedCastRequirement") return "ranged users";
+  return req.__type || "condition";
+}
+
+function formulaPartToText(part, dataValueMap, calcMap) {
   if (!part) return "0";
+
   switch (part.__type) {
     case "NumberCalculationPart":
       return String(part.mNumber ?? 0);
+
     case "StatByCoefficientCalculationPart": {
       const coef = Number(part.mCoefficient ?? 0);
       return `${(coef * 100).toFixed(coef % 1 ? 1 : 0)}% ${statLabel(part)}`;
     }
+
     case "NamedDataValueCalculationPart": {
       const val = dataValueMap[part.mDataValue];
       return val !== undefined ? `${val}` : part.mDataValue;
     }
+
+    case "StatByNamedDataValueCalculationPart": {
+      const val = dataValueMap[part.mDataValue];
+      if (val !== undefined) {
+        return `${(Number(val) * 100).toFixed(Number(val) % 1 ? 1 : 0)}% ${statLabel(part)}`;
+      }
+      return `${part.mDataValue} × ${statLabel(part)}`;
+    }
+
+    case "AbilityResourceByCoefficientCalculationPart": {
+      const coef = Number(part.mCoefficient ?? 0);
+      return `${(coef * 100).toFixed(coef % 1 ? 1 : 0)}% mana`;
+    }
+
+    case "ByCharLevelInterpolationCalculationPart":
+      return `${part.mStartValue ?? 0} → ${part.mEndValue ?? 0} (levels 1-18)`;
+
+    case "ByCharLevelBreakpointsCalculationPart": {
+      const first = part.mLevel1Value ?? 0;
+      const bps = (part.mBreakpoints || [])
+        .map((bp) => `L${bp.mLevel}: +${bp.mBonusPerLevelAtAndAfter}/lvl`)
+        .join(", ");
+      return `${first} at L1${bps ? `; ${bps}` : ""}`;
+    }
+
+    case "ByItemEpicnessCountCalculationPart":
+      return `${part.Coefficient ?? 1} × itemCount(epicness ${part.epicness ?? "?"})`;
+
+    case "BuffCounterByCoefficientCalculationPart":
+      return `${part.mCoefficient ?? 1} × buffCount(${part.mBuffName || "buff"})`;
+
+    case "BuffCounterByNamedDataValueCalculationPart": {
+      const val = dataValueMap[part.mDataValue];
+      return `${val !== undefined ? val : part.mDataValue} × buffCount(${part.mBuffName || "buff"})`;
+    }
+
+    case "EffectValueCalculationPart":
+      return `effect[${part.mEffectIndex}]`;
+
     case "ProductOfSubPartsCalculationPart":
-      return `(${formulaPartToText(part.mPart1, dataValueMap)}) × (${formulaPartToText(part.mPart2, dataValueMap)})`;
+      return `(${formulaPartToText(part.mPart1, dataValueMap, calcMap)}) × (${formulaPartToText(part.mPart2, dataValueMap, calcMap)})`;
+
     case "SumOfSubPartsCalculationPart":
-      return (part.mSubparts || []).map((p) => `(${formulaPartToText(p, dataValueMap)})`).join(" + ");
+      return (part.mSubparts || []).map((p) => `(${formulaPartToText(p, dataValueMap, calcMap)})`).join(" + ");
+
+    case "StatBySubPartCalculationPart":
+      return `(${formulaPartToText(part.mSubpart, dataValueMap, calcMap)}) × ${statLabel(part)}`;
+
+    case "ClampSubPartsCalculationPart": {
+      const sum = (part.mSubparts || []).map((p) => `(${formulaPartToText(p, dataValueMap, calcMap)})`).join(" + ");
+      return `min(${part.mCeiling ?? "ceiling"}, ${sum})`;
+    }
+
     default:
-      return part.__type || "unknown";
+      return `[${part.__type || "unknown part"}]`;
   }
+}
+
+function gameCalculationToText(calcName, calc, calcMap, dataValueMap) {
+  if (!calc || typeof calc !== "object") return "";
+
+  if (calc.__type === "GameCalculation") {
+    return (calc.mFormulaParts || []).map((p) => formulaPartToText(p, dataValueMap, calcMap)).join(" + ");
+  }
+
+  if (calc.__type === "GameCalculationModified") {
+    const baseKey = calc.mModifiedGameCalculation;
+    const baseCalc = calcMap[baseKey];
+    const baseText = baseCalc ? gameCalculationToText(baseKey, baseCalc, calcMap, dataValueMap) : baseKey;
+    const mult = formulaPartToText(calc.mMultiplier, dataValueMap, calcMap);
+    return `(${baseText}) × (${mult})`;
+  }
+
+  if (calc.__type === "GameCalculationConditional") {
+    const req = calcRequirementToText(calc.mConditionalCalculationRequirements);
+    const defText = calcMap[calc.mDefaultGameCalculation]
+      ? gameCalculationToText(calc.mDefaultGameCalculation, calcMap[calc.mDefaultGameCalculation], calcMap, dataValueMap)
+      : calc.mDefaultGameCalculation;
+    const condText = calcMap[calc.mConditionalGameCalculation]
+      ? gameCalculationToText(calc.mConditionalGameCalculation, calcMap[calc.mConditionalGameCalculation], calcMap, dataValueMap)
+      : calc.mConditionalGameCalculation;
+    return `${defText} (or ${condText} for ${req})`;
+  }
+
+  if (calc.__type === "{e9a3c91d}") {
+    const base = (calc.mFormulaParts || []).map((p) => formulaPartToText(p, dataValueMap, calcMap)).join(" + ");
+    const ranged = formulaPartToText(calc.mRangedMultiplier, dataValueMap, calcMap);
+    return `${base}; ranged multiplier ${ranged}`;
+  }
+
+  if (calc.__type === "{f3cbe7b2}") {
+    return `uses spell calc key ${calc.mSpellCalculationKey}`;
+  }
+
+  return `[${calc.__type || calcName}]`;
+}
+
+function buildCalculationLines(cItem) {
+  const calcMap = cItem.mItemCalculations || {};
+  const dataValueMap = {};
+  (cItem.mDataValues || []).forEach((d) => {
+    dataValueMap[d.mName] = d.mValue;
+  });
+
+  return Object.entries(calcMap).map(([name, calc]) => {
+    const text = gameCalculationToText(name, calc, calcMap, dataValueMap);
+    return { name, text, dataValueMap };
+  });
 }
 
 function buildDetailedPassiveText(itemId, item) {
   const cItem = ITEM_STATE.cdragonById[itemId];
   if (!cItem || !cItem.mItemCalculations) return "";
 
-  const dataValueMap = {};
-  (cItem.mDataValues || []).forEach((d) => {
-    dataValueMap[d.mName] = d.mValue;
-  });
-
-  const calcLines = Object.entries(cItem.mItemCalculations).map(([name, calc]) => {
-    const parts = (calc.mFormulaParts || []).map((p) => formulaPartToText(p, dataValueMap)).join(" + ");
-    return `<li><strong>${name}:</strong> ${parts || "n/a"}</li>`;
-  });
+  const lines = buildCalculationLines(cItem);
+  const calcLines = lines.map((l) => `<li><strong>${l.name}:</strong> ${l.text || "n/a"}</li>`);
+  const dataValueMap = lines[0]?.dataValueMap || {};
 
   const isSpellblade = item.description.toLowerCase().includes("spellblade");
   if (isSpellblade) {
-    const spellbladeExpr = Object.entries(cItem.mItemCalculations)
-      .find(([name]) => name.toLowerCase().includes("spellblade"));
+    const spellblade = lines.find((l) => l.name.toLowerCase().includes("spellblade"));
     const cooldown = dataValueMap.SpellbladeCooldown ?? dataValueMap.Cooldown;
     const damageTag = item.description.toLowerCase().includes("magic") ? "magic" : "physical";
 
-    if (spellbladeExpr) {
-      const expression = (spellbladeExpr[1].mFormulaParts || []).map((p) => formulaPartToText(p, dataValueMap)).join(" + ");
-      return `<div><strong>Detailed passive text</strong><p><strong>Unique – Spellblade:</strong> After using an ability, your next basic attack within 10 seconds deals ${expression} bonus ${damageTag} damage on-hit${cooldown ? ` (${cooldown}s cooldown)` : ""}.</p><ul>${calcLines.join("")}</ul></div>`;
+    if (spellblade) {
+      return `<div><strong>Detailed passive text</strong><p><strong>Unique – Spellblade:</strong> After using an ability, your next basic attack within 10 seconds deals ${spellblade.text} bonus ${damageTag} damage on-hit${cooldown ? ` (${cooldown}s cooldown)` : ""}.</p><ul>${calcLines.join("")}</ul></div>`;
     }
   }
 
