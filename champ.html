@@ -1,232 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>League of Legends Item Lookup</title>
-    <link href="/css/halfmoon-variables.css" rel="stylesheet">
-    <link href="/css/lolBuilder.css" rel="stylesheet">
-    <script src="/js/LoLBuilder.js"></script> <!-- Make sure to include your JavaScript file -->
-    <script src="/js/itemLookup.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Champion Lookup</title>
+  <link href="CSS/halfmoon-variables.css" rel="stylesheet">
+  <link href="CSS/lolBuilder.css" rel="stylesheet">
 </head>
-<body class="with-custom-webkit-scrollbars with-custom-css-scrollbars dark-mode" onload="populateItems()">
-    <div class="page-wrapper with-navbar with-transitions">
-
-         <!-- Navbar start -->
+<body class="dark-mode" onload="initChampionLookup()">
+  <div class="page-wrapper with-navbar with-transitions">
     <nav class="navbar">
-      <!-- Reference: https://www.gethalfmoon.com/docs/navbar -->
-
-      <a href="/" class="navbar-brand">
-        <span style="font-family: Arial, Helvetica, sans-serif">LoL Build Builder</span>
-      </a>
-
-
+      <a href="main.html" class="navbar-brand">LoL Build Builder</a>
       <ul class="navbar-nav d-none d-md-flex">
-        <li class="nav-item mx-20">&nbsp;</li>
-        <li class="nav-item mx-lg-20">&nbsp;</li>
-        <li class="nav-item mx-xl-20">&nbsp;</li>
-        <li class="nav-item active ">
-          <a href="/main.html" class="nav-link">Home</a>
-        </li>
-        <li class="nav-item">
-          <a href="/builds" class="nav-link">Builder</a>
-        </li>
-        <li class="nav-item">
-          <a href="/itemLookup.html" class="nav-link">Item Lookup</a>
-        </li>
-        <li class="nav-item">
-          <a href="/builder" class="nav-link">Champ Lookup</a>
-        </li>
+        <li class="nav-item"><a href="main.html" class="nav-link">Home</a></li>
+        <li class="nav-item"><a href="Builder.html" class="nav-link">Builder</a></li>
+        <li class="nav-item"><a href="itemLookup.html" class="nav-link">Item Lookup</a></li>
+        <li class="nav-item active"><a href="champ.html" class="nav-link">Champion Lookup</a></li>
       </ul>
+    </nav>
 
-      <div class="navbar-content d-md-none ml-auto"> <!-- d-md-none = display: none on medium screens and up (width > 768px), ml-auto = margin-left: auto -->
-        <div class="dropdown with-arrow">
-          <button class="btn" data-toggle="dropdown" type="button" id="navbar-dropdown-toggle-btn-1">
-            Menu
-            <i class="fa fa-angle-down" aria-hidden="true"></i>
-          </button>
-          <div class="dropdown-menu dropdown-menu-right w-200 font-size-24" aria-labelledby="navbar-dropdown-toggle-btn-1"> <!-- w-200 = width: 20rem (200px) -->
-              <a href="/" class="dropdown-item">Home</a>
-              <a href="/builds" class="dropdown-item">Builder</a>
-              <a href="/calculator" class="dropdown-item">Item Lookup</a>
-              <a href="/guides" class="dropdown-item">Champ Lookup</a>
+    <div class="content-wrapper">
+      <div class="container-fluid">
+        <div class="card section-card">
+          <h1 class="content-title">Champion Lookup</h1>
+          <div class="row row-eq-spacing">
+            <div class="col-lg-4 col-12">
+              <label class="label">Champion
+                <select id="champSelect" class="form-control"></select>
+              </label>
+            </div>
+            <div class="col-lg-8 col-12">
+              <img id="champSplash" class="champion-splash" alt="Champion splash" />
+            </div>
           </div>
+          <h2 id="champName" class="mt-20"></h2>
+          <p id="champLore"></p>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="content-title">Abilities</h2>
+          <div id="abilities" class="ability-grid"></div>
         </div>
       </div>
-    </nav>
-    <!-- Navbar end -->
-
-<div class="container-fluid">
-    <div class="card">
-        <div class="row">
-            <div class="col-3">
-                <select class="form-control" id="champList" onchange="champSelect()">
-                    <option value="" selected="selected" disabled="disabled">Select a Champ</option>
-                </select>
-            </div>
-            <div class="col-1" align="right"></div>
-            <div class="col-1" align="center" valign="middle"><b>Level?</b></div>
-            <div class="col-1"><select class="form-control" id="level" onchange="levelSelect()">
-                <option value=1 selected="selected">1</option>
-                <option value=2>2</option>
-                <option value=3>3</option>
-                <option value=4>4</option>
-                <option value=5>5</option>
-                <option value=6>6</option>
-                <option value=7>7</option>
-                <option value=8>8</option>
-                <option value=9>9</option>
-                <option value=10>10</option>
-                <option value=11>11</option>
-                <option value=12>12</option>
-                <option value=13>13</option>
-                <option value=14>14</option>
-                <option value=15>15</option>
-                <option value=16>16</option>
-                <option value=17>17</option>
-                <option value=18>18</option>
-                </select>
-            </div>
-        </div>
-        
-
-        <div class="row row-eq-spacing">
-            <div class="col-2"><div class="content"><img id="thumb" src=""></div></div>
-            <div class="col-2">
-            <div class="content"><h2 class="content-title">HP</h2></div><div class="content" id="hp"></div></div>
-            <div class="col-2">
-            <div class="content"><h2 class="content-title">Mana</h2></div><div class="content"><p id="mp"></p></div></div>
-            <div class="col-2"><div class="content"><h2 class="content-title">Attack Damage</h2></div><div class="content"><p id="ad"></p></div></div>
-            <div class="col-2"><div class="content"><h2 class="content-title">Move Speed</h2></div><div class="content"><p id="ms"></p></div></div>
-            <div class="col-2"><div class="content"><h2 class="content-title">Armour</h2></div><div class="content"><p id="ar"></p></div></div>
-            <div class="col-2"><div class="content"><h2 class="content-title">Magic Resist</h2></div><div class="content"><p id="mr"></p></div></div>
-        </div>
-   </div>
-            <!-- Champion abilities section -->
-<div class="card mt-20" id="abilities">
-    <h2 class="content-title">Champion Abilities</h2>
-    <div class="row">
-        <div class="col-2">
-            <img src="" alt="Ability 1 Icon">
-        </div>
-        <div class="col-10">
-            <h3 class="ability-title">Ability 1 Name</h3>
-            <p class="ability-description">Ability 1 description goes here.</p>
-            <ul class="ability-stats">
-              <li><strong>Cooldown:</strong> 10 seconds</li>
-              <li><strong>Mana cost:</strong> 50</li>
-              <li><strong>Range:</strong> 600 units</li>
-            </ul>
-            <ul class="ability-level">
-                <li>
-                <label for="ability1-level">Ability Level:</label>
-                <select id="ability1-level" name="ability1-level" onchange="abilitySelect()">
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                </select>
-                </li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="row mt-20">
-        <div class="col-2">
-      <img src="" alt="Ability 2 Icon">
-        </div>
-        <div class="col-10">
-            <h3 class="ability-title">Ability 2 Name</h3>
-            <p class="ability-description">Ability 2 description goes here.</p>
-            <ul class="ability-stats">
-                <li><strong>Cooldown:</strong> 12 seconds</li>
-                <li><strong>Mana cost:</strong> 60</li>
-                <li><strong>Range:</strong> 800 units</li>
-            </ul>
-            <ul class="ability-level">
-                <li>
-                <label for="ability2-level">Ability Level:</label>
-                <select id="ability2-level" name="ability2-level" onchange="abilitySelect()">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                </select>
-                </li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="row mt-20">
-        <div class="col-2">
-          <img src="" alt="Ability 3 Icon">
-        </div>
-        <div class="col-10">
-            <h3 class="ability-title">Ability 3 Name</h3>
-            <p class="ability-description">Ability 3 description goes here.</p>
-            <ul class="ability-stats">
-                <li><strong>Cooldown:</strong> 15 seconds</li>
-                <li><strong>Mana cost:</strong> 70</li>
-                <li><strong>Range:</strong> 1000 units</li>
-            </ul>
-            <ul class="ability-level">
-                <li>
-                    <label for="ability3-level">Ability Level:</label>
-                    <select id="ability3-level" name="ability3-level" onchange="abilitySelect()">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                    </select>
-                </li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="row mt-20">
-        <div class="col-2">
-            <img src="" alt="Ability 4 Icon">
-        </div>
-    <div class="col-10">
-      <h3 class="ability-title">Ultimate Name</h3>
-      <p class="ability-description">Ultimate description goes here.</p>
-      <ul class="ability-stats">
-        <li><strong>Cooldown:</strong> 120 seconds</li>
-        <li><strong>Mana cost:</strong> 100</li>
-        <li><strong>Range:</strong> Global</li>
-    </ul>
-    <ul class="ability-level">
-        <li>
-        <label for="ability4-level">Ability Level:</label>
-        <select id="ability4-level" name="ability4-level" onchange="abilitySelect()">
-          <option value="1">1</option>
-          <option value="2">2</option>
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5">5</option>
-        </select>
-        </li>
-    </ul>
     </div>
   </div>
-   <div class="row mt-20">
-    <div class="col-2">
-      <img src="" alt="Passive Icon">
-    </div>
-    <div class="col-10">
-      <h3 class="ability-title">Passive Name</h3>
-      <p class="ability-description">Passive description goes here.</p>
-       </div>
-    </div>
-</div>
-</div>
-
-        <!-- Existing Footer Here -->
-
-    </div>
-    <script src="/js/halfmoon.min.js"></script>
+  <script src="JS/champLookup.js"></script>
 </body>
 </html>
