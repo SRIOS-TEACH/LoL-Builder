@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>League of Legends Item Lookup</title>
+    <link href="/css/halfmoon-variables.css" rel="stylesheet">
+    <link href="/css/lolBuilder.css" rel="stylesheet">
+    <script src="/js/LoLBuilder.js"></script> <!-- Make sure to include your JavaScript file -->
+    <script src="/js/itemLookup.js"></script>
+</head>
+<body class="with-custom-webkit-scrollbars with-custom-css-scrollbars dark-mode" onload="populateItems()">
+    <div class="page-wrapper with-navbar with-transitions">
+
+         <!-- Navbar start -->
+    <nav class="navbar">
+      <!-- Reference: https://www.gethalfmoon.com/docs/navbar -->
+
+      <a href="/" class="navbar-brand">
+        <span style="font-family: Arial, Helvetica, sans-serif">LoL Build Builder</span>
+      </a>
+
+
+      <ul class="navbar-nav d-none d-md-flex">
+        <li class="nav-item mx-20">&nbsp;</li>
+        <li class="nav-item mx-lg-20">&nbsp;</li>
+        <li class="nav-item mx-xl-20">&nbsp;</li>
+        <li class="nav-item active ">
+          <a href="/main.html" class="nav-link">Home</a>
+        </li>
+        <li class="nav-item">
+          <a href="/Builder.html" class="nav-link">Builder</a>
+        </li>
+        <li class="nav-item">
+          <a href="/itemLookup.html" class="nav-link">Item Lookup</a>
+        </li>
+        <li class="nav-item">
+          <a href="/champ.html" class="nav-link">Champ Lookup</a>
+        </li>
+      </ul>
+
+      <div class="navbar-content d-md-none ml-auto"> <!-- d-md-none = display: none on medium screens and up (width > 768px), ml-auto = margin-left: auto -->
+        <div class="dropdown with-arrow">
+          <button class="btn" data-toggle="dropdown" type="button" id="navbar-dropdown-toggle-btn-1">
+            Menu
+            <i class="fa fa-angle-down" aria-hidden="true"></i>
+          </button>
+          <div class="dropdown-menu dropdown-menu-right w-200 font-size-24" aria-labelledby="navbar-dropdown-toggle-btn-1"> <!-- w-200 = width: 20rem (200px) -->
+              <a href="/" class="dropdown-item">Home</a>
+              <a href="/builds" class="dropdown-item">Builder</a>
+              <a href="/calculator" class="dropdown-item">Item Lookup</a>
+              <a href="/guides" class="dropdown-item">Champ Lookup</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <!-- Navbar end -->
+
+         <div class="content-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                        </div>
+                    </div>
+                </div>
+             </div>
+        </div>
+        <!-- Existing Footer Here -->
+
+    </div>
+    <script src="/js/halfmoon.min.js"></script>
+</body>
+</html>

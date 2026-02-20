@@ -1,0 +1,24 @@
+.item-icon {
+    width: 50px; /* or any size that fits your design */
+    height: auto;
+    margin: 5px; /* optional, for spacing */
+    cursor: pointer; /* changes the cursor to indicate the icon is clickable */
+}
+
+/* Style for checkboxes */
+#itemFilters input[type="checkbox"] {
+    width: 20px; /* Increase checkbox size */
+    height: 20px; /* Increase checkbox size */
+    cursor: pointer; /* Changes the cursor to indicate the checkbox is clickable */
+    margin-right: 10px; /* Space between checkbox and label */
+    
+}
+
+/* Style for labels */
+#itemFilters label {
+    margin-right: 20px; /* Space between label and next checkbox */
+    cursor: pointer; /* Changes the cursor to indicate the label is clickable */
+    font-size: 1.1em; /* Increase font size */
+    display: inline-block; /* Align with checkbox */
+    vertical-align: middle; /* Align text vertically with checkbox */
+}
