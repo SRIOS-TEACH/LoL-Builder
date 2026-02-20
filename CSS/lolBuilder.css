@@ -1,3 +1,13 @@
+/*
+ * Project-level UI styling for LoL-Builder.
+ *
+ * Sections:
+ * - Base page theme
+ * - Shared cards/grids
+ * - Item and ability visual components
+ * - Builder modal and status helpers
+ */
+
 body {
   background: linear-gradient(180deg, #0d1224 0%, #11192e 100%);
   color: #e5ecff;

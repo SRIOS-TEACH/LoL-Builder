@@ -1,3 +1,11 @@
+/**
+ * Champion lookup page controller.
+ *
+ * Loads champion list/details from Data Dragon and renders:
+ * - splash
+ * - name/lore
+ * - passive + Q/W/E/R cards
+ */
 const CHAMP_STATE = { version: "", champions: {}, selected: "" };
 
 async function initChampionLookup() {

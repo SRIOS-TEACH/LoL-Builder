@@ -1,3 +1,8 @@
+/**
+ * Legacy prototype logic (pre-refactor).
+ *
+ * Kept for reference/debugging while new modular pages replace older behavior.
+ */
 //for debuging
 var here="here";
 

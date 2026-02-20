@@ -1,3 +1,12 @@
+/**
+ * Item Lookup controller.
+ *
+ * Responsibilities:
+ * - Load and dedupe Summoner's Rift purchasable items from Data Dragon.
+ * - Load CommunityDragon item calculation payloads for richer formula detail.
+ * - Convert calculation parts into human-readable text for the RHS detail panel.
+ * - Keep UI state for search/filter/selection and render icon grid + details.
+ */
 const ITEM_STATE = {
   version: "",
   items: {},

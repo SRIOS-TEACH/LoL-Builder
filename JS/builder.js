@@ -1,3 +1,12 @@
+/**
+ * Builder page controller.
+ *
+ * Responsibilities:
+ * - Champion/level/item selection state.
+ * - Item modal search + tag filtering UX.
+ * - Ability-rank validation by level constraints.
+ * - Aggregate base+item stats and render summary cards.
+ */
 const BUILDER = {
   version: "",
   champions: {},

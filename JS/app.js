@@ -1,3 +1,9 @@
+/**
+ * Legacy experimental app controller.
+ *
+ * NOTE: Active page flows now use focused modules (`builder.js`, `itemLookup.js`,
+ * `champLookup.js`). This file is retained for reference while features are migrated.
+ */
 const APP_STATE = {
   version: "",
   champions: {},
