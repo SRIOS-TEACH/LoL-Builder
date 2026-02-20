@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LoL Champion Lookup</title>
+  <title>Champion Lookup</title>
   <link href="CSS/halfmoon-variables.css" rel="stylesheet">
   <link href="CSS/lolBuilder.css" rel="stylesheet">
 </head>
-<body class="with-custom-webkit-scrollbars with-custom-css-scrollbars dark-mode" onload="initChampionLookup()">
+<body class="dark-mode" onload="initChampionLookup()">
   <div class="page-wrapper with-navbar with-transitions">
     <nav class="navbar">
       <a href="main.html" class="navbar-brand">LoL Build Builder</a>
@@ -15,7 +15,7 @@
         <li class="nav-item"><a href="main.html" class="nav-link">Home</a></li>
         <li class="nav-item"><a href="Builder.html" class="nav-link">Builder</a></li>
         <li class="nav-item"><a href="itemLookup.html" class="nav-link">Item Lookup</a></li>
-        <li class="nav-item active"><a href="champ.html" class="nav-link">Champ Lookup</a></li>
+        <li class="nav-item active"><a href="champ.html" class="nav-link">Champion Lookup</a></li>
       </ul>
     </nav>
 
@@ -23,18 +23,27 @@
       <div class="container-fluid">
         <div class="card section-card">
           <h1 class="content-title">Champion Lookup</h1>
-          <select id="champLookupSelect" class="form-control"></select>
-          <img id="champLookupSplash" class="champion-splash mt-10" src="" alt="Champion splash">
-          <p id="champLookupLore" class="mt-10"></p>
+          <div class="row row-eq-spacing">
+            <div class="col-lg-4 col-12">
+              <label class="label">Champion
+                <select id="champSelect" class="form-control"></select>
+              </label>
+            </div>
+            <div class="col-lg-8 col-12">
+              <img id="champSplash" class="champion-splash" alt="Champion splash" />
+            </div>
+          </div>
+          <h2 id="champName" class="mt-20"></h2>
+          <p id="champLore"></p>
         </div>
+
         <div class="card section-card">
-          <h2>Abilities</h2>
-          <div id="champAbilityGrid" class="ability-grid"></div>
+          <h2 class="content-title">Abilities</h2>
+          <div id="abilities" class="ability-grid"></div>
         </div>
       </div>
     </div>
   </div>
-
   <script src="JS/champLookup.js"></script>
 </body>
 </html>

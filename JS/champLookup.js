@@ -1,39 +1,45 @@
-const CHAMP_LOOKUP_STATE = {
-  version: "",
-  champions: {},
-  current: null,
-};
+const CHAMP_STATE = { version: "", champions: {}, selected: "" };
 
 async function initChampionLookup() {
   const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
-  CHAMP_LOOKUP_STATE.version = versions[0];
-  const champs = await fetch(`https://ddragon.leagueoflegends.com/cdn/${CHAMP_LOOKUP_STATE.version}/data/en_US/champion.json`).then((r) => r.json());
-  CHAMP_LOOKUP_STATE.champions = champs.data;
+  CHAMP_STATE.version = versions[0];
+  const championJson = await fetch(`https://ddragon.leagueoflegends.com/cdn/${CHAMP_STATE.version}/data/en_US/champion.json`).then((r) => r.json());
+  CHAMP_STATE.champions = championJson.data;
 
-  const select = document.getElementById("champLookupSelect");
-  select.innerHTML = Object.keys(CHAMP_LOOKUP_STATE.champions)
+  const select = document.getElementById("champSelect");
+  select.innerHTML = Object.keys(CHAMP_STATE.champions)
     .sort((a, b) => a.localeCompare(b))
     .map((name) => `<option value="${name}">${name}</option>`)
     .join("");
 
-  select.addEventListener("change", () => loadChampionLookup(select.value));
-  await loadChampionLookup(select.value || Object.keys(CHAMP_LOOKUP_STATE.champions)[0]);
+  select.addEventListener("change", () => renderChampion(select.value));
+  renderChampion(Object.keys(CHAMP_STATE.champions).sort((a, b) => a.localeCompare(b))[0]);
 }
 
-async function loadChampionLookup(championKey) {
-  const detail = await fetch(`https://ddragon.leagueoflegends.com/cdn/${CHAMP_LOOKUP_STATE.version}/data/en_US/champion/${championKey}.json`).then((r) => r.json());
-  CHAMP_LOOKUP_STATE.current = detail.data[championKey];
-  const champ = CHAMP_LOOKUP_STATE.current;
+async function renderChampion(name) {
+  CHAMP_STATE.selected = name;
+  const details = await fetch(`https://ddragon.leagueoflegends.com/cdn/${CHAMP_STATE.version}/data/en_US/champion/${name}.json`).then((r) => r.json());
+  const champ = details.data[name];
 
-  document.getElementById("champLookupSelect").value = championKey;
-  document.getElementById("champLookupSplash").src = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${championKey}_0.jpg`;
-  document.getElementById("champLookupLore").textContent = champ.lore;
+  document.getElementById("champSelect").value = name;
+  document.getElementById("champSplash").src = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg`;
+  document.getElementById("champName").textContent = `${champ.name} — ${champ.title}`;
+  document.getElementById("champLore").textContent = champ.blurb;
 
-  const passive = champ.passive;
-  const passiveHtml = `<div class="ability-card"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${CHAMP_LOOKUP_STATE.version}/img/passive/${passive.image.full}" alt="${passive.name}"/><strong>Passive - ${passive.name}</strong><div>${passive.description}</div></div>`;
-  const spellsHtml = champ.spells
-    .map((spell, idx) => `<div class="ability-card"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${CHAMP_LOOKUP_STATE.version}/img/spell/${spell.image.full}" alt="${spell.name}"/><strong>${["Q", "W", "E", "R"][idx]} - ${spell.name}</strong><div>${spell.description}</div><div>Cooldown: ${spell.cooldownBurn}</div><div>Cost: ${spell.costBurn || '0'}</div></div>`)
+  const passiveCard = `<div class="ability-card"><strong>Passive - ${champ.passive.name}</strong>
+    <img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${CHAMP_STATE.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}">
+    <p>${champ.passive.description}</p></div>`;
+
+  const spellCards = champ.spells
+    .map((spell, idx) => `<div class="ability-card">
+      <strong>${["Q", "W", "E", "R"][idx]} - ${spell.name}</strong>
+      <img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${CHAMP_STATE.version}/img/spell/${spell.image.full}" alt="${spell.name}">
+      <p>${spell.description}</p>
+      <div><strong>Cooldown:</strong> ${spell.cooldownBurn}</div>
+      <div><strong>Cost:</strong> ${spell.costBurn || "No cost"}</div>
+      <div><strong>Range:</strong> ${spell.rangeBurn}</div>
+    </div>`)
     .join("");
 
-  document.getElementById("champAbilityGrid").innerHTML = passiveHtml + spellsHtml;
+  document.getElementById("abilities").innerHTML = passiveCard + spellCards;
 }

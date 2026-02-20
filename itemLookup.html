@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LoL Item Lookup</title>
+  <title>Item Lookup</title>
   <link href="CSS/halfmoon-variables.css" rel="stylesheet">
   <link href="CSS/lolBuilder.css" rel="stylesheet">
 </head>
-<body class="with-custom-webkit-scrollbars with-custom-css-scrollbars dark-mode" onload="initItemLookup()">
+<body class="dark-mode" onload="initItemLookup()">
   <div class="page-wrapper with-navbar with-transitions">
     <nav class="navbar">
       <a href="main.html" class="navbar-brand">LoL Build Builder</a>
@@ -15,7 +15,7 @@
         <li class="nav-item"><a href="main.html" class="nav-link">Home</a></li>
         <li class="nav-item"><a href="Builder.html" class="nav-link">Builder</a></li>
         <li class="nav-item active"><a href="itemLookup.html" class="nav-link">Item Lookup</a></li>
-        <li class="nav-item"><a href="champ.html" class="nav-link">Champ Lookup</a></li>
+        <li class="nav-item"><a href="champ.html" class="nav-link">Champion Lookup</a></li>
       </ul>
     </nav>
 
@@ -23,14 +23,18 @@
       <div class="container-fluid">
         <div class="card section-card">
           <h1 class="content-title">Item Lookup</h1>
-          <input id="lookupSearch" class="form-control" type="text" placeholder="Search item" />
-          <div id="lookupTags" class="item-tag-filters mt-10"></div>
-          <div id="lookupGrid" class="item-modal-grid mt-10"></div>
+          <label class="label">Search
+            <input id="itemSearch" class="form-control" placeholder="Search items" />
+          </label>
+          <div id="itemFilters" class="tag-filters mt-10"></div>
+          <div id="itemGrid" class="item-grid mt-10"></div>
         </div>
 
         <div class="card section-card">
           <h2 id="itemName">Select an item</h2>
-          <div id="itemDescription">Item details will appear here.</div>
+          <img id="itemIcon" class="ability-icon" alt="Item icon" />
+          <div id="itemMeta"></div>
+          <p id="itemDescription"></p>
         </div>
       </div>
     </div>

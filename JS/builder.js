@@ -11,12 +11,25 @@ const BUILDER = {
   itemTags: new Set(),
 };
 
+function setStatus(message, isError = false) {
+  const el = document.getElementById("builderStatus");
+  el.textContent = message;
+  el.classList.toggle("status-error", isError);
+}
+
 async function initBuilder() {
-  wireLevelOptions();
-  await loadBuilderData();
-  renderChampionSelect();
-  renderItemSlots();
-  initItemModal();
+  try {
+    setStatus("Loading champion and item data...");
+    wireLevelOptions();
+    await loadBuilderData();
+    renderChampionSelect();
+    renderItemSlots();
+    initItemModal();
+    setStatus("Data loaded successfully.");
+  } catch (error) {
+    console.error(error);
+    setStatus("Failed to load data. Check internet connection and refresh.", true);
+  }
 }
 
 function wireLevelOptions() {
@@ -26,22 +39,27 @@ function wireLevelOptions() {
     BUILDER.level = Number(level.value);
     enforceAbilityRules();
     renderAbilityControls();
+    renderAbilityCards();
     renderStats();
   });
+}
+
+function isSummonersRiftItem(item) {
+  return item.gold?.purchasable && item.maps?.[11] && !item.requiredAlly;
 }
 
 async function loadBuilderData() {
   const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
   BUILDER.version = versions[0];
+
   const champions = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion.json`).then((r) => r.json());
   BUILDER.champions = champions.data;
-  const items = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/item.json`).then((r) => r.json());
 
+  const items = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/item.json`).then((r) => r.json());
   Object.entries(items.data).forEach(([id, item]) => {
-    if (item.gold?.purchasable && item.maps?.[11] && !item.requiredAlly) {
-      BUILDER.items[id] = item;
-      (item.tags || []).forEach((tag) => BUILDER.itemTags.add(tag));
-    }
+    if (!isSummonersRiftItem(item)) return;
+    BUILDER.items[id] = item;
+    (item.tags || []).forEach((tag) => BUILDER.itemTags.add(tag));
   });
 }
 
@@ -54,11 +72,12 @@ function renderChampionSelect() {
 }
 
 async function setChampion(name) {
-  BUILDER.selectedChampion = name;
   const details = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion/${name}.json`).then((r) => r.json());
+  BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
   BUILDER.abilityRanks = { q: 1, w: 0, e: 0, r: 0 };
+
   document.getElementById("builderSplash").src = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg`;
   enforceAbilityRules();
   renderAbilityControls();
@@ -84,11 +103,26 @@ function refreshSlotLabels() {
 function initItemModal() {
   renderBuilderTagFilters();
   document.getElementById("modalItemSearch").addEventListener("input", renderModalItemGrid);
+  document.getElementById("itemModal").addEventListener("click", (event) => {
+    if (event.target.id === "itemModal") closeItemModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeItemModal();
+  });
+}
+
+function clearModalFilters() {
+  document.getElementById("modalItemSearch").value = "";
+  document.querySelectorAll(".modal-tag").forEach((cb) => {
+    cb.checked = false;
+  });
+  renderModalItemGrid();
 }
 
 function renderBuilderTagFilters() {
   const root = document.getElementById("modalItemFilters");
-  root.innerHTML = Array.from(BUILDER.itemTags).sort((a, b) => a.localeCompare(b))
+  root.innerHTML = Array.from(BUILDER.itemTags)
+    .sort((a, b) => a.localeCompare(b))
     .map((tag) => `<label class="tag-pill"><input type="checkbox" class="modal-tag" value="${tag}"> ${tag}</label>`)
     .join("");
   root.querySelectorAll(".modal-tag").forEach((cb) => cb.addEventListener("change", renderModalItemGrid));
@@ -96,6 +130,7 @@ function renderBuilderTagFilters() {
 
 function openItemModal(slot) {
   BUILDER.activeSlot = slot;
+  document.getElementById("itemModalTitle").textContent = `Select Item for Slot ${slot + 1}`;
   document.getElementById("itemModal").classList.remove("hidden");
   renderModalItemGrid();
 }
@@ -118,7 +153,17 @@ function renderModalItemGrid() {
     .sort((a, b) => a[1].name.localeCompare(b[1].name))
     .map(([id]) => id);
 
-  document.getElementById("modalItemGrid").innerHTML = `<button class="btn btn-sm mb-10" onclick="setSlotItem('')">Clear slot</button>` + ids.map((id) => `<button class="item-button" onclick="setSlotItem('${id}')"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${BUILDER.items[id].name}"><span>${BUILDER.items[id].name}</span></button>`).join("");
+  document.getElementById("modalResultsCount").textContent = `${ids.length} items shown`;
+  document.getElementById("modalItemGrid").innerHTML =
+    `<button class="btn btn-sm mb-10" onclick="setSlotItem('')">Clear slot</button>` +
+    ids
+      .map(
+        (id) => `<button class="item-button" onclick="setSlotItem('${id}')">
+          <img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${BUILDER.items[id].name}">
+          <span>${BUILDER.items[id].name}</span>
+        </button>`
+      )
+      .join("");
 }
 
 function setSlotItem(itemId) {
@@ -145,7 +190,7 @@ function enforceAbilityRules() {
     BUILDER.abilityRanks[k] = Math.min(BUILDER.abilityRanks[k], abilityMaxByLevel(BUILDER.level, k));
   });
 
-  let total = BUILDER.abilityRanks.q + BUILDER.abilityRanks.w + BUILDER.abilityRanks.e + BUILDER.abilityRanks.r;
+  let total = Object.values(BUILDER.abilityRanks).reduce((sum, rank) => sum + rank, 0);
   while (total > totalAllowed) {
     const keys = ["q", "w", "e", "r"].sort((a, b) => BUILDER.abilityRanks[b] - BUILDER.abilityRanks[a]);
     const pick = keys.find((k) => BUILDER.abilityRanks[k] > 0);
@@ -156,11 +201,13 @@ function enforceAbilityRules() {
 
 function renderAbilityControls() {
   const root = document.getElementById("abilityRankControls");
-  root.innerHTML = ["q", "w", "e", "r"].map((k) => {
-    const max = abilityMaxByLevel(BUILDER.level, k);
-    const options = Array.from({ length: max + 1 }, (_, i) => `<option value="${i}">${i}</option>`).join("");
-    return `<div class="col-lg-3 col-6"><label class="label">${k.toUpperCase()} Rank<select class="form-control" id="rank_${k}">${options}</select></label></div>`;
-  }).join("");
+  root.innerHTML = ["q", "w", "e", "r"]
+    .map((k) => {
+      const max = abilityMaxByLevel(BUILDER.level, k);
+      const options = Array.from({ length: max + 1 }, (_, i) => `<option value="${i}">${i}</option>`).join("");
+      return `<div class="col-lg-3 col-6"><label class="label">${k.toUpperCase()} Rank<select class="form-control" id="rank_${k}">${options}</select></label></div>`;
+    })
+    .join("");
 
   ["q", "w", "e", "r"].forEach((k) => {
     const el = document.getElementById(`rank_${k}`);
@@ -169,6 +216,7 @@ function renderAbilityControls() {
       BUILDER.abilityRanks[k] = Number(el.value);
       enforceAbilityRules();
       renderAbilityControls();
+      renderAbilityCards();
     });
   });
 
@@ -197,6 +245,7 @@ function scale(base, perLevel, level) {
 }
 
 function renderStats() {
+  if (!BUILDER.championData) return;
   const base = BUILDER.championData.stats;
   const item = getItemStats();
   const L = BUILDER.level;
@@ -211,14 +260,23 @@ function renderStats() {
     "Ability Haste": item.haste,
   };
 
-  document.getElementById("statsGrid").innerHTML = Object.entries(stats).map(([k, v]) => `<div class="stat-pill"><strong>${k}</strong><br>${v.toFixed(k === "Attack Speed" ? 3 : 1)}</div>`).join("");
+  document.getElementById("statsGrid").innerHTML = Object.entries(stats)
+    .map(([k, v]) => `<div class="stat-pill"><strong>${k}</strong><br>${v.toFixed(k === "Attack Speed" ? 3 : 1)}</div>`)
+    .join("");
 }
 
 function renderAbilityCards() {
+  if (!BUILDER.championData) return;
   const champ = BUILDER.championData;
   const passive = `<div class="ability-card"><strong>Passive - ${champ.passive.name}</strong><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><p>${champ.passive.description}</p></div>`;
 
-  const spells = champ.spells.map((s, i) => `<div class="ability-card"><strong>${["Q", "W", "E", "R"][i]} - ${s.name}</strong><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${s.image.full}" alt="${s.name}"><p>${s.description}</p><div><strong>Cooldown:</strong> ${s.cooldownBurn}</div><div><strong>Cost:</strong> ${s.costBurn || "No cost"}</div></div>`).join("");
+  const spells = champ.spells
+    .map((spell, i) => {
+      const key = ["q", "w", "e", "r"][i];
+      const rank = BUILDER.abilityRanks[key];
+      return `<div class="ability-card"><strong>${key.toUpperCase()} (Rank ${rank}) - ${spell.name}</strong><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><p>${spell.description}</p><div><strong>Cooldown:</strong> ${spell.cooldownBurn}</div><div><strong>Cost:</strong> ${spell.costBurn || "No cost"}</div><div><strong>Range:</strong> ${spell.rangeBurn}</div></div>`;
+    })
+    .join("");
 
   document.getElementById("abilityCards").innerHTML = passive + spells;
 }

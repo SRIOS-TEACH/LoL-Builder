@@ -1,12 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="refresh" content="0; url=main.html" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Builder</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build Sandbox</title>
+  <link href="CSS/halfmoon-variables.css" rel="stylesheet">
+  <link href="CSS/lolBuilder.css" rel="stylesheet">
 </head>
-<body>
-  <p>Redirecting to <a href="main.html">Build Lab</a>...</p>
+<body class="dark-mode" onload="initBuilder()">
+  <div class="page-wrapper with-navbar with-transitions">
+    <nav class="navbar">
+      <a href="main.html" class="navbar-brand">LoL Build Builder</a>
+      <ul class="navbar-nav d-none d-md-flex">
+        <li class="nav-item"><a href="main.html" class="nav-link">Home</a></li>
+        <li class="nav-item active"><a href="Builder.html" class="nav-link">Builder</a></li>
+        <li class="nav-item"><a href="itemLookup.html" class="nav-link">Item Lookup</a></li>
+        <li class="nav-item"><a href="champ.html" class="nav-link">Champion Lookup</a></li>
+      </ul>
+    </nav>
+
+    <div class="content-wrapper">
+      <div class="container-fluid">
+        <div class="card section-card">
+          <h1 class="content-title">Build Sandbox</h1>
+          <p class="text-muted">Focus: champion/item data correctness and stat validation before advanced damage simulation.</p>
+          <p id="builderStatus" class="status-text"></p>
+          <div class="row row-eq-spacing">
+            <div class="col-lg-4 col-12">
+              <label class="label">Champion
+                <select id="builderChampion" class="form-control"></select>
+              </label>
+            </div>
+            <div class="col-lg-2 col-12">
+              <label class="label">Level
+                <select id="builderLevel" class="form-control"></select>
+              </label>
+            </div>
+            <div class="col-lg-6 col-12"><img id="builderSplash" class="champion-splash" alt="Champion splash" /></div>
+          </div>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="content-title">Items</h2>
+          <div id="itemSlots" class="item-slots"></div>
+          <p class="text-muted mt-10">Click a slot to open item selector popup (search + filters, Summoner's Rift purchasables only).</p>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="content-title">Ability Ranks</h2>
+          <div id="abilityRankControls" class="row"></div>
+          <small id="abilityRuleHint" class="text-muted"></small>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="content-title">Current Stats</h2>
+          <div id="statsGrid" class="stats-grid"></div>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="content-title">Abilities</h2>
+          <div id="abilityCards" class="ability-grid"></div>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="content-title">Damage/CDR/DPS/Burst</h2>
+          <p>This section is temporarily disabled until ability and stat validation is finalized.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="itemModal" class="item-modal hidden" role="dialog" aria-modal="true">
+    <div class="item-modal-body">
+      <div class="item-modal-header">
+        <h3 id="itemModalTitle">Select Item</h3>
+        <div>
+          <button class="btn btn-sm" type="button" onclick="clearModalFilters()">Clear filters</button>
+          <button class="btn btn-sm" type="button" onclick="closeItemModal()">Close</button>
+        </div>
+      </div>
+      <input id="modalItemSearch" class="form-control" placeholder="Search items" />
+      <p id="modalResultsCount" class="text-muted mt-10"></p>
+      <div id="modalItemFilters" class="tag-filters mt-10"></div>
+      <div id="modalItemGrid" class="item-grid mt-10"></div>
+    </div>
+  </div>
+
+  <script src="JS/builder.js"></script>
 </body>
 </html>
