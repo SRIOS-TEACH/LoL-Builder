@@ -208,7 +208,7 @@ function computeFinalStats() {
   const base = APP_STATE.championData.stats;
   const item = getItemTotals();
   const lvl = APP_STATE.level;
-  return {
+return {
     hp: calcAtLevel(base.hp, base.hpperlevel, lvl) + item.hp,
     mp: calcAtLevel(base.mp, base.mpperlevel, lvl) + item.mp,
     ad: calcAtLevel(base.attackdamage, base.attackdamageperlevel, lvl) + item.ad,
