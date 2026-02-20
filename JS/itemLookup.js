@@ -23,6 +23,42 @@ function dedupeByNameKeepingLatest(itemEntries) {
   return Object.values(byName).map(({ id, item }) => [id, item]);
 }
 
+function resolveEffectToken(item, token) {
+  if (!item.effect) return null;
+  const effect = item.effect;
+  if (effect[token] !== undefined) return effect[token];
+
+  const tokenUpper = token.toUpperCase();
+  if (effect[tokenUpper] !== undefined) return effect[tokenUpper];
+
+  // Handle keys like e1 / E1 -> Effect1Amount
+  const match = token.match(/^e(\d+)$/i);
+  if (match) {
+    const key = `Effect${match[1]}Amount`;
+    if (effect[key] !== undefined) return effect[key];
+  }
+
+  return null;
+}
+
+function resolveDescriptionFormulas(item, descriptionHtml) {
+  return descriptionHtml.replace(/{{\s*([^}\s]+)\s*}}/g, (_, token) => {
+    const resolved = resolveEffectToken(item, token);
+    return resolved !== null ? String(resolved) : `{{${token}}}`;
+  });
+}
+
+function buildFormulaSection(item) {
+  const effects = Object.entries(item.effect || {})
+    .filter(([, value]) => value !== "0" && value !== 0)
+    .map(([key, value]) => `<li><strong>${key}:</strong> ${value}</li>`)
+    .join("");
+
+  return effects
+    ? `<hr><div><strong>Formula data</strong><ul>${effects}</ul></div>`
+    : "";
+}
+
 async function initItemLookup() {
   const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
   ITEM_STATE.version = versions[0];
@@ -111,8 +147,11 @@ function showItem(id) {
   ITEM_STATE.selectedId = id;
   renderItemGrid();
 
+  const resolvedDescription = resolveDescriptionFormulas(item, item.description || "");
+  const formulaSection = buildFormulaSection(item);
+
   document.getElementById("itemName").textContent = item.name;
   document.getElementById("itemIcon").src = `https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png`;
   document.getElementById("itemMeta").innerHTML = `<strong>Cost:</strong> ${item.gold.total}g <br><strong>Sell:</strong> ${item.gold.sell}g <br><strong>Tags:</strong> ${(item.tags || []).join(", ")}`;
-  document.getElementById("itemDescription").innerHTML = item.description;
+  document.getElementById("itemDescription").innerHTML = resolvedDescription + formulaSection;
 }

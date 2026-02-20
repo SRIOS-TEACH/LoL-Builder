@@ -65,6 +65,8 @@ body {
   border: 1px solid #35538a;
   border-radius: 999px;
   padding: 0.3rem 0.7rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .item-slots {
@@ -124,9 +126,11 @@ body {
 
 .tag-filters-column {
   flex-direction: column;
-  align-items: flex-start;
+  flex-wrap: nowrap;
+  align-items: stretch;
   max-height: 70vh;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .item-icon-grid {
