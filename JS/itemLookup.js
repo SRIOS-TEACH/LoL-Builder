@@ -63,17 +63,33 @@ function resolveDescriptionFormulas(item, descriptionHtml) {
 }
 
 function statLabel(part) {
-  if (part.mStat === 0) return "AP";
-  if (part.mStat === 1) return "armor";
-  if (part.mStat === 2) {
+  const statId = part.mStat;
+  const labels = {
+    1: "armor",
+    2: "AD",
+    4: "attack speed",
+    6: "critical strike chance",
+    7: "life steal",
+    8: "ability haste",
+    11: "AP",
+    12: "max health",
+    18: "lethality",
+    19: "armor penetration",
+    20: "magic penetration",
+    21: "magic pen %",
+    29: "target max health",
+    30: "bonus health",
+    31: "total health",
+    34: "move speed",
+  };
+
+  if (statId === 2) {
     if (part.mStatFormula === 1) return "base AD";
     if (part.mStatFormula === 2) return "bonus AD";
     return "total AD";
   }
-  if (part.mStat === 3) return "attack speed";
-  if (part.mStat === 5) return "magic resist";
-  if (part.mStat === 12) return "max health";
-  return `stat(${part.mStat ?? "?"})`;
+
+  return labels[statId] || `stat(${statId ?? "?"})`;
 }
 
 function calcRequirementToText(req) {
@@ -195,6 +211,16 @@ function gameCalculationToText(calcName, calc, calcMap, dataValueMap) {
   return `[${calc.__type || calcName}]`;
 }
 
+
+function prettyCalcName(name) {
+  if (!name) return "Calculation";
+  if (name.startsWith("{") && name.endsWith("}")) return `Calculation ${name}`;
+  return name
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .replace(/\w/g, (c) => c.toUpperCase());
+}
+
 function buildCalculationLines(cItem) {
   const calcMap = cItem.mItemCalculations || {};
   const dataValueMap = {};
@@ -204,7 +230,7 @@ function buildCalculationLines(cItem) {
 
   return Object.entries(calcMap).map(([name, calc]) => {
     const text = gameCalculationToText(name, calc, calcMap, dataValueMap);
-    return { name, text, dataValueMap };
+    return { name: prettyCalcName(name), text, dataValueMap };
   });
 }
 
