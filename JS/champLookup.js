@@ -42,7 +42,7 @@ async function renderChampion(name) {
   const champ = details.data[name];
 
   document.getElementById("champSelect").value = name;
-  document.getElementById("champSplash").src = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg`;
+  document.getElementById("champHeroCard").style.setProperty("--champ-splash-url", `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`);
   document.getElementById("champName").textContent = `${champ.name} — ${champ.title}`;
   document.getElementById("champLore").textContent = champ.blurb;
 

@@ -28,6 +28,21 @@ body {
   border: 1px solid #4866a2;
 }
 
+
+.splash-bg-card {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(rgba(9, 16, 30, 0.78), rgba(9, 16, 30, 0.78)), var(--champ-splash-url);
+  background-size: cover;
+  background-position: center 22%;
+  background-repeat: no-repeat;
+}
+
+.splash-bg-card > * {
+  position: relative;
+  z-index: 1;
+}
+
 .stats-grid,
 .ability-grid,
 .item-grid {
