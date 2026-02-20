@@ -60,8 +60,21 @@ function resolveDescriptionFormulas(item, descriptionHtml) {
   });
 }
 
-function statLabel(part) {
-  const statId = part.mStat;
+function inferStatFromDataValueName(name) {
+  const key = (name || "").toLowerCase();
+  if (!key) return null;
+  if (key.includes("ap") || key.includes("magicdamage")) return "AP";
+  if (key.includes("ad") || key.includes("physical")) return "AD";
+  if (key.includes("armor") || key.includes("resist") || key.includes("mr")) return "resistances";
+  if (key.includes("as") || key.includes("attackspeed")) return "attack speed";
+  if (key.includes("ms") || key.includes("movespeed")) return "move speed";
+  if (key.includes("crit")) return "critical strike chance";
+  if (key.includes("health") || key.includes("hp")) return "health";
+  return null;
+}
+
+function statLabel(part, dataValueName = "") {
+  const statId = part?.mStat;
   const labels = {
     0: "AP",
     1: "armor",
@@ -69,9 +82,9 @@ function statLabel(part) {
     3: "attack speed",
     4: "attack speed",
     5: "magic resist",
-    6: "critical strike chance",
-    7: "life steal",
-    8: "ability haste",
+    6: "magic resist",
+    7: "move speed",
+    8: "critical strike chance",
     11: "AP",
     12: "max health",
     18: "lethality",
@@ -90,7 +103,8 @@ function statLabel(part) {
     return "total AD";
   }
 
-  return labels[statId] || "scaling stat";
+  if (labels[statId]) return labels[statId];
+  return inferStatFromDataValueName(dataValueName) || "scaling stat";
 }
 
 function calcRequirementToText(req) {
@@ -108,7 +122,7 @@ function formulaPartToText(part, dataValueMap, calcMap) {
 
     case "StatByCoefficientCalculationPart": {
       const coef = Number(part.mCoefficient ?? 0);
-      return `${(coef * 100).toFixed(coef % 1 ? 1 : 0)}% ${statLabel(part)}`;
+      return `${(coef * 100).toFixed(coef % 1 ? 1 : 0)}% ${statLabel(part, part.mDataValue)}`;
     }
 
     case "NamedDataValueCalculationPart": {
@@ -118,8 +132,8 @@ function formulaPartToText(part, dataValueMap, calcMap) {
 
     case "StatByNamedDataValueCalculationPart": {
       const val = dataValueMap[part.mDataValue];
-      if (val !== undefined) return `${(Number(val) * 100).toFixed(Number(val) % 1 ? 1 : 0)}% ${statLabel(part)}`;
-      return `${part.mDataValue} × ${statLabel(part)}`;
+      if (val !== undefined) return `${(Number(val) * 100).toFixed(Number(val) % 1 ? 1 : 0)}% ${statLabel(part, part.mDataValue)}`;
+      return `${part.mDataValue} × ${statLabel(part, part.mDataValue)}`;
     }
 
     case "AbilityResourceByCoefficientCalculationPart": {
@@ -157,7 +171,7 @@ function formulaPartToText(part, dataValueMap, calcMap) {
       return (part.mSubparts || []).map((p) => `(${formulaPartToText(p, dataValueMap, calcMap)})`).join(" + ");
 
     case "StatBySubPartCalculationPart":
-      return `(${formulaPartToText(part.mSubpart, dataValueMap, calcMap)}) × ${statLabel(part)}`;
+      return `(${formulaPartToText(part.mSubpart, dataValueMap, calcMap)}) × ${statLabel(part, part.mDataValue)}`;
 
     case "ClampSubPartsCalculationPart": {
       const sum = (part.mSubparts || []).map((p) => `(${formulaPartToText(p, dataValueMap, calcMap)})`).join(" + ");
