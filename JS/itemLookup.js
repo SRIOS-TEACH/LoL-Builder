@@ -5,6 +5,7 @@ const ITEM_STATE = {
   tags: new Set(),
   selectedTags: new Set(),
   selectedId: null,
+  cdragonById: {},
 };
 
 function isSummonersRiftItem(item) {
@@ -23,6 +24,20 @@ function dedupeByNameKeepingLatest(itemEntries) {
   return Object.values(byName).map(({ id, item }) => [id, item]);
 }
 
+async function loadCommunityDragonCalcs() {
+  try {
+    const payload = await fetch("https://raw.communitydragon.org/latest/game/items.cdtb.bin.json").then((r) => r.json());
+    Object.entries(payload).forEach(([key, value]) => {
+      const match = key.match(/^Items\/(\d+)$/);
+      if (match) {
+        ITEM_STATE.cdragonById[match[1]] = value;
+      }
+    });
+  } catch (error) {
+    console.warn("CommunityDragon calc data unavailable", error);
+  }
+}
+
 function resolveEffectToken(item, token) {
   if (!item.effect) return null;
   const effect = item.effect;
@@ -31,7 +46,6 @@ function resolveEffectToken(item, token) {
   const tokenUpper = token.toUpperCase();
   if (effect[tokenUpper] !== undefined) return effect[tokenUpper];
 
-  // Handle keys like e1 / E1 -> Effect1Amount
   const match = token.match(/^e(\d+)$/i);
   if (match) {
     const key = `Effect${match[1]}Amount`;
@@ -48,6 +62,68 @@ function resolveDescriptionFormulas(item, descriptionHtml) {
   });
 }
 
+function statLabel(part) {
+  if (part.mStat === 0) return "AP";
+  if (part.mStat === 2) {
+    if (part.mStatFormula === 1) return "base AD";
+    if (part.mStatFormula === 2) return "bonus AD";
+    return "total AD";
+  }
+  return "stat";
+}
+
+function formulaPartToText(part, dataValueMap) {
+  if (!part) return "0";
+  switch (part.__type) {
+    case "NumberCalculationPart":
+      return String(part.mNumber ?? 0);
+    case "StatByCoefficientCalculationPart": {
+      const coef = Number(part.mCoefficient ?? 0);
+      return `${(coef * 100).toFixed(coef % 1 ? 1 : 0)}% ${statLabel(part)}`;
+    }
+    case "NamedDataValueCalculationPart": {
+      const val = dataValueMap[part.mDataValue];
+      return val !== undefined ? `${val}` : part.mDataValue;
+    }
+    case "ProductOfSubPartsCalculationPart":
+      return `(${formulaPartToText(part.mPart1, dataValueMap)}) × (${formulaPartToText(part.mPart2, dataValueMap)})`;
+    case "SumOfSubPartsCalculationPart":
+      return (part.mSubparts || []).map((p) => `(${formulaPartToText(p, dataValueMap)})`).join(" + ");
+    default:
+      return part.__type || "unknown";
+  }
+}
+
+function buildDetailedPassiveText(itemId, item) {
+  const cItem = ITEM_STATE.cdragonById[itemId];
+  if (!cItem || !cItem.mItemCalculations) return "";
+
+  const dataValueMap = {};
+  (cItem.mDataValues || []).forEach((d) => {
+    dataValueMap[d.mName] = d.mValue;
+  });
+
+  const calcLines = Object.entries(cItem.mItemCalculations).map(([name, calc]) => {
+    const parts = (calc.mFormulaParts || []).map((p) => formulaPartToText(p, dataValueMap)).join(" + ");
+    return `<li><strong>${name}:</strong> ${parts || "n/a"}</li>`;
+  });
+
+  const isSpellblade = item.description.toLowerCase().includes("spellblade");
+  if (isSpellblade) {
+    const spellbladeExpr = Object.entries(cItem.mItemCalculations)
+      .find(([name]) => name.toLowerCase().includes("spellblade"));
+    const cooldown = dataValueMap.SpellbladeCooldown ?? dataValueMap.Cooldown;
+    const damageTag = item.description.toLowerCase().includes("magic") ? "magic" : "physical";
+
+    if (spellbladeExpr) {
+      const expression = (spellbladeExpr[1].mFormulaParts || []).map((p) => formulaPartToText(p, dataValueMap)).join(" + ");
+      return `<div><strong>Detailed passive text</strong><p><strong>Unique – Spellblade:</strong> After using an ability, your next basic attack within 10 seconds deals ${expression} bonus ${damageTag} damage on-hit${cooldown ? ` (${cooldown}s cooldown)` : ""}.</p><ul>${calcLines.join("")}</ul></div>`;
+    }
+  }
+
+  return `<div><strong>Detailed formula breakdown</strong><ul>${calcLines.join("")}</ul></div>`;
+}
+
 function buildFormulaSection(item) {
   const effects = Object.entries(item.effect || {})
     .filter(([, value]) => value !== "0" && value !== 0)
@@ -55,7 +131,7 @@ function buildFormulaSection(item) {
     .join("");
 
   return effects
-    ? `<hr><div><strong>Formula data</strong><ul>${effects}</ul></div>`
+    ? `<hr><div><strong>Data Dragon effect values</strong><ul>${effects}</ul></div>`
     : "";
 }
 
@@ -71,6 +147,8 @@ async function initItemLookup() {
     ITEM_STATE.items[id] = item;
     (item.tags || []).forEach((tag) => ITEM_STATE.tags.add(tag));
   });
+
+  await loadCommunityDragonCalcs();
 
   document.getElementById("itemSearch").addEventListener("input", applyItemFilters);
   renderTagFilters("itemFilters", applyItemFilters);
@@ -148,10 +226,11 @@ function showItem(id) {
   renderItemGrid();
 
   const resolvedDescription = resolveDescriptionFormulas(item, item.description || "");
+  const detailedPassive = buildDetailedPassiveText(id, item);
   const formulaSection = buildFormulaSection(item);
 
   document.getElementById("itemName").textContent = item.name;
   document.getElementById("itemIcon").src = `https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png`;
   document.getElementById("itemMeta").innerHTML = `<strong>Cost:</strong> ${item.gold.total}g <br><strong>Sell:</strong> ${item.gold.sell}g <br><strong>Tags:</strong> ${(item.tags || []).join(", ")}`;
-  document.getElementById("itemDescription").innerHTML = resolvedDescription + formulaSection;
+  document.getElementById("itemDescription").innerHTML = resolvedDescription + (detailedPassive ? `<hr>${detailedPassive}` : "") + formulaSection;
 }
