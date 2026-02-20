@@ -23,18 +23,28 @@
       <div class="container-fluid">
         <div class="card section-card">
           <h1 class="content-title">Item Lookup</h1>
-          <label class="label">Search
-            <input id="itemSearch" class="form-control" placeholder="Search items" />
-          </label>
-          <div id="itemFilters" class="tag-filters mt-10"></div>
-          <div id="itemGrid" class="item-grid mt-10"></div>
-        </div>
+          <div class="row row-eq-spacing">
+            <div class="col-lg-3 col-12">
+              <label class="label">Search
+                <input id="itemSearch" class="form-control" placeholder="Search items" />
+              </label>
+              <div id="itemFilters" class="tag-filters tag-filters-column mt-10"></div>
+            </div>
 
-        <div class="card section-card">
-          <h2 id="itemName">Select an item</h2>
-          <img id="itemIcon" class="ability-icon" alt="Item icon" />
-          <div id="itemMeta"></div>
-          <p id="itemDescription"></p>
+            <div class="col-lg-6 col-12">
+              <p id="itemCount" class="text-muted"></p>
+              <div id="itemGrid" class="item-icon-grid mt-10"></div>
+            </div>
+
+            <div class="col-lg-3 col-12">
+              <div class="item-detail-panel">
+                <h2 id="itemName">Select an item</h2>
+                <img id="itemIcon" class="item-detail-icon" alt="Item icon" />
+                <div id="itemMeta"></div>
+                <p id="itemDescription"></p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

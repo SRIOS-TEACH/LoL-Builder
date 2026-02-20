@@ -120,3 +120,48 @@ body {
 .status-error {
   color: #ff7f7f;
 }
+
+
+.tag-filters-column {
+  flex-direction: column;
+  align-items: flex-start;
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.item-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 0.5rem;
+}
+
+.item-button-icon {
+  border: 1px solid #35538a;
+  border-radius: 6px;
+  background: #182541;
+  padding: 0.2rem;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.item-button-selected {
+  border-color: #f5d27a;
+  box-shadow: 0 0 0 1px #f5d27a;
+}
+
+.item-detail-panel {
+  border: 1px solid #35538a;
+  border-radius: 8px;
+  background: #182541;
+  padding: 0.8rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.item-detail-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  margin: 0.4rem 0;
+}
