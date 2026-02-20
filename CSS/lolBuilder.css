@@ -1,24 +1,116 @@
-.item-icon {
-    width: 50px; /* or any size that fits your design */
-    height: auto;
-    margin: 5px; /* optional, for spacing */
-    cursor: pointer; /* changes the cursor to indicate the icon is clickable */
+body {
+  background: linear-gradient(180deg, #0d1224 0%, #11192e 100%);
 }
 
-/* Style for checkboxes */
-#itemFilters input[type="checkbox"] {
-    width: 20px; /* Increase checkbox size */
-    height: 20px; /* Increase checkbox size */
-    cursor: pointer; /* Changes the cursor to indicate the checkbox is clickable */
-    margin-right: 10px; /* Space between checkbox and label */
-    
+.hero-card,
+.section-card {
+  margin-top: 1rem;
+  border: 1px solid #2c3f65;
+  background: rgba(16, 24, 45, 0.9);
 }
 
-/* Style for labels */
-#itemFilters label {
-    margin-right: 20px; /* Space between label and next checkbox */
-    cursor: pointer; /* Changes the cursor to indicate the label is clickable */
-    font-size: 1.1em; /* Increase font size */
-    display: inline-block; /* Align with checkbox */
-    vertical-align: middle; /* Align text vertically with checkbox */
+.champion-splash {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #4866a2;
+}
+
+.stats-grid,
+.ability-grid,
+.item-slots-grid,
+.ability-ranks-grid,
+.item-modal-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.stats-grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.ability-grid {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+.item-slots-grid {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.ability-ranks-grid {
+  grid-template-columns: repeat(4, minmax(90px, 120px));
+}
+
+.item-modal-grid {
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.stat-pill,
+.ability-card,
+.item-slot-btn,
+.item-pick,
+.ability-rank-select {
+  border: 1px solid #35538a;
+  border-radius: 8px;
+  background: #182541;
+  padding: 0.6rem;
+}
+
+.item-slot-btn,
+.item-pick {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: #dbe8ff;
+  cursor: pointer;
+}
+
+.item-slot-btn img,
+.item-pick img,
+.ability-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 4px;
+}
+
+.item-tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.hint-text {
+  color: #9bb7ea;
+}
+
+.item-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.item-modal-panel {
+  width: min(1000px, 92vw);
+  background: #0f1d38;
+  border: 1px solid #35538a;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.item-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.hidden {
+  display: none;
 }
