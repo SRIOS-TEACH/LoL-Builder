@@ -1,32 +1,49 @@
 body {
   background: linear-gradient(180deg, #0d1224 0%, #11192e 100%);
-  color: #e5ecff;
 }
 
 .hero-card,
 .section-card {
   margin-top: 1rem;
   border: 1px solid #2c3f65;
-  background: rgba(16, 24, 45, 0.9);
+  background: rgba(16, 24, 45, 0.85);
 }
 
 .champion-splash {
   width: 100%;
-  max-height: 220px;
+  max-height: 140px;
   object-fit: cover;
   border-radius: 8px;
   border: 1px solid #4866a2;
 }
 
-.stats-grid,
-.ability-grid,
-.item-grid {
+.stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 0.8rem;
 }
 
 .stat-pill,
+.metric-box {
+  border: 1px solid #35538a;
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  background: #182541;
+}
+
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.ability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.8rem;
+}
+
 .ability-card {
   border: 1px solid #35538a;
   border-radius: 8px;
@@ -34,80 +51,19 @@ body {
   background: #182541;
 }
 
-.ability-icon,
-.item-icon {
+.ability-icon {
   width: 48px;
   height: 48px;
   border-radius: 4px;
   margin: 0.4rem 0;
 }
 
-.item-button {
-  border: 1px solid #35538a;
-  border-radius: 8px;
-  background: #182541;
-  color: #e5ecff;
-  padding: 0.5rem;
-  text-align: left;
+.ability-title-row {
   display: flex;
-  gap: 0.6rem;
   align-items: center;
+  gap: 0.4rem;
 }
 
-.tag-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.tag-pill {
-  background: #182541;
-  border: 1px solid #35538a;
-  border-radius: 999px;
-  padding: 0.3rem 0.7rem;
-}
-
-.item-slots {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 0.7rem;
-}
-
-.item-slot-btn {
-  border: 1px solid #35538a;
-  border-radius: 8px;
-  background: #182541;
-  color: #e5ecff;
-  padding: 0.7rem;
-  text-align: left;
-}
-
-.item-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-
-.item-modal-body {
-  width: min(1000px, 95vw);
-  max-height: 90vh;
-  overflow: auto;
-  background: #0f1c35;
-  border: 1px solid #35538a;
-  border-radius: 12px;
-  padding: 1rem;
-}
-
-.item-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.hidden {
-  display: none;
+#buildComparison {
+  overflow-x: auto;
 }

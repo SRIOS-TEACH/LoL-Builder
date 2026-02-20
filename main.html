@@ -7,12 +7,12 @@
   <link href="CSS/halfmoon-variables.css" rel="stylesheet" />
   <link href="CSS/lolBuilder.css" rel="stylesheet" />
 </head>
-<body class="dark-mode">
+<body class="with-custom-webkit-scrollbars with-custom-css-scrollbars dark-mode" onload="initBuilderApp()">
   <div class="page-wrapper with-navbar with-transitions">
     <nav class="navbar">
       <a href="main.html" class="navbar-brand">LoL Build Builder</a>
       <ul class="navbar-nav d-none d-md-flex">
-        <li class="nav-item active"><a href="main.html" class="nav-link">Home</a></li>
+        <li class="nav-item active"><a href="main.html" class="nav-link">Build Lab</a></li>
         <li class="nav-item"><a href="Builder.html" class="nav-link">Builder</a></li>
         <li class="nav-item"><a href="itemLookup.html" class="nav-link">Item Lookup</a></li>
         <li class="nav-item"><a href="champ.html" class="nav-link">Champion Lookup</a></li>
@@ -22,16 +22,70 @@
     <div class="content-wrapper">
       <div class="container-fluid">
         <div class="card hero-card">
-          <h1 class="content-title">LoL Build Builder</h1>
-          <p>Use the tools below to validate champion and item data first, then build and test your setup.</p>
-          <div class="mt-20">
-            <a class="btn btn-primary mr-10" href="champ.html">Champion Lookup</a>
-            <a class="btn btn-primary mr-10" href="itemLookup.html">Item Lookup</a>
-            <a class="btn btn-secondary" href="Builder.html">Build Sandbox</a>
+          <h1 class="content-title">League of Legends Build Lab</h1>
+          <p>Pick a champion, set levels/items/abilities, and evaluate damage, DPS, burst, and target kill pressure.</p>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="content-title">1) Champion & Build Setup</h2>
+          <div class="row row-eq-spacing">
+            <div class="col-lg-4 col-12">
+              <label class="label" for="championSelect">Champion</label>
+              <select id="championSelect" class="form-control"></select>
+            </div>
+            <div class="col-lg-2 col-12">
+              <label class="label" for="championLevel">Level</label>
+              <select id="championLevel" class="form-control"></select>
+            </div>
+            <div class="col-lg-3 col-12 stat-pill-container">
+              <img id="championSplash" class="champion-splash" src="" alt="Champion splash" />
+            </div>
           </div>
+
+          <h3>Item Build (6 slots)</h3>
+          <div class="row" id="itemSlots"></div>
+
+          <h3>Ability Ranks</h3>
+          <div class="row" id="abilityRanks"></div>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="content-title">2) Calculated Stats</h2>
+          <div id="statsGrid" class="stats-grid"></div>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="content-title">3) Damage, CDR, DPS, and Burst</h2>
+          <div id="abilityCards" class="ability-grid"></div>
+          <div class="metrics-row">
+            <div class="metric-box"><strong>Ability Haste:</strong> <span id="abilityHaste">0</span></div>
+            <div class="metric-box"><strong>CDR:</strong> <span id="cdrValue">0%</span></div>
+            <div class="metric-box"><strong>Combo Burst:</strong> <span id="comboBurst">0</span></div>
+            <div class="metric-box"><strong>Combo DPS:</strong> <span id="comboDps">0</span></div>
+          </div>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="content-title">4) Dummy Target Evaluation</h2>
+          <div class="row row-eq-spacing">
+            <div class="col-lg-2 col-12"><label class="label">HP<input id="dummyHp" class="form-control" type="number" value="2500" /></label></div>
+            <div class="col-lg-2 col-12"><label class="label">Armor<input id="dummyArmor" class="form-control" type="number" value="120" /></label></div>
+            <div class="col-lg-2 col-12"><label class="label">Magic Resist<input id="dummyMr" class="form-control" type="number" value="100" /></label></div>
+          </div>
+          <div class="metrics-row">
+            <div class="metric-box"><strong>Post-mitigation Combo:</strong> <span id="mitigatedCombo">0</span></div>
+            <div class="metric-box"><strong>% Target HP Removed:</strong> <span id="hpRemoved">0%</span></div>
+          </div>
+        </div>
+
+        <div class="card section-card">
+          <h2 class="content-title">5) Build Comparison</h2>
+          <button class="btn btn-primary" onclick="saveCurrentBuild()">Save Current Build Snapshot</button>
+          <div id="buildComparison"></div>
         </div>
       </div>
     </div>
   </div>
+  <script src="JS/app.js"></script>
 </body>
 </html>
