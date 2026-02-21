@@ -11,6 +11,21 @@ The app intentionally validates data and readability first before adding advance
 
 ---
 
+## How to run locally
+From the repository root:
+
+```bash
+python3 -m http.server 8000
+```
+
+Open pages directly:
+- `http://127.0.0.1:8000/main.html`
+- `http://127.0.0.1:8000/champ.html`
+- `http://127.0.0.1:8000/itemLookup.html`
+- `http://127.0.0.1:8000/Builder.html`
+
+---
+
 ## File map (what each major file does)
 
 ### HTML entry points

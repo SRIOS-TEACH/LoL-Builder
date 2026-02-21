@@ -28,6 +28,37 @@ body {
   border: 1px solid #4866a2;
 }
 
+
+.splash-bg-card {
+  --champ-splash-url: none;
+  position: relative;
+  overflow: hidden;
+  min-height: 260px;
+  padding: 1rem;
+  background: rgba(16, 24, 45, 0.9);
+}
+
+.splash-bg-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(9, 16, 30, 0.45), rgba(9, 16, 30, 0.75)), var(--champ-splash-url);
+  background-size: cover;
+  background-position: center 22%;
+  background-repeat: no-repeat;
+  filter: saturate(0.95);
+  z-index: 0;
+}
+
+.splash-bg-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.splash-bg-card .text-muted {
+  color: #d4ddf5;
+}
+
 .stats-grid,
 .ability-grid,
 .item-grid {
@@ -178,4 +209,25 @@ body {
   height: 64px;
   border-radius: 6px;
   margin: 0.4rem 0;
+}
+
+.stat-colored {
+  font-weight: 600;
+}
+
+.formula-json {
+  background: #0f1c35;
+  border: 1px solid #35538a;
+  border-radius: 8px;
+  padding: 0.6rem;
+  font-size: 0.78rem;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+#itemTooltipMain ul,
+#itemRawStats ul,
+#itemActives ul {
+  margin: 0.4rem 0 0.4rem 1rem;
 }

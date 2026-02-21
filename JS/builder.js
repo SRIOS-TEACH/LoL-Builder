@@ -113,7 +113,7 @@ async function setChampion(name) {
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
   BUILDER.abilityRanks = { q: 1, w: 0, e: 0, r: 0 };
 
-  document.getElementById("builderSplash").src = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg`;
+  document.getElementById("builderHeroCard").style.setProperty("--champ-splash-url", `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`);
   enforceAbilityRules();
   renderAbilityControls();
   renderAbilityCards();

@@ -10,7 +10,6 @@
 <body class="dark-mode" onload="initItemLookup()">
   <!-- Page purpose: search/filter SR items and inspect detailed formula output -->
   <div class="page-wrapper with-navbar with-transitions">
-    <!-- Shared navigation -->
     <nav class="navbar">
       <a href="main.html" class="navbar-brand">LoL Build Builder</a>
       <ul class="navbar-nav d-none d-md-flex">
@@ -21,7 +20,6 @@
       </ul>
     </nav>
 
-    <!-- Main page content -->
     <div class="content-wrapper">
       <div class="container-fluid">
         <div class="card section-card">
@@ -34,17 +32,29 @@
               <div id="itemFilters" class="tag-filters tag-filters-column mt-10"></div>
             </div>
 
-            <div class="col-lg-6 col-12">
+            <div class="col-lg-4 col-12">
               <p id="itemCount" class="text-muted"></p>
               <div id="itemGrid" class="item-icon-grid mt-10"></div>
             </div>
 
-            <div class="col-lg-3 col-12">
+            <div class="col-lg-5 col-12">
               <div class="item-detail-panel">
                 <h2 id="itemName">Select an item</h2>
                 <img id="itemIcon" class="item-detail-icon" alt="Item icon" />
-                <div id="itemMeta"></div>
-                <p id="itemDescription"></p>
+                <div id="itemMeta" class="mt-5"></div>
+                <div id="itemCost" class="mt-10"></div>
+
+                <h3 class="mt-15">Raw Stats</h3>
+                <div id="itemRawStats"></div>
+
+                <h3 class="mt-15">Tooltip (with formulas)</h3>
+                <div id="itemTooltipMain"></div>
+
+                <h3 class="mt-15">Active Details</h3>
+                <div id="itemActives"></div>
+
+                <h3 class="mt-15">Extracted Formulas (for Builder use)</h3>
+                <pre id="itemFormulaExtract" class="formula-json"></pre>
               </div>
             </div>
           </div>
