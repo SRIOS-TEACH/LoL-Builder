@@ -371,6 +371,46 @@ function buildExtractedFormulas(itemId) {
 }
 
 /**
+ * Builds a name->value map for CommunityDragon mDataValues for one item.
+ */
+function getCdragonDataValueMap(itemId) {
+  const cItem = ITEM_STATE.cdragonById[itemId];
+  const map = {};
+  (cItem?.mDataValues || []).forEach((d) => {
+    map[d.mName] = Number(d.mValue);
+  });
+  return map;
+}
+
+/**
+ * Attempts to infer an item active cooldown from CommunityDragon data values.
+ * Prefers generic active cooldown keys (e.g. Cooldown/ActiveCooldown) and avoids passive-only keys like SpellbladeCooldown.
+ */
+function inferActiveCooldownSeconds(itemId) {
+  const values = getCdragonDataValueMap(itemId);
+  const entries = Object.entries(values)
+    .filter(([name, value]) => /cooldown/i.test(name) && Number.isFinite(value) && value > 0);
+  if (!entries.length) return null;
+
+  const preferredMatchers = [
+    /^Cooldown$/i,
+    /Active.*Cooldown/i,
+    /Item.*Cooldown/i,
+    /SpellDamage.*Cooldown/i,
+  ];
+
+  for (const matcher of preferredMatchers) {
+    const hit = entries.find(([name]) => matcher.test(name));
+    if (hit) return Number(hit[1]);
+  }
+
+  const nonPassive = entries.find(([name]) => !/spellblade|sheen|onhit/i.test(name));
+  if (nonPassive) return Number(nonPassive[1]);
+
+  return null;
+}
+
+/**
  * Extracts burn DPS and total-damage helper rows from data values where possible.
  */
 function buildBurnMetrics(dataValueMap) {
@@ -406,14 +446,19 @@ function buildBurnMetrics(dataValueMap) {
 /**
  * Extracts active ability details (cooldown/range/effects) from tooltip body heuristics.
  */
-function extractActiveDetails(descriptionHtml, formulaLines) {
+function extractActiveDetails(descriptionHtml, formulaLines, itemId = null) {
   const plain = String(descriptionHtml || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   const looksActive = /\bactive\b/i.test(plain) || formulaLines.some((l) => l.category === "Active");
   if (!looksActive) return [];
 
   const details = [];
+  const inferredCooldown = itemId ? inferActiveCooldownSeconds(itemId) : null;
   const cooldownMatch = plain.match(/(\d+(?:\.\d+)?)\s*second(?:s)?\s*cooldown/i);
-  if (cooldownMatch) details.push(`Cooldown: ${cooldownMatch[1]}s`);
+  if (cooldownMatch) {
+    details.push(`Cooldown: ${cooldownMatch[1]}s`);
+  } else if (inferredCooldown !== null) {
+    details.push(`Cooldown: ${inferredCooldown}s`);
+  }
   const rangeMatch = plain.match(/(\d+(?:\.\d+)?)\s*range/i);
   if (rangeMatch) details.push(`Range: ${rangeMatch[1]}`);
 
@@ -527,13 +572,17 @@ function showItem(id) {
 
   const resolvedDescription = resolveDescriptionFormulas(item, item.description || "");
   const { lines, extracted } = buildExtractedFormulas(id);
-  const activeDetails = extractActiveDetails(resolvedDescription, lines);
+  const inferredCooldown = inferActiveCooldownSeconds(id);
+  const normalizedDescription = inferredCooldown !== null
+    ? resolvedDescription.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${inferredCooldown}s$2`)
+    : resolvedDescription;
+  const activeDetails = extractActiveDetails(normalizedDescription, lines, id);
 
   ITEM_STATE.extractedById[id] = extracted;
 
   const tooltipMain = lines.length
-    ? `${resolvedDescription}<hr><div><strong>Formula-enhanced tooltip:</strong><ul>${lines.map((l) => `<li><strong>${l.name}:</strong> ${l.formula}</li>`).join("")}</ul></div>`
-    : resolvedDescription;
+    ? `${normalizedDescription}<hr><div><strong>Formula-enhanced tooltip:</strong><ul>${lines.map((l) => `<li><strong>${l.name}:</strong> ${l.formula}</li>`).join("")}</ul></div>`
+    : normalizedDescription;
 
   const activesHtml = activeDetails.length
     ? `<ul>${activeDetails.map((d) => `<li>${d}</li>`).join("")}</ul>`
