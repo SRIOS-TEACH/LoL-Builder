@@ -187,7 +187,7 @@ function extractRawStats(item) {
 function inferStatFromDataValueName(name) {
   const key = (name || "").toLowerCase();
   if (!key) return null;
-  if (key.includes("ap") || key.includes("magicdamage")) return "AP";
+  if (key.includes("ap") || key.includes("magicdamage") || key.includes("spelldamage")) return "AP";
   if (key.includes("ad") || key.includes("physical")) return "AD";
   if (key.includes("armor") || key.includes("resist") || key.includes("mr")) return "resistances";
   if (key.includes("as") || key.includes("attackspeed")) return "attack speed";
@@ -410,6 +410,24 @@ function inferActiveCooldownSeconds(itemId) {
   return null;
 }
 
+
+/**
+ * Bolds ACTIVE cooldown headers and injects computed active damage formulas into tooltip text.
+ */
+function enhanceActiveTooltip(descriptionHtml, formulaLines) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+
+  const activeDamage = (formulaLines || []).find((line) => /active\s*damage/i.test(line.name))
+    || (formulaLines || []).find((line) => line.category === "Active" && /damage/i.test(line.name));
+
+  if (activeDamage) {
+    enhanced = enhanced.replace(/dealing\s+magic damage/i, `dealing ${activeDamage.formula} magic damage`);
+  }
+
+  return enhanced;
+}
+
 /**
  * Extracts burn DPS and total-damage helper rows from data values where possible.
  */
@@ -443,30 +461,6 @@ function buildBurnMetrics(dataValueMap) {
   return rows;
 }
 
-/**
- * Extracts active ability details (cooldown/range/effects) from tooltip body heuristics.
- */
-function extractActiveDetails(descriptionHtml, formulaLines, itemId = null) {
-  const plain = String(descriptionHtml || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-  const looksActive = /\bactive\b/i.test(plain) || formulaLines.some((l) => l.category === "Active");
-  if (!looksActive) return [];
-
-  const details = [];
-  const inferredCooldown = itemId ? inferActiveCooldownSeconds(itemId) : null;
-  const cooldownMatch = plain.match(/(\d+(?:\.\d+)?)\s*second(?:s)?\s*cooldown/i);
-  if (cooldownMatch) {
-    details.push(`Cooldown: ${cooldownMatch[1]}s`);
-  } else if (inferredCooldown !== null) {
-    details.push(`Cooldown: ${inferredCooldown}s`);
-  }
-  const rangeMatch = plain.match(/(\d+(?:\.\d+)?)\s*range/i);
-  if (rangeMatch) details.push(`Range: ${rangeMatch[1]}`);
-
-  const effectSentence = plain.match(/active[^.]*\./i);
-  if (effectSentence) details.push(`Effect: ${effectSentence[0].trim()}`);
-
-  return details;
-}
 
 /**
  * Initializes Item Lookup: load data, build filters, bind events, and render first state.
@@ -556,12 +550,10 @@ function clearItemDetails() {
   document.getElementById("itemMeta").textContent = "";
   document.getElementById("itemCost").textContent = "";
   document.getElementById("itemTooltipMain").innerHTML = "Try changing search or filters.";
-  document.getElementById("itemActives").innerHTML = "";
-  document.getElementById("itemFormulaExtract").textContent = "";
 }
 
 /**
- * Renders one selected item with cost, stats, tooltip body, active details and formula extracts.
+ * Renders one selected item with cost, stats, and enhanced tooltip body.
  */
 function showItem(id) {
   const item = ITEM_STATE.items[id];
@@ -576,23 +568,13 @@ function showItem(id) {
   const normalizedDescription = inferredCooldown !== null
     ? resolvedDescription.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${inferredCooldown}s$2`)
     : resolvedDescription;
-  const activeDetails = extractActiveDetails(normalizedDescription, lines, id);
+  const tooltipMain = enhanceActiveTooltip(normalizedDescription, lines);
 
   ITEM_STATE.extractedById[id] = extracted;
-
-  const tooltipMain = lines.length
-    ? `${normalizedDescription}<hr><div><strong>Formula-enhanced tooltip:</strong><ul>${lines.map((l) => `<li><strong>${l.name}:</strong> ${l.formula}</li>`).join("")}</ul></div>`
-    : normalizedDescription;
-
-  const activesHtml = activeDetails.length
-    ? `<ul>${activeDetails.map((d) => `<li>${d}</li>`).join("")}</ul>`
-    : "<p class=\"text-muted\">No explicit active details found for this item.</p>";
 
   document.getElementById("itemName").textContent = item.name;
   document.getElementById("itemIcon").src = `https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png`;
   document.getElementById("itemMeta").innerHTML = `<strong>Tags:</strong> ${(item.tags || []).join(", ") || "-"}`;
   document.getElementById("itemCost").innerHTML = `<strong>Cost:</strong> ${item.gold?.total ?? 0}g`;
   document.getElementById("itemTooltipMain").innerHTML = colorizeStatsInHtml(tooltipMain);
-  document.getElementById("itemActives").innerHTML = colorizeStatsInHtml(activesHtml);
-  document.getElementById("itemFormulaExtract").textContent = JSON.stringify(extracted, null, 2);
 }
