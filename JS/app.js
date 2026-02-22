@@ -36,7 +36,6 @@ const STAT_LABELS = {
 /**
  * Initializes legacy builder app flow and loads default champion state.
  */
-
 async function initBuilderApp() {
   wireStaticInputs();
   await loadStaticData();
@@ -48,7 +47,6 @@ async function initBuilderApp() {
 /**
  * Wires static level/dummy-target inputs so any change triggers full refresh.
  */
-
 function wireStaticInputs() {
   const levelSelect = document.getElementById("championLevel");
   for (let i = 1; i <= 18; i += 1) {
@@ -67,7 +65,6 @@ function wireStaticInputs() {
 /**
  * Loads patch version, champion catalog, and item catalog for legacy app usage.
  */
-
 async function loadStaticData() {
   const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
   APP_STATE.version = versions[0];
@@ -80,7 +77,6 @@ async function loadStaticData() {
 /**
  * Renders champion and item selectors and wires change handlers.
  */
-
 function renderSelectors() {
   const championSelect = document.getElementById("championSelect");
   championSelect.innerHTML = Object.keys(APP_STATE.champions)
@@ -142,7 +138,6 @@ function renderSelectors() {
 /**
  * Loads full selected champion details then triggers complete UI recomputation.
  */
-
 async function loadChampion(championKey) {
   const champ = APP_STATE.champions[championKey];
   const champData = await fetch(`https://ddragon.leagueoflegends.com/cdn/${APP_STATE.version}/data/en_US/champion/${championKey}.json`).then((r) => r.json());
@@ -166,7 +161,6 @@ async function loadChampion(championKey) {
 /**
  * Returns a stat value scaled from base + per-level growth at a specific level.
  */
-
 function calcAtLevel(base, perLevel, level) {
   return base + perLevel * (level - 1);
 }
@@ -174,7 +168,6 @@ function calcAtLevel(base, perLevel, level) {
 /**
  * Aggregates item-provided flat stats from selected slots.
  */
-
 function getItemTotals() {
   const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, asPercent: 0, ah: 0 };
   APP_STATE.itemSlots.forEach((id) => {
@@ -195,7 +188,6 @@ function getItemTotals() {
 /**
  * Combines champion level stats and item totals into a final stat object.
  */
-
 function computeFinalStats() {
   const base = APP_STATE.championData.stats;
   const item = getItemTotals();
@@ -216,7 +208,6 @@ function computeFinalStats() {
 /**
  * Renders final computed stats for the selected champion build.
  */
-
 function renderStats(stats) {
   const grid = document.getElementById("statsGrid");
   grid.innerHTML = Object.entries(stats)
@@ -227,7 +218,6 @@ function renderStats(stats) {
 /**
  * Converts ability haste into cooldown reduction percentage.
  */
-
 function cdrFromHaste(ah) {
   return (ah / (100 + ah)) * 100;
 }
@@ -235,7 +225,6 @@ function cdrFromHaste(ah) {
 /**
  * Evaluates one spell calculation part against current stats and spell rank.
  */
-
 function evaluatePart(part, spell, spellRank, stats) {
   if (!part || typeof part !== "object") return 0;
   if (part.__type === "NumberCalculationPart") return part.mNumber || 0;
@@ -271,7 +260,6 @@ function evaluatePart(part, spell, spellRank, stats) {
 /**
  * Evaluates spell damage expression parts and returns estimated output text.
  */
-
 function evaluateSpellDamage(spell, spellRank, stats) {
   if (!spell) return { raw: 0, cd: 0, damageType: "mixed" };
   let raw = 0;
@@ -295,7 +283,6 @@ function evaluateSpellDamage(spell, spellRank, stats) {
 /**
  * Applies armor/mr mitigation formula to raw damage.
  */
-
 function mitigation(amount, resist) {
   if (resist >= 0) return amount * (100 / (100 + resist));
   return amount * (2 - 100 / (100 - resist));
@@ -304,7 +291,6 @@ function mitigation(amount, resist) {
 /**
  * Renders ability cards with calculated damage snippets versus dummy defenses.
  */
-
 function renderAbilityCards(stats) {
   const container = document.getElementById("abilityCards");
   const spells = APP_STATE.championDetail?.spells || [];
@@ -340,7 +326,6 @@ function renderAbilityCards(stats) {
 /**
  * Runs full recomputation pipeline (stats + abilities + comparisons).
  */
-
 function refreshAll() {
   if (!APP_STATE.championData) return;
   const stats = computeFinalStats();
@@ -377,7 +362,6 @@ function refreshAll() {
 /**
  * Captures current build configuration and stores it for comparison table rendering.
  */
-
 function saveCurrentBuild() {
   const stats = computeFinalStats();
   const burst = Number(document.getElementById("comboBurst").textContent) || 0;
@@ -398,7 +382,6 @@ function saveCurrentBuild() {
 /**
  * Renders side-by-side summary table for saved build snapshots.
  */
-
 function renderBuildComparison() {
   const root = document.getElementById("buildComparison");
   if (!APP_STATE.savedBuilds.length) {

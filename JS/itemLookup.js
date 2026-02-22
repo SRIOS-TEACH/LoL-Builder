@@ -510,7 +510,6 @@ function clearItemDetails() {
   document.getElementById("itemIcon").removeAttribute("src");
   document.getElementById("itemMeta").textContent = "";
   document.getElementById("itemCost").textContent = "";
-  document.getElementById("itemRawStats").innerHTML = "";
   document.getElementById("itemTooltipMain").innerHTML = "Try changing search or filters.";
   document.getElementById("itemActives").innerHTML = "";
   document.getElementById("itemFormulaExtract").textContent = "";
@@ -526,7 +525,6 @@ function showItem(id) {
   ITEM_STATE.selectedId = id;
   renderItemGrid();
 
-  const rawStats = extractRawStats(item);
   const resolvedDescription = resolveDescriptionFormulas(item, item.description || "");
   const { lines, extracted } = buildExtractedFormulas(id);
   const activeDetails = extractActiveDetails(resolvedDescription, lines);
@@ -543,12 +541,8 @@ function showItem(id) {
 
   document.getElementById("itemName").textContent = item.name;
   document.getElementById("itemIcon").src = `https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png`;
-  document.getElementById("itemMeta").innerHTML = `<strong>ID:</strong> ${id}<br><strong>Tags:</strong> ${(item.tags || []).join(", ") || "-"}`;
-  document.getElementById("itemCost").innerHTML = `<strong>Cost:</strong> ${item.gold?.total ?? 0}g &nbsp; <strong>Sell:</strong> ${item.gold?.sell ?? 0}g`;
-  document.getElementById("itemRawStats").innerHTML = rawStats.length
-    ? `<ul>${rawStats.map((s) => `<li><strong>${s.label}:</strong> ${s.value}</li>`).join("")}</ul>`
-    : "<p class=\"text-muted\">No raw stat modifiers.</p>";
-
+  document.getElementById("itemMeta").innerHTML = `<strong>Tags:</strong> ${(item.tags || []).join(", ") || "-"}`;
+  document.getElementById("itemCost").innerHTML = `<strong>Cost:</strong> ${item.gold?.total ?? 0}g`;
   document.getElementById("itemTooltipMain").innerHTML = colorizeStatsInHtml(tooltipMain);
   document.getElementById("itemActives").innerHTML = colorizeStatsInHtml(activesHtml);
   document.getElementById("itemFormulaExtract").textContent = JSON.stringify(extracted, null, 2);
