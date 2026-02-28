@@ -24,6 +24,15 @@ Open pages directly:
 - `http://127.0.0.1:8000/itemLookup.html`
 - `http://127.0.0.1:8000/Builder.html`
 
+### Quick sanity checks
+Before committing JavaScript changes, you can run fast syntax checks from the repository root:
+
+```bash
+node --check JS/champLookup.js
+node --check JS/itemLookup.js
+node --check JS/builder.js
+```
+
 ---
 
 ## File map (what each major file does)
