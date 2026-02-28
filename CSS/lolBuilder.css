@@ -17,6 +17,12 @@ body {
   color: #e5ecff;
 }
 
+.page-wrapper,
+.content-wrapper,
+.builder-dashboard {
+  background: transparent !important;
+}
+
 .hero-card,
 .section-card {
   margin-top: 1rem;
@@ -67,15 +73,15 @@ body {
 .ability-grid,
 .item-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 0.55rem;
 }
 
 .stat-pill,
 .ability-card {
   border: 1px solid #35538a;
   border-radius: 8px;
-  padding: 0.7rem;
+  padding: 0.55rem;
   background: #182541;
 }
 
@@ -116,8 +122,8 @@ body {
 
 .item-slots {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 0.6rem;
 }
 
 .item-slot-btn {
@@ -125,8 +131,35 @@ body {
   border-radius: 8px;
   background: #182541;
   color: #e5ecff;
-  padding: 0.7rem;
-  text-align: left;
+  padding: 0.35rem;
+  min-height: 76px;
+  text-align: center;
+}
+
+.item-slot-label {
+  font-size: 0.72rem;
+  color: #b7c5eb;
+  margin-bottom: 0.2rem;
+}
+
+.item-slot-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  border: 1px solid #35538a;
+}
+
+.item-slot-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 42px;
+  height: 42px;
+  margin: 0 auto;
+  border-radius: 6px;
+  border: 1px dashed #4f6da8;
+  color: #9fb2dd;
+  font-size: 0.75rem;
 }
 
 .item-modal {
@@ -256,3 +289,68 @@ body {
 }
 
 .w-full { width: 100%; }
+
+
+.compact-hero-card {
+  min-height: 0;
+}
+
+.compact-card {
+  margin-top: 0;
+}
+
+.builder-top-row {
+  margin-top: 1rem;
+}
+
+.compact-stats-grid .stat-pill {
+  font-size: 0.88rem;
+}
+
+.stat-name-health { color: #7ee787; }
+.stat-name-mana { color: #7db5ff; }
+.stat-name-ad { color: #ffad66; }
+.stat-name-ap { color: #d8a8ff; }
+.stat-name-armor { color: #d2d6e0; }
+.stat-name-mr { color: #73e0b1; }
+.stat-name-attack-speed { color: #ffd966; }
+.stat-name-ability-haste { color: #83d3ff; }
+
+.stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.compact-ability-grid {
+  grid-template-columns: 1fr;
+}
+
+.compact-ability-grid .ability-card {
+  padding: 0.5rem;
+}
+
+.compact-ability-grid p {
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.rune-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.rune-config-grid .label {
+  font-size: 0.78rem;
+  margin-bottom: 0;
+}
+
+.rune-config-grid .form-control {
+  margin-top: 0.2rem;
+}
+
+@media (max-width: 991px) {
+  .rune-config-grid {
+    grid-template-columns: 1fr;
+  }
+}

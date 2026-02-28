@@ -202,7 +202,7 @@ async function setChampion(name) {
 function renderItemSlots() {
   const root = document.getElementById("itemSlots");
   root.innerHTML = BUILDER.itemSlots
-    .map((_, i) => `<button class="item-slot-btn" onclick="openItemModal(${i})">Slot ${i + 1}: <span id="slotText${i}">Empty</span></button>`)
+    .map((_, i) => `<button class="item-slot-btn" onclick="openItemModal(${i})"><div class="item-slot-label">${i + 1}</div><div id="slotText${i}" class="item-slot-empty">+</div></button>`)
     .join("");
   refreshSlotLabels();
 }
@@ -212,8 +212,15 @@ function renderItemSlots() {
  */
 function refreshSlotLabels() {
   BUILDER.itemSlots.forEach((id, i) => {
-    const text = id ? BUILDER.items[id].name : "Empty";
-    document.getElementById(`slotText${i}`).textContent = text;
+    const root = document.getElementById(`slotText${i}`);
+    if (!id) {
+      root.className = "item-slot-empty";
+      root.textContent = "+";
+      return;
+    }
+    const item = BUILDER.items[id];
+    root.className = "";
+    root.innerHTML = `<img class="item-slot-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${item.name}" title="${item.name}">`;
   });
 }
 
@@ -398,7 +405,7 @@ function getItemStats() {
     totals.ap += s.FlatMagicDamageMod || 0;
     totals.armor += s.FlatArmorMod || 0;
     totals.mr += s.FlatSpellBlockMod || 0;
-    totals.haste += s.FlatHasteMod || s.FlatAbilityHasteMod || 0;
+    totals.haste += Number(s.FlatHasteMod || s.FlatAbilityHasteMod || s.AbilityHaste || s.FlatCooldownReduction || 0);
     totals.asPct += (s.PercentAttackSpeedMod || 0) * 100;
   });
   return totals;
@@ -457,7 +464,11 @@ function renderStats() {
   ];
 
   document.getElementById("statsGrid").innerHTML = rows
-    .map((r) => `<div class="stat-pill"><strong>${r.name}</strong><br>${r.value.toFixed(r.name === "Attack Speed" ? 3 : 1)}<div class='stat-eq'>${r.eq}</div></div>`)
+    .map((r) => {
+      const className = `stat-name-${r.name.toLowerCase().replace(/\s+/g, "-")}`;
+      const precision = r.name === "Attack Speed" ? 3 : 1;
+      return `<div class="stat-pill"><strong class="${className}">${r.name}</strong><br><span class="stat-value">${r.value.toFixed(precision)}</span><div class='stat-eq'>${r.eq}</div></div>`;
+    })
     .join("");
 }
 

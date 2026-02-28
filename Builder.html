@@ -21,45 +21,63 @@
 
     <div class="content-wrapper">
       <div class="container-fluid builder-dashboard">
-        <div id="builderHeroCard" class="card section-card splash-bg-card">
-          <h1 class="content-title">Build Sandbox</h1>
-          <p id="builderStatus" class="status-text"></p>
-          <div class="row row-eq-spacing">
-            <div class="col-lg-4 col-12">
-              <label class="label">Champion</label>
-              <button id="championPickerBtn" class="btn w-full" type="button" onclick="openChampionModal()">Select champion</button>
+        <div class="row row-eq-spacing builder-top-row">
+          <div class="col-lg-5 col-12">
+            <div id="builderHeroCard" class="card section-card floating-card compact-hero-card">
+              <h1 class="content-title">Build Sandbox</h1>
+              <p id="builderStatus" class="status-text"></p>
+              <div class="row row-eq-spacing">
+                <div class="col-sm-8 col-12">
+                  <label class="label">Champion</label>
+                  <button id="championPickerBtn" class="btn w-full" type="button" onclick="openChampionModal()">Select champion</button>
+                </div>
+                <div class="col-sm-4 col-12">
+                  <label class="label">Level
+                    <select id="builderLevel" class="form-control"></select>
+                  </label>
+                </div>
+              </div>
             </div>
-            <div class="col-lg-2 col-12">
-              <label class="label">Level
-                <select id="builderLevel" class="form-control"></select>
-              </label>
+          </div>
+          <div class="col-lg-7 col-12">
+            <div class="card section-card floating-card compact-card">
+              <h2 class="content-title">Current Stats</h2>
+              <div id="statsGrid" class="stats-grid compact-stats-grid"></div>
             </div>
           </div>
         </div>
 
         <div class="row row-eq-spacing mt-10">
-          <div class="col-lg-6 col-12">
-            <div class="card section-card floating-card">
+          <div class="col-lg-5 col-12">
+            <div class="card section-card floating-card compact-card">
               <h2 class="content-title">Items</h2>
-              <div id="itemSlots" class="item-slots"></div>
+              <div id="itemSlots" class="item-slots item-slots-icons"></div>
             </div>
 
-            <div class="card section-card floating-card">
-              <h2 class="content-title">Current Stats</h2>
-              <div id="statsGrid" class="stats-grid"></div>
+            <div class="card section-card floating-card compact-card">
+              <h2 class="content-title">Runes / Masteries</h2>
+              <div class="rune-config-grid">
+                <label class="label">Primary Path<select class="form-control"><option>Sorcery</option><option>Precision</option><option>Domination</option><option>Resolve</option><option>Inspiration</option></select></label>
+                <label class="label">Keystone<select class="form-control"><option>Arcane Comet</option><option>Phase Rush</option><option>Summon Aery</option><option>First Strike</option></select></label>
+                <label class="label">Primary Rune 1<select class="form-control"><option>Manaflow Band</option><option>Nimbus Cloak</option><option>Nullifying Orb</option></select></label>
+                <label class="label">Primary Rune 2<select class="form-control"><option>Transcendence</option><option>Celerity</option><option>Absolute Focus</option></select></label>
+                <label class="label">Primary Rune 3<select class="form-control"><option>Gathering Storm</option><option>Scorch</option><option>Waterwalking</option></select></label>
+                <label class="label">Secondary Path<select class="form-control"><option>Precision</option><option>Domination</option><option>Resolve</option><option>Inspiration</option></select></label>
+                <label class="label">Secondary Rune 1<select class="form-control"><option>Legend: Haste</option><option>Cut Down</option><option>Presence of Mind</option></select></label>
+                <label class="label">Secondary Rune 2<select class="form-control"><option>Cut Down</option><option>Coup de Grace</option><option>Last Stand</option></select></label>
+                <label class="label">Shard 1<select class="form-control"><option>+9 Adaptive</option><option>+10% Attack Speed</option><option>+8 Ability Haste</option></select></label>
+                <label class="label">Shard 2<select class="form-control"><option>+9 Adaptive</option><option>+2% Move Speed</option><option>+10-180 Health</option></select></label>
+                <label class="label">Shard 3<select class="form-control"><option>+10-180 Health</option><option>+6 Armor</option><option>+10 MR</option></select></label>
+              </div>
             </div>
           </div>
 
-          <div class="col-lg-6 col-12">
-            <div class="card section-card floating-card">
-              <h2 class="content-title">Ability Ranks</h2>
-              <div id="abilityRankControls" class="row"></div>
+          <div class="col-lg-7 col-12">
+            <div class="card section-card floating-card compact-card">
+              <h2 class="content-title">Abilities & Ranks</h2>
+              <div id="abilityRankControls" class="row row-eq-spacing"></div>
               <small id="abilityRuleHint" class="text-muted"></small>
-            </div>
-
-            <div class="card section-card floating-card">
-              <h2 class="content-title">Abilities</h2>
-              <div id="abilityCards" class="ability-grid"></div>
+              <div id="abilityCards" class="ability-grid compact-ability-grid mt-10"></div>
             </div>
           </div>
         </div>
