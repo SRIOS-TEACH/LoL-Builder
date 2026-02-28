@@ -2,15 +2,15 @@
  * Item Lookup controller.
  *
  * Responsibilities:
- * - Load and dedupe Summoner's Rift purchasable items from Data Dragon.
+ * - Load purchasable Data Dragon items and filter by selected maps.
  * - Load CommunityDragon item calculation payloads for richer formula detail.
- * - Render item cost, raw stats, tooltip body, active details, and extracted formulas.
+ * - Render item cost, stats, tooltip body, and tags for the selected item.
  * - Color-code stat keywords in tooltip/details using the shared color table.
  *
  * Flow:
  * 1) `initItemLookup` loads versioned item data + CommunityDragon calculations.
  * 2) Search/tag filters update `ITEM_STATE.filteredIds` then render the icon grid.
- * 3) `showItem` composes the detailed panel (cost/stats/tooltip/actives/formulas).
+ * 3) `showItem` composes the detailed panel (cost/stats/tooltip/tags).
  */
 const ITEM_STATE = {
   version: "",
@@ -18,6 +18,7 @@ const ITEM_STATE = {
   filteredIds: [],
   tags: new Set(),
   selectedTags: new Set(),
+  selectedMaps: new Set([11]),
   selectedId: null,
   cdragonById: {},
   extractedById: {},
@@ -47,6 +48,12 @@ const RAW_STAT_KEYS = {
   FlatMagicPenetrationMod: "Magic Penetration",
   FlatLethalityMod: "Lethality",
 };
+
+const MAP_OPTIONS = [
+  { id: 11, label: "Summoners Rift" },
+  { id: 12, label: "ARAM" },
+  { id: 30, label: "Arena" },
+];
 
 /**
  * Ordered keyword->color table used for tooltip/detail stat highlighting.
@@ -80,22 +87,59 @@ const STAT_COLOR_RULES = [
 ].sort((a, b) => b[0].length - a[0].length);
 
 /**
- * Returns true when an item is purchasable and available on Summoner's Rift.
+ * Returns true when an item is purchasable and available on at least one map.
  */
-function isSummonersRiftItem(item) {
-  return item.gold?.purchasable && item.maps?.[11] && !item.requiredAlly;
+function isPurchasableItem(item) {
+  const mapEnabled = Object.values(item.maps || {}).some(Boolean);
+  return item.gold?.purchasable && mapEnabled && !item.requiredAlly;
 }
 
 /**
- * Deduplicates item entries by normalized name, keeping the highest numeric item id.
+ * Returns true when an item can be purchased on any currently-selected map.
  */
-function dedupeByNameKeepingLatest(itemEntries) {
+function itemMatchesSelectedMaps(item) {
+  const maps = item.maps || {};
+  return Array.from(ITEM_STATE.selectedMaps).some((mapId) => maps[mapId]);
+}
+
+/**
+ * Chooses one representative item id per normalized item name based on selected map priority.
+ */
+function dedupeByNameWithMapPriority(itemEntries) {
+  const selectedOrder = MAP_OPTIONS.map((m) => m.id).filter((id) => ITEM_STATE.selectedMaps.has(id));
   const byName = {};
+
+  function rankItem(id, item) {
+    const maps = item.maps || {};
+    const selectedIdx = selectedOrder.findIndex((mapId) => maps[mapId]);
+    const enabledMapCount = Object.values(maps).filter(Boolean).length;
+    const numericId = Number(id);
+    return {
+      selectedIdx: selectedIdx === -1 ? Number.MAX_SAFE_INTEGER : selectedIdx,
+      enabledMapCount,
+      numericId,
+    };
+  }
+
+  function isBetterCandidate(incoming, current) {
+    if (incoming.selectedIdx !== current.selectedIdx) return incoming.selectedIdx < current.selectedIdx;
+    if (incoming.enabledMapCount !== current.enabledMapCount) return incoming.enabledMapCount > current.enabledMapCount;
+    return incoming.numericId < current.numericId;
+  }
+
   itemEntries.forEach(([id, item]) => {
     const key = item.name.trim().toLowerCase();
     const current = byName[key];
-    if (!current || Number(id) > Number(current.id)) byName[key] = { id, item };
+    if (!current) {
+      byName[key] = { id, item };
+      return;
+    }
+
+    const currentRank = rankItem(current.id, current.item);
+    const incomingRank = rankItem(id, item);
+    if (isBetterCandidate(incomingRank, currentRank)) byName[key] = { id, item };
   });
+
   return Object.values(byName).map(({ id, item }) => [id, item]);
 }
 
@@ -187,7 +231,7 @@ function extractRawStats(item) {
 function inferStatFromDataValueName(name) {
   const key = (name || "").toLowerCase();
   if (!key) return null;
-  if (key.includes("ap") || key.includes("magicdamage")) return "AP";
+  if (key.includes("ap") || key.includes("magicdamage") || key.includes("spelldamage")) return "AP";
   if (key.includes("ad") || key.includes("physical")) return "AD";
   if (key.includes("armor") || key.includes("resist") || key.includes("mr")) return "resistances";
   if (key.includes("as") || key.includes("attackspeed")) return "attack speed";
@@ -213,6 +257,7 @@ function statLabel(part, dataValueName = "") {
     return "total AD";
   }
 
+  if (part?.mStat === undefined || part?.mStat === null) return inferStatFromDataValueName(dataValueName) || "AP";
   return labels[part?.mStat] || inferStatFromDataValueName(dataValueName) || "scaling stat";
 }
 
@@ -411,6 +456,81 @@ function inferActiveCooldownSeconds(itemId) {
 }
 
 /**
+ * Replaces placeholder ACTIVE cooldown text with inferred cooldown seconds.
+ */
+function injectActiveCooldown(descriptionHtml, cooldownSeconds) {
+  if (cooldownSeconds === null || cooldownSeconds === undefined) return String(descriptionHtml || "");
+  let normalized = String(descriptionHtml || "");
+  normalized = normalized.replace(/(<active>\s*ACTIVE\s*<\/active>\s*)\((?:0|0\.0+)s\)/i, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(<active>\s*[^<]+\s*<\/active>\s*)\((?:0|0\.0+)s\)/i, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${cooldownSeconds}s$2`);
+  return normalized;
+}
+
+/**
+ * Colors numeric tokens in formulas by damage type for readability.
+ */
+function colorFormulaNumbers(formulaText, damageType) {
+  const colors = { magic: "#00B0F0", physical: "#FF8C34", true: "#F9966B" };
+  const color = colors[damageType];
+  if (!color) return formulaText;
+  return formulaText.replace(/\b\d+(?:\.\d+)?%?\b/g, (n) => `<span class="stat-colored" style="color:${color}">${n}</span>`);
+}
+
+/**
+ * Injects extracted damage formulas into generic damage phrases across item tooltips.
+ */
+function injectDamageFormulaText(descriptionHtml, formulaLines) {
+  let enhanced = String(descriptionHtml || "");
+  const damageLines = (formulaLines || []).filter((line) => /damage/i.test(`${line.name} ${line.formula}`));
+  if (!damageLines.length) return enhanced;
+
+  const bestLineForType = (type) => damageLines.find((l) => new RegExp(type, "i").test(`${l.name} ${l.formula}`)) || damageLines[0];
+  const replacements = [
+    { type: "magic", regex: /<magicDamage>\s*magic damage\s*<\/magicDamage>/i },
+    { type: "physical", regex: /<physicalDamage>\s*physical damage\s*<\/physicalDamage>/i },
+    { type: "true", regex: /<trueDamage>\s*true damage\s*<\/trueDamage>/i },
+    { type: "magic", regex: /\b(?:dealing|deals)\s+magic damage\b/i, withVerb: true },
+    { type: "physical", regex: /\b(?:dealing|deals)\s+physical damage\b/i, withVerb: true },
+    { type: "true", regex: /\b(?:dealing|deals)\s+true damage\b/i, withVerb: true },
+  ];
+
+  replacements.forEach(({ type, regex, withVerb }) => {
+    if (!regex.test(enhanced)) return;
+    const line = bestLineForType(type);
+    const coloredFormula = colorFormulaNumbers(line.formula, type);
+    enhanced = enhanced.replace(regex, withVerb ? `dealing ${coloredFormula} ${type} damage` : `${coloredFormula} ${type} damage`);
+  });
+
+  return enhanced;
+}
+
+/**
+ * Bolds ACTIVE headers and formats active name inline with cooldown.
+ */
+function enhanceActiveTooltip(descriptionHtml) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(
+    /<active>\s*ACTIVE\s*<\/active>\s*\((\d+(?:\.\d+)?s)\)\s*<br>\s*<active>([^<]+)<\/active>/i,
+    (_match, cooldown, name) => `<strong><active>ACTIVE - ${name.trim()} (${cooldown})</active></strong>`
+  );
+  enhanced = enhanced.replace(
+    /<active>\s*([^<]+)\s*<\/active>\s*\((\d+(?:\.\d+)?s)\)/i,
+    (_match, name, cooldown) => {
+      const cleanName = name.trim();
+      if (/^active$/i.test(cleanName)) return `<strong><active>ACTIVE (${cooldown})</active></strong>`;
+      return `<strong><active>ACTIVE - ${cleanName} (${cooldown})</active></strong>`;
+    }
+  );
+  enhanced = enhanced.replace(
+    /\bACTIVE\s*\((\d+(?:\.\d+)?s)\)\s*<br>\s*([^<\n]+)\b/i,
+    (_match, cooldown, name) => `<strong>ACTIVE - ${name.trim()} (${cooldown})</strong>`
+  );
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+  return enhanced;
+}
+
+/**
  * Extracts burn DPS and total-damage helper rows from data values where possible.
  */
 function buildBurnMetrics(dataValueMap) {
@@ -443,30 +563,6 @@ function buildBurnMetrics(dataValueMap) {
   return rows;
 }
 
-/**
- * Extracts active ability details (cooldown/range/effects) from tooltip body heuristics.
- */
-function extractActiveDetails(descriptionHtml, formulaLines, itemId = null) {
-  const plain = String(descriptionHtml || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-  const looksActive = /\bactive\b/i.test(plain) || formulaLines.some((l) => l.category === "Active");
-  if (!looksActive) return [];
-
-  const details = [];
-  const inferredCooldown = itemId ? inferActiveCooldownSeconds(itemId) : null;
-  const cooldownMatch = plain.match(/(\d+(?:\.\d+)?)\s*second(?:s)?\s*cooldown/i);
-  if (cooldownMatch) {
-    details.push(`Cooldown: ${cooldownMatch[1]}s`);
-  } else if (inferredCooldown !== null) {
-    details.push(`Cooldown: ${inferredCooldown}s`);
-  }
-  const rangeMatch = plain.match(/(\d+(?:\.\d+)?)\s*range/i);
-  if (rangeMatch) details.push(`Range: ${rangeMatch[1]}`);
-
-  const effectSentence = plain.match(/active[^.]*\./i);
-  if (effectSentence) details.push(`Effect: ${effectSentence[0].trim()}`);
-
-  return details;
-}
 
 /**
  * Initializes Item Lookup: load data, build filters, bind events, and render first state.
@@ -476,16 +572,18 @@ async function initItemLookup() {
   ITEM_STATE.version = versions[0];
   const itemJson = await fetch(`https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/data/en_US/item.json`).then((r) => r.json());
 
-  const deduped = dedupeByNameKeepingLatest(Object.entries(itemJson.data).filter(([, item]) => isSummonersRiftItem(item)));
-  deduped.forEach(([id, item]) => {
-    ITEM_STATE.items[id] = item;
-    (item.tags || []).forEach((tag) => ITEM_STATE.tags.add(tag));
-  });
+  Object.entries(itemJson.data)
+    .filter(([, item]) => isPurchasableItem(item))
+    .forEach(([id, item]) => {
+      ITEM_STATE.items[id] = item;
+      (item.tags || []).forEach((tag) => ITEM_STATE.tags.add(tag));
+    });
 
   await loadCommunityDragonCalcs();
 
   document.getElementById("itemSearch").addEventListener("input", applyItemFilters);
   renderTagFilters("itemFilters", applyItemFilters);
+  renderMapFilters("mapFilters", applyItemFilters);
   applyItemFilters();
 }
 
@@ -501,6 +599,27 @@ function renderTagFilters(targetId, onChange) {
   root.querySelectorAll(".tag-checkbox").forEach((cb) => cb.addEventListener("change", onChange));
 }
 
+
+/**
+ * Renders map toggle checkboxes for manual map selection.
+ */
+function renderMapFilters(targetId, onChange) {
+  const root = document.getElementById(targetId);
+  root.innerHTML = MAP_OPTIONS
+    .map((map) => `<label class="tag-pill mr-5"><input type="checkbox" value="${map.id}" class="map-checkbox" ${ITEM_STATE.selectedMaps.has(map.id) ? "checked" : ""}> ${map.label}</label>`)
+    .join("");
+  root.querySelectorAll(".map-checkbox").forEach((cb) => cb.addEventListener("change", onChange));
+}
+
+/**
+ * Reads selected map checkboxes and returns map ids.
+ */
+function getSelectedMaps() {
+  const checkboxes = Array.from(document.querySelectorAll("#mapFilters .map-checkbox"));
+  const picked = checkboxes.filter((cb) => cb.checked).map((cb) => Number(cb.value));
+  return new Set(picked);
+}
+
 /**
  * Reads selected tag checkboxes from a filter container and returns normalized tag names.
  */
@@ -513,14 +632,18 @@ function getSelectedTags(rootId) {
  */
 function applyItemFilters() {
   ITEM_STATE.selectedTags = getSelectedTags("itemFilters");
+  ITEM_STATE.selectedMaps = getSelectedMaps();
   const text = document.getElementById("itemSearch").value.trim().toLowerCase();
 
-  ITEM_STATE.filteredIds = Object.entries(ITEM_STATE.items)
+  const filteredEntries = Object.entries(ITEM_STATE.items)
+    .filter(([, item]) => itemMatchesSelectedMaps(item))
     .filter(([, item]) => {
       const nameOk = !text || item.name.toLowerCase().includes(text);
       const tagOk = !ITEM_STATE.selectedTags.size || Array.from(ITEM_STATE.selectedTags).every((t) => item.tags?.includes(t));
       return nameOk && tagOk;
-    })
+    });
+
+  ITEM_STATE.filteredIds = dedupeByNameWithMapPriority(filteredEntries)
     .sort((a, b) => a[1].name.localeCompare(b[1].name))
     .map(([id]) => id);
 
@@ -556,12 +679,10 @@ function clearItemDetails() {
   document.getElementById("itemMeta").textContent = "";
   document.getElementById("itemCost").textContent = "";
   document.getElementById("itemTooltipMain").innerHTML = "Try changing search or filters.";
-  document.getElementById("itemActives").innerHTML = "";
-  document.getElementById("itemFormulaExtract").textContent = "";
 }
 
 /**
- * Renders one selected item with cost, stats, tooltip body, active details and formula extracts.
+ * Renders one selected item with cost, stats, and enhanced tooltip body.
  */
 function showItem(id) {
   const item = ITEM_STATE.items[id];
@@ -572,27 +693,17 @@ function showItem(id) {
 
   const resolvedDescription = resolveDescriptionFormulas(item, item.description || "");
   const { lines, extracted } = buildExtractedFormulas(id);
-  const inferredCooldown = inferActiveCooldownSeconds(id);
-  const normalizedDescription = inferredCooldown !== null
-    ? resolvedDescription.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${inferredCooldown}s$2`)
-    : resolvedDescription;
-  const activeDetails = extractActiveDetails(normalizedDescription, lines, id);
+  const hasExplicitActive = /<active>|\bACTIVE\b/i.test(item.description || "");
+  const inferredCooldown = hasExplicitActive ? inferActiveCooldownSeconds(id) : null;
+  const normalizedDescription = injectActiveCooldown(resolvedDescription, inferredCooldown);
+  const formulaEnhancedDescription = injectDamageFormulaText(normalizedDescription, lines);
+  const tooltipMain = enhanceActiveTooltip(formulaEnhancedDescription);
 
   ITEM_STATE.extractedById[id] = extracted;
 
-  const tooltipMain = lines.length
-    ? `${normalizedDescription}<hr><div><strong>Formula-enhanced tooltip:</strong><ul>${lines.map((l) => `<li><strong>${l.name}:</strong> ${l.formula}</li>`).join("")}</ul></div>`
-    : normalizedDescription;
-
-  const activesHtml = activeDetails.length
-    ? `<ul>${activeDetails.map((d) => `<li>${d}</li>`).join("")}</ul>`
-    : "<p class=\"text-muted\">No explicit active details found for this item.</p>";
-
   document.getElementById("itemName").textContent = item.name;
   document.getElementById("itemIcon").src = `https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png`;
-  document.getElementById("itemMeta").innerHTML = `<strong>Tags:</strong> ${(item.tags || []).join(", ") || "-"}`;
   document.getElementById("itemCost").innerHTML = `<strong>Cost:</strong> ${item.gold?.total ?? 0}g`;
+  document.getElementById("itemMeta").innerHTML = `<strong>Tags:</strong> ${(item.tags || []).join(", ") || "-"}`;
   document.getElementById("itemTooltipMain").innerHTML = colorizeStatsInHtml(tooltipMain);
-  document.getElementById("itemActives").innerHTML = colorizeStatsInHtml(activesHtml);
-  document.getElementById("itemFormulaExtract").textContent = JSON.stringify(extracted, null, 2);
 }
