@@ -213,6 +213,7 @@ function statLabel(part, dataValueName = "") {
     return "total AD";
   }
 
+  if (part?.mStat === undefined || part?.mStat === null) return inferStatFromDataValueName(dataValueName) || "AP";
   return labels[part?.mStat] || inferStatFromDataValueName(dataValueName) || "scaling stat";
 }
 
@@ -429,6 +430,36 @@ function enhanceActiveTooltip(descriptionHtml, formulaLines) {
 }
 
 /**
+ * Replaces placeholder ACTIVE cooldown text with inferred cooldown seconds.
+ */
+function injectActiveCooldown(descriptionHtml, cooldownSeconds) {
+  if (cooldownSeconds === null || cooldownSeconds === undefined) return String(descriptionHtml || "");
+  let normalized = String(descriptionHtml || "");
+  normalized = normalized.replace(/(<active>\s*ACTIVE\s*<\/active>\s*)\((?:0|0\.0+)s\)/i, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${cooldownSeconds}s$2`);
+  return normalized;
+}
+
+/**
+ * Bolds ACTIVE cooldown headers and injects computed active damage formulas into tooltip text.
+ */
+function enhanceActiveTooltip(descriptionHtml, formulaLines) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(/(<active>\s*ACTIVE\s*<\/active>\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+
+  const activeDamage = (formulaLines || []).find((line) => /active\s*damage/i.test(line.name))
+    || (formulaLines || []).find((line) => line.category === "Active" && /damage/i.test(line.name));
+
+  if (activeDamage) {
+    enhanced = enhanced.replace(/dealing\s*<magicDamage>\s*magic damage\s*<\/magicDamage>/i, `dealing ${activeDamage.formula} magic damage`);
+    enhanced = enhanced.replace(/dealing\s+magic damage/i, `dealing ${activeDamage.formula} magic damage`);
+  }
+
+  return enhanced;
+}
+
+/**
  * Extracts burn DPS and total-damage helper rows from data values where possible.
  */
 function buildBurnMetrics(dataValueMap) {
@@ -565,9 +596,7 @@ function showItem(id) {
   const resolvedDescription = resolveDescriptionFormulas(item, item.description || "");
   const { lines, extracted } = buildExtractedFormulas(id);
   const inferredCooldown = inferActiveCooldownSeconds(id);
-  const normalizedDescription = inferredCooldown !== null
-    ? resolvedDescription.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${inferredCooldown}s$2`)
-    : resolvedDescription;
+  const normalizedDescription = injectActiveCooldown(resolvedDescription, inferredCooldown);
   const tooltipMain = enhanceActiveTooltip(normalizedDescription, lines);
 
   ITEM_STATE.extractedById[id] = extracted;
