@@ -438,26 +438,27 @@ body {
 .rune-panel-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.7rem;
+  gap: 0.35rem;
 }
 
 .rune-column-title {
-  color: #b7c9ff;
-  font-weight: 700;
-  margin-bottom: 0.35rem;
+  color: #d7e3ff;
+  font-weight: 800;
+  margin-bottom: 0.45rem;
   letter-spacing: 0.03em;
+  font-size: 1.02rem;
 }
 
 .rune-slot-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.4rem;
+  gap: 0.55rem;
+  margin-bottom: 0.5rem;
 }
 
 .rune-slot-btn {
-  width: 50px;
-  height: 50px;
+  width: 56px;
+  height: 56px;
   border-radius: 999px;
   border: 2px solid #5f7fbe;
   background: rgba(10, 18, 36, 0.75);
@@ -469,49 +470,56 @@ body {
 }
 
 .rune-slot-btn img {
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   border-radius: 999px;
 }
 
 .rune-slot-label {
-  font-size: 0.82rem;
-  color: #dce6ff;
+  font-size: 0.94rem;
+  color: #e9f0ff;
+  line-height: 1.18;
 }
 
 .rune-modal-body {
-  width: min(760px, 95vw);
+  width: min(900px, 96vw);
 }
 
 .rune-option-list {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
-  margin-top: 0.75rem;
+  gap: 0.6rem;
+  margin-top: 0.6rem;
 }
 
 .rune-option-btn {
   width: 100%;
-  border: 1px solid #5877b6;
-  border-radius: 8px;
-  background: rgba(19, 33, 62, 0.8);
-  color: #e5ecff;
+  border: 1px solid #6e91db;
+  border-radius: 10px;
+  background: rgba(15, 31, 62, 0.88);
+  color: #eef4ff;
   text-align: left;
-  padding: 0.45rem 0.55rem;
+  padding: 0.62rem 0.72rem;
   display: flex;
-  gap: 0.6rem;
+  gap: 0.75rem;
   align-items: center;
 }
 
 .rune-option-btn img {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   border-radius: 999px;
 }
 
+.rune-option-name {
+  font-size: 1.16rem;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
 .rune-option-desc {
-  font-size: 0.8rem;
-  color: #b9c9ef;
+  font-size: 0.9rem;
+  color: #d0dcfb;
 }
 
 .ability-layout {

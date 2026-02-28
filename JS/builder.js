@@ -35,31 +35,31 @@ const RUNE_DATA = {
       name: "Sorcery",
       splash: "url(https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/Sorcery.png)",
       icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/Sorcery.png",
-      options: ["arcane-comet", "manaflow-band", "absolute-focus", "gathering-storm"],
+      primaryRows: [["arcane-comet", "summon-aery", "phase-rush"], ["nullifying-orb", "manaflow-band", "nimbus-cloak"], ["transcendence", "celerity", "absolute-focus"], ["scorch", "waterwalking", "gathering-storm"]],
     },
     precision: {
       name: "Precision",
       splash: "url(https://ddragon.canisback.com/img/perk-images/Styles/Precision/Precision.png)",
       icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/Precision.png",
-      options: ["press-the-attack", "presence-of-mind", "legend-haste", "cut-down"],
+      primaryRows: [["press-the-attack", "fleet-footwork", "conqueror"], ["overheal", "triumph", "presence-of-mind"], ["legend-alacrity", "legend-haste", "legend-bloodline"], ["coup-de-grace", "cut-down", "last-stand"]],
     },
     domination: {
       name: "Domination",
       splash: "url(https://ddragon.canisback.com/img/perk-images/Styles/Domination/Domination.png)",
       icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/Domination.png",
-      options: ["electrocute", "cheap-shot", "eyeball-collection", "ultimate-hunter"],
+      primaryRows: [["electrocute", "dark-harvest", "hail-of-blades"], ["cheap-shot", "taste-of-blood", "sudden-impact"], ["zombie-ward", "ghost-poro", "eyeball-collection"], ["treasure-hunter", "relentless-hunter", "ultimate-hunter"]],
     },
     resolve: {
       name: "Resolve",
       splash: "url(https://ddragon.canisback.com/img/perk-images/Styles/Resolve/Resolve.png)",
       icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/Resolve.png",
-      options: ["grasp-of-the-undying", "demolish", "second-wind", "overgrowth"],
+      primaryRows: [["grasp-of-the-undying", "aftershock", "guardian"], ["shield-bash", "demolish", "font-of-life"], ["conditioning", "second-wind", "bone-plating"], ["overgrowth", "revitalize", "unflinching"]],
     },
     inspiration: {
       name: "Inspiration",
       splash: "url(https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/Inspiration.png)",
       icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/Inspiration.png",
-      options: ["first-strike", "magical-footwear", "biscuit-delivery", "cosmic-insight"],
+      primaryRows: [["first-strike", "glacial-augment", "unsealed-spellbook"], ["hextech-flashtraption", "magical-footwear", "cashback"], ["biscuit-delivery", "triple-tonic", "time-warp-tonic"], ["cosmic-insight", "approach-velocity", "jack-of-all-trades"]],
     },
   },
   runeLookup: {
@@ -69,19 +69,57 @@ const RUNE_DATA = {
     "manaflow-band": { name: "Manaflow Band", desc: "Abilities that hit grant max mana.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/ManaflowBand/ManaflowBand.png" },
     "absolute-focus": { name: "Absolute Focus", desc: "Gain adaptive force at high health.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/AbsoluteFocus/AbsoluteFocus.png" },
     "gathering-storm": { name: "Gathering Storm", desc: "Gain increasing AD/AP over time.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/GatheringStorm/GatheringStorm.png" },
+    "nullifying-orb": { name: "Nullifying Orb", desc: "Shield triggers vs magic damage.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/NullifyingOrb/Pokeshield.png" },
+    "nimbus-cloak": { name: "Nimbus Cloak", desc: "Gain movement speed after summoner spells.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/NimbusCloak/6361.png" },
+    "transcendence": { name: "Transcendence", desc: "Bonus ability haste at level milestones.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/Transcendence/Transcendence.png" },
+    "celerity": { name: "Celerity", desc: "Improves all movement speed bonuses.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/Celerity/CelerityTemp.png" },
+    "scorch": { name: "Scorch", desc: "Abilities scorch enemies for bonus damage.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/Scorch/Scorch.png" },
+    "waterwalking": { name: "Waterwalking", desc: "Move speed + stats in river.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/Waterwalking/Waterwalking.png" },
     "press-the-attack": { name: "Press the Attack", desc: "3 attacks expose targets.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/PressTheAttack/PressTheAttack.png" },
+    "fleet-footwork": { name: "Fleet Footwork", desc: "Energized attacks heal and grant speed.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/FleetFootwork/FleetFootwork.png" },
+    "conqueror": { name: "Conqueror", desc: "Gain adaptive force in combat.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/Conqueror/Conqueror.png" },
+    "overheal": { name: "Overheal", desc: "Excess healing converts to a shield.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/Overheal.png" },
+    "triumph": { name: "Triumph", desc: "Takedowns heal and grant bonus gold.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/Triumph.png" },
+    "legend-alacrity": { name: "Legend: Alacrity", desc: "Gain attack speed from Legend stacks.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/LegendAlacrity/LegendAlacrity.png" },
+    "legend-bloodline": { name: "Legend: Bloodline", desc: "Gain lifesteal from Legend stacks.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/LegendBloodline/LegendBloodline.png" },
+    "coup-de-grace": { name: "Coup de Grace", desc: "Deal more damage to low-health enemies.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/CoupDeGrace/CoupDeGrace.png" },
+    "last-stand": { name: "Last Stand", desc: "Deal more damage while low health.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/LastStand/LastStand.png" },
     "presence-of-mind": { name: "Presence of Mind", desc: "Restore mana on takedown.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/PresenceOfMind/PresenceOfMind.png" },
     "legend-haste": { name: "Legend: Haste", desc: "Gain ability haste via Legend stacks.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/LegendHaste/LegendHaste.png" },
     "cut-down": { name: "Cut Down", desc: "Bonus damage vs high-health targets.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/CutDown/CutDown.png" },
     "electrocute": { name: "Electrocute", desc: "3 separate hits burst damage.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/Electrocute/Electrocute.png" },
+    "dark-harvest": { name: "Dark Harvest", desc: "Damage low-health enemies for soul stacks.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/DarkHarvest/DarkHarvest.png" },
+    "hail-of-blades": { name: "Hail of Blades", desc: "Burst of attack speed at combat start.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/HailOfBlades/HailOfBlades.png" },
+    "taste-of-blood": { name: "Taste of Blood", desc: "Heal when damaging enemy champions.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/TasteOfBlood/GreenTerror_TasteOfBlood.png" },
+    "sudden-impact": { name: "Sudden Impact", desc: "Penetration after dashes/stealth.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/SuddenImpact/SuddenImpact.png" },
+    "zombie-ward": { name: "Zombie Ward", desc: "Wards replace destroyed enemy wards.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/ZombieWard/ZombieWard.png" },
+    "ghost-poro": { name: "Ghost Poro", desc: "Wards spawn a spotting poro.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/GhostPoro/GhostPoro.png" },
+    "treasure-hunter": { name: "Treasure Hunter", desc: "Bonus gold from unique takedowns.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/TreasureHunter/TreasureHunter.png" },
+    "relentless-hunter": { name: "Relentless Hunter", desc: "Out-of-combat movement speed.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/RelentlessHunter/RelentlessHunter.png" },
     "cheap-shot": { name: "Cheap Shot", desc: "Bonus true damage to impaired enemies.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/CheapShot/CheapShot.png" },
     "eyeball-collection": { name: "Eyeball Collection", desc: "Gain adaptive force from takedowns.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/EyeballCollection/EyeballCollection.png" },
     "ultimate-hunter": { name: "Ultimate Hunter", desc: "Ultimate cooldown reduction.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/UltimateHunter/UltimateHunter.png" },
     "grasp-of-the-undying": { name: "Grasp of the Undying", desc: "Periodic empowered attack in combat.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/GraspOfTheUndying/GraspOfTheUndying.png" },
+    "aftershock": { name: "Aftershock", desc: "Immobilize enemies for resistances and burst.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/VeteranAftershock/VeteranAftershock.png" },
+    "guardian": { name: "Guardian", desc: "Guard allies and shield on damage.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/Guardian/Guardian.png" },
+    "shield-bash": { name: "Shield Bash", desc: "Empower attacks after gaining shields.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/ShieldBash/ShieldBash.png" },
+    "font-of-life": { name: "Font of Life", desc: "Impaired enemies can be marked for healing.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/FontOfLife/FontOfLife.png" },
+    "conditioning": { name: "Conditioning", desc: "Gain bonus armor and magic resist later.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/Conditioning/Conditioning.png" },
+    "bone-plating": { name: "Bone Plating", desc: "Reduce damage from incoming combo hits.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/BonePlating/BonePlating.png" },
+    "revitalize": { name: "Revitalize", desc: "Stronger heals and shields.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/Revitalize/Revitalize.png" },
+    "unflinching": { name: "Unflinching", desc: "Gain tenacity and slow resist.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/Unflinching/Unflinching.png" },
     "demolish": { name: "Demolish", desc: "Charge attack against towers.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/Demolish/Demolish.png" },
     "second-wind": { name: "Second Wind", desc: "Heal after taking champion damage.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/SecondWind/SecondWind.png" },
     "overgrowth": { name: "Overgrowth", desc: "Gain permanent max health.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/Overgrowth/Overgrowth.png" },
     "first-strike": { name: "First Strike", desc: "Strike first for bonus damage and gold.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/FirstStrike/FirstStrike.png" },
+    "glacial-augment": { name: "Glacial Augment", desc: "Immobilizing attacks create slow rays.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/GlacialAugment/GlacialAugment.png" },
+    "unsealed-spellbook": { name: "Unsealed Spellbook", desc: "Swap summoner spells mid game.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/UnsealedSpellbook/UnsealedSpellbook.png" },
+    "hextech-flashtraption": { name: "Hextech Flashtraption", desc: "Flash while on cooldown after channel.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/HextechFlashtraption/HextechFlashtraption.png" },
+    "cashback": { name: "Cash Back", desc: "Receive gold back on purchases.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/CashBack/CashBack2.png" },
+    "triple-tonic": { name: "Triple Tonic", desc: "Gain elixirs through the game.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/TripleTonic/TripleTonic.png" },
+    "time-warp-tonic": { name: "Time Warp Tonic", desc: "Potions grant immediate effects and speed.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/TimeWarpTonic/TimeWarpTonic.png" },
+    "approach-velocity": { name: "Approach Velocity", desc: "Move faster toward impaired enemies.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/ApproachVelocity/ApproachVelocity.png" },
+    "jack-of-all-trades": { name: "Jack of All Trades", desc: "Gain value from varied stats.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/JackOfAllTrades/JackofAllTrades2.png" },
     "magical-footwear": { name: "Magical Footwear", desc: "Get free boots at 12 min.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/MagicalFootwear/MagicalFootwear.png" },
     "biscuit-delivery": { name: "Biscuit Delivery", desc: "Periodic lane sustain biscuits.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/BiscuitDelivery/BiscuitDelivery.png" },
     "cosmic-insight": { name: "Cosmic Insight", desc: "Summoner and item haste.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/CosmicInsight/CosmicInsight.png" },
@@ -469,11 +507,31 @@ function renderRunePanel() {
   `;
 }
 
+function flattenSecondaryOptions(pathId) {
+  const rows = RUNE_DATA.paths[pathId]?.primaryRows || [];
+  return rows.slice(1).flat();
+}
+
+function getPathPrimaryDefaults(pathId) {
+  return (RUNE_DATA.pathDefaults[pathId] || ["arcane-comet", "manaflow-band", "absolute-focus", "gathering-storm"]).slice(0, 4);
+}
+
+function getPathSecondaryDefaults(pathId) {
+  const flat = flattenSecondaryOptions(pathId);
+  return [flat[0], flat[1] || flat[0]];
+}
+
 function getRuneOptions(target) {
   if (target.startsWith("primaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as primary path`, icon: p.icon }));
   if (target.startsWith("secondaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as secondary path`, icon: p.icon }));
-  if (target.startsWith("primary")) return RUNE_DATA.paths[BUILDER.runeSelections.primaryPath].options.map((id) => ({ id, ...getRuneMeta(id) }));
-  if (target.startsWith("secondary")) return RUNE_DATA.paths[BUILDER.runeSelections.secondaryPath].options.map((id) => ({ id, ...getRuneMeta(id) }));
+  if (target.startsWith("primary")) {
+    const rowIndex = Number(target.split("_")[1]);
+    const rows = RUNE_DATA.paths[BUILDER.runeSelections.primaryPath]?.primaryRows || [];
+    return (rows[rowIndex] || []).map((id) => ({ id, ...getRuneMeta(id) }));
+  }
+  if (target.startsWith("secondary")) {
+    return flattenSecondaryOptions(BUILDER.runeSelections.secondaryPath).map((id) => ({ id, ...getRuneMeta(id) }));
+  }
   return RUNE_DATA.shardOptions.map((id) => ({ id, ...getRuneMeta(id) }));
 }
 
@@ -482,7 +540,7 @@ function openRuneModal(target) {
   document.getElementById("runeModal").classList.remove("hidden");
   const options = getRuneOptions(target);
   document.getElementById("runeModalTitle").textContent = "Select Rune Option";
-  document.getElementById("runeModalList").innerHTML = options.map((o) => `<button class="rune-option-btn" onclick="selectRuneOption('${o.id}')">${runeImgTag(o)}<div><div><strong>${o.name}</strong></div><div class="rune-option-desc">${o.desc}</div></div></button>`).join("");
+  document.getElementById("runeModalList").innerHTML = options.map((o) => `<button class="rune-option-btn" onclick="selectRuneOption('${o.id}')">${runeImgTag(o)}<div><div class="rune-option-name">${o.name}</div><div class="rune-option-desc">${o.desc}</div></div></button>`).join("");
   document.getElementById("runeModal").onclick = (e) => {
     if (e.target.id === "runeModal") closeRuneModal();
   };
@@ -500,11 +558,11 @@ function selectRuneOption(id) {
   if (group === "shard") BUILDER.runeSelections.shards[Number(index)] = id;
   if (group === "primaryPath") {
     BUILDER.runeSelections.primaryPath = id;
-    BUILDER.runeSelections.primary = [...(RUNE_DATA.pathDefaults[id] || BUILDER.runeSelections.primary)];
+    BUILDER.runeSelections.primary = getPathPrimaryDefaults(id);
   }
   if (group === "secondaryPath") {
     BUILDER.runeSelections.secondaryPath = id;
-    BUILDER.runeSelections.secondary = [...(RUNE_DATA.pathDefaults[id] || BUILDER.runeSelections.secondary)].slice(0, 2);
+    BUILDER.runeSelections.secondary = getPathSecondaryDefaults(id);
   }
   renderRunePanel();
   closeRuneModal();
