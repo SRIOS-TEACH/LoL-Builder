@@ -555,6 +555,67 @@ function enhanceActiveTooltip(descriptionHtml) {
 }
 
 /**
+ * Replaces placeholder ACTIVE cooldown text with inferred cooldown seconds.
+ */
+function injectActiveCooldown(descriptionHtml, cooldownSeconds) {
+  if (cooldownSeconds === null || cooldownSeconds === undefined) return String(descriptionHtml || "");
+  let normalized = String(descriptionHtml || "");
+  normalized = normalized.replace(/(<active>\s*ACTIVE\s*<\/active>\s*)\((?:0|0\.0+)s\)/i, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${cooldownSeconds}s$2`);
+  return normalized;
+}
+
+/**
+ * Colors numeric tokens in formulas by damage type for readability.
+ */
+function colorFormulaNumbers(formulaText, damageType) {
+  const colors = { magic: "#00B0F0", physical: "#FF8C34", true: "#F9966B" };
+  const color = colors[damageType];
+  if (!color) return formulaText;
+  return formulaText.replace(/\b\d+(?:\.\d+)?%?\b/g, (n) => `<span class="stat-colored" style="color:${color}">${n}</span>`);
+}
+
+/**
+ * Injects extracted damage formulas into generic damage phrases across item tooltips.
+ */
+function injectDamageFormulaText(descriptionHtml, formulaLines) {
+  let enhanced = String(descriptionHtml || "");
+  const damageLines = (formulaLines || []).filter((line) => /damage/i.test(`${line.name} ${line.formula}`));
+  if (!damageLines.length) return enhanced;
+
+  const patterns = [
+    { type: "magic", regex: /dealing\s*<magicDamage>\s*magic damage\s*<\/magicDamage>/i },
+    { type: "physical", regex: /dealing\s*<physicalDamage>\s*physical damage\s*<\/physicalDamage>/i },
+    { type: "true", regex: /dealing\s*<trueDamage>\s*true damage\s*<\/trueDamage>/i },
+    { type: "magic", regex: /dealing\s+magic damage/i },
+    { type: "physical", regex: /dealing\s+physical damage/i },
+    { type: "true", regex: /dealing\s+true damage/i },
+  ];
+
+  patterns.forEach(({ type, regex }) => {
+    if (!regex.test(enhanced)) return;
+    const line = damageLines.find((l) => new RegExp(type, "i").test(`${l.name} ${l.formula}`)) || damageLines[0];
+    const coloredFormula = colorFormulaNumbers(line.formula, type);
+    enhanced = enhanced.replace(regex, `dealing ${coloredFormula} ${type} damage`);
+  });
+
+  return enhanced;
+}
+
+/**
+ * Bolds ACTIVE headers and formats active name inline with cooldown.
+ */
+function enhanceActiveTooltip(descriptionHtml) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(
+    /<active>\s*ACTIVE\s*<\/active>\s*\((\d+(?:\.\d+)?s)\)\s*<br>\s*<active>([^<]+)<\/active>/i,
+    (_match, cooldown, name) => `<strong><active>ACTIVE - ${name.trim()} (${cooldown})</active></strong>`
+  );
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+  return enhanced;
+}
+
+/**
  * Extracts burn DPS and total-damage helper rows from data values where possible.
  */
 function buildBurnMetrics(dataValueMap) {
@@ -641,10 +702,7 @@ function renderMapFilters(targetId, onChange) {
 function getSelectedMaps() {
   const checkboxes = Array.from(document.querySelectorAll("#mapFilters .map-checkbox"));
   const picked = checkboxes.filter((cb) => cb.checked).map((cb) => Number(cb.value));
-  if (picked.length) return new Set(picked);
-  const srBox = checkboxes.find((cb) => Number(cb.value) === 11) || checkboxes[0];
-  if (srBox) srBox.checked = true;
-  return new Set([11]);
+  return new Set(picked);
 }
 
 /**
