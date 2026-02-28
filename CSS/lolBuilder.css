@@ -9,7 +9,11 @@
  */
 
 body {
-  background: linear-gradient(180deg, #0d1224 0%, #11192e 100%);
+  --builder-splash-url: none;
+  background-image: linear-gradient(rgba(7, 12, 24, 0.78), rgba(8, 12, 24, 0.92)), var(--builder-splash-url);
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
   color: #e5ecff;
 }
 
@@ -17,7 +21,7 @@ body {
 .section-card {
   margin-top: 1rem;
   border: 1px solid #2c3f65;
-  background: rgba(16, 24, 45, 0.9);
+  background: rgba(16, 24, 45, 0.72);
 }
 
 .champion-splash {
@@ -35,7 +39,7 @@ body {
   overflow: hidden;
   min-height: 260px;
   padding: 1rem;
-  background: rgba(16, 24, 45, 0.9);
+  background: rgba(16, 24, 45, 0.72);
 }
 
 .splash-bg-card::before {
@@ -231,3 +235,24 @@ body {
 #itemActives ul {
   margin: 0.4rem 0 0.4rem 1rem;
 }
+
+.floating-card {
+  backdrop-filter: blur(3px);
+}
+
+.builder-dashboard {
+  min-height: calc(100vh - 7rem);
+}
+
+.stat-eq {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: #c9d4f6;
+  line-height: 1.2;
+}
+
+.item-modal-wide {
+  width: min(1300px, 97vw);
+}
+
+.w-full { width: 100%; }

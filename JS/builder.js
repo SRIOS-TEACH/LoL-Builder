@@ -23,6 +23,9 @@ const BUILDER = {
   itemSlots: Array(6).fill(""),
   activeSlot: null,
   itemTags: new Set(),
+  champTags: new Set(),
+  modalItemFiltered: [],
+  modalChampFiltered: [],
 };
 
 /**
@@ -45,6 +48,7 @@ async function initBuilder() {
     renderChampionSelect();
     renderItemSlots();
     initItemModal();
+    initChampionModal();
     setStatus("Data loaded successfully.");
   } catch (error) {
     console.error(error);
@@ -70,7 +74,8 @@ function wireLevelOptions() {
 /**
  * Returns true when an item can be bought on Summoner's Rift.
  */
-function isSummonersRiftItem(item) {
+function isSummonersRiftItem(id, item) {
+  if (["3040", "3042", "3121"].includes(String(id))) return true;
   return item.gold?.purchasable && item.maps?.[11] && !item.requiredAlly;
 }
 
@@ -86,7 +91,7 @@ async function loadBuilderData() {
 
   const items = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/item.json`).then((r) => r.json());
   Object.entries(items.data).forEach(([id, item]) => {
-    if (!isSummonersRiftItem(item)) return;
+    if (!isSummonersRiftItem(id, item)) return;
     BUILDER.items[id] = item;
     (item.tags || []).forEach((tag) => BUILDER.itemTags.add(tag));
   });
@@ -96,11 +101,79 @@ async function loadBuilderData() {
  * Renders champion dropdown options and wires champion-change handling.
  */
 function renderChampionSelect() {
-  const select = document.getElementById("builderChampion");
   const names = Object.keys(BUILDER.champions).sort((a, b) => a.localeCompare(b));
-  select.innerHTML = names.map((n) => `<option value="${n}">${n}</option>`).join("");
-  select.addEventListener("change", () => setChampion(select.value));
+  names.forEach((name) => {
+    const champ = BUILDER.champions[name];
+    (champ.tags || []).forEach((tag) => BUILDER.champTags.add(tag));
+  });
+  initChampionModal();
   setChampion(names[0]);
+}
+
+/**
+ * Initializes champion picker modal search/filter wiring.
+ */
+function initChampionModal() {
+  const modal = document.getElementById("champModal");
+  if (!modal) return;
+
+  document.getElementById("modalChampSearch").addEventListener("input", renderChampionModalGrid);
+  modal.addEventListener("click", (event) => {
+    if (event.target.id === "champModal") closeChampionModal();
+  });
+
+  const root = document.getElementById("modalChampFilters");
+  root.innerHTML = Array.from(BUILDER.champTags)
+    .sort((a, b) => a.localeCompare(b))
+    .map((tag) => `<label class="tag-pill"><input type="checkbox" class="champ-tag" value="${tag}"> ${tag}</label>`)
+    .join("");
+  root.querySelectorAll(".champ-tag").forEach((cb) => cb.addEventListener("change", renderChampionModalGrid));
+}
+
+function openChampionModal() {
+  document.getElementById("champModal").classList.remove("hidden");
+  renderChampionModalGrid();
+}
+
+function closeChampionModal() {
+  document.getElementById("champModal").classList.add("hidden");
+}
+
+function renderChampionModalGrid() {
+  const text = document.getElementById("modalChampSearch").value.trim().toLowerCase();
+  const tags = new Set(Array.from(document.querySelectorAll(".champ-tag:checked")).map((cb) => cb.value));
+
+  BUILDER.modalChampFiltered = Object.keys(BUILDER.champions)
+    .filter((name) => {
+      const c = BUILDER.champions[name];
+      const nameOk = !text || name.toLowerCase().includes(text);
+      const tagOk = !tags.size || Array.from(tags).every((t) => c.tags?.includes(t));
+      return nameOk && tagOk;
+    })
+    .sort((a, b) => a.localeCompare(b));
+
+  document.getElementById("modalChampResults").textContent = `${BUILDER.modalChampFiltered.length} champions`;
+  document.getElementById("modalChampGrid").innerHTML = BUILDER.modalChampFiltered
+    .map((name) => `<button class="item-button-icon" onclick="setChampionFromModal('${name.replace("'", "\'")}')" title="${name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.champions[name].image.full}" alt="${name}"></button>`)
+    .join("");
+
+  const pick = BUILDER.modalChampFiltered[0];
+  renderChampionModalDetail(pick || null);
+}
+
+function renderChampionModalDetail(name) {
+  const root = document.getElementById("modalChampDetail");
+  if (!name) {
+    root.innerHTML = "<p class='text-muted'>No champion found.</p>";
+    return;
+  }
+  const c = BUILDER.champions[name];
+  root.innerHTML = `<h3>${name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${c.image.full}' alt='${name}'><p><strong>Tags:</strong> ${(c.tags||[]).join(", ")}</p><p><strong>Title:</strong> ${c.title}</p><p>${c.blurb}</p>`;
+}
+
+function setChampionFromModal(name) {
+  setChampion(name);
+  closeChampionModal();
 }
 
 /**
@@ -113,7 +186,10 @@ async function setChampion(name) {
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
   BUILDER.abilityRanks = { q: 1, w: 0, e: 0, r: 0 };
 
-  document.getElementById("builderHeroCard").style.setProperty("--champ-splash-url", `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`);
+  const splashUrl = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`;
+  document.getElementById("builderHeroCard").style.setProperty("--champ-splash-url", splashUrl);
+  document.body.style.setProperty("--builder-splash-url", splashUrl);
+  document.getElementById("championPickerBtn").textContent = name;
   enforceAbilityRules();
   renderAbilityControls();
   renderAbilityCards();
@@ -203,7 +279,7 @@ function renderModalItemGrid() {
   const text = document.getElementById("modalItemSearch").value.trim().toLowerCase();
   const tags = new Set(Array.from(document.querySelectorAll(".modal-tag:checked")).map((cb) => cb.value));
 
-  const ids = Object.entries(BUILDER.items)
+  BUILDER.modalItemFiltered = Object.entries(BUILDER.items)
     .filter(([, item]) => {
       const nameOk = !text || item.name.toLowerCase().includes(text);
       const tagOk = !tags.size || Array.from(tags).every((t) => item.tags?.includes(t));
@@ -212,17 +288,31 @@ function renderModalItemGrid() {
     .sort((a, b) => a[1].name.localeCompare(b[1].name))
     .map(([id]) => id);
 
+  const ids = BUILDER.modalItemFiltered;
   document.getElementById("modalResultsCount").textContent = `${ids.length} items shown`;
-  document.getElementById("modalItemGrid").innerHTML =
-    `<button class="btn btn-sm mb-10" onclick="setSlotItem('')">Clear slot</button>` +
-    ids
-      .map(
-        (id) => `<button class="item-button" onclick="setSlotItem('${id}')">
-          <img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${BUILDER.items[id].name}">
-          <span>${BUILDER.items[id].name}</span>
-        </button>`
-      )
-      .join("");
+  document.getElementById("modalItemGrid").innerHTML = ids
+    .map((id) => `<button class="item-button-icon" onclick="previewAndSelectItem('${id}')" title="${BUILDER.items[id].name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${BUILDER.items[id].name}"></button>`)
+    .join("");
+
+  renderModalItemDetail(ids[0] || null);
+}
+
+function renderModalItemDetail(id) {
+  const root = document.getElementById("modalItemDetail");
+  if (!id) {
+    root.innerHTML = "<p class='text-muted'>No items found.</p>";
+    return;
+  }
+  const item = BUILDER.items[id];
+  const statLines = Object.entries(item.stats || {})
+    .filter(([, v]) => Number(v) !== 0)
+    .map(([k, v]) => `<div>${k}: ${v}</div>`)
+    .join("");
+  root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div><div class='mt-10'>${item.description || ""}</div><p class='mt-10'><strong>Tags:</strong> ${(item.tags || []).join(", ")}</p><button class='btn btn-sm mt-10' onclick="setSlotItem('${id}')">Select this item</button><button class='btn btn-sm mt-10 ml-5' onclick="setSlotItem('')">Clear slot</button>`;
+}
+
+function previewAndSelectItem(id) {
+  renderModalItemDetail(id);
 }
 
 /**
@@ -308,7 +398,7 @@ function getItemStats() {
     totals.ap += s.FlatMagicDamageMod || 0;
     totals.armor += s.FlatArmorMod || 0;
     totals.mr += s.FlatSpellBlockMod || 0;
-    totals.haste += s.FlatHasteMod || 0;
+    totals.haste += s.FlatHasteMod || s.FlatAbilityHasteMod || 0;
     totals.asPct += (s.PercentAttackSpeedMod || 0) * 100;
   });
   return totals;
@@ -329,19 +419,45 @@ function renderStats() {
   const base = BUILDER.championData.stats;
   const item = getItemStats();
   const L = BUILDER.level;
-  const stats = {
-    Health: scale(base.hp, base.hpperlevel, L) + item.hp,
-    Mana: scale(base.mp, base.mpperlevel, L) + item.mp,
-    AD: scale(base.attackdamage, base.attackdamageperlevel, L) + item.ad,
-    AP: item.ap,
-    Armor: scale(base.armor, base.armorperlevel, L) + item.armor,
-    MR: scale(base.spellblock, base.spellblockperlevel, L) + item.mr,
-    "Attack Speed": base.attackspeed * (1 + (base.attackspeedperlevel * (L - 1)) / 100) * (1 + item.asPct / 100),
-    "Ability Haste": item.haste,
-  };
 
-  document.getElementById("statsGrid").innerHTML = Object.entries(stats)
-    .map(([k, v]) => `<div class="stat-pill"><strong>${k}</strong><br>${v.toFixed(k === "Attack Speed" ? 3 : 1)}</div>`)
+  const hpBase = Number(base.hp.toFixed(1));
+  const hpGrowth = Number((base.hpperlevel * (L - 1)).toFixed(1));
+  const hpTotal = hpBase + hpGrowth + item.hp;
+
+  const mpBase = Number(base.mp.toFixed(1));
+  const mpGrowth = Number((base.mpperlevel * (L - 1)).toFixed(1));
+  const mpTotal = mpBase + mpGrowth + item.mp;
+
+  const adBase = Number(base.attackdamage.toFixed(1));
+  const adGrowth = Number((base.attackdamageperlevel * (L - 1)).toFixed(1));
+  const adTotal = adBase + adGrowth + item.ad;
+
+  const armorBase = Number(base.armor.toFixed(1));
+  const armorGrowth = Number((base.armorperlevel * (L - 1)).toFixed(1));
+  const armorTotal = armorBase + armorGrowth + item.armor;
+
+  const mrBase = Number(base.spellblock.toFixed(1));
+  const mrGrowth = Number((base.spellblockperlevel * (L - 1)).toFixed(1));
+  const mrTotal = mrBase + mrGrowth + item.mr;
+
+  const asBase = base.attackspeed;
+  const asGrowthMult = 1 + (base.attackspeedperlevel * (L - 1)) / 100;
+  const asItemMult = 1 + item.asPct / 100;
+  const asTotal = asBase * asGrowthMult * asItemMult;
+
+  const rows = [
+    { name: "Health", value: hpTotal, eq: `${hpBase} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp} = ${hpTotal.toFixed(1)}` },
+    { name: "Mana", value: mpTotal, eq: `${mpBase} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp} = ${mpTotal.toFixed(1)}` },
+    { name: "AD", value: adTotal, eq: `${adBase} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad} = ${adTotal.toFixed(1)}` },
+    { name: "AP", value: item.ap, eq: `0 + ${item.ap} = ${item.ap.toFixed(1)}` },
+    { name: "Armor", value: armorTotal, eq: `${armorBase} + ${base.armorperlevel.toFixed(1)}*${L - 1} + ${item.armor} = ${armorTotal.toFixed(1)}` },
+    { name: "MR", value: mrTotal, eq: `${mrBase} + ${base.spellblockperlevel.toFixed(1)}*${L - 1} + ${item.mr} = ${mrTotal.toFixed(1)}` },
+    { name: "Attack Speed", value: asTotal, eq: `${asBase.toFixed(3)} * ${asGrowthMult.toFixed(3)} * ${asItemMult.toFixed(3)} = ${asTotal.toFixed(3)}` },
+    { name: "Ability Haste", value: item.haste, eq: `0 + ${item.haste} = ${item.haste.toFixed(1)}` },
+  ];
+
+  document.getElementById("statsGrid").innerHTML = rows
+    .map((r) => `<div class="stat-pill"><strong>${r.name}</strong><br>${r.value.toFixed(r.name === "Attack Speed" ? 3 : 1)}<div class='stat-eq'>${r.eq}</div></div>`)
     .join("");
 }
 
