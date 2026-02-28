@@ -23,48 +23,77 @@ const BUILDER = {
 };
 
 const RUNE_DATA = {
+  pathDefaults: {
+    sorcery: ["arcane-comet", "manaflow-band", "absolute-focus", "gathering-storm"],
+    precision: ["press-the-attack", "presence-of-mind", "legend-haste", "cut-down"],
+    domination: ["electrocute", "cheap-shot", "eyeball-collection", "ultimate-hunter"],
+    resolve: ["grasp-of-the-undying", "demolish", "second-wind", "overgrowth"],
+    inspiration: ["first-strike", "magical-footwear", "biscuit-delivery", "cosmic-insight"],
+  },
   paths: {
     sorcery: {
       name: "Sorcery",
       splash: "url(https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/Sorcery.png)",
       icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/Sorcery.png",
-      options: [
-        { id: "arcane-comet", name: "Arcane Comet", desc: "Damaging an enemy with an ability hurls a comet at them.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/ArcaneComet/ArcaneComet.png" },
-        { id: "summon-aery", name: "Summon Aery", desc: "Attacks and abilities send Aery to target.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/SummonAery/SummonAery.png" },
-        { id: "phase-rush", name: "Phase Rush", desc: "Hitting an enemy grants burst of movement speed.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/PhaseRush/PhaseRush.png" },
-      ],
+      options: ["arcane-comet", "manaflow-band", "absolute-focus", "gathering-storm"],
     },
     precision: {
       name: "Precision",
       splash: "url(https://ddragon.canisback.com/img/perk-images/Styles/Precision/Precision.png)",
       icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/Precision.png",
-      options: [
-        { id: "legend-haste", name: "Legend: Haste", desc: "Gain ability haste from takedowns.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/LegendHaste/LegendHaste.png" },
-        { id: "cut-down", name: "Cut Down", desc: "Deal more damage to higher-health champions.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/CutDown/CutDown.png" },
-        { id: "presence-of-mind", name: "Presence of Mind", desc: "Restore mana and gain max mana on takedown.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/PresenceOfMind/PresenceOfMind.png" },
-      ],
+      options: ["press-the-attack", "presence-of-mind", "legend-haste", "cut-down"],
+    },
+    domination: {
+      name: "Domination",
+      splash: "url(https://ddragon.canisback.com/img/perk-images/Styles/Domination/Domination.png)",
+      icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/Domination.png",
+      options: ["electrocute", "cheap-shot", "eyeball-collection", "ultimate-hunter"],
+    },
+    resolve: {
+      name: "Resolve",
+      splash: "url(https://ddragon.canisback.com/img/perk-images/Styles/Resolve/Resolve.png)",
+      icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/Resolve.png",
+      options: ["grasp-of-the-undying", "demolish", "second-wind", "overgrowth"],
+    },
+    inspiration: {
+      name: "Inspiration",
+      splash: "url(https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/Inspiration.png)",
+      icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/Inspiration.png",
+      options: ["first-strike", "magical-footwear", "biscuit-delivery", "cosmic-insight"],
     },
   },
   runeLookup: {
     "arcane-comet": { name: "Arcane Comet", desc: "Damaging abilities launch a comet.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/ArcaneComet/ArcaneComet.png" },
+    "summon-aery": { name: "Summon Aery", desc: "Attacks and abilities send Aery.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/SummonAery/SummonAery.png" },
+    "phase-rush": { name: "Phase Rush", desc: "3 hits grant movement speed.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/PhaseRush/PhaseRush.png" },
     "manaflow-band": { name: "Manaflow Band", desc: "Abilities that hit grant max mana.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/ManaflowBand/ManaflowBand.png" },
-    "absolute-focus": { name: "Absolute Focus", desc: "Gain adaptive force when high health.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/AbsoluteFocus/AbsoluteFocus.png" },
+    "absolute-focus": { name: "Absolute Focus", desc: "Gain adaptive force at high health.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/AbsoluteFocus/AbsoluteFocus.png" },
     "gathering-storm": { name: "Gathering Storm", desc: "Gain increasing AD/AP over time.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/GatheringStorm/GatheringStorm.png" },
-    "legend-haste": { name: "Legend: Haste", desc: "Gain ability haste from Legend stacks.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/LegendHaste/LegendHaste.png" },
-    "cut-down": { name: "Cut Down", desc: "Bonus damage vs high-health enemies.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/CutDown/CutDown.png" },
+    "press-the-attack": { name: "Press the Attack", desc: "3 attacks expose targets.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/PressTheAttack/PressTheAttack.png" },
+    "presence-of-mind": { name: "Presence of Mind", desc: "Restore mana on takedown.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/PresenceOfMind/PresenceOfMind.png" },
+    "legend-haste": { name: "Legend: Haste", desc: "Gain ability haste via Legend stacks.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/LegendHaste/LegendHaste.png" },
+    "cut-down": { name: "Cut Down", desc: "Bonus damage vs high-health targets.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/CutDown/CutDown.png" },
+    "electrocute": { name: "Electrocute", desc: "3 separate hits burst damage.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/Electrocute/Electrocute.png" },
+    "cheap-shot": { name: "Cheap Shot", desc: "Bonus true damage to impaired enemies.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/CheapShot/CheapShot.png" },
+    "eyeball-collection": { name: "Eyeball Collection", desc: "Gain adaptive force from takedowns.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/EyeballCollection/EyeballCollection.png" },
+    "ultimate-hunter": { name: "Ultimate Hunter", desc: "Ultimate cooldown reduction.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Domination/UltimateHunter/UltimateHunter.png" },
+    "grasp-of-the-undying": { name: "Grasp of the Undying", desc: "Periodic empowered attack in combat.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/GraspOfTheUndying/GraspOfTheUndying.png" },
+    "demolish": { name: "Demolish", desc: "Charge attack against towers.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/Demolish/Demolish.png" },
+    "second-wind": { name: "Second Wind", desc: "Heal after taking champion damage.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/SecondWind/SecondWind.png" },
+    "overgrowth": { name: "Overgrowth", desc: "Gain permanent max health.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Resolve/Overgrowth/Overgrowth.png" },
+    "first-strike": { name: "First Strike", desc: "Strike first for bonus damage and gold.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/FirstStrike/FirstStrike.png" },
+    "magical-footwear": { name: "Magical Footwear", desc: "Get free boots at 12 min.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/MagicalFootwear/MagicalFootwear.png" },
+    "biscuit-delivery": { name: "Biscuit Delivery", desc: "Periodic lane sustain biscuits.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/BiscuitDelivery/BiscuitDelivery.png" },
+    "cosmic-insight": { name: "Cosmic Insight", desc: "Summoner and item haste.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Inspiration/CosmicInsight/CosmicInsight.png" },
     "adaptive-force": { name: "Adaptive", desc: "+9 Adaptive Force", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsAdaptiveForceIcon.png" },
-    "scaling-health": { name: "Scaling Health", desc: "+10-180 Health (based on level)", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsHealthScalingIcon.png" },
+    "attack-speed": { name: "Attack Speed", desc: "+10% Attack Speed", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsAttackSpeedIcon.png" },
+    "ability-haste": { name: "Ability Haste", desc: "+8 Ability Haste", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsCDRScalingIcon.png" },
+    "scaling-health": { name: "Scaling Health", desc: "+10-180 Health", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsHealthScalingIcon.png" },
+    "armor": { name: "Armor", desc: "+6 Armor", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsArmorIcon.png" },
+    "magic-resist": { name: "Magic Resist", desc: "+10 Magic Resist", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsMagicResIcon.png" },
   },
-  shardOptions: [
-    { id: "adaptive-force", name: "Adaptive", desc: "+9 Adaptive Force", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsAdaptiveForceIcon.png" },
-    { id: "attack-speed", name: "Attack Speed", desc: "+10% Attack Speed", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsAttackSpeedIcon.png" },
-    { id: "ability-haste", name: "Ability Haste", desc: "+8 Ability Haste", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsCDRScalingIcon.png" },
-    { id: "scaling-health", name: "Scaling Health", desc: "+10-180 Health", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsHealthScalingIcon.png" },
-    { id: "armor", name: "Armor", desc: "+6 Armor", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsArmorIcon.png" },
-    { id: "magic-resist", name: "Magic Resist", desc: "+10 Magic Resist", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsMagicResIcon.png" },
-  ],
+  shardOptions: ["adaptive-force", "attack-speed", "ability-haste", "scaling-health", "armor", "magic-resist"],
 };
-
 function setStatus(message, isError = false) {
   const el = document.getElementById("builderStatus");
   el.textContent = message || "";
@@ -160,7 +189,7 @@ function renderChampionModalGrid() {
 
   document.getElementById("modalChampResults").textContent = `${BUILDER.modalChampFiltered.length} champions`;
   document.getElementById("modalChampGrid").innerHTML = BUILDER.modalChampFiltered
-    .map((name) => `<button class=\"item-button-icon\" onclick=\"setChampionFromModal(${JSON.stringify(name)})\" title=\"${name}\"><img class=\"item-icon\" src=\"https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.champions[name].image.full}\" alt=\"${name}\"></button>`)
+    .map((name) => `<button class="item-button-icon" data-champ="${name}" onclick="setChampionFromModal(this.dataset.champ)" title="${name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.champions[name].image.full}" alt="${name}"></button>`)
     .join("");
   renderChampionModalDetail(BUILDER.modalChampFiltered[0] || null);
 }
@@ -178,6 +207,15 @@ function renderChampionModalDetail(name) {
 function setChampionFromModal(name) {
   setChampion(name);
   closeChampionModal();
+}
+
+function getRuneMeta(id) {
+  return RUNE_DATA.runeLookup[id] || { name: "Select", desc: "Pick a rune", icon: "" };
+}
+
+function runeImgTag(meta, className = "") {
+  const fallback = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='32' fill='%23111f3d'/><circle cx='32' cy='32' r='26' fill='%23273d70'/></svg>");
+  return `<img class="${className}" src="${meta.icon || fallback}" alt="${meta.name}" onerror="this.onerror=null;this.src='${fallback}'">`;
 }
 
 async function setChampion(name) {
@@ -408,8 +446,8 @@ function renderRunePanel() {
   document.getElementById("runesCard").style.setProperty("--rune-splash-url", primaryPath.splash);
 
   const renderSlot = (id, label, target) => {
-    const rune = RUNE_DATA.runeLookup[id] || { name: "Select", icon: primaryPath.icon, desc: "Pick a rune" };
-    return `<div class="rune-slot-row"><button class="rune-slot-btn" onclick="openRuneModal('${target}')"><img src="${rune.icon}" alt="${rune.name}"></button><div class="rune-slot-label">${label}<br>${rune.name}</div></div>`;
+    const rune = getRuneMeta(id);
+    return `<div class="rune-slot-row"><button class="rune-slot-btn" onclick="openRuneModal('${target}')">${runeImgTag(rune)}</button><div class="rune-slot-label">${label}<br>${rune.name}</div></div>`;
   };
 
   root.innerHTML = `
@@ -434,9 +472,9 @@ function renderRunePanel() {
 function getRuneOptions(target) {
   if (target.startsWith("primaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as primary path`, icon: p.icon }));
   if (target.startsWith("secondaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as secondary path`, icon: p.icon }));
-  if (target.startsWith("primary")) return RUNE_DATA.paths[BUILDER.runeSelections.primaryPath].options;
-  if (target.startsWith("secondary")) return RUNE_DATA.paths[BUILDER.runeSelections.secondaryPath].options;
-  return RUNE_DATA.shardOptions;
+  if (target.startsWith("primary")) return RUNE_DATA.paths[BUILDER.runeSelections.primaryPath].options.map((id) => ({ id, ...getRuneMeta(id) }));
+  if (target.startsWith("secondary")) return RUNE_DATA.paths[BUILDER.runeSelections.secondaryPath].options.map((id) => ({ id, ...getRuneMeta(id) }));
+  return RUNE_DATA.shardOptions.map((id) => ({ id, ...getRuneMeta(id) }));
 }
 
 function openRuneModal(target) {
@@ -444,7 +482,7 @@ function openRuneModal(target) {
   document.getElementById("runeModal").classList.remove("hidden");
   const options = getRuneOptions(target);
   document.getElementById("runeModalTitle").textContent = "Select Rune Option";
-  document.getElementById("runeModalList").innerHTML = options.map((o) => `<button class="rune-option-btn" onclick="selectRuneOption('${o.id}')"><img src="${o.icon}" alt="${o.name}"><div><div><strong>${o.name}</strong></div><div class="rune-option-desc">${o.desc}</div></div></button>`).join("");
+  document.getElementById("runeModalList").innerHTML = options.map((o) => `<button class="rune-option-btn" onclick="selectRuneOption('${o.id}')">${runeImgTag(o)}<div><div><strong>${o.name}</strong></div><div class="rune-option-desc">${o.desc}</div></div></button>`).join("");
   document.getElementById("runeModal").onclick = (e) => {
     if (e.target.id === "runeModal") closeRuneModal();
   };
@@ -460,8 +498,14 @@ function selectRuneOption(id) {
   if (group === "primary") BUILDER.runeSelections.primary[Number(index)] = id;
   if (group === "secondary") BUILDER.runeSelections.secondary[Number(index)] = id;
   if (group === "shard") BUILDER.runeSelections.shards[Number(index)] = id;
-  if (group === "primaryPath") BUILDER.runeSelections.primaryPath = id;
-  if (group === "secondaryPath") BUILDER.runeSelections.secondaryPath = id;
+  if (group === "primaryPath") {
+    BUILDER.runeSelections.primaryPath = id;
+    BUILDER.runeSelections.primary = [...(RUNE_DATA.pathDefaults[id] || BUILDER.runeSelections.primary)];
+  }
+  if (group === "secondaryPath") {
+    BUILDER.runeSelections.secondaryPath = id;
+    BUILDER.runeSelections.secondary = [...(RUNE_DATA.pathDefaults[id] || BUILDER.runeSelections.secondary)].slice(0, 2);
+  }
   renderRunePanel();
   closeRuneModal();
 }

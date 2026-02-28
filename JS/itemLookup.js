@@ -1409,6 +1409,161 @@ function enhanceActiveTooltip(descriptionHtml) {
 }
 
 /**
+ * Replaces placeholder ACTIVE cooldown text with inferred cooldown seconds.
+ */
+function injectActiveCooldown(descriptionHtml, cooldownSeconds) {
+  let normalized = String(descriptionHtml || "");
+  if (cooldownSeconds === null || cooldownSeconds === undefined) {
+    normalized = normalized.replace(/(<[a-zA-Z]+>\s*[^<]+\s*<\/[a-zA-Z]+>\s*)\((?:0|0\.0+)s\)/ig, "$1");
+    normalized = normalized.replace(/\((?:0|0\.0+)s\)/ig, "");
+    normalized = normalized.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, "ACTIVE");
+    return normalized;
+  }
+  normalized = normalized.replace(/(<active>\s*ACTIVE\s*<\/active>\s*)\((?:0|0\.0+)s\)/ig, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(<active>\s*[^<]+\s*<\/active>\s*)\((?:0|0\.0+)s\)/ig, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(<[a-zA-Z]+>\s*[^<]+\s*<\/[a-zA-Z]+>\s*)\((?:0|0\.0+)s\)/ig, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/\((?:0|0\.0+)s\)/ig, `(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${cooldownSeconds}s$2`);
+  return normalized;
+}
+
+/**
+ * Colors numeric tokens in formulas by damage type for readability.
+ */
+function colorFormulaNumbers(formulaText, damageType) {
+  const colors = { magic: "#00B0F0", physical: "#FF8C34", true: "#F9966B" };
+  const color = colors[damageType];
+  if (!color) return formulaText;
+  return formulaText.replace(/\b\d+(?:\.\d+)?%?\b/g, (n) => `<span class="stat-colored" style="color:${color}">${n}</span>`);
+}
+
+/**
+ * Bolds named ability headers emitted by tooltip tags (active/passive/unique/on-hit).
+ */
+function emphasizeAbilityHeaders(descriptionHtml) {
+  let html = String(descriptionHtml || "");
+  html = html.replace(/<(active|passive|unique|onhit)>\s*([^<]+?)\s*<\/\1>/gi, (_m, tag, name) => `<${tag}><strong>${name}</strong></${tag}>`);
+  return html;
+}
+
+function inferFallbackMetric(itemId, metricType) {
+  const values = getCdragonDataValueMap(itemId);
+  const entries = Object.entries(values).filter(([name, value]) => Number.isFinite(value) && value > 0);
+  if (!entries.length) return null;
+
+  const patterns = {
+    damage: /damage|onhit/i,
+    cooldown: /cooldown/i,
+    shield: /shield/i,
+  };
+  const pattern = patterns[metricType];
+  if (!pattern) return null;
+
+  const filtered = entries
+    .filter(([name]) => pattern.test(name) && !/multiplier|ratio|amp|percent/i.test(name))
+    .map(([, value]) => Number(value));
+  if (!filtered.length) return null;
+
+  const uniq = Array.from(new Set(filtered)).sort((a, b) => a - b);
+  if (metricType === "cooldown") {
+    return uniq.length > 1 ? `${uniq[uniq.length - 1]} → ${uniq[0]}s` : `${uniq[0]}s`;
+  }
+  return uniq.length > 1 ? `${uniq[0]} → ${uniq[uniq.length - 1]}` : `${uniq[0]}`;
+}
+
+function injectDamageFormulaText(descriptionHtml, formulaLines, itemId = null) {
+  let enhanced = String(descriptionHtml || "");
+  const damageLines = (formulaLines || []).filter((line) => /damage/i.test(`${line.name} ${line.formula}`));
+
+  if (!damageLines.length && itemId !== null) {
+    const fallbackDamage = inferFallbackMetric(itemId, "damage");
+    if (fallbackDamage) {
+      enhanced = enhanced.replace(/<magicDamage>\s*(?:bonus\s+)?magic damage\s*<\/magicDamage>/i, `${fallbackDamage} magic damage`);
+      enhanced = enhanced.replace(/<physicalDamage>\s*(?:bonus\s+)?physical damage\s*<\/physicalDamage>/i, `${fallbackDamage} physical damage`);
+      enhanced = enhanced.replace(/<trueDamage>\s*(?:bonus\s+)?true damage\s*<\/trueDamage>/i, `${fallbackDamage} true damage`);
+      enhanced = enhanced.replace(/\b(?:deal|dealing|deals)\s+(?:bonus\s+)?magic damage\b/i, `dealing ${fallbackDamage} magic damage`);
+      enhanced = enhanced.replace(/\b(?:deal|dealing|deals)\s+(?:bonus\s+)?physical damage\b/i, `dealing ${fallbackDamage} physical damage`);
+      enhanced = enhanced.replace(/\b(?:deal|dealing|deals)\s+(?:bonus\s+)?true damage\b/i, `dealing ${fallbackDamage} true damage`);
+    }
+  }
+
+  if (damageLines.length) {
+    const bestLineForType = (type) => damageLines.find((l) => new RegExp(type, "i").test(`${l.name} ${l.formula}`)) || damageLines[0];
+    const replacements = [
+      { type: "magic", regex: /<magicDamage>\s*(?:bonus\s+)?magic damage\s*<\/magicDamage>/i },
+      { type: "physical", regex: /<physicalDamage>\s*(?:bonus\s+)?physical damage\s*<\/physicalDamage>/i },
+      { type: "true", regex: /<trueDamage>\s*(?:bonus\s+)?true damage\s*<\/trueDamage>/i },
+      { type: "magic", regex: /\b(?:deal|dealing|deals)\s+(?:bonus\s+)?magic damage\b/i, withVerb: true },
+      { type: "physical", regex: /\b(?:deal|dealing|deals)\s+(?:bonus\s+)?physical damage\b/i, withVerb: true },
+      { type: "true", regex: /\b(?:deal|dealing|deals)\s+(?:bonus\s+)?true damage\b/i, withVerb: true },
+    ];
+
+    replacements.forEach(({ type, regex, withVerb }) => {
+      if (!regex.test(enhanced)) return;
+      const line = bestLineForType(type);
+      const coloredFormula = colorFormulaNumbers(line.formula, type);
+      enhanced = enhanced.replace(regex, withVerb ? `dealing ${coloredFormula} ${type} damage` : `${coloredFormula} ${type} damage`);
+    });
+  }
+
+  if (/\bwith a cooldown\b/i.test(enhanced)) {
+    const cooldownLine = (formulaLines || []).find((l) => /cooldown/i.test(`${l.name} ${l.formula}`));
+    const cooldownText = cooldownLine?.formula || (itemId !== null ? inferFallbackMetric(itemId, "cooldown") : null);
+    if (cooldownText) enhanced = enhanced.replace(/\bwith a cooldown\b/i, `with a ${cooldownText} cooldown`);
+  }
+
+  const shieldLine = (formulaLines || []).find((l) => /shield/i.test(`${l.name} ${l.formula}`))
+    || (formulaLines || []).find((l) => /\d/.test(l.formula));
+  if (/shield/i.test(enhanced)) {
+    const shieldText = shieldLine?.formula || (itemId !== null ? inferFallbackMetric(itemId, "shield") : null);
+    if (shieldText) {
+      enhanced = enhanced.replace(/\bgain a shield\b/i, `Gain a ${shieldText} Shield`);
+      enhanced = enhanced.replace(/\bgain a magic shield\b/i, `Gain a ${shieldText} magic Shield`);
+      enhanced = enhanced.replace(/\bto a shield\b/i, `to a ${shieldText} Shield`);
+      enhanced = enhanced.replace(/\bgrants? a (?:magic damage )?shield\b/i, `grants a ${shieldText} magic Shield`);
+
+      enhanced = enhanced.replace(/to a\s*<shield>\s*shield\s*<\/shield>/i, `to a ${shieldText} Shield`);
+      enhanced = enhanced.replace(/grants? a\s*<shield>\s*magic damage shield\s*<\/shield>/i, `grants a ${shieldText} magic Shield`);
+      enhanced = enhanced.replace(/gain a\s*<shield>\s*<\/shield>\s*<magicDamage>\s*magic\s*<\/magicDamage>\s*<shield>\s*shield\s*<\/shield>/i, `Gain a ${shieldText} magic Shield`);
+      enhanced = enhanced.replace(/gain a\s*(?:<magicDamage>\s*magic(?: damage)?\s*<\/magicDamage>\s*)?<shield>\s*shield\s*<\/shield>/i, `Gain a ${shieldText} magic Shield`);
+      enhanced = enhanced.replace(/grants? a\s*(?:<magicDamage>\s*magic(?: damage)?\s*<\/magicDamage>\s*)?<shield>\s*shield\s*<\/shield>/i, `grants a ${shieldText} magic Shield`);
+    }
+  }
+
+  return enhanced;
+}
+
+/**
+ * Bolds ACTIVE headers and formats active name inline with cooldown.
+ */
+function enhanceActiveTooltip(descriptionHtml) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(
+    /<active>\s*ACTIVE\s*<\/active>\s*\((\d+(?:\.\d+)?s)\)\s*<br>\s*<active>([^<]+)<\/active>/i,
+    (_match, cooldown, name) => `<strong><active>ACTIVE - ${name.trim()} (${cooldown})</active></strong>`
+  );
+  enhanced = enhanced.replace(
+    /<active>\s*([^<]+)\s*<\/active>\s*\((\d+(?:\.\d+)?s)\)/i,
+    (_match, name, cooldown) => {
+      const cleanName = name.trim();
+      if (/^active$/i.test(cleanName)) return `<strong><active>ACTIVE (${cooldown})</active></strong>`;
+      return `<strong><active>ACTIVE - ${cleanName} (${cooldown})</active></strong>`;
+    }
+  );
+  enhanced = enhanced.replace(
+    /\bACTIVE\s*\((\d+(?:\.\d+)?s)\)\s*<br>\s*([^<\n]+)\b/i,
+    (_match, cooldown, name) => `<strong>ACTIVE - ${name.trim()} (${cooldown})</strong>`
+  );
+
+  enhanced = enhanced.replace(
+    /<active>\s*<strong>Active\s*-<\/strong>\s*<\/active>\s*<active>\s*<strong>([^<:]+):<\/strong>\s*<\/active>/i,
+    (_m, name) => `<active><strong>ACTIVE - ${name.trim()}:</strong></active>`
+  );
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+  return enhanced;
+}
+
+/**
  * Extracts burn DPS and total-damage helper rows from data values where possible.
  */
 function buildBurnMetrics(dataValueMap) {
