@@ -411,6 +411,24 @@ function inferActiveCooldownSeconds(itemId) {
   return null;
 }
 
+
+/**
+ * Bolds ACTIVE cooldown headers and injects computed active damage formulas into tooltip text.
+ */
+function enhanceActiveTooltip(descriptionHtml, formulaLines) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+
+  const activeDamage = (formulaLines || []).find((line) => /active\s*damage/i.test(line.name))
+    || (formulaLines || []).find((line) => line.category === "Active" && /damage/i.test(line.name));
+
+  if (activeDamage) {
+    enhanced = enhanced.replace(/dealing\s+magic damage/i, `dealing ${activeDamage.formula} magic damage`);
+  }
+
+  return enhanced;
+}
+
 /**
  * Replaces placeholder ACTIVE cooldown text with inferred cooldown seconds.
  */
