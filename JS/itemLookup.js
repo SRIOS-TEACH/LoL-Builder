@@ -445,6 +445,115 @@ function inferActiveCooldownSeconds(itemId) {
   return null;
 }
 
+
+/**
+ * Bolds ACTIVE cooldown headers and injects computed active damage formulas into tooltip text.
+ */
+function enhanceActiveTooltip(descriptionHtml, formulaLines) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+
+  const activeDamage = (formulaLines || []).find((line) => /active\s*damage/i.test(line.name))
+    || (formulaLines || []).find((line) => line.category === "Active" && /damage/i.test(line.name));
+
+  if (activeDamage) {
+    enhanced = enhanced.replace(/dealing\s+magic damage/i, `dealing ${activeDamage.formula} magic damage`);
+  }
+
+  return enhanced;
+}
+
+/**
+ * Replaces placeholder ACTIVE cooldown text with inferred cooldown seconds.
+ */
+function injectActiveCooldown(descriptionHtml, cooldownSeconds) {
+  if (cooldownSeconds === null || cooldownSeconds === undefined) return String(descriptionHtml || "");
+  let normalized = String(descriptionHtml || "");
+  normalized = normalized.replace(/(<active>\s*ACTIVE\s*<\/active>\s*)\((?:0|0\.0+)s\)/i, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${cooldownSeconds}s$2`);
+  return normalized;
+}
+
+/**
+ * Bolds ACTIVE cooldown headers and injects computed active damage formulas into tooltip text.
+ */
+function enhanceActiveTooltip(descriptionHtml, formulaLines) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(/(<active>\s*ACTIVE\s*<\/active>\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+
+  const activeDamage = (formulaLines || []).find((line) => /active\s*damage/i.test(line.name))
+    || (formulaLines || []).find((line) => line.category === "Active" && /damage/i.test(line.name));
+
+  if (activeDamage) {
+    enhanced = enhanced.replace(/dealing\s*<magicDamage>\s*magic damage\s*<\/magicDamage>/i, `dealing ${activeDamage.formula} magic damage`);
+    enhanced = enhanced.replace(/dealing\s+magic damage/i, `dealing ${activeDamage.formula} magic damage`);
+  }
+
+  return enhanced;
+}
+
+/**
+ * Replaces placeholder ACTIVE cooldown text with inferred cooldown seconds.
+ */
+function injectActiveCooldown(descriptionHtml, cooldownSeconds) {
+  if (cooldownSeconds === null || cooldownSeconds === undefined) return String(descriptionHtml || "");
+  let normalized = String(descriptionHtml || "");
+  normalized = normalized.replace(/(<active>\s*ACTIVE\s*<\/active>\s*)\((?:0|0\.0+)s\)/i, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${cooldownSeconds}s$2`);
+  return normalized;
+}
+
+/**
+ * Colors numeric tokens in formulas by damage type for readability.
+ */
+function colorFormulaNumbers(formulaText, damageType) {
+  const colors = { magic: "#00B0F0", physical: "#FF8C34", true: "#F9966B" };
+  const color = colors[damageType];
+  if (!color) return formulaText;
+  return formulaText.replace(/\b\d+(?:\.\d+)?%?\b/g, (n) => `<span class="stat-colored" style="color:${color}">${n}</span>`);
+}
+
+/**
+ * Injects extracted damage formulas into generic damage phrases across item tooltips.
+ */
+function injectDamageFormulaText(descriptionHtml, formulaLines) {
+  let enhanced = String(descriptionHtml || "");
+  const damageLines = (formulaLines || []).filter((line) => /damage/i.test(`${line.name} ${line.formula}`));
+  if (!damageLines.length) return enhanced;
+
+  const patterns = [
+    { type: "magic", regex: /dealing\s*<magicDamage>\s*magic damage\s*<\/magicDamage>/i },
+    { type: "physical", regex: /dealing\s*<physicalDamage>\s*physical damage\s*<\/physicalDamage>/i },
+    { type: "true", regex: /dealing\s*<trueDamage>\s*true damage\s*<\/trueDamage>/i },
+    { type: "magic", regex: /dealing\s+magic damage/i },
+    { type: "physical", regex: /dealing\s+physical damage/i },
+    { type: "true", regex: /dealing\s+true damage/i },
+  ];
+
+  patterns.forEach(({ type, regex }) => {
+    if (!regex.test(enhanced)) return;
+    const line = damageLines.find((l) => new RegExp(type, "i").test(`${l.name} ${l.formula}`)) || damageLines[0];
+    const coloredFormula = colorFormulaNumbers(line.formula, type);
+    enhanced = enhanced.replace(regex, `dealing ${coloredFormula} ${type} damage`);
+  });
+
+  return enhanced;
+}
+
+/**
+ * Bolds ACTIVE headers and formats active name inline with cooldown.
+ */
+function enhanceActiveTooltip(descriptionHtml) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(
+    /<active>\s*ACTIVE\s*<\/active>\s*\((\d+(?:\.\d+)?s)\)\s*<br>\s*<active>([^<]+)<\/active>/i,
+    (_match, cooldown, name) => `<strong><active>ACTIVE - ${name.trim()} (${cooldown})</active></strong>`
+  );
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+  return enhanced;
+}
+
 /**
  * Replaces placeholder ACTIVE cooldown text with inferred cooldown seconds.
  */
