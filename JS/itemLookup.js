@@ -2,15 +2,15 @@
  * Item Lookup controller.
  *
  * Responsibilities:
- * - Load and dedupe Summoner's Rift purchasable items from Data Dragon.
+ * - Load purchasable Data Dragon items and filter by selected maps.
  * - Load CommunityDragon item calculation payloads for richer formula detail.
- * - Render item cost, raw stats, tooltip body, active details, and extracted formulas.
+ * - Render item cost, stats, tooltip body, and tags for the selected item.
  * - Color-code stat keywords in tooltip/details using the shared color table.
  *
  * Flow:
  * 1) `initItemLookup` loads versioned item data + CommunityDragon calculations.
  * 2) Search/tag filters update `ITEM_STATE.filteredIds` then render the icon grid.
- * 3) `showItem` composes the detailed panel (cost/stats/tooltip/actives/formulas).
+ * 3) `showItem` composes the detailed panel (cost/stats/tooltip/tags).
  */
 const ITEM_STATE = {
   version: "",
@@ -18,6 +18,7 @@ const ITEM_STATE = {
   filteredIds: [],
   tags: new Set(),
   selectedTags: new Set(),
+  selectedMaps: new Set([11]),
   selectedId: null,
   cdragonById: {},
   extractedById: {},
@@ -47,6 +48,12 @@ const RAW_STAT_KEYS = {
   FlatMagicPenetrationMod: "Magic Penetration",
   FlatLethalityMod: "Lethality",
 };
+
+const MAP_OPTIONS = [
+  { id: 11, label: "Summoners Rift" },
+  { id: 12, label: "ARAM" },
+  { id: 30, label: "Arena" },
+];
 
 /**
  * Ordered keyword->color table used for tooltip/detail stat highlighting.
@@ -80,22 +87,49 @@ const STAT_COLOR_RULES = [
 ].sort((a, b) => b[0].length - a[0].length);
 
 /**
- * Returns true when an item is purchasable and available on Summoner's Rift.
+ * Returns true when an item is purchasable and available on at least one map.
  */
-function isSummonersRiftItem(item) {
-  return item.gold?.purchasable && item.maps?.[11] && !item.requiredAlly;
+function isPurchasableItem(item) {
+  const mapEnabled = Object.values(item.maps || {}).some(Boolean);
+  return item.gold?.purchasable && mapEnabled && !item.requiredAlly;
 }
 
 /**
- * Deduplicates item entries by normalized name, keeping the highest numeric item id.
+ * Returns true when an item can be purchased on any currently-selected map.
  */
-function dedupeByNameKeepingLatest(itemEntries) {
+function itemMatchesSelectedMaps(item) {
+  const maps = item.maps || {};
+  return Array.from(ITEM_STATE.selectedMaps).some((mapId) => maps[mapId]);
+}
+
+/**
+ * Chooses one representative item id per normalized item name based on selected map priority.
+ */
+function dedupeByNameWithMapPriority(itemEntries) {
+  const selectedOrder = MAP_OPTIONS.map((m) => m.id).filter((id) => ITEM_STATE.selectedMaps.has(id));
   const byName = {};
+
+  function scoreItem(item) {
+    const maps = item.maps || {};
+    const idx = selectedOrder.findIndex((mapId) => maps[mapId]);
+    return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+  }
+
   itemEntries.forEach(([id, item]) => {
     const key = item.name.trim().toLowerCase();
     const current = byName[key];
-    if (!current || Number(id) > Number(current.id)) byName[key] = { id, item };
+    if (!current) {
+      byName[key] = { id, item };
+      return;
+    }
+
+    const currentScore = scoreItem(current.item);
+    const incomingScore = scoreItem(item);
+    if (incomingScore < currentScore || (incomingScore === currentScore && Number(id) > Number(current.id))) {
+      byName[key] = { id, item };
+    }
   });
+
   return Object.values(byName).map(({ id, item }) => [id, item]);
 }
 
@@ -460,6 +494,67 @@ function enhanceActiveTooltip(descriptionHtml, formulaLines) {
 }
 
 /**
+ * Replaces placeholder ACTIVE cooldown text with inferred cooldown seconds.
+ */
+function injectActiveCooldown(descriptionHtml, cooldownSeconds) {
+  if (cooldownSeconds === null || cooldownSeconds === undefined) return String(descriptionHtml || "");
+  let normalized = String(descriptionHtml || "");
+  normalized = normalized.replace(/(<active>\s*ACTIVE\s*<\/active>\s*)\((?:0|0\.0+)s\)/i, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${cooldownSeconds}s$2`);
+  return normalized;
+}
+
+/**
+ * Colors numeric tokens in formulas by damage type for readability.
+ */
+function colorFormulaNumbers(formulaText, damageType) {
+  const colors = { magic: "#00B0F0", physical: "#FF8C34", true: "#F9966B" };
+  const color = colors[damageType];
+  if (!color) return formulaText;
+  return formulaText.replace(/\b\d+(?:\.\d+)?%?\b/g, (n) => `<span class="stat-colored" style="color:${color}">${n}</span>`);
+}
+
+/**
+ * Injects extracted damage formulas into generic damage phrases across item tooltips.
+ */
+function injectDamageFormulaText(descriptionHtml, formulaLines) {
+  let enhanced = String(descriptionHtml || "");
+  const damageLines = (formulaLines || []).filter((line) => /damage/i.test(`${line.name} ${line.formula}`));
+  if (!damageLines.length) return enhanced;
+
+  const patterns = [
+    { type: "magic", regex: /dealing\s*<magicDamage>\s*magic damage\s*<\/magicDamage>/i },
+    { type: "physical", regex: /dealing\s*<physicalDamage>\s*physical damage\s*<\/physicalDamage>/i },
+    { type: "true", regex: /dealing\s*<trueDamage>\s*true damage\s*<\/trueDamage>/i },
+    { type: "magic", regex: /dealing\s+magic damage/i },
+    { type: "physical", regex: /dealing\s+physical damage/i },
+    { type: "true", regex: /dealing\s+true damage/i },
+  ];
+
+  patterns.forEach(({ type, regex }) => {
+    if (!regex.test(enhanced)) return;
+    const line = damageLines.find((l) => new RegExp(type, "i").test(`${l.name} ${l.formula}`)) || damageLines[0];
+    const coloredFormula = colorFormulaNumbers(line.formula, type);
+    enhanced = enhanced.replace(regex, `dealing ${coloredFormula} ${type} damage`);
+  });
+
+  return enhanced;
+}
+
+/**
+ * Bolds ACTIVE headers and formats active name inline with cooldown.
+ */
+function enhanceActiveTooltip(descriptionHtml) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(
+    /<active>\s*ACTIVE\s*<\/active>\s*\((\d+(?:\.\d+)?s)\)\s*<br>\s*<active>([^<]+)<\/active>/i,
+    (_match, cooldown, name) => `<strong><active>ACTIVE - ${name.trim()} (${cooldown})</active></strong>`
+  );
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+  return enhanced;
+}
+
+/**
  * Extracts burn DPS and total-damage helper rows from data values where possible.
  */
 function buildBurnMetrics(dataValueMap) {
@@ -501,16 +596,18 @@ async function initItemLookup() {
   ITEM_STATE.version = versions[0];
   const itemJson = await fetch(`https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/data/en_US/item.json`).then((r) => r.json());
 
-  const deduped = dedupeByNameKeepingLatest(Object.entries(itemJson.data).filter(([, item]) => isSummonersRiftItem(item)));
-  deduped.forEach(([id, item]) => {
-    ITEM_STATE.items[id] = item;
-    (item.tags || []).forEach((tag) => ITEM_STATE.tags.add(tag));
-  });
+  Object.entries(itemJson.data)
+    .filter(([, item]) => isPurchasableItem(item))
+    .forEach(([id, item]) => {
+      ITEM_STATE.items[id] = item;
+      (item.tags || []).forEach((tag) => ITEM_STATE.tags.add(tag));
+    });
 
   await loadCommunityDragonCalcs();
 
   document.getElementById("itemSearch").addEventListener("input", applyItemFilters);
   renderTagFilters("itemFilters", applyItemFilters);
+  renderMapFilters("mapFilters", applyItemFilters);
   applyItemFilters();
 }
 
@@ -526,6 +623,30 @@ function renderTagFilters(targetId, onChange) {
   root.querySelectorAll(".tag-checkbox").forEach((cb) => cb.addEventListener("change", onChange));
 }
 
+
+/**
+ * Renders map toggle checkboxes for manual map selection.
+ */
+function renderMapFilters(targetId, onChange) {
+  const root = document.getElementById(targetId);
+  root.innerHTML = MAP_OPTIONS
+    .map((map) => `<label class="tag-pill mr-5"><input type="checkbox" value="${map.id}" class="map-checkbox" ${ITEM_STATE.selectedMaps.has(map.id) ? "checked" : ""}> ${map.label}</label>`)
+    .join("");
+  root.querySelectorAll(".map-checkbox").forEach((cb) => cb.addEventListener("change", onChange));
+}
+
+/**
+ * Reads selected map checkboxes and returns map ids.
+ */
+function getSelectedMaps() {
+  const checkboxes = Array.from(document.querySelectorAll("#mapFilters .map-checkbox"));
+  const picked = checkboxes.filter((cb) => cb.checked).map((cb) => Number(cb.value));
+  if (picked.length) return new Set(picked);
+  const srBox = checkboxes.find((cb) => Number(cb.value) === 11) || checkboxes[0];
+  if (srBox) srBox.checked = true;
+  return new Set([11]);
+}
+
 /**
  * Reads selected tag checkboxes from a filter container and returns normalized tag names.
  */
@@ -538,14 +659,18 @@ function getSelectedTags(rootId) {
  */
 function applyItemFilters() {
   ITEM_STATE.selectedTags = getSelectedTags("itemFilters");
+  ITEM_STATE.selectedMaps = getSelectedMaps();
   const text = document.getElementById("itemSearch").value.trim().toLowerCase();
 
-  ITEM_STATE.filteredIds = Object.entries(ITEM_STATE.items)
+  const filteredEntries = Object.entries(ITEM_STATE.items)
+    .filter(([, item]) => itemMatchesSelectedMaps(item))
     .filter(([, item]) => {
       const nameOk = !text || item.name.toLowerCase().includes(text);
       const tagOk = !ITEM_STATE.selectedTags.size || Array.from(ITEM_STATE.selectedTags).every((t) => item.tags?.includes(t));
       return nameOk && tagOk;
-    })
+    });
+
+  ITEM_STATE.filteredIds = dedupeByNameWithMapPriority(filteredEntries)
     .sort((a, b) => a[1].name.localeCompare(b[1].name))
     .map(([id]) => id);
 
@@ -597,13 +722,14 @@ function showItem(id) {
   const { lines, extracted } = buildExtractedFormulas(id);
   const inferredCooldown = inferActiveCooldownSeconds(id);
   const normalizedDescription = injectActiveCooldown(resolvedDescription, inferredCooldown);
-  const tooltipMain = enhanceActiveTooltip(normalizedDescription, lines);
+  const formulaEnhancedDescription = injectDamageFormulaText(normalizedDescription, lines);
+  const tooltipMain = enhanceActiveTooltip(formulaEnhancedDescription);
 
   ITEM_STATE.extractedById[id] = extracted;
 
   document.getElementById("itemName").textContent = item.name;
   document.getElementById("itemIcon").src = `https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png`;
-  document.getElementById("itemMeta").innerHTML = `<strong>Tags:</strong> ${(item.tags || []).join(", ") || "-"}`;
   document.getElementById("itemCost").innerHTML = `<strong>Cost:</strong> ${item.gold?.total ?? 0}g`;
+  document.getElementById("itemMeta").innerHTML = `<strong>Tags:</strong> ${(item.tags || []).join(", ") || "-"}`;
   document.getElementById("itemTooltipMain").innerHTML = colorizeStatsInHtml(tooltipMain);
 }
