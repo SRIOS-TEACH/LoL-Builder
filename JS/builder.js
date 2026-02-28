@@ -1,17 +1,3 @@
-/**
- * Builder page controller.
- *
- * Responsibilities:
- * - Champion/level/item selection state.
- * - Item modal search + tag filtering UX.
- * - Ability-rank validation by level constraints.
- * - Aggregate base+item stats and render summary cards.
- *
- * Flow:
- * 1) `initBuilder` loads patch data, champions, and item catalog.
- * 2) User selects champion/level/items, then `enforceAbilityRules` keeps ranks valid.
- * 3) Stat + ability panels are re-rendered from combined champion and item state.
- */
 const BUILDER = {
   version: "",
   champions: {},
@@ -19,27 +5,72 @@ const BUILDER = {
   selectedChampion: "",
   championData: null,
   level: 1,
-  abilityRanks: { q: 1, w: 0, e: 0, r: 0 },
+  abilityRanks: { q: 0, w: 0, e: 0, r: 0 },
   itemSlots: Array(6).fill(""),
   activeSlot: null,
   itemTags: new Set(),
   champTags: new Set(),
   modalItemFiltered: [],
   modalChampFiltered: [],
+  runeModalTarget: null,
+  runeSelections: {
+    primaryPath: "sorcery",
+    secondaryPath: "precision",
+    primary: ["arcane-comet", "manaflow-band", "absolute-focus", "gathering-storm"],
+    secondary: ["legend-haste", "cut-down"],
+    shards: ["adaptive-force", "adaptive-force", "scaling-health"],
+  },
 };
 
-/**
- * Writes a builder status message and toggles error styling when needed.
- */
+const RUNE_DATA = {
+  paths: {
+    sorcery: {
+      name: "Sorcery",
+      splash: "url(https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/Sorcery.png)",
+      icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/Sorcery.png",
+      options: [
+        { id: "arcane-comet", name: "Arcane Comet", desc: "Damaging an enemy with an ability hurls a comet at them.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/ArcaneComet/ArcaneComet.png" },
+        { id: "summon-aery", name: "Summon Aery", desc: "Attacks and abilities send Aery to target.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/SummonAery/SummonAery.png" },
+        { id: "phase-rush", name: "Phase Rush", desc: "Hitting an enemy grants burst of movement speed.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/PhaseRush/PhaseRush.png" },
+      ],
+    },
+    precision: {
+      name: "Precision",
+      splash: "url(https://ddragon.canisback.com/img/perk-images/Styles/Precision/Precision.png)",
+      icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/Precision.png",
+      options: [
+        { id: "legend-haste", name: "Legend: Haste", desc: "Gain ability haste from takedowns.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/LegendHaste/LegendHaste.png" },
+        { id: "cut-down", name: "Cut Down", desc: "Deal more damage to higher-health champions.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/CutDown/CutDown.png" },
+        { id: "presence-of-mind", name: "Presence of Mind", desc: "Restore mana and gain max mana on takedown.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/PresenceOfMind/PresenceOfMind.png" },
+      ],
+    },
+  },
+  runeLookup: {
+    "arcane-comet": { name: "Arcane Comet", desc: "Damaging abilities launch a comet.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/ArcaneComet/ArcaneComet.png" },
+    "manaflow-band": { name: "Manaflow Band", desc: "Abilities that hit grant max mana.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/ManaflowBand/ManaflowBand.png" },
+    "absolute-focus": { name: "Absolute Focus", desc: "Gain adaptive force when high health.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/AbsoluteFocus/AbsoluteFocus.png" },
+    "gathering-storm": { name: "Gathering Storm", desc: "Gain increasing AD/AP over time.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Sorcery/GatheringStorm/GatheringStorm.png" },
+    "legend-haste": { name: "Legend: Haste", desc: "Gain ability haste from Legend stacks.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/LegendHaste/LegendHaste.png" },
+    "cut-down": { name: "Cut Down", desc: "Bonus damage vs high-health enemies.", icon: "https://ddragon.canisback.com/img/perk-images/Styles/Precision/CutDown/CutDown.png" },
+    "adaptive-force": { name: "Adaptive", desc: "+9 Adaptive Force", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsAdaptiveForceIcon.png" },
+    "scaling-health": { name: "Scaling Health", desc: "+10-180 Health (based on level)", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsHealthScalingIcon.png" },
+  },
+  shardOptions: [
+    { id: "adaptive-force", name: "Adaptive", desc: "+9 Adaptive Force", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsAdaptiveForceIcon.png" },
+    { id: "attack-speed", name: "Attack Speed", desc: "+10% Attack Speed", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsAttackSpeedIcon.png" },
+    { id: "ability-haste", name: "Ability Haste", desc: "+8 Ability Haste", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsCDRScalingIcon.png" },
+    { id: "scaling-health", name: "Scaling Health", desc: "+10-180 Health", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsHealthScalingIcon.png" },
+    { id: "armor", name: "Armor", desc: "+6 Armor", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsArmorIcon.png" },
+    { id: "magic-resist", name: "Magic Resist", desc: "+10 Magic Resist", icon: "https://ddragon.canisback.com/img/perk-images/StatMods/StatModsMagicResIcon.png" },
+  ],
+};
+
 function setStatus(message, isError = false) {
   const el = document.getElementById("builderStatus");
-  el.textContent = message;
+  el.textContent = message || "";
   el.classList.toggle("status-error", isError);
 }
 
-/**
- * Initializes Builder page data, selectors, modal wiring, and default render state.
- */
 async function initBuilder() {
   try {
     setStatus("Loading champion and item data...");
@@ -49,39 +80,31 @@ async function initBuilder() {
     renderItemSlots();
     initItemModal();
     initChampionModal();
-    setStatus("Data loaded successfully.");
+    renderRunePanel();
+    renderAbilityCards();
+    setStatus("");
   } catch (error) {
     console.error(error);
     setStatus("Failed to load data. Check internet connection and refresh.", true);
   }
 }
 
-/**
- * Builds level dropdown options and wires level-change refresh behavior.
- */
 function wireLevelOptions() {
   const level = document.getElementById("builderLevel");
   level.innerHTML = Array.from({ length: 18 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
   level.addEventListener("change", () => {
     BUILDER.level = Number(level.value);
     enforceAbilityRules();
-    renderAbilityControls();
     renderAbilityCards();
     renderStats();
   });
 }
 
-/**
- * Returns true when an item can be bought on Summoner's Rift.
- */
 function isSummonersRiftItem(id, item) {
   if (["3040", "3042", "3121"].includes(String(id))) return true;
   return item.gold?.purchasable && item.maps?.[11] && !item.requiredAlly;
 }
 
-/**
- * Loads latest patch metadata, champion index, and item catalog for builder usage.
- */
 async function loadBuilderData() {
   const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
   BUILDER.version = versions[0];
@@ -97,36 +120,22 @@ async function loadBuilderData() {
   });
 }
 
-/**
- * Renders champion dropdown options and wires champion-change handling.
- */
 function renderChampionSelect() {
-  const names = Object.keys(BUILDER.champions).sort((a, b) => a.localeCompare(b));
-  names.forEach((name) => {
-    const champ = BUILDER.champions[name];
-    (champ.tags || []).forEach((tag) => BUILDER.champTags.add(tag));
+  Object.keys(BUILDER.champions).forEach((name) => {
+    (BUILDER.champions[name].tags || []).forEach((tag) => BUILDER.champTags.add(tag));
   });
-  initChampionModal();
-  setChampion(names[0]);
+  document.getElementById("championPickerBtn").textContent = "Select champion";
 }
 
-/**
- * Initializes champion picker modal search/filter wiring.
- */
 function initChampionModal() {
   const modal = document.getElementById("champModal");
-  if (!modal) return;
-
   document.getElementById("modalChampSearch").addEventListener("input", renderChampionModalGrid);
   modal.addEventListener("click", (event) => {
     if (event.target.id === "champModal") closeChampionModal();
   });
-
   const root = document.getElementById("modalChampFilters");
-  root.innerHTML = Array.from(BUILDER.champTags)
-    .sort((a, b) => a.localeCompare(b))
-    .map((tag) => `<label class="tag-pill"><input type="checkbox" class="champ-tag" value="${tag}"> ${tag}</label>`)
-    .join("");
+  root.innerHTML = Array.from(BUILDER.champTags).sort((a, b) => a.localeCompare(b))
+    .map((tag) => `<label class="tag-pill"><input type="checkbox" class="champ-tag" value="${tag}"> ${tag}</label>`).join("");
   root.querySelectorAll(".champ-tag").forEach((cb) => cb.addEventListener("change", renderChampionModalGrid));
 }
 
@@ -142,23 +151,18 @@ function closeChampionModal() {
 function renderChampionModalGrid() {
   const text = document.getElementById("modalChampSearch").value.trim().toLowerCase();
   const tags = new Set(Array.from(document.querySelectorAll(".champ-tag:checked")).map((cb) => cb.value));
-
   BUILDER.modalChampFiltered = Object.keys(BUILDER.champions)
     .filter((name) => {
       const c = BUILDER.champions[name];
-      const nameOk = !text || name.toLowerCase().includes(text);
-      const tagOk = !tags.size || Array.from(tags).every((t) => c.tags?.includes(t));
-      return nameOk && tagOk;
+      return (!text || name.toLowerCase().includes(text)) && (!tags.size || Array.from(tags).every((t) => c.tags?.includes(t)));
     })
     .sort((a, b) => a.localeCompare(b));
 
   document.getElementById("modalChampResults").textContent = `${BUILDER.modalChampFiltered.length} champions`;
   document.getElementById("modalChampGrid").innerHTML = BUILDER.modalChampFiltered
-    .map((name) => `<button class="item-button-icon" onclick="setChampionFromModal('${name.replace("'", "\'")}')" title="${name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.champions[name].image.full}" alt="${name}"></button>`)
+    .map((name) => `<button class=\"item-button-icon\" onclick=\"setChampionFromModal(${JSON.stringify(name)})\" title=\"${name}\"><img class=\"item-icon\" src=\"https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.champions[name].image.full}\" alt=\"${name}\"></button>`)
     .join("");
-
-  const pick = BUILDER.modalChampFiltered[0];
-  renderChampionModalDetail(pick || null);
+  renderChampionModalDetail(BUILDER.modalChampFiltered[0] || null);
 }
 
 function renderChampionModalDetail(name) {
@@ -168,7 +172,7 @@ function renderChampionModalDetail(name) {
     return;
   }
   const c = BUILDER.champions[name];
-  root.innerHTML = `<h3>${name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${c.image.full}' alt='${name}'><p><strong>Tags:</strong> ${(c.tags||[]).join(", ")}</p><p><strong>Title:</strong> ${c.title}</p><p>${c.blurb}</p>`;
+  root.innerHTML = `<h3>${name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${c.image.full}' alt='${name}'><p><strong>Tags:</strong> ${(c.tags || []).join(", ")}</p><p>${c.blurb}</p>`;
 }
 
 function setChampionFromModal(name) {
@@ -176,40 +180,32 @@ function setChampionFromModal(name) {
   closeChampionModal();
 }
 
-/**
- * Loads selected champion details and refreshes splash, stats, abilities, and controls.
- */
 async function setChampion(name) {
   const details = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion/${name}.json`).then((r) => r.json());
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
-  BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
   BUILDER.abilityRanks = { q: 1, w: 0, e: 0, r: 0 };
+  BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
 
   const splashUrl = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`;
-  document.getElementById("builderHeroCard").style.setProperty("--champ-splash-url", splashUrl);
   document.body.style.setProperty("--builder-splash-url", splashUrl);
+  document.getElementById("runesCard").style.setProperty("--rune-splash-url", RUNE_DATA.paths[BUILDER.runeSelections.primaryPath].splash);
   document.getElementById("championPickerBtn").textContent = name;
+
+  document.getElementById("selectedChampionBadge").classList.remove("hidden");
+  document.getElementById("selectedChampionBadge").innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.championData.image.full}" alt="${name}">`;
+
   enforceAbilityRules();
-  renderAbilityControls();
   renderAbilityCards();
   renderStats();
 }
 
-/**
- * Creates clickable item slot UI for opening the item-selection modal.
- */
 function renderItemSlots() {
   const root = document.getElementById("itemSlots");
-  root.innerHTML = BUILDER.itemSlots
-    .map((_, i) => `<button class="item-slot-btn" onclick="openItemModal(${i})"><div class="item-slot-label">${i + 1}</div><div id="slotText${i}" class="item-slot-empty">+</div></button>`)
-    .join("");
+  root.innerHTML = BUILDER.itemSlots.map((_, i) => `<button class="item-slot-btn" onclick="openItemModal(${i})"><div id="slotText${i}" class="item-slot-empty">+</div></button>`).join("");
   refreshSlotLabels();
 }
 
-/**
- * Refreshes item slot labels/icons based on currently selected item ids.
- */
 function refreshSlotLabels() {
   BUILDER.itemSlots.forEach((id, i) => {
     const root = document.getElementById(`slotText${i}`);
@@ -224,83 +220,51 @@ function refreshSlotLabels() {
   });
 }
 
-/**
- * Wires modal search/filter controls and close/cancel interactions.
- */
 function initItemModal() {
   renderBuilderTagFilters();
   document.getElementById("modalItemSearch").addEventListener("input", renderModalItemGrid);
   document.getElementById("itemModal").addEventListener("click", (event) => {
     if (event.target.id === "itemModal") closeItemModal();
   });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeItemModal();
-  });
 }
 
-/**
- * Resets modal search text and selected tag filters before re-rendering item grid.
- */
 function clearModalFilters() {
   document.getElementById("modalItemSearch").value = "";
-  document.querySelectorAll(".modal-tag").forEach((cb) => {
-    cb.checked = false;
-  });
+  document.querySelectorAll(".modal-tag").forEach((cb) => { cb.checked = false; });
   renderModalItemGrid();
 }
 
-/**
- * Renders modal tag filters derived from current builder item data.
- */
 function renderBuilderTagFilters() {
   const root = document.getElementById("modalItemFilters");
-  root.innerHTML = Array.from(BUILDER.itemTags)
-    .sort((a, b) => a.localeCompare(b))
-    .map((tag) => `<label class="tag-pill"><input type="checkbox" class="modal-tag" value="${tag}"> ${tag}</label>`)
-    .join("");
+  root.innerHTML = Array.from(BUILDER.itemTags).sort((a, b) => a.localeCompare(b))
+    .map((tag) => `<label class="tag-pill"><input type="checkbox" class="modal-tag" value="${tag}"> ${tag}</label>`).join("");
   root.querySelectorAll(".modal-tag").forEach((cb) => cb.addEventListener("change", renderModalItemGrid));
 }
 
-/**
- * Opens the item modal for a specific slot and renders available filtered items.
- */
 function openItemModal(slot) {
   BUILDER.activeSlot = slot;
-  document.getElementById("itemModalTitle").textContent = `Select Item for Slot ${slot + 1}`;
+  document.getElementById("itemModalTitle").textContent = "Select Item";
   document.getElementById("itemModal").classList.remove("hidden");
   renderModalItemGrid();
 }
 
-/**
- * Closes item modal and clears active slot tracking.
- */
 function closeItemModal() {
   document.getElementById("itemModal").classList.add("hidden");
   BUILDER.activeSlot = null;
 }
 
-/**
- * Renders modal item candidates after applying current search and tag filters.
- */
 function renderModalItemGrid() {
   const text = document.getElementById("modalItemSearch").value.trim().toLowerCase();
   const tags = new Set(Array.from(document.querySelectorAll(".modal-tag:checked")).map((cb) => cb.value));
-
   BUILDER.modalItemFiltered = Object.entries(BUILDER.items)
-    .filter(([, item]) => {
-      const nameOk = !text || item.name.toLowerCase().includes(text);
-      const tagOk = !tags.size || Array.from(tags).every((t) => item.tags?.includes(t));
-      return nameOk && tagOk;
-    })
+    .filter(([, item]) => (!text || item.name.toLowerCase().includes(text)) && (!tags.size || Array.from(tags).every((t) => item.tags?.includes(t))))
     .sort((a, b) => a[1].name.localeCompare(b[1].name))
     .map(([id]) => id);
-
   const ids = BUILDER.modalItemFiltered;
   document.getElementById("modalResultsCount").textContent = `${ids.length} items shown`;
   document.getElementById("modalItemGrid").innerHTML = ids
-    .map((id) => `<button class="item-button-icon" onclick="previewAndSelectItem('${id}')" title="${BUILDER.items[id].name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${BUILDER.items[id].name}"></button>`)
+    .map((id) => `<button class="item-button-icon" onclick="renderModalItemDetail('${id}')" title="${BUILDER.items[id].name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${BUILDER.items[id].name}"></button>`)
     .join("");
-
   renderModalItemDetail(ids[0] || null);
 }
 
@@ -311,20 +275,10 @@ function renderModalItemDetail(id) {
     return;
   }
   const item = BUILDER.items[id];
-  const statLines = Object.entries(item.stats || {})
-    .filter(([, v]) => Number(v) !== 0)
-    .map(([k, v]) => `<div>${k}: ${v}</div>`)
-    .join("");
-  root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div><div class='mt-10'>${item.description || ""}</div><p class='mt-10'><strong>Tags:</strong> ${(item.tags || []).join(", ")}</p><button class='btn btn-sm mt-10' onclick="setSlotItem('${id}')">Select this item</button><button class='btn btn-sm mt-10 ml-5' onclick="setSlotItem('')">Clear slot</button>`;
+  const statLines = Object.entries(item.stats || {}).filter(([, v]) => Number(v) !== 0).map(([k, v]) => `<div>${k}: ${v}</div>`).join("");
+  root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div><div class='mt-10'>${item.description || ""}</div><button class='btn btn-sm mt-10' onclick="setSlotItem('${id}')">Select this item</button><button class='btn btn-sm mt-10 ml-5' onclick="setSlotItem('')">Clear slot</button>`;
 }
 
-function previewAndSelectItem(id) {
-  renderModalItemDetail(id);
-}
-
-/**
- * Assigns an item id to the active slot, then refreshes labels and computed stats.
- */
 function setSlotItem(itemId) {
   if (BUILDER.activeSlot === null) return;
   BUILDER.itemSlots[BUILDER.activeSlot] = itemId;
@@ -333,9 +287,6 @@ function setSlotItem(itemId) {
   closeItemModal();
 }
 
-/**
- * Returns max legal rank for an ability key at the current champion level.
- */
 function abilityMaxByLevel(level, spellKey) {
   if (spellKey === "r") {
     if (level >= 16) return 3;
@@ -346,54 +297,61 @@ function abilityMaxByLevel(level, spellKey) {
   return Math.min(5, Math.ceil(level / 2));
 }
 
-/**
- * Clamps ability ranks so totals and per-skill maxima remain legal for the level.
- */
 function enforceAbilityRules() {
-  const totalAllowed = BUILDER.level;
   ["q", "w", "e", "r"].forEach((k) => {
     BUILDER.abilityRanks[k] = Math.min(BUILDER.abilityRanks[k], abilityMaxByLevel(BUILDER.level, k));
   });
-
-  let total = Object.values(BUILDER.abilityRanks).reduce((sum, rank) => sum + rank, 0);
-  while (total > totalAllowed) {
-    const keys = ["q", "w", "e", "r"].sort((a, b) => BUILDER.abilityRanks[b] - BUILDER.abilityRanks[a]);
-    const pick = keys.find((k) => BUILDER.abilityRanks[k] > 0);
+  let total = Object.values(BUILDER.abilityRanks).reduce((a, b) => a + b, 0);
+  while (total > BUILDER.level) {
+    const pick = ["q", "w", "e", "r"].sort((a, b) => BUILDER.abilityRanks[b] - BUILDER.abilityRanks[a]).find((k) => BUILDER.abilityRanks[k] > 0);
     BUILDER.abilityRanks[pick] -= 1;
     total -= 1;
   }
 }
 
-/**
- * Renders ability rank selectors and wires changes through validation and refresh.
- */
-function renderAbilityControls() {
-  const root = document.getElementById("abilityRankControls");
-  root.innerHTML = ["q", "w", "e", "r"]
-    .map((k) => {
-      const max = abilityMaxByLevel(BUILDER.level, k);
-      const options = Array.from({ length: max + 1 }, (_, i) => `<option value="${i}">${i}</option>`).join("");
-      return `<div class="col-lg-3 col-6"><label class="label">${k.toUpperCase()} Rank<select class="form-control" id="rank_${k}">${options}</select></label></div>`;
-    })
-    .join("");
+function parseByRank(valueBurn, rank) {
+  if (!rank) return "-";
+  if (!valueBurn || valueBurn === "0") return "-";
+  const parts = String(valueBurn).split("/");
+  return parts[Math.max(0, Math.min(parts.length - 1, rank - 1))] || parts[0] || "-";
+}
 
+function renderAbilityCards() {
+  const root = document.getElementById("abilityCards");
+  if (!BUILDER.championData) {
+    root.innerHTML = "<div class='ability-card'><p class='text-muted'>Select a champion to view abilities.</p></div>";
+    document.getElementById("abilityRuleHint").textContent = "";
+    return;
+  }
+
+  const champ = BUILDER.championData;
+  const passive = `<div class="ability-card"><strong>Passive - ${champ.passive.name}</strong><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><p>${champ.passive.description}</p></div>`;
+
+  const spells = champ.spells.map((spell, i) => {
+    const key = ["q", "w", "e", "r"][i];
+    const max = abilityMaxByLevel(BUILDER.level, key);
+    const opts = Array.from({ length: max + 1 }, (_, idx) => `<option value="${idx}">${idx}</option>`).join("");
+    const rank = BUILDER.abilityRanks[key];
+    const cd = parseByRank(spell.cooldownBurn, rank);
+    const cost = parseByRank(spell.costBurn, rank);
+    const range = parseByRank(spell.rangeBurn, rank);
+    return `<div class="ability-card"><strong>${key.toUpperCase()} - ${spell.name}</strong><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><p>${spell.description}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div></div>`;
+  }).join("");
+
+  root.innerHTML = passive + spells;
   ["q", "w", "e", "r"].forEach((k) => {
     const el = document.getElementById(`rank_${k}`);
+    if (!el) return;
     el.value = String(BUILDER.abilityRanks[k]);
     el.addEventListener("change", () => {
       BUILDER.abilityRanks[k] = Number(el.value);
       enforceAbilityRules();
-      renderAbilityControls();
       renderAbilityCards();
     });
   });
-
-  document.getElementById("abilityRuleHint").textContent = `At level ${BUILDER.level}: basic abilities max ${abilityMaxByLevel(BUILDER.level, "q")}, R max ${abilityMaxByLevel(BUILDER.level, "r")}, total points available ${BUILDER.level}.`;
+  document.getElementById("abilityRuleHint").textContent = `At level ${BUILDER.level}: basic max ${abilityMaxByLevel(BUILDER.level, "q")}, R max ${abilityMaxByLevel(BUILDER.level, "r")}, total points ${BUILDER.level}.`;
 }
 
-/**
- * Aggregates additive stats from all selected items into a single stats object.
- */
 function getItemStats() {
   const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0 };
   BUILDER.itemSlots.forEach((id) => {
@@ -411,82 +369,99 @@ function getItemStats() {
   return totals;
 }
 
-/**
- * Computes level-scaled base stat growth using Riot's per-level scaling formula.
- */
-function scale(base, perLevel, level) {
-  return base + perLevel * (level - 1);
-}
-
-/**
- * Calculates and renders current champion + item stats into summary cards.
- */
 function renderStats() {
-  if (!BUILDER.championData) return;
+  const root = document.getElementById("statsTable");
+  if (!BUILDER.championData) {
+    root.innerHTML = "<p class='text-muted'>Select a champion to view stats.</p>";
+    return;
+  }
+
   const base = BUILDER.championData.stats;
   const item = getItemStats();
   const L = BUILDER.level;
 
-  const hpBase = Number(base.hp.toFixed(1));
-  const hpGrowth = Number((base.hpperlevel * (L - 1)).toFixed(1));
-  const hpTotal = hpBase + hpGrowth + item.hp;
-
-  const mpBase = Number(base.mp.toFixed(1));
-  const mpGrowth = Number((base.mpperlevel * (L - 1)).toFixed(1));
-  const mpTotal = mpBase + mpGrowth + item.mp;
-
-  const adBase = Number(base.attackdamage.toFixed(1));
-  const adGrowth = Number((base.attackdamageperlevel * (L - 1)).toFixed(1));
-  const adTotal = adBase + adGrowth + item.ad;
-
-  const armorBase = Number(base.armor.toFixed(1));
-  const armorGrowth = Number((base.armorperlevel * (L - 1)).toFixed(1));
-  const armorTotal = armorBase + armorGrowth + item.armor;
-
-  const mrBase = Number(base.spellblock.toFixed(1));
-  const mrGrowth = Number((base.spellblockperlevel * (L - 1)).toFixed(1));
-  const mrTotal = mrBase + mrGrowth + item.mr;
-
-  const asBase = base.attackspeed;
-  const asGrowthMult = 1 + (base.attackspeedperlevel * (L - 1)) / 100;
-  const asItemMult = 1 + item.asPct / 100;
-  const asTotal = asBase * asGrowthMult * asItemMult;
+  const hp = (base.hp + base.hpperlevel * (L - 1) + item.hp);
+  const mp = (base.mp + base.mpperlevel * (L - 1) + item.mp);
+  const ad = (base.attackdamage + base.attackdamageperlevel * (L - 1) + item.ad);
+  const armor = (base.armor + base.armorperlevel * (L - 1) + item.armor);
+  const mr = (base.spellblock + base.spellblockperlevel * (L - 1) + item.mr);
+  const asTotal = base.attackspeed * (1 + (base.attackspeedperlevel * (L - 1)) / 100) * (1 + item.asPct / 100);
 
   const rows = [
-    { name: "Health", value: hpTotal, eq: `${hpBase} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp} = ${hpTotal.toFixed(1)}` },
-    { name: "Mana", value: mpTotal, eq: `${mpBase} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp} = ${mpTotal.toFixed(1)}` },
-    { name: "AD", value: adTotal, eq: `${adBase} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad} = ${adTotal.toFixed(1)}` },
-    { name: "AP", value: item.ap, eq: `0 + ${item.ap} = ${item.ap.toFixed(1)}` },
-    { name: "Armor", value: armorTotal, eq: `${armorBase} + ${base.armorperlevel.toFixed(1)}*${L - 1} + ${item.armor} = ${armorTotal.toFixed(1)}` },
-    { name: "MR", value: mrTotal, eq: `${mrBase} + ${base.spellblockperlevel.toFixed(1)}*${L - 1} + ${item.mr} = ${mrTotal.toFixed(1)}` },
-    { name: "Attack Speed", value: asTotal, eq: `${asBase.toFixed(3)} * ${asGrowthMult.toFixed(3)} * ${asItemMult.toFixed(3)} = ${asTotal.toFixed(3)}` },
-    { name: "Ability Haste", value: item.haste, eq: `0 + ${item.haste} = ${item.haste.toFixed(1)}` },
+    { name: "HP", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)}` },
+    { name: "MP", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp.toFixed(1)}` },
+    { name: "AD", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad.toFixed(1)}` },
+    { name: "AP", value: item.ap, eq: `0 + ${item.ap.toFixed(1)}` },
+    { name: "Armor", value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${L - 1} + ${item.armor.toFixed(1)}` },
+    { name: "MR", value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${L - 1} + ${item.mr.toFixed(1)}` },
+    { name: "Attack Speed", value: asTotal, eq: `${base.attackspeed.toFixed(3)} * level mult * item mult` },
+    { name: "Ability Haste", value: item.haste, eq: `0 + ${item.haste.toFixed(1)}` },
   ];
 
-  document.getElementById("statsGrid").innerHTML = rows
-    .map((r) => {
-      const className = `stat-name-${r.name.toLowerCase().replace(/\s+/g, "-")}`;
-      const precision = r.name === "Attack Speed" ? 3 : 1;
-      return `<div class="stat-pill"><strong class="${className}">${r.name}</strong><br><span class="stat-value">${r.value.toFixed(precision)}</span><div class='stat-eq'>${r.eq}</div></div>`;
-    })
-    .join("");
+  root.innerHTML = `<table class="stats-table">${rows.map((r) => `<tr><td class="stats-label">${r.name}</td><td class="stats-value" title="${r.eq}">${r.value.toFixed(r.name === "Attack Speed" ? 3 : 1)}</td></tr>`).join("")}</table>`;
 }
 
-/**
- * Renders champion passive and spell cards with current rank highlights.
- */
-function renderAbilityCards() {
-  if (!BUILDER.championData) return;
-  const champ = BUILDER.championData;
-  const passive = `<div class="ability-card"><strong>Passive - ${champ.passive.name}</strong><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><p>${champ.passive.description}</p></div>`;
+function renderRunePanel() {
+  const root = document.getElementById("runePanel");
+  const primaryPath = RUNE_DATA.paths[BUILDER.runeSelections.primaryPath];
+  const secondaryPath = RUNE_DATA.paths[BUILDER.runeSelections.secondaryPath];
+  document.getElementById("runesCard").style.setProperty("--rune-splash-url", primaryPath.splash);
 
-  const spells = champ.spells
-    .map((spell, i) => {
-      const key = ["q", "w", "e", "r"][i];
-      const rank = BUILDER.abilityRanks[key];
-      return `<div class="ability-card"><strong>${key.toUpperCase()} (Rank ${rank}) - ${spell.name}</strong><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><p>${spell.description}</p><div><strong>Cooldown:</strong> ${spell.cooldownBurn}</div><div><strong>Cost:</strong> ${spell.costBurn || "No cost"}</div><div><strong>Range:</strong> ${spell.rangeBurn}</div></div>`;
-    })
-    .join("");
+  const renderSlot = (id, label, target) => {
+    const rune = RUNE_DATA.runeLookup[id] || { name: "Select", icon: primaryPath.icon, desc: "Pick a rune" };
+    return `<div class="rune-slot-row"><button class="rune-slot-btn" onclick="openRuneModal('${target}')"><img src="${rune.icon}" alt="${rune.name}"></button><div class="rune-slot-label">${label}<br>${rune.name}</div></div>`;
+  };
 
-  document.getElementById("abilityCards").innerHTML = passive + spells;
+  root.innerHTML = `
+    <div>
+      <div class="rune-column-title"><button class='btn btn-sm' onclick="openRuneModal('primaryPath_0')">${primaryPath.name}</button></div>
+      ${renderSlot(BUILDER.runeSelections.primary[0], "Keystone", "primary_0")}
+      ${renderSlot(BUILDER.runeSelections.primary[1], "Row 1", "primary_1")}
+      ${renderSlot(BUILDER.runeSelections.primary[2], "Row 2", "primary_2")}
+      ${renderSlot(BUILDER.runeSelections.primary[3], "Row 3", "primary_3")}
+    </div>
+    <div>
+      <div class="rune-column-title"><button class='btn btn-sm' onclick="openRuneModal('secondaryPath_0')">${secondaryPath.name}</button></div>
+      ${renderSlot(BUILDER.runeSelections.secondary[0], "Secondary 1", "secondary_0")}
+      ${renderSlot(BUILDER.runeSelections.secondary[1], "Secondary 2", "secondary_1")}
+      ${renderSlot(BUILDER.runeSelections.shards[0], "Shard 1", "shard_0")}
+      ${renderSlot(BUILDER.runeSelections.shards[1], "Shard 2", "shard_1")}
+      ${renderSlot(BUILDER.runeSelections.shards[2], "Shard 3", "shard_2")}
+    </div>
+  `;
+}
+
+function getRuneOptions(target) {
+  if (target.startsWith("primaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as primary path`, icon: p.icon }));
+  if (target.startsWith("secondaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as secondary path`, icon: p.icon }));
+  if (target.startsWith("primary")) return RUNE_DATA.paths[BUILDER.runeSelections.primaryPath].options;
+  if (target.startsWith("secondary")) return RUNE_DATA.paths[BUILDER.runeSelections.secondaryPath].options;
+  return RUNE_DATA.shardOptions;
+}
+
+function openRuneModal(target) {
+  BUILDER.runeModalTarget = target;
+  document.getElementById("runeModal").classList.remove("hidden");
+  const options = getRuneOptions(target);
+  document.getElementById("runeModalTitle").textContent = "Select Rune Option";
+  document.getElementById("runeModalList").innerHTML = options.map((o) => `<button class="rune-option-btn" onclick="selectRuneOption('${o.id}')"><img src="${o.icon}" alt="${o.name}"><div><div><strong>${o.name}</strong></div><div class="rune-option-desc">${o.desc}</div></div></button>`).join("");
+  document.getElementById("runeModal").onclick = (e) => {
+    if (e.target.id === "runeModal") closeRuneModal();
+  };
+}
+
+function closeRuneModal() {
+  document.getElementById("runeModal").classList.add("hidden");
+  BUILDER.runeModalTarget = null;
+}
+
+function selectRuneOption(id) {
+  const [group, index] = BUILDER.runeModalTarget.split("_");
+  if (group === "primary") BUILDER.runeSelections.primary[Number(index)] = id;
+  if (group === "secondary") BUILDER.runeSelections.secondary[Number(index)] = id;
+  if (group === "shard") BUILDER.runeSelections.shards[Number(index)] = id;
+  if (group === "primaryPath") BUILDER.runeSelections.primaryPath = id;
+  if (group === "secondaryPath") BUILDER.runeSelections.secondaryPath = id;
+  renderRunePanel();
+  closeRuneModal();
 }
