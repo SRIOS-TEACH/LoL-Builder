@@ -8,9 +8,7 @@
   <link href="CSS/lolBuilder.css" rel="stylesheet">
 </head>
 <body class="dark-mode" onload="initBuilder()">
-  <!-- Page purpose: combine champion + levels + items and inspect stat/ability state -->
   <div class="page-wrapper with-navbar with-transitions">
-    <!-- Shared navigation -->
     <nav class="navbar">
       <a href="main.html" class="navbar-brand">LoL Build Builder</a>
       <ul class="navbar-nav d-none d-md-flex">
@@ -21,59 +19,74 @@
       </ul>
     </nav>
 
-    <!-- Main page content -->
     <div class="content-wrapper">
-      <div class="container-fluid">
-        <div id="builderHeroCard" class="card section-card splash-bg-card">
-          <h1 class="content-title">Build Sandbox</h1>
-          <p class="text-muted">Focus: champion/item data correctness and stat validation before advanced damage simulation.</p>
-          <p id="builderStatus" class="status-text"></p>
-          <div class="row row-eq-spacing">
-            <div class="col-lg-4 col-12">
-              <label class="label">Champion
-                <select id="builderChampion" class="form-control"></select>
-              </label>
+      <div class="container-fluid builder-dashboard">
+        <div class="row row-eq-spacing builder-top-row">
+          <div class="col-lg-5 col-12">
+            <div id="builderHeroCard" class="card section-card floating-card compact-hero-card">
+              <h1 class="content-title">Build Sandbox</h1>
+              <p id="builderStatus" class="status-text"></p>
+              <div class="row row-eq-spacing">
+                <div class="col-sm-8 col-12">
+                  <label class="label">Champion</label>
+                  <button id="championPickerBtn" class="btn w-full" type="button" onclick="openChampionModal()">Select champion</button>
+                </div>
+                <div class="col-sm-4 col-12">
+                  <label class="label">Level
+                    <select id="builderLevel" class="form-control"></select>
+                  </label>
+                </div>
+              </div>
             </div>
-            <div class="col-lg-2 col-12">
-              <label class="label">Level
-                <select id="builderLevel" class="form-control"></select>
-              </label>
+          </div>
+          <div class="col-lg-7 col-12">
+            <div class="card section-card floating-card compact-card">
+              <h2 class="content-title">Current Stats</h2>
+              <div id="statsGrid" class="stats-grid compact-stats-grid"></div>
             </div>
           </div>
         </div>
 
-        <div class="card section-card">
-          <h2 class="content-title">Items</h2>
-          <div id="itemSlots" class="item-slots"></div>
-          <p class="text-muted mt-10">Click a slot to open item selector popup (search + filters, Summoner's Rift purchasables only).</p>
-        </div>
+        <div class="row row-eq-spacing mt-10">
+          <div class="col-lg-5 col-12">
+            <div class="card section-card floating-card compact-card">
+              <h2 class="content-title">Items</h2>
+              <div id="itemSlots" class="item-slots item-slots-icons"></div>
+            </div>
 
-        <div class="card section-card">
-          <h2 class="content-title">Ability Ranks</h2>
-          <div id="abilityRankControls" class="row"></div>
-          <small id="abilityRuleHint" class="text-muted"></small>
-        </div>
+            <div class="card section-card floating-card compact-card">
+              <h2 class="content-title">Runes / Masteries</h2>
+              <div class="rune-config-grid">
+                <label class="label">Primary Path<select class="form-control"><option>Sorcery</option><option>Precision</option><option>Domination</option><option>Resolve</option><option>Inspiration</option></select></label>
+                <label class="label">Keystone<select class="form-control"><option>Arcane Comet</option><option>Phase Rush</option><option>Summon Aery</option><option>First Strike</option></select></label>
+                <label class="label">Primary Rune 1<select class="form-control"><option>Manaflow Band</option><option>Nimbus Cloak</option><option>Nullifying Orb</option></select></label>
+                <label class="label">Primary Rune 2<select class="form-control"><option>Transcendence</option><option>Celerity</option><option>Absolute Focus</option></select></label>
+                <label class="label">Primary Rune 3<select class="form-control"><option>Gathering Storm</option><option>Scorch</option><option>Waterwalking</option></select></label>
+                <label class="label">Secondary Path<select class="form-control"><option>Precision</option><option>Domination</option><option>Resolve</option><option>Inspiration</option></select></label>
+                <label class="label">Secondary Rune 1<select class="form-control"><option>Legend: Haste</option><option>Cut Down</option><option>Presence of Mind</option></select></label>
+                <label class="label">Secondary Rune 2<select class="form-control"><option>Cut Down</option><option>Coup de Grace</option><option>Last Stand</option></select></label>
+                <label class="label">Shard 1<select class="form-control"><option>+9 Adaptive</option><option>+10% Attack Speed</option><option>+8 Ability Haste</option></select></label>
+                <label class="label">Shard 2<select class="form-control"><option>+9 Adaptive</option><option>+2% Move Speed</option><option>+10-180 Health</option></select></label>
+                <label class="label">Shard 3<select class="form-control"><option>+10-180 Health</option><option>+6 Armor</option><option>+10 MR</option></select></label>
+              </div>
+            </div>
+          </div>
 
-        <div class="card section-card">
-          <h2 class="content-title">Current Stats</h2>
-          <div id="statsGrid" class="stats-grid"></div>
-        </div>
-
-        <div class="card section-card">
-          <h2 class="content-title">Abilities</h2>
-          <div id="abilityCards" class="ability-grid"></div>
-        </div>
-
-        <div class="card section-card">
-          <h2 class="content-title">Damage/CDR/DPS/Burst</h2>
-          <p>This section is temporarily disabled until ability and stat validation is finalized.</p>
+          <div class="col-lg-7 col-12">
+            <div class="card section-card floating-card compact-card">
+              <h2 class="content-title">Abilities & Ranks</h2>
+              <div id="abilityRankControls" class="row row-eq-spacing"></div>
+              <small id="abilityRuleHint" class="text-muted"></small>
+              <div id="abilityCards" class="ability-grid compact-ability-grid mt-10"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <div id="itemModal" class="item-modal hidden" role="dialog" aria-modal="true">
-    <div class="item-modal-body">
+    <div class="item-modal-body item-modal-wide">
       <div class="item-modal-header">
         <h3 id="itemModalTitle">Select Item</h3>
         <div>
@@ -81,10 +94,41 @@
           <button class="btn btn-sm" type="button" onclick="closeItemModal()">Close</button>
         </div>
       </div>
-      <input id="modalItemSearch" class="form-control" placeholder="Search items" />
-      <p id="modalResultsCount" class="text-muted mt-10"></p>
-      <div id="modalItemFilters" class="tag-filters mt-10"></div>
-      <div id="modalItemGrid" class="item-grid mt-10"></div>
+      <div class="row row-eq-spacing">
+        <div class="col-lg-3 col-12">
+          <input id="modalItemSearch" class="form-control" placeholder="Search items" />
+          <div id="modalItemFilters" class="tag-filters tag-filters-column mt-10"></div>
+        </div>
+        <div class="col-lg-4 col-12">
+          <p id="modalResultsCount" class="text-muted"></p>
+          <div id="modalItemGrid" class="item-icon-grid mt-10"></div>
+        </div>
+        <div class="col-lg-5 col-12">
+          <div id="modalItemDetail" class="item-detail-panel"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="champModal" class="item-modal hidden" role="dialog" aria-modal="true">
+    <div class="item-modal-body item-modal-wide">
+      <div class="item-modal-header">
+        <h3>Select Champion</h3>
+        <button class="btn btn-sm" type="button" onclick="closeChampionModal()">Close</button>
+      </div>
+      <div class="row row-eq-spacing">
+        <div class="col-lg-3 col-12">
+          <input id="modalChampSearch" class="form-control" placeholder="Search champions" />
+          <div id="modalChampFilters" class="tag-filters tag-filters-column mt-10"></div>
+        </div>
+        <div class="col-lg-4 col-12">
+          <p id="modalChampResults" class="text-muted"></p>
+          <div id="modalChampGrid" class="item-icon-grid mt-10"></div>
+        </div>
+        <div class="col-lg-5 col-12">
+          <div id="modalChampDetail" class="item-detail-panel"></div>
+        </div>
+      </div>
     </div>
   </div>
 

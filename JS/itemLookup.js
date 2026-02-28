@@ -2,15 +2,15 @@
  * Item Lookup controller.
  *
  * Responsibilities:
- * - Load and dedupe Summoner's Rift purchasable items from Data Dragon.
+ * - Load purchasable Data Dragon items and filter by selected maps.
  * - Load CommunityDragon item calculation payloads for richer formula detail.
- * - Render item cost, raw stats, tooltip body, active details, and extracted formulas.
+ * - Render item cost, stats, tooltip body, and tags for the selected item.
  * - Color-code stat keywords in tooltip/details using the shared color table.
  *
  * Flow:
  * 1) `initItemLookup` loads versioned item data + CommunityDragon calculations.
  * 2) Search/tag filters update `ITEM_STATE.filteredIds` then render the icon grid.
- * 3) `showItem` composes the detailed panel (cost/stats/tooltip/actives/formulas).
+ * 3) `showItem` composes the detailed panel (cost/stats/tooltip/tags).
  */
 const ITEM_STATE = {
   version: "",
@@ -18,6 +18,7 @@ const ITEM_STATE = {
   filteredIds: [],
   tags: new Set(),
   selectedTags: new Set(),
+  selectedMaps: new Set([11]),
   selectedId: null,
   cdragonById: {},
   extractedById: {},
@@ -47,6 +48,14 @@ const RAW_STAT_KEYS = {
   FlatMagicPenetrationMod: "Magic Penetration",
   FlatLethalityMod: "Lethality",
 };
+
+const MAP_OPTIONS = [
+  { id: 11, label: "Summoners Rift" },
+  { id: 12, label: "ARAM" },
+  { id: 30, label: "Arena" },
+];
+
+const FORCE_INCLUDE_ITEM_IDS = new Set(["3040", "3042", "3121"]);
 
 /**
  * Ordered keyword->color table used for tooltip/detail stat highlighting.
@@ -80,22 +89,60 @@ const STAT_COLOR_RULES = [
 ].sort((a, b) => b[0].length - a[0].length);
 
 /**
- * Returns true when an item is purchasable and available on Summoner's Rift.
+ * Returns true when an item is purchasable and available on at least one map.
  */
-function isSummonersRiftItem(item) {
-  return item.gold?.purchasable && item.maps?.[11] && !item.requiredAlly;
+function isPurchasableItem(id, item) {
+  if (FORCE_INCLUDE_ITEM_IDS.has(String(id))) return true;
+  const mapEnabled = Object.values(item.maps || {}).some(Boolean);
+  return item.gold?.purchasable && mapEnabled && !item.requiredAlly;
 }
 
 /**
- * Deduplicates item entries by normalized name, keeping the highest numeric item id.
+ * Returns true when an item can be purchased on any currently-selected map.
  */
-function dedupeByNameKeepingLatest(itemEntries) {
+function itemMatchesSelectedMaps(item) {
+  const maps = item.maps || {};
+  return Array.from(ITEM_STATE.selectedMaps).some((mapId) => maps[mapId]);
+}
+
+/**
+ * Chooses one representative item id per normalized item name based on selected map priority.
+ */
+function dedupeByNameWithMapPriority(itemEntries) {
+  const selectedOrder = MAP_OPTIONS.map((m) => m.id).filter((id) => ITEM_STATE.selectedMaps.has(id));
   const byName = {};
+
+  function rankItem(id, item) {
+    const maps = item.maps || {};
+    const selectedIdx = selectedOrder.findIndex((mapId) => maps[mapId]);
+    const enabledMapCount = Object.values(maps).filter(Boolean).length;
+    const numericId = Number(id);
+    return {
+      selectedIdx: selectedIdx === -1 ? Number.MAX_SAFE_INTEGER : selectedIdx,
+      enabledMapCount,
+      numericId,
+    };
+  }
+
+  function isBetterCandidate(incoming, current) {
+    if (incoming.selectedIdx !== current.selectedIdx) return incoming.selectedIdx < current.selectedIdx;
+    if (incoming.enabledMapCount !== current.enabledMapCount) return incoming.enabledMapCount > current.enabledMapCount;
+    return incoming.numericId < current.numericId;
+  }
+
   itemEntries.forEach(([id, item]) => {
     const key = item.name.trim().toLowerCase();
     const current = byName[key];
-    if (!current || Number(id) > Number(current.id)) byName[key] = { id, item };
+    if (!current) {
+      byName[key] = { id, item };
+      return;
+    }
+
+    const currentRank = rankItem(current.id, current.item);
+    const incomingRank = rankItem(id, item);
+    if (isBetterCandidate(incomingRank, currentRank)) byName[key] = { id, item };
   });
+
   return Object.values(byName).map(({ id, item }) => [id, item]);
 }
 
@@ -187,7 +234,7 @@ function extractRawStats(item) {
 function inferStatFromDataValueName(name) {
   const key = (name || "").toLowerCase();
   if (!key) return null;
-  if (key.includes("ap") || key.includes("magicdamage")) return "AP";
+  if (key.includes("ap") || key.includes("magicdamage") || key.includes("spelldamage")) return "AP";
   if (key.includes("ad") || key.includes("physical")) return "AD";
   if (key.includes("armor") || key.includes("resist") || key.includes("mr")) return "resistances";
   if (key.includes("as") || key.includes("attackspeed")) return "attack speed";
@@ -213,6 +260,7 @@ function statLabel(part, dataValueName = "") {
     return "total AD";
   }
 
+  if (part?.mStat === undefined || part?.mStat === null) return inferStatFromDataValueName(dataValueName) || "AP";
   return labels[part?.mStat] || inferStatFromDataValueName(dataValueName) || "scaling stat";
 }
 
@@ -253,8 +301,15 @@ function formulaPartToText(part, dataValueMap, calcMap) {
     case "ByCharLevelInterpolationCalculationPart":
       return `${part.mStartValue ?? 0} → ${part.mEndValue ?? 0} (levels 1-18)`;
     case "ByCharLevelBreakpointsCalculationPart": {
-      const first = part.mLevel1Value ?? 0;
-      const bps = (part.mBreakpoints || []).map((bp) => `L${bp.mLevel}: +${bp.mBonusPerLevelAtAndAfter}/lvl`).join(", ");
+      const first = Number(part.mLevel1Value ?? 0);
+      const bps = (part.mBreakpoints || []).map((bp) => {
+        const lvl = bp.mLevel ?? "?";
+        const add = Number(bp.mAdditionalBonusAtThisLevel ?? 0);
+        const per = Number(bp.mBonusPerLevelAtAndAfter ?? 0);
+        if (add) return `L${lvl}: ${add > 0 ? "+" : ""}${add}`;
+        if (per) return `L${lvl}: ${per > 0 ? "+" : ""}${per}/lvl`;
+        return `L${lvl}`;
+      }).join(", ");
       return `${first} at L1${bps ? `; ${bps}` : ""}`;
     }
     case "BuffCounterByCoefficientCalculationPart":
@@ -289,7 +344,14 @@ function formulaPartToText(part, dataValueMap, calcMap) {
  */
 function gameCalculationToText(calcName, calc, calcMap, dataValueMap) {
   if (!calc || typeof calc !== "object") return "";
-  if (calc.__type === "GameCalculation") return (calc.mFormulaParts || []).map((p) => formulaPartToText(p, dataValueMap, calcMap)).join(" + ");
+  if (Array.isArray(calc.mFormulaParts)) {
+    const base = (calc.mFormulaParts || []).map((p) => formulaPartToText(p, dataValueMap, calcMap)).join(" + ");
+    if (calc.mRangedMultiplier) {
+      const ranged = formulaPartToText(calc.mRangedMultiplier, dataValueMap, calcMap);
+      return `${base} (${ranged} for ranged)`;
+    }
+    return base;
+  }
 
   if (calc.__type === "GameCalculationModified") {
     const base = calcMap[calc.mModifiedGameCalculation];
@@ -354,7 +416,9 @@ function buildExtractedFormulas(itemId) {
   const extracted = [];
   Object.entries(calcMap).forEach(([name, calc]) => {
     const formula = gameCalculationToText(name, calc, calcMap, dataValueMap);
-    if (!formula || /^\s*[0-9.]+\s*$/.test(formula)) return;
+    if (!formula) return;
+    const isPureNumeric = /^\s*[0-9.]+\s*$/.test(formula);
+    if (isPureNumeric && !/damage|shield|heal|cooldown/i.test(name)) return;
     const cleanName = prettyCalcName(name);
     const category = categorizeEffect(cleanName, formula);
     lines.push({ name: cleanName, formula, category });
@@ -411,6 +475,161 @@ function inferActiveCooldownSeconds(itemId) {
 }
 
 /**
+ * Replaces placeholder ACTIVE cooldown text with inferred cooldown seconds.
+ */
+function injectActiveCooldown(descriptionHtml, cooldownSeconds) {
+  let normalized = String(descriptionHtml || "");
+  if (cooldownSeconds === null || cooldownSeconds === undefined) {
+    normalized = normalized.replace(/(<[a-zA-Z]+>\s*[^<]+\s*<\/[a-zA-Z]+>\s*)\((?:0|0\.0+)s\)/ig, "$1");
+    normalized = normalized.replace(/\((?:0|0\.0+)s\)/ig, "");
+    normalized = normalized.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, "ACTIVE");
+    return normalized;
+  }
+  normalized = normalized.replace(/(<active>\s*ACTIVE\s*<\/active>\s*)\((?:0|0\.0+)s\)/ig, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(<active>\s*[^<]+\s*<\/active>\s*)\((?:0|0\.0+)s\)/ig, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(<[a-zA-Z]+>\s*[^<]+\s*<\/[a-zA-Z]+>\s*)\((?:0|0\.0+)s\)/ig, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/\((?:0|0\.0+)s\)/ig, `(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${cooldownSeconds}s$2`);
+  return normalized;
+}
+
+/**
+ * Colors numeric tokens in formulas by damage type for readability.
+ */
+function colorFormulaNumbers(formulaText, damageType) {
+  const colors = { magic: "#00B0F0", physical: "#FF8C34", true: "#F9966B" };
+  const color = colors[damageType];
+  if (!color) return formulaText;
+  return formulaText.replace(/\b\d+(?:\.\d+)?%?\b/g, (n) => `<span class="stat-colored" style="color:${color}">${n}</span>`);
+}
+
+/**
+ * Bolds named ability headers emitted by tooltip tags (active/passive/unique/on-hit).
+ */
+function emphasizeAbilityHeaders(descriptionHtml) {
+  let html = String(descriptionHtml || "");
+  html = html.replace(/<(active|passive|unique|onhit)>\s*([^<]+?)\s*<\/\1>/gi, (_m, tag, name) => `<${tag}><strong>${name}</strong></${tag}>`);
+  return html;
+}
+
+function inferFallbackMetric(itemId, metricType) {
+  const values = getCdragonDataValueMap(itemId);
+  const entries = Object.entries(values).filter(([name, value]) => Number.isFinite(value) && value > 0);
+  if (!entries.length) return null;
+
+  const patterns = {
+    damage: /damage|onhit/i,
+    cooldown: /cooldown/i,
+    shield: /shield/i,
+  };
+  const pattern = patterns[metricType];
+  if (!pattern) return null;
+
+  const filtered = entries
+    .filter(([name]) => pattern.test(name) && !/multiplier|ratio|amp|percent/i.test(name))
+    .map(([, value]) => Number(value));
+  if (!filtered.length) return null;
+
+  const uniq = Array.from(new Set(filtered)).sort((a, b) => a - b);
+  if (metricType === "cooldown") {
+    return uniq.length > 1 ? `${uniq[uniq.length - 1]} → ${uniq[0]}s` : `${uniq[0]}s`;
+  }
+  return uniq.length > 1 ? `${uniq[0]} → ${uniq[uniq.length - 1]}` : `${uniq[0]}`;
+}
+
+function injectDamageFormulaText(descriptionHtml, formulaLines, itemId = null) {
+  let enhanced = String(descriptionHtml || "");
+  const damageLines = (formulaLines || []).filter((line) => /damage/i.test(`${line.name} ${line.formula}`));
+
+  if (!damageLines.length && itemId !== null) {
+    const fallbackDamage = inferFallbackMetric(itemId, "damage");
+    if (fallbackDamage) {
+      enhanced = enhanced.replace(/<magicDamage>\s*(?:bonus\s+)?magic damage\s*<\/magicDamage>/i, `${fallbackDamage} magic damage`);
+      enhanced = enhanced.replace(/<physicalDamage>\s*(?:bonus\s+)?physical damage\s*<\/physicalDamage>/i, `${fallbackDamage} physical damage`);
+      enhanced = enhanced.replace(/<trueDamage>\s*(?:bonus\s+)?true damage\s*<\/trueDamage>/i, `${fallbackDamage} true damage`);
+      enhanced = enhanced.replace(/\b(?:deal|dealing|deals)\s+(?:bonus\s+)?magic damage\b/i, `dealing ${fallbackDamage} magic damage`);
+      enhanced = enhanced.replace(/\b(?:deal|dealing|deals)\s+(?:bonus\s+)?physical damage\b/i, `dealing ${fallbackDamage} physical damage`);
+      enhanced = enhanced.replace(/\b(?:deal|dealing|deals)\s+(?:bonus\s+)?true damage\b/i, `dealing ${fallbackDamage} true damage`);
+    }
+  }
+
+  if (damageLines.length) {
+    const bestLineForType = (type) => damageLines.find((l) => new RegExp(type, "i").test(`${l.name} ${l.formula}`)) || damageLines[0];
+    const replacements = [
+      { type: "magic", regex: /<magicDamage>\s*(?:bonus\s+)?magic damage\s*<\/magicDamage>/i },
+      { type: "physical", regex: /<physicalDamage>\s*(?:bonus\s+)?physical damage\s*<\/physicalDamage>/i },
+      { type: "true", regex: /<trueDamage>\s*(?:bonus\s+)?true damage\s*<\/trueDamage>/i },
+      { type: "magic", regex: /\b(?:deal|dealing|deals)\s+(?:bonus\s+)?magic damage\b/i, withVerb: true },
+      { type: "physical", regex: /\b(?:deal|dealing|deals)\s+(?:bonus\s+)?physical damage\b/i, withVerb: true },
+      { type: "true", regex: /\b(?:deal|dealing|deals)\s+(?:bonus\s+)?true damage\b/i, withVerb: true },
+    ];
+
+    replacements.forEach(({ type, regex, withVerb }) => {
+      if (!regex.test(enhanced)) return;
+      const line = bestLineForType(type);
+      const coloredFormula = colorFormulaNumbers(line.formula, type);
+      enhanced = enhanced.replace(regex, withVerb ? `dealing ${coloredFormula} ${type} damage` : `${coloredFormula} ${type} damage`);
+    });
+  }
+
+  if (/\bwith a cooldown\b/i.test(enhanced)) {
+    const cooldownLine = (formulaLines || []).find((l) => /cooldown/i.test(`${l.name} ${l.formula}`));
+    const cooldownText = cooldownLine?.formula || (itemId !== null ? inferFallbackMetric(itemId, "cooldown") : null);
+    if (cooldownText) enhanced = enhanced.replace(/\bwith a cooldown\b/i, `with a ${cooldownText} cooldown`);
+  }
+
+  const shieldLine = (formulaLines || []).find((l) => /shield/i.test(`${l.name} ${l.formula}`))
+    || (formulaLines || []).find((l) => /\d/.test(l.formula));
+  if (/shield/i.test(enhanced)) {
+    const shieldText = shieldLine?.formula || (itemId !== null ? inferFallbackMetric(itemId, "shield") : null);
+    if (shieldText) {
+      enhanced = enhanced.replace(/\bgain a shield\b/i, `Gain a ${shieldText} Shield`);
+      enhanced = enhanced.replace(/\bgain a magic shield\b/i, `Gain a ${shieldText} magic Shield`);
+      enhanced = enhanced.replace(/\bto a shield\b/i, `to a ${shieldText} Shield`);
+      enhanced = enhanced.replace(/\bgrants? a (?:magic damage )?shield\b/i, `grants a ${shieldText} magic Shield`);
+
+      enhanced = enhanced.replace(/to a\s*<shield>\s*shield\s*<\/shield>/i, `to a ${shieldText} Shield`);
+      enhanced = enhanced.replace(/grants? a\s*<shield>\s*magic damage shield\s*<\/shield>/i, `grants a ${shieldText} magic Shield`);
+      enhanced = enhanced.replace(/gain a\s*<shield>\s*<\/shield>\s*<magicDamage>\s*magic\s*<\/magicDamage>\s*<shield>\s*shield\s*<\/shield>/i, `Gain a ${shieldText} magic Shield`);
+      enhanced = enhanced.replace(/gain a\s*(?:<magicDamage>\s*magic(?: damage)?\s*<\/magicDamage>\s*)?<shield>\s*shield\s*<\/shield>/i, `Gain a ${shieldText} magic Shield`);
+      enhanced = enhanced.replace(/grants? a\s*(?:<magicDamage>\s*magic(?: damage)?\s*<\/magicDamage>\s*)?<shield>\s*shield\s*<\/shield>/i, `grants a ${shieldText} magic Shield`);
+    }
+  }
+
+  return enhanced;
+}
+
+/**
+ * Bolds ACTIVE headers and formats active name inline with cooldown.
+ */
+function enhanceActiveTooltip(descriptionHtml) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(
+    /<active>\s*ACTIVE\s*<\/active>\s*\((\d+(?:\.\d+)?s)\)\s*<br>\s*<active>([^<]+)<\/active>/i,
+    (_match, cooldown, name) => `<strong><active>ACTIVE - ${name.trim()} (${cooldown})</active></strong>`
+  );
+  enhanced = enhanced.replace(
+    /<active>\s*([^<]+)\s*<\/active>\s*\((\d+(?:\.\d+)?s)\)/i,
+    (_match, name, cooldown) => {
+      const cleanName = name.trim();
+      if (/^active$/i.test(cleanName)) return `<strong><active>ACTIVE (${cooldown})</active></strong>`;
+      return `<strong><active>ACTIVE - ${cleanName} (${cooldown})</active></strong>`;
+    }
+  );
+  enhanced = enhanced.replace(
+    /\bACTIVE\s*\((\d+(?:\.\d+)?s)\)\s*<br>\s*([^<\n]+)\b/i,
+    (_match, cooldown, name) => `<strong>ACTIVE - ${name.trim()} (${cooldown})</strong>`
+  );
+
+  enhanced = enhanced.replace(
+    /<active>\s*<strong>Active\s*-<\/strong>\s*<\/active>\s*<active>\s*<strong>([^<:]+):<\/strong>\s*<\/active>/i,
+    (_m, name) => `<active><strong>ACTIVE - ${name.trim()}:</strong></active>`
+  );
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+  return enhanced;
+}
+
+/**
  * Extracts burn DPS and total-damage helper rows from data values where possible.
  */
 function buildBurnMetrics(dataValueMap) {
@@ -443,30 +662,6 @@ function buildBurnMetrics(dataValueMap) {
   return rows;
 }
 
-/**
- * Extracts active ability details (cooldown/range/effects) from tooltip body heuristics.
- */
-function extractActiveDetails(descriptionHtml, formulaLines, itemId = null) {
-  const plain = String(descriptionHtml || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-  const looksActive = /\bactive\b/i.test(plain) || formulaLines.some((l) => l.category === "Active");
-  if (!looksActive) return [];
-
-  const details = [];
-  const inferredCooldown = itemId ? inferActiveCooldownSeconds(itemId) : null;
-  const cooldownMatch = plain.match(/(\d+(?:\.\d+)?)\s*second(?:s)?\s*cooldown/i);
-  if (cooldownMatch) {
-    details.push(`Cooldown: ${cooldownMatch[1]}s`);
-  } else if (inferredCooldown !== null) {
-    details.push(`Cooldown: ${inferredCooldown}s`);
-  }
-  const rangeMatch = plain.match(/(\d+(?:\.\d+)?)\s*range/i);
-  if (rangeMatch) details.push(`Range: ${rangeMatch[1]}`);
-
-  const effectSentence = plain.match(/active[^.]*\./i);
-  if (effectSentence) details.push(`Effect: ${effectSentence[0].trim()}`);
-
-  return details;
-}
 
 /**
  * Initializes Item Lookup: load data, build filters, bind events, and render first state.
@@ -476,16 +671,18 @@ async function initItemLookup() {
   ITEM_STATE.version = versions[0];
   const itemJson = await fetch(`https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/data/en_US/item.json`).then((r) => r.json());
 
-  const deduped = dedupeByNameKeepingLatest(Object.entries(itemJson.data).filter(([, item]) => isSummonersRiftItem(item)));
-  deduped.forEach(([id, item]) => {
-    ITEM_STATE.items[id] = item;
-    (item.tags || []).forEach((tag) => ITEM_STATE.tags.add(tag));
-  });
+  Object.entries(itemJson.data)
+    .filter(([id, item]) => isPurchasableItem(id, item))
+    .forEach(([id, item]) => {
+      ITEM_STATE.items[id] = item;
+      (item.tags || []).forEach((tag) => ITEM_STATE.tags.add(tag));
+    });
 
   await loadCommunityDragonCalcs();
 
   document.getElementById("itemSearch").addEventListener("input", applyItemFilters);
   renderTagFilters("itemFilters", applyItemFilters);
+  renderMapFilters("mapFilters", applyItemFilters);
   applyItemFilters();
 }
 
@@ -501,6 +698,27 @@ function renderTagFilters(targetId, onChange) {
   root.querySelectorAll(".tag-checkbox").forEach((cb) => cb.addEventListener("change", onChange));
 }
 
+
+/**
+ * Renders map toggle checkboxes for manual map selection.
+ */
+function renderMapFilters(targetId, onChange) {
+  const root = document.getElementById(targetId);
+  root.innerHTML = MAP_OPTIONS
+    .map((map) => `<label class="tag-pill mr-5"><input type="checkbox" value="${map.id}" class="map-checkbox" ${ITEM_STATE.selectedMaps.has(map.id) ? "checked" : ""}> ${map.label}</label>`)
+    .join("");
+  root.querySelectorAll(".map-checkbox").forEach((cb) => cb.addEventListener("change", onChange));
+}
+
+/**
+ * Reads selected map checkboxes and returns map ids.
+ */
+function getSelectedMaps() {
+  const checkboxes = Array.from(document.querySelectorAll("#mapFilters .map-checkbox"));
+  const picked = checkboxes.filter((cb) => cb.checked).map((cb) => Number(cb.value));
+  return new Set(picked);
+}
+
 /**
  * Reads selected tag checkboxes from a filter container and returns normalized tag names.
  */
@@ -513,14 +731,18 @@ function getSelectedTags(rootId) {
  */
 function applyItemFilters() {
   ITEM_STATE.selectedTags = getSelectedTags("itemFilters");
+  ITEM_STATE.selectedMaps = getSelectedMaps();
   const text = document.getElementById("itemSearch").value.trim().toLowerCase();
 
-  ITEM_STATE.filteredIds = Object.entries(ITEM_STATE.items)
+  const filteredEntries = Object.entries(ITEM_STATE.items)
+    .filter(([, item]) => itemMatchesSelectedMaps(item))
     .filter(([, item]) => {
       const nameOk = !text || item.name.toLowerCase().includes(text);
       const tagOk = !ITEM_STATE.selectedTags.size || Array.from(ITEM_STATE.selectedTags).every((t) => item.tags?.includes(t));
       return nameOk && tagOk;
-    })
+    });
+
+  ITEM_STATE.filteredIds = dedupeByNameWithMapPriority(filteredEntries)
     .sort((a, b) => a[1].name.localeCompare(b[1].name))
     .map(([id]) => id);
 
@@ -556,12 +778,10 @@ function clearItemDetails() {
   document.getElementById("itemMeta").textContent = "";
   document.getElementById("itemCost").textContent = "";
   document.getElementById("itemTooltipMain").innerHTML = "Try changing search or filters.";
-  document.getElementById("itemActives").innerHTML = "";
-  document.getElementById("itemFormulaExtract").textContent = "";
 }
 
 /**
- * Renders one selected item with cost, stats, tooltip body, active details and formula extracts.
+ * Renders one selected item with cost, stats, and enhanced tooltip body.
  */
 function showItem(id) {
   const item = ITEM_STATE.items[id];
@@ -572,27 +792,19 @@ function showItem(id) {
 
   const resolvedDescription = resolveDescriptionFormulas(item, item.description || "");
   const { lines, extracted } = buildExtractedFormulas(id);
-  const inferredCooldown = inferActiveCooldownSeconds(id);
-  const normalizedDescription = inferredCooldown !== null
-    ? resolvedDescription.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${inferredCooldown}s$2`)
-    : resolvedDescription;
-  const activeDetails = extractActiveDetails(normalizedDescription, lines, id);
+  const hasExplicitActive = /<active>|\bACTIVE\b/i.test(item.description || "");
+  const hasCooldownPlaceholder = /\(0s\)/i.test(item.description || "");
+  const inferredCooldown = (hasExplicitActive || hasCooldownPlaceholder) ? inferActiveCooldownSeconds(id) : null;
+  const normalizedDescription = injectActiveCooldown(resolvedDescription, inferredCooldown);
+  const formulaEnhancedDescription = injectDamageFormulaText(normalizedDescription, lines, id);
+  const titledDescription = emphasizeAbilityHeaders(formulaEnhancedDescription);
+  const tooltipMain = enhanceActiveTooltip(titledDescription);
 
   ITEM_STATE.extractedById[id] = extracted;
 
-  const tooltipMain = lines.length
-    ? `${normalizedDescription}<hr><div><strong>Formula-enhanced tooltip:</strong><ul>${lines.map((l) => `<li><strong>${l.name}:</strong> ${l.formula}</li>`).join("")}</ul></div>`
-    : normalizedDescription;
-
-  const activesHtml = activeDetails.length
-    ? `<ul>${activeDetails.map((d) => `<li>${d}</li>`).join("")}</ul>`
-    : "<p class=\"text-muted\">No explicit active details found for this item.</p>";
-
   document.getElementById("itemName").textContent = item.name;
   document.getElementById("itemIcon").src = `https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png`;
-  document.getElementById("itemMeta").innerHTML = `<strong>Tags:</strong> ${(item.tags || []).join(", ") || "-"}`;
   document.getElementById("itemCost").innerHTML = `<strong>Cost:</strong> ${item.gold?.total ?? 0}g`;
+  document.getElementById("itemMeta").innerHTML = `<strong>Tags:</strong> ${(item.tags || []).join(", ") || "-"}`;
   document.getElementById("itemTooltipMain").innerHTML = colorizeStatsInHtml(tooltipMain);
-  document.getElementById("itemActives").innerHTML = colorizeStatsInHtml(activesHtml);
-  document.getElementById("itemFormulaExtract").textContent = JSON.stringify(extracted, null, 2);
 }
