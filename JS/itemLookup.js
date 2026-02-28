@@ -445,6 +445,54 @@ function inferActiveCooldownSeconds(itemId) {
   return null;
 }
 
+
+/**
+ * Bolds ACTIVE cooldown headers and injects computed active damage formulas into tooltip text.
+ */
+function enhanceActiveTooltip(descriptionHtml, formulaLines) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+
+  const activeDamage = (formulaLines || []).find((line) => /active\s*damage/i.test(line.name))
+    || (formulaLines || []).find((line) => line.category === "Active" && /damage/i.test(line.name));
+
+  if (activeDamage) {
+    enhanced = enhanced.replace(/dealing\s+magic damage/i, `dealing ${activeDamage.formula} magic damage`);
+  }
+
+  return enhanced;
+}
+
+/**
+ * Replaces placeholder ACTIVE cooldown text with inferred cooldown seconds.
+ */
+function injectActiveCooldown(descriptionHtml, cooldownSeconds) {
+  if (cooldownSeconds === null || cooldownSeconds === undefined) return String(descriptionHtml || "");
+  let normalized = String(descriptionHtml || "");
+  normalized = normalized.replace(/(<active>\s*ACTIVE\s*<\/active>\s*)\((?:0|0\.0+)s\)/i, `$1(${cooldownSeconds}s)`);
+  normalized = normalized.replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${cooldownSeconds}s$2`);
+  return normalized;
+}
+
+/**
+ * Bolds ACTIVE cooldown headers and injects computed active damage formulas into tooltip text.
+ */
+function enhanceActiveTooltip(descriptionHtml, formulaLines) {
+  let enhanced = String(descriptionHtml || "");
+  enhanced = enhanced.replace(/(<active>\s*ACTIVE\s*<\/active>\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+  enhanced = enhanced.replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
+
+  const activeDamage = (formulaLines || []).find((line) => /active\s*damage/i.test(line.name))
+    || (formulaLines || []).find((line) => line.category === "Active" && /damage/i.test(line.name));
+
+  if (activeDamage) {
+    enhanced = enhanced.replace(/dealing\s*<magicDamage>\s*magic damage\s*<\/magicDamage>/i, `dealing ${activeDamage.formula} magic damage`);
+    enhanced = enhanced.replace(/dealing\s+magic damage/i, `dealing ${activeDamage.formula} magic damage`);
+  }
+
+  return enhanced;
+}
+
 /**
  * Replaces placeholder ACTIVE cooldown text with inferred cooldown seconds.
  */
