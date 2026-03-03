@@ -440,6 +440,7 @@ function getItemStats() {
     totals.ap += s.FlatMagicDamageMod || 0;
     totals.armor += s.FlatArmorMod || 0;
     totals.mr += s.FlatSpellBlockMod || 0;
+<<<<<<< codex/fix-ability-haste-stat-update
 
     const explicitHaste = [s.FlatHasteMod, s.FlatAbilityHasteMod, s.AbilityHaste, s.AbilityHasteMod]
       .map(Number)
@@ -457,6 +458,16 @@ function getItemStats() {
       .reduce((sum, match) => sum + Number(match[1] || 0), 0);
 
     const hasteFromItem = explicitHaste || cdrAsHaste || descHaste || 0;
+=======
+    const hasteCandidates = [
+      s.FlatHasteMod,
+      s.FlatAbilityHasteMod,
+      s.AbilityHaste,
+      s.AbilityHasteMod,
+      s.FlatCooldownReduction,
+    ].map(Number).filter((value) => Number.isFinite(value));
+    const hasteFromItem = hasteCandidates.find((value) => value !== 0) ?? hasteCandidates[0] ?? 0;
+>>>>>>> main
     totals.haste += hasteFromItem;
     totals.asPct += (s.PercentAttackSpeedMod || 0) * 100;
   });
