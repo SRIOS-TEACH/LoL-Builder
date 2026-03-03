@@ -439,13 +439,15 @@ function getItemStats() {
     totals.ap += s.FlatMagicDamageMod || 0;
     totals.armor += s.FlatArmorMod || 0;
     totals.mr += s.FlatSpellBlockMod || 0;
-    totals.haste += Number(
-      s.FlatHasteMod
-      ?? s.FlatAbilityHasteMod
-      ?? s.AbilityHaste
-      ?? s.FlatCooldownReduction
-      ?? 0,
-    );
+    const hasteCandidates = [
+      s.FlatHasteMod,
+      s.FlatAbilityHasteMod,
+      s.AbilityHaste,
+      s.AbilityHasteMod,
+      s.FlatCooldownReduction,
+    ].map(Number).filter((value) => Number.isFinite(value));
+    const hasteFromItem = hasteCandidates.find((value) => value !== 0) ?? hasteCandidates[0] ?? 0;
+    totals.haste += hasteFromItem;
     totals.asPct += (s.PercentAttackSpeedMod || 0) * 100;
   });
   return totals;
