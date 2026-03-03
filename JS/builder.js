@@ -430,7 +430,7 @@ function renderAbilityCards() {
 
 function getItemStats() {
   const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0 };
-  BUILDER.itemSlots.forEach((id) => {
+ BUILDER.itemSlots.forEach((id) => {
     if (!id) return;
     const item = BUILDER.items[id] || {};
     const s = item.stats || {};
@@ -457,16 +457,6 @@ function getItemStats() {
       .reduce((sum, match) => sum + Number(match[1] || 0), 0);
 
     const hasteFromItem = explicitHaste || cdrAsHaste || descHaste || 0;
-=======
-    const hasteCandidates = [
-      s.FlatHasteMod,
-      s.FlatAbilityHasteMod,
-      s.AbilityHaste,
-      s.AbilityHasteMod,
-      s.FlatCooldownReduction,
-    ].map(Number).filter((value) => Number.isFinite(value));
-    const hasteFromItem = hasteCandidates.find((value) => value !== 0) ?? hasteCandidates[0] ?? 0;
->>>>>>> main
     totals.haste += hasteFromItem;
     totals.asPct += (s.PercentAttackSpeedMod || 0) * 100;
   });
@@ -555,73 +545,3 @@ function renderRunePanel() {
       ${renderSlot(BUILDER.runeSelections.primary[3], "Row 3", "primary_3")}
     </div>
     <div>
-      <div class="rune-column-title"><button class='btn btn-sm' onclick="openRuneModal('secondaryPath_0')">${secondaryPath.name}</button></div>
-      ${renderSlot(BUILDER.runeSelections.secondary[0], "Secondary 1", "secondary_0")}
-      ${renderSlot(BUILDER.runeSelections.secondary[1], "Secondary 2", "secondary_1")}
-      ${renderSlot(BUILDER.runeSelections.shards[0], "Shard 1", "shard_0")}
-      ${renderSlot(BUILDER.runeSelections.shards[1], "Shard 2", "shard_1")}
-      ${renderSlot(BUILDER.runeSelections.shards[2], "Shard 3", "shard_2")}
-    </div>
-  `;
-}
-
-function flattenSecondaryOptions(pathId) {
-  const rows = RUNE_DATA.paths[pathId]?.primaryRows || [];
-  return rows.slice(1).flat();
-}
-
-function getPathPrimaryDefaults(pathId) {
-  return (RUNE_DATA.pathDefaults[pathId] || ["arcane-comet", "manaflow-band", "absolute-focus", "gathering-storm"]).slice(0, 4);
-}
-
-function getPathSecondaryDefaults(pathId) {
-  const flat = flattenSecondaryOptions(pathId);
-  return [flat[0], flat[1] || flat[0]];
-}
-
-function getRuneOptions(target) {
-  if (target.startsWith("primaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as primary path`, icon: p.icon }));
-  if (target.startsWith("secondaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as secondary path`, icon: p.icon }));
-  if (target.startsWith("primary")) {
-    const rowIndex = Number(target.split("_")[1]);
-    const rows = RUNE_DATA.paths[BUILDER.runeSelections.primaryPath]?.primaryRows || [];
-    return (rows[rowIndex] || []).map((id) => ({ id, ...getRuneMeta(id) }));
-  }
-  if (target.startsWith("secondary")) {
-    return flattenSecondaryOptions(BUILDER.runeSelections.secondaryPath).map((id) => ({ id, ...getRuneMeta(id) }));
-  }
-  return RUNE_DATA.shardOptions.map((id) => ({ id, ...getRuneMeta(id) }));
-}
-
-function openRuneModal(target) {
-  BUILDER.runeModalTarget = target;
-  document.getElementById("runeModal").classList.remove("hidden");
-  const options = getRuneOptions(target);
-  document.getElementById("runeModalTitle").textContent = "Select Rune Option";
-  document.getElementById("runeModalList").innerHTML = options.map((o) => `<button class="rune-option-btn" onclick="selectRuneOption('${o.id}')">${runeImgTag(o)}<div><div class="rune-option-name">${o.name}</div><div class="rune-option-desc">${o.desc}</div></div></button>`).join("");
-  document.getElementById("runeModal").onclick = (e) => {
-    if (e.target.id === "runeModal") closeRuneModal();
-  };
-}
-
-function closeRuneModal() {
-  document.getElementById("runeModal").classList.add("hidden");
-  BUILDER.runeModalTarget = null;
-}
-
-function selectRuneOption(id) {
-  const [group, index] = BUILDER.runeModalTarget.split("_");
-  if (group === "primary") BUILDER.runeSelections.primary[Number(index)] = id;
-  if (group === "secondary") BUILDER.runeSelections.secondary[Number(index)] = id;
-  if (group === "shard") BUILDER.runeSelections.shards[Number(index)] = id;
-  if (group === "primaryPath") {
-    BUILDER.runeSelections.primaryPath = id;
-    BUILDER.runeSelections.primary = getPathPrimaryDefaults(id);
-  }
-  if (group === "secondaryPath") {
-    BUILDER.runeSelections.secondaryPath = id;
-    BUILDER.runeSelections.secondary = getPathSecondaryDefaults(id);
-  }
-  renderRunePanel();
-  closeRuneModal();
-}
