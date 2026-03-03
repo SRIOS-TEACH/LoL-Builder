@@ -440,7 +440,6 @@ function getItemStats() {
     totals.ap += s.FlatMagicDamageMod || 0;
     totals.armor += s.FlatArmorMod || 0;
     totals.mr += s.FlatSpellBlockMod || 0;
-<<<<<<< codex/fix-ability-haste-stat-update
 
     const explicitHaste = [s.FlatHasteMod, s.FlatAbilityHasteMod, s.AbilityHaste, s.AbilityHasteMod]
       .map(Number)
