@@ -439,9 +439,43 @@ function getItemStats() {
     totals.ap += s.FlatMagicDamageMod || 0;
     totals.armor += s.FlatArmorMod || 0;
     totals.mr += s.FlatSpellBlockMod || 0;
-    totals.haste += Number(s.FlatHasteMod || s.FlatAbilityHasteMod || s.AbilityHaste || s.FlatCooldownReduction || 0);
+    totals.haste += Number(
+      s.FlatHasteMod
+      ?? s.FlatAbilityHasteMod
+      ?? s.AbilityHaste
+      ?? s.FlatCooldownReduction
+      ?? 0,
+    );
     totals.asPct += (s.PercentAttackSpeedMod || 0) * 100;
   });
+  return totals;
+}
+
+function getRuneStats() {
+  const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0 };
+  const selected = [
+    ...BUILDER.runeSelections.primary,
+    ...BUILDER.runeSelections.secondary,
+    ...BUILDER.runeSelections.shards,
+  ];
+
+  selected.forEach((runeId) => {
+    if (runeId === "ability-haste") totals.haste += 8;
+    if (runeId === "attack-speed") totals.asPct += 10;
+    if (runeId === "scaling-health") totals.hp += 10 + (BUILDER.level - 1) * 10;
+    if (runeId === "armor") totals.armor += 6;
+    if (runeId === "magic-resist") totals.mr += 10;
+
+    // Adaptive force currently modeled as AP in this lightweight builder.
+    if (runeId === "adaptive-force") totals.ap += 9;
+
+    // Sorcery: +5 Ability Haste at level 5 and again at level 8.
+    if (runeId === "transcendence") {
+      if (BUILDER.level >= 5) totals.haste += 5;
+      if (BUILDER.level >= 8) totals.haste += 5;
+    }
+  });
+
   return totals;
 }
 
@@ -454,24 +488,26 @@ function renderStats() {
 
   const base = BUILDER.championData.stats;
   const item = getItemStats();
+  const rune = getRuneStats();
   const L = BUILDER.level;
 
-  const hp = (base.hp + base.hpperlevel * (L - 1) + item.hp);
-  const mp = (base.mp + base.mpperlevel * (L - 1) + item.mp);
-  const ad = (base.attackdamage + base.attackdamageperlevel * (L - 1) + item.ad);
-  const armor = (base.armor + base.armorperlevel * (L - 1) + item.armor);
-  const mr = (base.spellblock + base.spellblockperlevel * (L - 1) + item.mr);
-  const asTotal = base.attackspeed * (1 + (base.attackspeedperlevel * (L - 1)) / 100) * (1 + item.asPct / 100);
+  const hp = (base.hp + base.hpperlevel * (L - 1) + item.hp + rune.hp);
+  const mp = (base.mp + base.mpperlevel * (L - 1) + item.mp + rune.mp);
+  const ad = (base.attackdamage + base.attackdamageperlevel * (L - 1) + item.ad + rune.ad);
+  const armor = (base.armor + base.armorperlevel * (L - 1) + item.armor + rune.armor);
+  const mr = (base.spellblock + base.spellblockperlevel * (L - 1) + item.mr + rune.mr);
+  const asTotal = base.attackspeed * (1 + (base.attackspeedperlevel * (L - 1)) / 100) * (1 + (item.asPct + rune.asPct) / 100);
+  const abilityHaste = item.haste + rune.haste;
 
   const rows = [
-    { name: "HP", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)}` },
-    { name: "MP", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp.toFixed(1)}` },
-    { name: "AD", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad.toFixed(1)}` },
-    { name: "AP", value: item.ap, eq: `0 + ${item.ap.toFixed(1)}` },
-    { name: "Armor", value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${L - 1} + ${item.armor.toFixed(1)}` },
-    { name: "MR", value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${L - 1} + ${item.mr.toFixed(1)}` },
-    { name: "Attack Speed", value: asTotal, eq: `${base.attackspeed.toFixed(3)} * level mult * item mult` },
-    { name: "Ability Haste", value: item.haste, eq: `0 + ${item.haste.toFixed(1)}` },
+    { name: "HP", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
+    { name: "MP", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
+    { name: "AD", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)}` },
+    { name: "AP", value: item.ap + rune.ap, eq: `0 + ${item.ap.toFixed(1)} + ${rune.ap.toFixed(1)}` },
+    { name: "Armor", value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${L - 1} + ${item.armor.toFixed(1)} + ${rune.armor.toFixed(1)}` },
+    { name: "MR", value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${L - 1} + ${item.mr.toFixed(1)} + ${rune.mr.toFixed(1)}` },
+    { name: "Attack Speed", value: asTotal, eq: `${base.attackspeed.toFixed(3)} * level mult * (1 + ${(item.asPct + rune.asPct).toFixed(1)}%)` },
+    { name: "Ability Haste", value: abilityHaste, eq: `0 + ${item.haste.toFixed(1)} + ${rune.haste.toFixed(1)}` },
   ];
 
   root.innerHTML = `<table class="stats-table">${rows.map((r) => `<tr><td class="stats-label">${r.name}</td><td class="stats-value" title="${r.eq}">${r.value.toFixed(r.name === "Attack Speed" ? 3 : 1)}</td></tr>`).join("")}</table>`;
