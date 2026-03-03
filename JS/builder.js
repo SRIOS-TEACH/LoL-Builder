@@ -432,13 +432,33 @@ function getItemStats() {
   const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0 };
   BUILDER.itemSlots.forEach((id) => {
     if (!id) return;
-    const s = BUILDER.items[id].stats || {};
+    const item = BUILDER.items[id] || {};
+    const s = item.stats || {};
     totals.hp += s.FlatHPPoolMod || 0;
     totals.mp += s.FlatMPPoolMod || 0;
     totals.ad += s.FlatPhysicalDamageMod || 0;
     totals.ap += s.FlatMagicDamageMod || 0;
     totals.armor += s.FlatArmorMod || 0;
     totals.mr += s.FlatSpellBlockMod || 0;
+<<<<<<< codex/fix-ability-haste-stat-update
+
+    const explicitHaste = [s.FlatHasteMod, s.FlatAbilityHasteMod, s.AbilityHaste, s.AbilityHasteMod]
+      .map(Number)
+      .find((value) => Number.isFinite(value) && value !== 0) || 0;
+
+    const cdrRaw = Number(s.FlatCooldownReduction);
+    const cdrAsHaste = Number.isFinite(cdrRaw)
+      ? (cdrRaw > 0 && cdrRaw < 1 ? (100 * cdrRaw) / (1 - cdrRaw) : cdrRaw)
+      : 0;
+
+    const descText = String(item.description || "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ");
+    const descHaste = Array.from(descText.matchAll(/\+\s*([0-9]+(?:\.[0-9]+)?)\s+Ability\s+Haste/gi))
+      .reduce((sum, match) => sum + Number(match[1] || 0), 0);
+
+    const hasteFromItem = explicitHaste || cdrAsHaste || descHaste || 0;
+=======
     const hasteCandidates = [
       s.FlatHasteMod,
       s.FlatAbilityHasteMod,
@@ -447,6 +467,7 @@ function getItemStats() {
       s.FlatCooldownReduction,
     ].map(Number).filter((value) => Number.isFinite(value));
     const hasteFromItem = hasteCandidates.find((value) => value !== 0) ?? hasteCandidates[0] ?? 0;
+>>>>>>> main
     totals.haste += hasteFromItem;
     totals.asPct += (s.PercentAttackSpeedMod || 0) * 100;
   });
