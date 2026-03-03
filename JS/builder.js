@@ -543,6 +543,5 @@ function renderRunePanel() {
       ${renderSlot(BUILDER.runeSelections.primary[1], "Row 1", "primary_1")}
       ${renderSlot(BUILDER.runeSelections.primary[2], "Row 2", "primary_2")}
       ${renderSlot(BUILDER.runeSelections.primary[3], "Row 3", "primary_3")}
-    </div>
-    <div>
+    </div>`;
   }
