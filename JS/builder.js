@@ -229,6 +229,8 @@ function buildMergedItemStats(ddragonStats, cdtbEntry) {
     PercentMovementSpeedMod: Number(cdtbEntry?.mPercentMovementSpeedMod ?? base.PercentMovementSpeedMod ?? 0),
     FlatHPRegenMod: Number(cdtbEntry?.mFlatHPRegenMod ?? base.FlatHPRegenMod ?? 0),
     FlatMPRegenMod: Number(cdtbEntry?.mFlatMPRegenMod ?? base.FlatMPRegenMod ?? 0),
+    PercentBaseHPRegenMod: Number(cdtbEntry?.mPercentBaseHPRegenMod ?? cdtbEntry?.mPercentHPRegenMod ?? base.PercentBaseHPRegenMod ?? base.PercentHPRegenMod ?? 0),
+    PercentBaseMPRegenMod: Number(cdtbEntry?.mPercentBaseMPRegenMod ?? cdtbEntry?.mPercentMPRegenMod ?? base.PercentBaseMPRegenMod ?? base.PercentMPRegenMod ?? 0),
     FlatCritChanceMod: Number(cdtbEntry?.mFlatCritChanceMod ?? base.FlatCritChanceMod ?? 0),
     PercentCritChanceMod: Number(cdtbEntry?.mPercentCritChanceMod ?? base.PercentCritChanceMod ?? 0),
     FlatCritDamageMod: Number(cdtbEntry?.mFlatCritDamageMod ?? base.FlatCritDamageMod ?? 0),
@@ -420,7 +422,33 @@ function renderModalItemDetail(id) {
     return;
   }
   const item = BUILDER.items[id];
-  const statLines = Object.entries(item.stats || {}).filter(([, v]) => Number(v) !== 0).map(([k, v]) => `<div>${k}: ${v}</div>`).join("");
+  const statNameMap = {
+    FlatHPPoolMod: "Health",
+    FlatMPPoolMod: "Mana",
+    FlatHPRegenMod: "HP/5",
+    FlatMPRegenMod: "MP/5",
+    PercentBaseHPRegenMod: "Base HP Regen %",
+    PercentBaseMPRegenMod: "Base MP Regen %",
+    FlatPhysicalDamageMod: "Attack Damage",
+    FlatMagicDamageMod: "Ability Power",
+    FlatArmorMod: "Armor",
+    FlatSpellBlockMod: "Magic Resist",
+    PercentAttackSpeedMod: "Attack Speed %",
+    FlatMovementSpeedMod: "Move Speed",
+    PercentMovementSpeedMod: "Move Speed %",
+    FlatCritChanceMod: "Crit Chance",
+    PercentCritChanceMod: "Crit Chance %",
+    FlatCritDamageMod: "Crit Damage",
+    PercentCritDamageMod: "Crit Damage %",
+    FlatAttackRangeMod: "Attack Range",
+    FlatHasteMod: "Ability Haste",
+    FlatAbilityHasteMod: "Ability Haste",
+  };
+  const pctStats = new Set(["PercentBaseHPRegenMod", "PercentBaseMPRegenMod", "PercentAttackSpeedMod", "PercentMovementSpeedMod", "PercentCritChanceMod", "PercentCritDamageMod"]);
+  const statLines = Object.entries(item.stats || {})
+    .filter(([, v]) => Number(v) !== 0)
+    .map(([k, v]) => `<div>${statNameMap[k] || k}: ${Number(v)}${pctStats.has(k) ? "%" : ""}</div>`)
+    .join("");
   root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div><div class='mt-10'>${item.description || ""}</div><button class='btn btn-sm mt-10' onclick="setSlotItem('${id}')">Select this item</button><button class='btn btn-sm mt-10 ml-5' onclick="setSlotItem('')">Clear slot</button>`;
 }
 
@@ -499,7 +527,7 @@ function renderAbilityCards() {
 
 function getItemStats() {
   const totals = {
-    hp: 0, hp5: 0, mp: 0, mp5: 0, ad: 0, ap: 0, armor: 0, mr: 0,
+    hp: 0, hp5: 0, hp5PctBase: 0, mp: 0, mp5: 0, mp5PctBase: 0, ad: 0, ap: 0, armor: 0, mr: 0,
     haste: 0, asPct: 0, critChance: 0, critDamage: 0, attackRange: 0, msFlat: 0, msPct: 0,
   };
   BUILDER.itemSlots.forEach((id) => {
@@ -508,7 +536,9 @@ function getItemStats() {
     totals.hp += s.FlatHPPoolMod || 0;
     totals.mp += s.FlatMPPoolMod || 0;
     totals.hp5 += s.FlatHPRegenMod || 0;
+    totals.hp5PctBase += s.PercentBaseHPRegenMod || s.PercentHPRegenMod || 0;
     totals.mp5 += s.FlatMPRegenMod || 0;
+    totals.mp5PctBase += s.PercentBaseMPRegenMod || s.PercentMPRegenMod || 0;
     totals.ad += s.FlatPhysicalDamageMod || 0;
     totals.ap += s.FlatMagicDamageMod || 0;
     totals.armor += s.FlatArmorMod || 0;
@@ -532,7 +562,7 @@ function getItemStats() {
 
 function getRuneStats() {
   const totals = {
-    hp: 0, hp5: 0, mp: 0, mp5: 0, ad: 0, ap: 0, armor: 0, mr: 0,
+    hp: 0, hp5: 0, hp5PctBase: 0, mp: 0, mp5: 0, mp5PctBase: 0, ad: 0, ap: 0, armor: 0, mr: 0,
     haste: 0, asPct: 0, critChance: 0, critDamage: 0, attackRange: 0, msFlat: 0, msPct: 0,
   };
   const selected = [
@@ -598,9 +628,11 @@ function renderStats() {
   const L = BUILDER.level;
 
   const hp = (base.hp + base.hpperlevel * (L - 1) + item.hp + rune.hp);
-  const hp5 = (base.hpregen + base.hpregenperlevel * (L - 1) + item.hp5 + rune.hp5);
+  const baseHp5 = base.hpregen + base.hpregenperlevel * (L - 1);
+  const hp5 = (baseHp5 * (1 + item.hp5PctBase / 100) + item.hp5 + rune.hp5);
   const mp = (base.mp + base.mpperlevel * (L - 1) + item.mp + rune.mp);
-  const mp5 = (base.mpregen + base.mpregenperlevel * (L - 1) + item.mp5 + rune.mp5);
+  const baseMp5 = base.mpregen + base.mpregenperlevel * (L - 1);
+  const mp5 = (baseMp5 * (1 + item.mp5PctBase / 100) + item.mp5 + rune.mp5);
   const ad = (base.attackdamage + base.attackdamageperlevel * (L - 1) + item.ad + rune.ad);
   const ap = item.ap + rune.ap;
   const armor = (base.armor + base.armorperlevel * (L - 1) + item.armor + rune.armor);
@@ -615,8 +647,8 @@ function renderStats() {
   const rows = [
     { name: "HP", icon: "❤️", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
     { name: "MP", icon: "🔷", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
-    { name: "HP/5", icon: "💚", value: hp5, eq: `${base.hpregen.toFixed(1)} + ${base.hpregenperlevel.toFixed(2)}*${L - 1} + ${item.hp5.toFixed(1)} + ${rune.hp5.toFixed(1)}` },
-    { name: "MP/5", icon: "💙", value: mp5, eq: `${base.mpregen.toFixed(1)} + ${base.mpregenperlevel.toFixed(2)}*${L - 1} + ${item.mp5.toFixed(1)} + ${rune.mp5.toFixed(1)}` },
+    { name: "HP/5", icon: "💚", value: hp5, eq: `(${base.hpregen.toFixed(1)} + ${base.hpregenperlevel.toFixed(2)}*${L - 1}) * (1 + ${item.hp5PctBase.toFixed(1)}%) + ${item.hp5.toFixed(1)} + ${rune.hp5.toFixed(1)}` },
+    { name: "MP/5", icon: "💙", value: mp5, eq: `(${base.mpregen.toFixed(1)} + ${base.mpregenperlevel.toFixed(2)}*${L - 1}) * (1 + ${item.mp5PctBase.toFixed(1)}%) + ${item.mp5.toFixed(1)} + ${rune.mp5.toFixed(1)}` },
     { name: "AD", icon: "🗡️", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)}` },
     { name: "AP", icon: "✨", value: ap, eq: `0 + ${item.ap.toFixed(1)} + ${rune.ap.toFixed(1)}` },
     { name: "Range", icon: "🏹", value: attackRange, eq: `${(base.attackrange || 0).toFixed(1)} + ${item.attackRange.toFixed(1)} + ${rune.attackRange.toFixed(1)}` },
@@ -713,13 +745,21 @@ function ensureSecondarySelectionsValid() {
 
 function getRuneOptions(target) {
   if (target.startsWith("primaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as primary path`, icon: p.icon }));
-  if (target.startsWith("secondaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as secondary path`, icon: p.icon }));
+  if (target.startsWith("secondaryPath")) {
+    return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({
+      id,
+      name: p.name,
+      desc: id === BUILDER.runeSelections.primaryPath ? "Secondary path cannot match primary path" : `Set ${p.name} as secondary path`,
+      icon: p.icon,
+      disabled: id === BUILDER.runeSelections.primaryPath,
+    }));
+  }
   if (target.startsWith("primary")) {
     const rowIndex = Number(target.split("_")[1]);
     const rows = RUNE_DATA.paths[BUILDER.runeSelections.primaryPath]?.primaryRows || [];
     return (rows[rowIndex] || []).map((id) => ({ id, ...getRuneMeta(id) }));
   }
-  if (target.startsWith("secondary")) {
+  if (/^secondary_\d+$/.test(target)) {
     const slot = Number(target.split("_")[1]);
     const other = BUILDER.runeSelections.secondary[slot === 0 ? 1 : 0];
     const blockedRow = getSecondaryRowIndex(BUILDER.runeSelections.secondaryPath, other);
@@ -747,11 +787,11 @@ function openRuneModal(target) {
   document.getElementById("runeModalTitle").textContent = "Select Rune Option";
   const optionBtn = (o) => {
     const disabled = o.disabled ? "disabled" : "";
-    const lockNote = o.disabled ? "Pick from a different secondary row" : (o.desc || "");
+    const lockNote = o.disabled ? (o.desc || "This option is unavailable") : (o.desc || "");
     return `<button class="rune-option-btn ${o.disabled ? "is-disabled" : ""}" ${disabled} onclick="selectRuneOption('${o.id}')">${runeImgTag(o)}<div><div class="rune-option-name">${o.name}</div><div class="rune-option-desc">${lockNote}</div></div></button>`;
   };
 
-  if (target.startsWith("secondary")) {
+  if (/^secondary_\d+$/.test(target)) {
     const groups = [0, 1, 2]
       .map((rowIndex) => options.filter((o) => o.rowIndex === rowIndex))
       .filter((group) => group.length);
@@ -782,10 +822,17 @@ function selectRuneOption(id) {
   if (group === "primaryPath") {
     BUILDER.runeSelections.primaryPath = id;
     BUILDER.runeSelections.primary = getPathPrimaryDefaults(id);
+    if (BUILDER.runeSelections.secondaryPath === id) {
+      const fallbackSecondary = Object.keys(RUNE_DATA.paths).find((pathId) => pathId !== id) || id;
+      BUILDER.runeSelections.secondaryPath = fallbackSecondary;
+      BUILDER.runeSelections.secondary = getPathSecondaryDefaults(fallbackSecondary);
+    }
   }
   if (group === "secondaryPath") {
-    BUILDER.runeSelections.secondaryPath = id;
-    BUILDER.runeSelections.secondary = getPathSecondaryDefaults(id);
+    if (id !== BUILDER.runeSelections.primaryPath) {
+      BUILDER.runeSelections.secondaryPath = id;
+      BUILDER.runeSelections.secondary = getPathSecondaryDefaults(id);
+    }
     ensureSecondarySelectionsValid();
   }
   renderRunePanel();
