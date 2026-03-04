@@ -12,6 +12,8 @@ const BUILDER = {
   champTags: new Set(),
   modalItemFiltered: [],
   modalChampFiltered: [],
+  championDetailCache: {},
+  championModalRequestId: 0,
   runeModalTarget: null,
   runeSelections: {
     primaryPath: "sorcery",
@@ -229,6 +231,40 @@ function buildMergedItemStats(ddragonStats, cdtbEntry) {
   return { ...base, ...cdtbStats };
 }
 
+function buildCdtbItemsById(cdtbData) {
+  const byId = new Map();
+  Object.values(cdtbData || {}).forEach((entry) => {
+    const itemId = Number(entry?.itemID ?? entry?.mItemDataClient?.mId ?? entry?.id ?? entry?.mId);
+    if (!itemId) return;
+    byId.set(String(itemId), entry);
+  });
+  return byId;
+}
+
+function buildMergedItemStats(ddragonStats, cdtbEntry) {
+  const base = { ...(ddragonStats || {}) };
+  if (!cdtbEntry) return base;
+
+  const cdtbStats = {
+    FlatHPPoolMod: Number(cdtbEntry?.mFlatHPPoolMod ?? base.FlatHPPoolMod ?? 0),
+    FlatMPPoolMod: Number(cdtbEntry?.mFlatMPPoolMod ?? base.FlatMPPoolMod ?? 0),
+    FlatPhysicalDamageMod: Number(cdtbEntry?.mFlatPhysicalDamageMod ?? base.FlatPhysicalDamageMod ?? 0),
+    FlatMagicDamageMod: Number(cdtbEntry?.mFlatMagicDamageMod ?? base.FlatMagicDamageMod ?? 0),
+    FlatArmorMod: Number(cdtbEntry?.mFlatArmorMod ?? base.FlatArmorMod ?? 0),
+    FlatSpellBlockMod: Number(cdtbEntry?.mFlatSpellBlockMod ?? base.FlatSpellBlockMod ?? 0),
+    PercentAttackSpeedMod: Number(cdtbEntry?.mPercentAttackSpeedMod ?? base.PercentAttackSpeedMod ?? 0),
+    FlatMovementSpeedMod: Number(cdtbEntry?.mFlatMovementSpeedMod ?? base.FlatMovementSpeedMod ?? 0),
+    PercentMovementSpeedMod: Number(cdtbEntry?.mPercentMovementSpeedMod ?? base.PercentMovementSpeedMod ?? 0),
+  };
+
+  const haste = Number(cdtbEntry?.mAbilityHasteMod ?? cdtbEntry?.mFlatHasteMod ?? base.FlatHasteMod ?? base.FlatAbilityHasteMod ?? 0);
+  cdtbStats.FlatHasteMod = haste;
+  cdtbStats.FlatAbilityHasteMod = haste;
+  cdtbStats.AbilityHaste = haste;
+
+  return { ...base, ...cdtbStats };
+}
+
 function renderChampionSelect() {
   Object.keys(BUILDER.champions).forEach((name) => {
     (BUILDER.champions[name].tags || []).forEach((tag) => BUILDER.champTags.add(tag));
@@ -274,14 +310,27 @@ function renderChampionModalGrid() {
   renderChampionModalDetail(BUILDER.modalChampFiltered[0] || null);
 }
 
-function renderChampionModalDetail(name) {
+async function renderChampionModalDetail(name) {
   const root = document.getElementById("modalChampDetail");
   if (!name) {
     root.innerHTML = "<p class='text-muted'>No champion found.</p>";
     return;
   }
+
+  const reqId = ++BUILDER.championModalRequestId;
   const c = BUILDER.champions[name];
-  root.innerHTML = `<h3>${name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${c.image.full}' alt='${name}'><p><strong>Tags:</strong> ${(c.tags || []).join(", ")}</p><p>${c.blurb}</p>`;
+  root.innerHTML = `<h3>${name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${c.image.full}' alt='${name}'><p><strong>Tags:</strong> ${(c.tags || []).join(", ")}</p><p>${c.blurb}</p><div class='champ-ability-strip'><span class='text-muted'>Loading abilities...</span></div>`;
+
+  if (!BUILDER.championDetailCache[name]) {
+    const data = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion/${name}.json`).then((r) => r.json()).catch(() => null);
+    BUILDER.championDetailCache[name] = data?.data?.[name] || null;
+  }
+  if (reqId !== BUILDER.championModalRequestId) return;
+
+  const detail = BUILDER.championDetailCache[name];
+  const spells = detail?.spells || [];
+  const icons = spells.map((s) => `<img class='champ-ability-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${s.image.full}' title='${s.name}' alt='${s.name}'>`).join("");
+  root.innerHTML = `<h3>${name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${c.image.full}' alt='${name}'><p><strong>Tags:</strong> ${(c.tags || []).join(", ")}</p><p>${c.blurb}</p><div class='champ-ability-strip'>${icons || "<span class='text-muted'>No abilities found.</span>"}</div>`;
 }
 
 function setChampionFromModal(name) {
@@ -294,8 +343,8 @@ function getRuneMeta(id) {
 }
 
 function runeImgTag(meta, className = "") {
-  const fallback = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='32' fill='%23111f3d'/><circle cx='32' cy='32' r='26' fill='%23273d70'/></svg>");
-  return `<img class="${className}" src="${meta.icon || fallback}" alt="${meta.name}" onerror="this.onerror=null;this.src='${fallback}'">`;
+  const fallback = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc2NCcgaGVpZ2h0PSc2NCc+PHJlY3Qgd2lkdGg9JzY0JyBoZWlnaHQ9JzY0JyByeD0nMzInIGZpbGw9JyMxMTFmM2QnLz48Y2lyY2xlIGN4PSczMicgY3k9JzMyJyByPScyNicgZmlsbD0nIzI3M2Q3MCcvPjwvc3ZnPg==";
+  return `<img class="${className}" src="${meta.icon || fallback}" alt="${meta.name}" data-fallback="${fallback}" onerror="this.onerror=null;this.src=this.dataset.fallback">`;
 }
 
 async function setChampion(name) {
@@ -661,11 +710,22 @@ function openRuneModal(target) {
   document.getElementById("runeModal").classList.remove("hidden");
   const options = getRuneOptions(target);
   document.getElementById("runeModalTitle").textContent = "Select Rune Option";
-  document.getElementById("runeModalList").innerHTML = options.map((o) => {
+  const optionBtn = (o) => {
     const disabled = o.disabled ? "disabled" : "";
     const lockNote = o.disabled ? "Pick from a different secondary row" : (o.desc || "");
     return `<button class="rune-option-btn ${o.disabled ? "is-disabled" : ""}" ${disabled} onclick="selectRuneOption('${o.id}')">${runeImgTag(o)}<div><div class="rune-option-name">${o.name}</div><div class="rune-option-desc">${lockNote}</div></div></button>`;
-  }).join("");
+  };
+
+  if (target.startsWith("secondary")) {
+    const groups = [0, 1, 2]
+      .map((rowIndex) => options.filter((o) => o.rowIndex === rowIndex))
+      .filter((group) => group.length);
+    document.getElementById("runeModalList").innerHTML = groups
+      .map((group, idx) => `<section class='rune-option-group'><h4 class='rune-option-group-title'>Secondary Row ${idx + 1}</h4><div class='rune-option-group-grid'>${group.map(optionBtn).join("")}</div></section>`)
+      .join("");
+  } else {
+    document.getElementById("runeModalList").innerHTML = options.map(optionBtn).join("");
+  }
   document.getElementById("runeModal").onclick = (e) => {
     if (e.target.id === "runeModal") closeRuneModal();
   };
