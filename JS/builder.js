@@ -199,8 +199,13 @@ async function loadBuilderData() {
 
 function buildCdtbItemsById(cdtbData) {
   const byId = new Map();
-  Object.values(cdtbData || {}).forEach((entry) => {
-    const itemId = Number(entry?.itemID ?? entry?.mItemDataClient?.mId ?? entry?.id ?? entry?.mId);
+  Object.entries(cdtbData || {}).forEach(([key, entry]) => {
+    const rawItemId = entry?.itemID
+      ?? entry?.mItemDataClient?.mId
+      ?? entry?.id
+      ?? entry?.mId
+      ?? key;
+    const itemId = Number(String(rawItemId).match(/(\d+)(?:\D*)$/)?.[1]);
     if (!itemId) return;
     byId.set(String(itemId), entry);
   });
