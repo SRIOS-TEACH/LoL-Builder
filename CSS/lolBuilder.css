@@ -471,18 +471,20 @@ body {
 }
 
 .stats-table {
-  width: 100%;
+  width: auto;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .stats-table td {
   border: 1px solid rgba(116, 148, 214, 0.45);
   padding: 0.35rem 0.45rem;
+  width: 5.5rem;
 }
 
 .stats-label { font-weight: 700; }
 .stats-value { text-align: right; font-weight: 700; }
+.stats-table-wrap { overflow-x: auto; }
 
 .rune-panel {
   --rune-splash-url: none;

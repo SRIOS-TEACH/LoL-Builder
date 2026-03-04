@@ -491,7 +491,7 @@ function renderAbilityCards() {
 }
 
 function getItemStats() {
-  const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0 };
+  const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0, msFlat: 0, msPct: 0 };
   BUILDER.itemSlots.forEach((id) => {
     if (!id) return;
     const s = BUILDER.items[id].stats || {};
@@ -509,12 +509,14 @@ function getItemStats() {
       ?? 0,
     );
     totals.asPct += (s.PercentAttackSpeedMod || 0) * 100;
+    totals.msFlat += s.FlatMovementSpeedMod || 0;
+    totals.msPct += (s.PercentMovementSpeedMod || 0) * 100;
   });
   return totals;
 }
 
 function getRuneStats() {
-  const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0 };
+  const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0, msFlat: 0, msPct: 0 };
   const selected = [
     ...BUILDER.runeSelections.primary,
     ...BUILDER.runeSelections.secondary,
@@ -560,6 +562,7 @@ function renderStats() {
   const mr = (base.spellblock + base.spellblockperlevel * (L - 1) + item.mr + rune.mr);
   const asTotal = base.attackspeed * (1 + (base.attackspeedperlevel * (L - 1)) / 100) * (1 + (item.asPct + rune.asPct) / 100);
   const abilityHaste = item.haste + rune.haste;
+  const moveSpeed = (base.movespeed + item.msFlat + rune.msFlat) * (1 + (item.msPct + rune.msPct) / 100);
 
   const rows = [
     { name: "HP", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
@@ -570,9 +573,15 @@ function renderStats() {
     { name: "MR", value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${L - 1} + ${item.mr.toFixed(1)} + ${rune.mr.toFixed(1)}` },
     { name: "Attack Speed", value: asTotal, eq: `${base.attackspeed.toFixed(3)} * level mult * (1 + ${(item.asPct + rune.asPct).toFixed(1)}%)` },
     { name: "Ability Haste", value: abilityHaste, eq: `0 + ${item.haste.toFixed(1)} + ${rune.haste.toFixed(1)}` },
+    { name: "Movement Speed", value: moveSpeed, eq: `(${base.movespeed.toFixed(1)} + ${item.msFlat.toFixed(1)} + ${rune.msFlat.toFixed(1)}) * (1 + ${(item.msPct + rune.msPct).toFixed(1)}%)` },
   ];
 
-  root.innerHTML = `<table class="stats-table">${rows.map((r) => `<tr><td class="stats-label">${r.name}</td><td class="stats-value" title="${r.eq}">${r.value.toFixed(r.name === "Attack Speed" ? 3 : 1)}</td></tr>`).join("")}</table>`;
+  const pairRows = [];
+  for (let i = 0; i < rows.length; i += 2) {
+    pairRows.push([rows[i], rows[i + 1] || null]);
+  }
+
+  root.innerHTML = `<table class="stats-table">${pairRows.map(([left, right]) => `<tr><td class="stats-label">${left.name}</td><td class="stats-value" title="${left.eq}">${left.value.toFixed(left.name === "Attack Speed" ? 3 : 1)}</td>${right ? `<td class="stats-label">${right.name}</td><td class="stats-value" title="${right.eq}">${right.value.toFixed(right.name === "Attack Speed" ? 3 : 1)}</td>` : '<td class="stats-label"></td><td class="stats-value"></td>'}</tr>`).join("")}</table>`;
 }
 
 function renderRunePanel() {
