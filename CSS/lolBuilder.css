@@ -253,19 +253,26 @@ body {
 }
 
 .champ-modal-toolbar {
-  display: grid;
-  grid-template-columns: minmax(300px, 420px) 1fr;
-  gap: 0.75rem;
-  align-items: start;
+  display: flex;
+  justify-content: flex-start;
   margin: 0.45rem 0 0.75rem;
+}
+
+.champ-toolbar-left {
+  width: min(900px, 100%);
 }
 
 .champ-filter-row {
   align-items: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.25rem;
 }
 
 .champ-filter-row .tag-pill {
   width: auto;
+  flex: 0 0 auto;
   padding: 0.25rem 0.55rem;
 }
 
@@ -615,7 +622,6 @@ body {
   border-style: dashed;
 }
 
-<<<<<<< codex/prototype-ability-haste-extraction-methods
 .rune-option-group {
   border: 1px solid rgba(98, 128, 196, 0.42);
   border-radius: 10px;
@@ -637,8 +643,6 @@ body {
   gap: 0.45rem;
 }
 
-=======
->>>>>>> main
 .rune-option-btn img {
   width: 44px;
   height: 44px;
@@ -657,7 +661,6 @@ body {
 }
 
 @media (max-width: 780px) {
-<<<<<<< codex/prototype-ability-haste-extraction-methods
   .champ-modal-toolbar {
     grid-template-columns: 1fr;
   }
@@ -669,11 +672,6 @@ body {
   .rune-option-group-grid {
     grid-template-columns: 1fr;
   }
-=======
-  .rune-option-list {
-    grid-template-columns: 1fr;
-  }
->>>>>>> main
 }
 
 .ability-layout {

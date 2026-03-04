@@ -35,32 +35,32 @@ const RUNE_DATA = {
   paths: {
     sorcery: {
       name: "Sorcery",
-      splash: "url(https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Sorcery/Sorcery.png)",
-      icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Sorcery/Sorcery.png",
+      splash: "url(https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/7202_sorcery.png)",
+      icon: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/7202_sorcery.png",
       primaryRows: [["arcane-comet", "summon-aery", "phase-rush"], ["nullifying-orb", "manaflow-band", "nimbus-cloak"], ["transcendence", "celerity", "absolute-focus"], ["scorch", "waterwalking", "gathering-storm"]],
     },
     precision: {
       name: "Precision",
-      splash: "url(https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Precision/Precision.png)",
-      icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Precision/Precision.png",
+      splash: "url(https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/7201_precision.png)",
+      icon: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/7201_precision.png",
       primaryRows: [["press-the-attack", "fleet-footwork", "conqueror"], ["overheal", "triumph", "presence-of-mind"], ["legend-alacrity", "legend-haste", "legend-bloodline"], ["coup-de-grace", "cut-down", "last-stand"]],
     },
     domination: {
       name: "Domination",
-      splash: "url(https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Domination/Domination.png)",
-      icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Domination/Domination.png",
+      splash: "url(https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/7200_domination.png)",
+      icon: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/7200_domination.png",
       primaryRows: [["electrocute", "dark-harvest", "hail-of-blades"], ["cheap-shot", "taste-of-blood", "sudden-impact"], ["zombie-ward", "ghost-poro", "eyeball-collection"], ["treasure-hunter", "relentless-hunter", "ultimate-hunter"]],
     },
     resolve: {
       name: "Resolve",
-      splash: "url(https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Resolve/Resolve.png)",
-      icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Resolve/Resolve.png",
+      splash: "url(https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/7204_resolve.png)",
+      icon: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/7204_resolve.png",
       primaryRows: [["grasp-of-the-undying", "aftershock", "guardian"], ["shield-bash", "demolish", "font-of-life"], ["conditioning", "second-wind", "bone-plating"], ["overgrowth", "revitalize", "unflinching"]],
     },
     inspiration: {
       name: "Inspiration",
-      splash: "url(https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Inspiration/Inspiration.png)",
-      icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Inspiration/Inspiration.png",
+      splash: "url(https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/7203_whimsy.png)",
+      icon: "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/7203_whimsy.png",
       primaryRows: [["first-strike", "glacial-augment", "unsealed-spellbook"], ["hextech-flashtraption", "magical-footwear", "cashback"], ["biscuit-delivery", "triple-tonic", "time-warp-tonic"], ["cosmic-insight", "approach-velocity", "jack-of-all-trades"]],
     },
   },
@@ -199,42 +199,13 @@ async function loadBuilderData() {
 
 function buildCdtbItemsById(cdtbData) {
   const byId = new Map();
-  Object.values(cdtbData || {}).forEach((entry) => {
-    const itemId = Number(entry?.itemID ?? entry?.mItemDataClient?.mId ?? entry?.id ?? entry?.mId);
-    if (!itemId) return;
-    byId.set(String(itemId), entry);
-  });
-  return byId;
-}
-
-function buildMergedItemStats(ddragonStats, cdtbEntry) {
-  const base = { ...(ddragonStats || {}) };
-  if (!cdtbEntry) return base;
-
-  const cdtbStats = {
-    FlatHPPoolMod: Number(cdtbEntry?.mFlatHPPoolMod ?? base.FlatHPPoolMod ?? 0),
-    FlatMPPoolMod: Number(cdtbEntry?.mFlatMPPoolMod ?? base.FlatMPPoolMod ?? 0),
-    FlatPhysicalDamageMod: Number(cdtbEntry?.mFlatPhysicalDamageMod ?? base.FlatPhysicalDamageMod ?? 0),
-    FlatMagicDamageMod: Number(cdtbEntry?.mFlatMagicDamageMod ?? base.FlatMagicDamageMod ?? 0),
-    FlatArmorMod: Number(cdtbEntry?.mFlatArmorMod ?? base.FlatArmorMod ?? 0),
-    FlatSpellBlockMod: Number(cdtbEntry?.mFlatSpellBlockMod ?? base.FlatSpellBlockMod ?? 0),
-    PercentAttackSpeedMod: Number(cdtbEntry?.mPercentAttackSpeedMod ?? base.PercentAttackSpeedMod ?? 0),
-    FlatMovementSpeedMod: Number(cdtbEntry?.mFlatMovementSpeedMod ?? base.FlatMovementSpeedMod ?? 0),
-    PercentMovementSpeedMod: Number(cdtbEntry?.mPercentMovementSpeedMod ?? base.PercentMovementSpeedMod ?? 0),
-  };
-
-  const haste = Number(cdtbEntry?.mAbilityHasteMod ?? cdtbEntry?.mFlatHasteMod ?? base.FlatHasteMod ?? base.FlatAbilityHasteMod ?? 0);
-  cdtbStats.FlatHasteMod = haste;
-  cdtbStats.FlatAbilityHasteMod = haste;
-  cdtbStats.AbilityHaste = haste;
-
-  return { ...base, ...cdtbStats };
-}
-
-function buildCdtbItemsById(cdtbData) {
-  const byId = new Map();
-  Object.values(cdtbData || {}).forEach((entry) => {
-    const itemId = Number(entry?.itemID ?? entry?.mItemDataClient?.mId ?? entry?.id ?? entry?.mId);
+  Object.entries(cdtbData || {}).forEach(([key, entry]) => {
+    const rawItemId = entry?.itemID
+      ?? entry?.mItemDataClient?.mId
+      ?? entry?.id
+      ?? entry?.mId
+      ?? key;
+    const itemId = Number(String(rawItemId).match(/(\d+)(?:\D*)$/)?.[1]);
     if (!itemId) return;
     byId.set(String(itemId), entry);
   });
@@ -305,7 +276,7 @@ function renderChampionModalGrid() {
 
   document.getElementById("modalChampResults").textContent = `${BUILDER.modalChampFiltered.length} champions`;
   document.getElementById("modalChampGrid").innerHTML = BUILDER.modalChampFiltered
-    .map((name) => `<button class="item-button-icon" data-champ="${name}" onclick="setChampionFromModal(this.dataset.champ)" title="${name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.champions[name].image.full}" alt="${name}"></button>`)
+    .map((name) => `<button class="item-button-icon" data-champ="${name}" onmouseenter="renderChampionModalDetail(this.dataset.champ)" onclick="setChampionFromModal(this.dataset.champ)" title="${name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.champions[name].image.full}" alt="${name}"></button>`)
     .join("");
   renderChampionModalDetail(BUILDER.modalChampFiltered[0] || null);
 }
@@ -329,7 +300,7 @@ async function renderChampionModalDetail(name) {
 
   const detail = BUILDER.championDetailCache[name];
   const spells = detail?.spells || [];
-  const icons = spells.map((s) => `<img class='champ-ability-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${s.image.full}' title='${s.name}' alt='${s.name}'>`).join("");
+  const icons = spells.map((s) => `<img class='champ-ability-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${s.image.full}' title='${s.name}' alt='${s.name}' loading='lazy'>`).join("");
   root.innerHTML = `<h3>${name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${c.image.full}' alt='${name}'><p><strong>Tags:</strong> ${(c.tags || []).join(", ")}</p><p>${c.blurb}</p><div class='champ-ability-strip'>${icons || "<span class='text-muted'>No abilities found.</span>"}</div>`;
 }
 
