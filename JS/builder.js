@@ -179,12 +179,54 @@ async function loadBuilderData() {
   const champions = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion.json`).then((r) => r.json());
   BUILDER.champions = champions.data;
 
-  const items = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/item.json`).then((r) => r.json());
+  const [items, cdtbData] = await Promise.all([
+    fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/item.json`).then((r) => r.json()),
+    fetch("https://raw.communitydragon.org/latest/game/items.cdtb.bin.json").then((r) => r.json()).catch(() => null),
+  ]);
+  const cdtbById = buildCdtbItemsById(cdtbData);
+
   Object.entries(items.data).forEach(([id, item]) => {
     if (!isSummonersRiftItem(id, item)) return;
-    BUILDER.items[id] = item;
-    (item.tags || []).forEach((tag) => BUILDER.itemTags.add(tag));
+    const cdtbEntry = cdtbById.get(String(id));
+    const stats = buildMergedItemStats(item.stats || {}, cdtbEntry);
+    const mergedItem = { ...item, stats };
+    BUILDER.items[id] = mergedItem;
+    (mergedItem.tags || []).forEach((tag) => BUILDER.itemTags.add(tag));
   });
+}
+
+function buildCdtbItemsById(cdtbData) {
+  const byId = new Map();
+  Object.values(cdtbData || {}).forEach((entry) => {
+    const itemId = Number(entry?.itemID ?? entry?.mItemDataClient?.mId ?? entry?.id ?? entry?.mId);
+    if (!itemId) return;
+    byId.set(String(itemId), entry);
+  });
+  return byId;
+}
+
+function buildMergedItemStats(ddragonStats, cdtbEntry) {
+  const base = { ...(ddragonStats || {}) };
+  if (!cdtbEntry) return base;
+
+  const cdtbStats = {
+    FlatHPPoolMod: Number(cdtbEntry?.mFlatHPPoolMod ?? base.FlatHPPoolMod ?? 0),
+    FlatMPPoolMod: Number(cdtbEntry?.mFlatMPPoolMod ?? base.FlatMPPoolMod ?? 0),
+    FlatPhysicalDamageMod: Number(cdtbEntry?.mFlatPhysicalDamageMod ?? base.FlatPhysicalDamageMod ?? 0),
+    FlatMagicDamageMod: Number(cdtbEntry?.mFlatMagicDamageMod ?? base.FlatMagicDamageMod ?? 0),
+    FlatArmorMod: Number(cdtbEntry?.mFlatArmorMod ?? base.FlatArmorMod ?? 0),
+    FlatSpellBlockMod: Number(cdtbEntry?.mFlatSpellBlockMod ?? base.FlatSpellBlockMod ?? 0),
+    PercentAttackSpeedMod: Number(cdtbEntry?.mPercentAttackSpeedMod ?? base.PercentAttackSpeedMod ?? 0),
+    FlatMovementSpeedMod: Number(cdtbEntry?.mFlatMovementSpeedMod ?? base.FlatMovementSpeedMod ?? 0),
+    PercentMovementSpeedMod: Number(cdtbEntry?.mPercentMovementSpeedMod ?? base.PercentMovementSpeedMod ?? 0),
+  };
+
+  const haste = Number(cdtbEntry?.mAbilityHasteMod ?? cdtbEntry?.mFlatHasteMod ?? base.FlatHasteMod ?? base.FlatAbilityHasteMod ?? 0);
+  cdtbStats.FlatHasteMod = haste;
+  cdtbStats.FlatAbilityHasteMod = haste;
+  cdtbStats.AbilityHaste = haste;
+
+  return { ...base, ...cdtbStats };
 }
 
 function renderChampionSelect() {
