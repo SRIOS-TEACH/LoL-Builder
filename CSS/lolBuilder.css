@@ -661,6 +661,10 @@ body {
 }
 
 @media (max-width: 780px) {
+  .champ-modal-toolbar {
+    grid-template-columns: 1fr;
+  }
+
   .rune-option-list {
     grid-template-columns: 1fr;
   }
