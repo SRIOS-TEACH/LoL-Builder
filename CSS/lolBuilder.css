@@ -453,36 +453,103 @@ body {
 
 #builderStatus {
   min-height: 0;
-  margin: 0.2rem 0 0.5rem;
+  margin: 0 0 0.35rem;
 }
 
 .champion-stats-layout {
   display: grid;
-  grid-template-columns: 90px 1fr;
+  grid-template-columns: 90px 1fr minmax(220px, 280px);
   gap: 0.6rem;
   align-items: start;
 }
 
-.selected-champion-badge img {
+.selected-champion-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.champion-picker-icon-btn {
   width: 74px;
   height: 74px;
   border-radius: 10px;
   border: 1px solid #7896d8;
+  background: rgba(9, 20, 40, 0.72);
+  color: #8ea8dd;
+  font-size: 1.6rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.champion-picker-icon-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.champ-level-control {
+  width: 74px;
 }
 
 .stats-table {
-  width: 100%;
+  width: auto;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 1.5rem;
 }
 
 .stats-table td {
   border: 1px solid rgba(116, 148, 214, 0.45);
   padding: 0.35rem 0.45rem;
+  width: 7.2rem;
 }
 
-.stats-label { font-weight: 700; }
-.stats-value { text-align: right; font-weight: 700; }
+.stats-label { font-weight: 700; white-space: nowrap; }
+.stats-value { text-align: right; font-weight: 400; }
+.stat-icon {
+  margin-right: 0.35rem;
+  font-size: 0.9em;
+}
+.stats-table-wrap { overflow-x: auto; }
+
+.champion-items-inline {
+  margin-top: 0;
+}
+
+.inline-section-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #b9ccf3;
+}
+
+.champion-items-inline .item-slots {
+  grid-template-columns: repeat(2, minmax(92px, 1fr));
+  gap: 0.6rem;
+}
+
+.champion-items-inline .item-slot-btn {
+  min-height: 88px;
+}
+
+.champion-items-inline .item-slot-icon {
+  width: 56px;
+  height: 56px;
+}
+
+.champion-items-inline .item-slot-empty {
+  width: 56px;
+  height: 56px;
+  font-size: 1.05rem;
+}
+
 
 .rune-panel {
   --rune-splash-url: none;
@@ -528,6 +595,18 @@ body {
   font-size: 1.02rem;
 }
 
+.rune-path-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.rune-path-btn img {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+}
+
 .rune-subsection-title {
   font-size: 0.72rem;
   text-transform: uppercase;
@@ -540,6 +619,28 @@ body {
 .rune-subsection-title-shards {
   margin-top: 0.7rem;
   color: #b8cbf3;
+}
+
+.rune-shard-row-wrap {
+  grid-column: 1 / -1;
+  background: rgba(7, 18, 44, 0.74);
+  border: 1px solid rgba(112, 146, 224, 0.55);
+  border-radius: 12px;
+  padding: 0.6rem 0.7rem;
+}
+
+.rune-shard-row-wrap .rune-subsection-title-shards {
+  margin-top: 0;
+}
+
+.rune-shard-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.rune-shard-row .rune-slot-row {
+  margin-bottom: 0;
 }
 
 .rune-slot-row {
@@ -684,6 +785,19 @@ body {
   grid-column: 1 / -1;
 }
 
+.ability-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ability-head .ability-icon {
+  margin: 0;
+  width: 44px;
+  height: 44px;
+}
+
 .ability-rank-row {
   margin: 0.35rem 0;
 }
@@ -699,8 +813,8 @@ body {
 .item-slot-btn {
   background: transparent !important;
   border: 2px dashed #6f88be !important;
-  min-height: 56px;
-  padding: 0.25rem;
+  min-height: 52px;
+  padding: 0.2rem;
 }
 
 .item-slot-label { display: none; }
@@ -713,8 +827,8 @@ body {
 }
 
 .item-slot-icon {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   border-radius: 4px;
 }
 
@@ -723,8 +837,21 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .champion-items-inline .item-slots {
+    grid-template-columns: repeat(3, minmax(72px, 1fr));
+  }
+
   .rune-panel-grid,
   .ability-layout {
     grid-template-columns: 1fr;
   }
+
+  .rune-shard-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.builder-dashboard .col-lg-6 > .card + .card {
+  margin-top: 0.6rem;
 }

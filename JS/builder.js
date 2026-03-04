@@ -151,6 +151,7 @@ async function initBuilder() {
     initChampionModal();
     renderRunePanel();
     renderAbilityCards();
+    renderStats();
     setStatus("");
   } catch (error) {
     console.error(error);
@@ -226,6 +227,13 @@ function buildMergedItemStats(ddragonStats, cdtbEntry) {
     PercentAttackSpeedMod: Number(cdtbEntry?.mPercentAttackSpeedMod ?? base.PercentAttackSpeedMod ?? 0),
     FlatMovementSpeedMod: Number(cdtbEntry?.mFlatMovementSpeedMod ?? base.FlatMovementSpeedMod ?? 0),
     PercentMovementSpeedMod: Number(cdtbEntry?.mPercentMovementSpeedMod ?? base.PercentMovementSpeedMod ?? 0),
+    FlatHPRegenMod: Number(cdtbEntry?.mFlatHPRegenMod ?? base.FlatHPRegenMod ?? 0),
+    FlatMPRegenMod: Number(cdtbEntry?.mFlatMPRegenMod ?? base.FlatMPRegenMod ?? 0),
+    FlatCritChanceMod: Number(cdtbEntry?.mFlatCritChanceMod ?? base.FlatCritChanceMod ?? 0),
+    PercentCritChanceMod: Number(cdtbEntry?.mPercentCritChanceMod ?? base.PercentCritChanceMod ?? 0),
+    FlatCritDamageMod: Number(cdtbEntry?.mFlatCritDamageMod ?? base.FlatCritDamageMod ?? 0),
+    PercentCritDamageMod: Number(cdtbEntry?.mPercentCritDamageMod ?? base.PercentCritDamageMod ?? 0),
+    FlatAttackRangeMod: Number(cdtbEntry?.mFlatAttackRangeMod ?? base.FlatAttackRangeMod ?? 0),
   };
 
   const haste = Number(cdtbEntry?.mAbilityHasteMod ?? cdtbEntry?.mFlatHasteMod ?? base.FlatHasteMod ?? base.FlatAbilityHasteMod ?? 0);
@@ -240,7 +248,8 @@ function renderChampionSelect() {
   Object.keys(BUILDER.champions).forEach((name) => {
     (BUILDER.champions[name].tags || []).forEach((tag) => BUILDER.champTags.add(tag));
   });
-  document.getElementById("championPickerBtn").textContent = "Select champion";
+  document.getElementById("championPickerBtn").innerHTML = "+";
+  document.getElementById("championPickerBtn").setAttribute("aria-label", "Select champion");
 }
 
 function initChampionModal() {
@@ -328,10 +337,8 @@ async function setChampion(name) {
   const splashUrl = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`;
   document.body.style.setProperty("--builder-splash-url", splashUrl);
   document.getElementById("runesCard").style.setProperty("--rune-splash-url", RUNE_DATA.paths[BUILDER.runeSelections.primaryPath].splash);
-  document.getElementById("championPickerBtn").textContent = name;
-
-  document.getElementById("selectedChampionBadge").classList.remove("hidden");
-  document.getElementById("selectedChampionBadge").innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.championData.image.full}" alt="${name}">`;
+  document.getElementById("championPickerBtn").innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.championData.image.full}" alt="${name}">`;
+  document.getElementById("championPickerBtn").setAttribute("aria-label", `Selected champion: ${name}`);
 
   enforceAbilityRules();
   renderAbilityCards();
@@ -463,7 +470,7 @@ function renderAbilityCards() {
   }
 
   const champ = BUILDER.championData;
-  const passive = `<div class="ability-card"><strong>Passive - ${champ.passive.name}</strong><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><p>${champ.passive.description}</p></div>`;
+  const passive = `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p>${champ.passive.description}</p></div>`;
 
   const spells = champ.spells.map((spell, i) => {
     const key = ["q", "w", "e", "r"][i];
@@ -473,7 +480,7 @@ function renderAbilityCards() {
     const cd = parseByRank(spell.cooldownBurn, rank);
     const cost = parseByRank(spell.costBurn, rank);
     const range = parseByRank(spell.rangeBurn, rank);
-    return `<div class="ability-card"><strong>${key.toUpperCase()} - ${spell.name}</strong><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><p>${spell.description}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div></div>`;
+    return `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p>${spell.description}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div></div>`;
   }).join("");
 
   root.innerHTML = passive + spells;
@@ -491,12 +498,17 @@ function renderAbilityCards() {
 }
 
 function getItemStats() {
-  const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0 };
+  const totals = {
+    hp: 0, hp5: 0, mp: 0, mp5: 0, ad: 0, ap: 0, armor: 0, mr: 0,
+    haste: 0, asPct: 0, critChance: 0, critDamage: 0, attackRange: 0, msFlat: 0, msPct: 0,
+  };
   BUILDER.itemSlots.forEach((id) => {
     if (!id) return;
     const s = BUILDER.items[id].stats || {};
     totals.hp += s.FlatHPPoolMod || 0;
     totals.mp += s.FlatMPPoolMod || 0;
+    totals.hp5 += s.FlatHPRegenMod || 0;
+    totals.mp5 += s.FlatMPRegenMod || 0;
     totals.ad += s.FlatPhysicalDamageMod || 0;
     totals.ap += s.FlatMagicDamageMod || 0;
     totals.armor += s.FlatArmorMod || 0;
@@ -509,12 +521,20 @@ function getItemStats() {
       ?? 0,
     );
     totals.asPct += (s.PercentAttackSpeedMod || 0) * 100;
+    totals.critChance += ((s.FlatCritChanceMod || 0) + (s.PercentCritChanceMod || 0)) * 100;
+    totals.critDamage += ((s.FlatCritDamageMod || 0) + (s.PercentCritDamageMod || 0)) * 100;
+    totals.attackRange += s.FlatAttackRangeMod || 0;
+    totals.msFlat += s.FlatMovementSpeedMod || 0;
+    totals.msPct += (s.PercentMovementSpeedMod || 0) * 100;
   });
   return totals;
 }
 
 function getRuneStats() {
-  const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0 };
+  const totals = {
+    hp: 0, hp5: 0, mp: 0, mp5: 0, ad: 0, ap: 0, armor: 0, mr: 0,
+    haste: 0, asPct: 0, critChance: 0, critDamage: 0, attackRange: 0, msFlat: 0, msPct: 0,
+  };
   const selected = [
     ...BUILDER.runeSelections.primary,
     ...BUILDER.runeSelections.secondary,
@@ -543,8 +563,32 @@ function getRuneStats() {
 
 function renderStats() {
   const root = document.getElementById("statsTable");
+  const emptyRows = [
+    { name: "HP", icon: "❤️" },
+    { name: "MP", icon: "🔷" },
+    { name: "HP/5", icon: "💚" },
+    { name: "MP/5", icon: "💙" },
+    { name: "AD", icon: "🗡️" },
+    { name: "AP", icon: "✨" },
+    { name: "Range", icon: "🏹" },
+    { name: "AH", icon: "⏱️" },
+    { name: "Arm", icon: "🛡️" },
+    { name: "MR", icon: "🔮" },
+    { name: "AS", icon: "⚡" },
+    { name: "MS", icon: "👟" },
+    { name: "Crit %", icon: "🎯" },
+    { name: "Crit Dmg", icon: "💥" },
+  ];
+  const renderPairedRows = (rows) => {
+    const pairRows = [];
+    for (let i = 0; i < rows.length; i += 2) {
+      pairRows.push([rows[i], rows[i + 1] || null]);
+    }
+    return `<table class="stats-table">${pairRows.map(([left, right]) => `<tr><td class="stats-label"><span class="stat-icon">${left.icon}</span>${left.name}</td><td class="stats-value" title="${left.eq || ''}">${left.displayValue}</td>${right ? `<td class="stats-label"><span class="stat-icon">${right.icon}</span>${right.name}</td><td class="stats-value" title="${right.eq || ''}">${right.displayValue}</td>` : '<td class="stats-label"></td><td class="stats-value"></td>'}</tr>`).join("")}</table>`;
+  };
+
   if (!BUILDER.championData) {
-    root.innerHTML = "<p class='text-muted'>Select a champion to view stats.</p>";
+    root.innerHTML = renderPairedRows(emptyRows.map((row) => ({ ...row, displayValue: "--" })));
     return;
   }
 
@@ -554,25 +598,41 @@ function renderStats() {
   const L = BUILDER.level;
 
   const hp = (base.hp + base.hpperlevel * (L - 1) + item.hp + rune.hp);
+  const hp5 = (base.hpregen + base.hpregenperlevel * (L - 1) + item.hp5 + rune.hp5);
   const mp = (base.mp + base.mpperlevel * (L - 1) + item.mp + rune.mp);
+  const mp5 = (base.mpregen + base.mpregenperlevel * (L - 1) + item.mp5 + rune.mp5);
   const ad = (base.attackdamage + base.attackdamageperlevel * (L - 1) + item.ad + rune.ad);
+  const ap = item.ap + rune.ap;
   const armor = (base.armor + base.armorperlevel * (L - 1) + item.armor + rune.armor);
   const mr = (base.spellblock + base.spellblockperlevel * (L - 1) + item.mr + rune.mr);
   const asTotal = base.attackspeed * (1 + (base.attackspeedperlevel * (L - 1)) / 100) * (1 + (item.asPct + rune.asPct) / 100);
   const abilityHaste = item.haste + rune.haste;
+  const critChance = (base.crit + base.critperlevel * (L - 1) + item.critChance + rune.critChance);
+  const critDamage = (base.critdamage ? base.critdamage * 100 : 175) + item.critDamage + rune.critDamage;
+  const attackRange = (base.attackrange || 0) + item.attackRange + rune.attackRange;
+  const moveSpeed = (base.movespeed + item.msFlat + rune.msFlat) * (1 + (item.msPct + rune.msPct) / 100);
 
   const rows = [
-    { name: "HP", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
-    { name: "MP", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
-    { name: "AD", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)}` },
-    { name: "AP", value: item.ap + rune.ap, eq: `0 + ${item.ap.toFixed(1)} + ${rune.ap.toFixed(1)}` },
-    { name: "Armor", value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${L - 1} + ${item.armor.toFixed(1)} + ${rune.armor.toFixed(1)}` },
-    { name: "MR", value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${L - 1} + ${item.mr.toFixed(1)} + ${rune.mr.toFixed(1)}` },
-    { name: "Attack Speed", value: asTotal, eq: `${base.attackspeed.toFixed(3)} * level mult * (1 + ${(item.asPct + rune.asPct).toFixed(1)}%)` },
-    { name: "Ability Haste", value: abilityHaste, eq: `0 + ${item.haste.toFixed(1)} + ${rune.haste.toFixed(1)}` },
+    { name: "HP", icon: "❤️", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
+    { name: "MP", icon: "🔷", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
+    { name: "HP/5", icon: "💚", value: hp5, eq: `${base.hpregen.toFixed(1)} + ${base.hpregenperlevel.toFixed(2)}*${L - 1} + ${item.hp5.toFixed(1)} + ${rune.hp5.toFixed(1)}` },
+    { name: "MP/5", icon: "💙", value: mp5, eq: `${base.mpregen.toFixed(1)} + ${base.mpregenperlevel.toFixed(2)}*${L - 1} + ${item.mp5.toFixed(1)} + ${rune.mp5.toFixed(1)}` },
+    { name: "AD", icon: "🗡️", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)}` },
+    { name: "AP", icon: "✨", value: ap, eq: `0 + ${item.ap.toFixed(1)} + ${rune.ap.toFixed(1)}` },
+    { name: "Range", icon: "🏹", value: attackRange, eq: `${(base.attackrange || 0).toFixed(1)} + ${item.attackRange.toFixed(1)} + ${rune.attackRange.toFixed(1)}` },
+    { name: "AH", icon: "⏱️", value: abilityHaste, eq: `0 + ${item.haste.toFixed(1)} + ${rune.haste.toFixed(1)}` },
+    { name: "Arm", icon: "🛡️", value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${L - 1} + ${item.armor.toFixed(1)} + ${rune.armor.toFixed(1)}` },
+    { name: "MR", icon: "🔮", value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${L - 1} + ${item.mr.toFixed(1)} + ${rune.mr.toFixed(1)}` },
+    { name: "AS", icon: "⚡", value: asTotal, eq: `${base.attackspeed.toFixed(3)} * level mult * (1 + ${(item.asPct + rune.asPct).toFixed(1)}%)` },
+    { name: "MS", icon: "👟", value: moveSpeed, eq: `(${base.movespeed.toFixed(1)} + ${item.msFlat.toFixed(1)} + ${rune.msFlat.toFixed(1)}) * (1 + ${(item.msPct + rune.msPct).toFixed(1)}%)` },
+    { name: "Crit %", icon: "🎯", value: critChance, eq: `${base.crit.toFixed(1)} + ${base.critperlevel.toFixed(1)}*${L - 1} + ${item.critChance.toFixed(1)} + ${rune.critChance.toFixed(1)}` },
+    { name: "Crit Dmg", icon: "💥", value: critDamage, eq: `${(base.critdamage ? base.critdamage * 100 : 175).toFixed(1)} + ${item.critDamage.toFixed(1)} + ${rune.critDamage.toFixed(1)}` },
   ];
 
-  root.innerHTML = `<table class="stats-table">${rows.map((r) => `<tr><td class="stats-label">${r.name}</td><td class="stats-value" title="${r.eq}">${r.value.toFixed(r.name === "Attack Speed" ? 3 : 1)}</td></tr>`).join("")}</table>`;
+  root.innerHTML = renderPairedRows(rows.map((row) => ({
+    ...row,
+    displayValue: row.value.toFixed(row.name === "AS" ? 3 : 1),
+  })));
 }
 
 function renderRunePanel() {
@@ -590,21 +650,25 @@ function renderRunePanel() {
 
   root.innerHTML = `
     <div class="rune-column-block">
-      <div class="rune-column-title"><button class='btn btn-sm' onclick="openRuneModal('primaryPath_0')">${primaryPath.name}</button></div>
+      <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' onclick="openRuneModal('primaryPath_0')"><img src="${primaryPath.icon}" alt="${primaryPath.name}"><span>${primaryPath.name}</span></button></div>
       ${renderSlot(BUILDER.runeSelections.primary[0], "Keystone", "primary_0")}
       ${renderSlot(BUILDER.runeSelections.primary[1], "Row 1", "primary_1")}
       ${renderSlot(BUILDER.runeSelections.primary[2], "Row 2", "primary_2")}
       ${renderSlot(BUILDER.runeSelections.primary[3], "Row 3", "primary_3")}
     </div>
     <div class="rune-column-block">
-      <div class="rune-column-title"><button class='btn btn-sm' onclick="openRuneModal('secondaryPath_0')">${secondaryPath.name}</button></div>
+      <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' onclick="openRuneModal('secondaryPath_0')"><img src="${secondaryPath.icon}" alt="${secondaryPath.name}"><span>${secondaryPath.name}</span></button></div>
       <div class='rune-subsection-title'>Secondary Runes</div>
       ${renderSlot(BUILDER.runeSelections.secondary[0], "Secondary 1", "secondary_0")}
       ${renderSlot(BUILDER.runeSelections.secondary[1], "Secondary 2", "secondary_1")}
+    </div>
+    <div class="rune-shard-row-wrap">
       <div class='rune-subsection-title rune-subsection-title-shards'>Stat Shards</div>
-      ${renderSlot(BUILDER.runeSelections.shards[0], "Shard 1", "shard_0")}
-      ${renderSlot(BUILDER.runeSelections.shards[1], "Shard 2", "shard_1")}
-      ${renderSlot(BUILDER.runeSelections.shards[2], "Shard 3", "shard_2")}
+      <div class="rune-shard-row">
+        ${renderSlot(BUILDER.runeSelections.shards[0], "Shard 1", "shard_0")}
+        ${renderSlot(BUILDER.runeSelections.shards[1], "Shard 2", "shard_1")}
+        ${renderSlot(BUILDER.runeSelections.shards[2], "Shard 3", "shard_2")}
+      </div>
     </div>
   `;
 }
