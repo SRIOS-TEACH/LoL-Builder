@@ -615,6 +615,7 @@ body {
   border-style: dashed;
 }
 
+<<<<<<< codex/prototype-ability-haste-extraction-methods
 .rune-option-group {
   border: 1px solid rgba(98, 128, 196, 0.42);
   border-radius: 10px;
@@ -636,6 +637,8 @@ body {
   gap: 0.45rem;
 }
 
+=======
+>>>>>>> main
 .rune-option-btn img {
   width: 44px;
   height: 44px;
@@ -654,6 +657,7 @@ body {
 }
 
 @media (max-width: 780px) {
+<<<<<<< codex/prototype-ability-haste-extraction-methods
   .champ-modal-toolbar {
     grid-template-columns: 1fr;
   }
@@ -665,6 +669,11 @@ body {
   .rune-option-group-grid {
     grid-template-columns: 1fr;
   }
+=======
+  .rune-option-list {
+    grid-template-columns: 1fr;
+  }
+>>>>>>> main
 }
 
 .ability-layout {

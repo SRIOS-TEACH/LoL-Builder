@@ -231,6 +231,40 @@ function buildMergedItemStats(ddragonStats, cdtbEntry) {
   return { ...base, ...cdtbStats };
 }
 
+function buildCdtbItemsById(cdtbData) {
+  const byId = new Map();
+  Object.values(cdtbData || {}).forEach((entry) => {
+    const itemId = Number(entry?.itemID ?? entry?.mItemDataClient?.mId ?? entry?.id ?? entry?.mId);
+    if (!itemId) return;
+    byId.set(String(itemId), entry);
+  });
+  return byId;
+}
+
+function buildMergedItemStats(ddragonStats, cdtbEntry) {
+  const base = { ...(ddragonStats || {}) };
+  if (!cdtbEntry) return base;
+
+  const cdtbStats = {
+    FlatHPPoolMod: Number(cdtbEntry?.mFlatHPPoolMod ?? base.FlatHPPoolMod ?? 0),
+    FlatMPPoolMod: Number(cdtbEntry?.mFlatMPPoolMod ?? base.FlatMPPoolMod ?? 0),
+    FlatPhysicalDamageMod: Number(cdtbEntry?.mFlatPhysicalDamageMod ?? base.FlatPhysicalDamageMod ?? 0),
+    FlatMagicDamageMod: Number(cdtbEntry?.mFlatMagicDamageMod ?? base.FlatMagicDamageMod ?? 0),
+    FlatArmorMod: Number(cdtbEntry?.mFlatArmorMod ?? base.FlatArmorMod ?? 0),
+    FlatSpellBlockMod: Number(cdtbEntry?.mFlatSpellBlockMod ?? base.FlatSpellBlockMod ?? 0),
+    PercentAttackSpeedMod: Number(cdtbEntry?.mPercentAttackSpeedMod ?? base.PercentAttackSpeedMod ?? 0),
+    FlatMovementSpeedMod: Number(cdtbEntry?.mFlatMovementSpeedMod ?? base.FlatMovementSpeedMod ?? 0),
+    PercentMovementSpeedMod: Number(cdtbEntry?.mPercentMovementSpeedMod ?? base.PercentMovementSpeedMod ?? 0),
+  };
+
+  const haste = Number(cdtbEntry?.mAbilityHasteMod ?? cdtbEntry?.mFlatHasteMod ?? base.FlatHasteMod ?? base.FlatAbilityHasteMod ?? 0);
+  cdtbStats.FlatHasteMod = haste;
+  cdtbStats.FlatAbilityHasteMod = haste;
+  cdtbStats.AbilityHaste = haste;
+
+  return { ...base, ...cdtbStats };
+}
+
 function renderChampionSelect() {
   Object.keys(BUILDER.champions).forEach((name) => {
     (BUILDER.champions[name].tags || []).forEach((tag) => BUILDER.champTags.add(tag));
