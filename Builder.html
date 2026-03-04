@@ -21,42 +21,35 @@
 
     <div class="content-wrapper">
       <div class="container-fluid builder-dashboard">
-        <div class="row row-eq-spacing mt-10">
+        <div class="row row-eq-spacing">
           <div class="col-lg-6 col-12">
             <div id="builderHeroCard" class="card section-card floating-card compact-card champion-stats-card">
-              <div class="champion-select-header">
-                <h2 class="content-title">Champion Select</h2>
-                <div class="champion-header-controls">
-                  <button id="championPickerBtn" class="btn" type="button" onclick="openChampionModal()">Select champion</button>
-                  <label class="label mb-0">Level
+              <p id="builderStatus" class="status-text"></p>
+              <div class="champion-stats-layout">
+                <div id="selectedChampionBadge" class="selected-champion-badge">
+                  <button id="championPickerBtn" class="champion-picker-icon-btn" type="button" onclick="openChampionModal()" aria-label="Select champion">+</button>
+                  <label class="label mb-0 champ-level-control">Level
                     <select id="builderLevel" class="form-control"></select>
                   </label>
                 </div>
-              </div>
-              <p id="builderStatus" class="status-text"></p>
-              <div class="champion-stats-layout">
-                <div id="selectedChampionBadge" class="selected-champion-badge hidden"></div>
                 <div id="statsTable" class="stats-table-wrap">
                   <p class="text-muted">Select a champion to view stats.</p>
                 </div>
                 <div class="champion-items-inline">
-                  <h3 class="inline-section-title">Items</h3>
                   <div id="itemSlots" class="item-slots item-slots-icons"></div>
                 </div>
               </div>
             </div>
 
             <div id="runesCard" class="card section-card floating-card compact-card rune-panel">
-              <h2 class="content-title">Runes / Masteries</h2>
               <div id="runePanel" class="rune-panel-grid"></div>
             </div>
           </div>
 
           <div class="col-lg-6 col-12">
             <div class="card section-card floating-card compact-card">
-              <h2 class="content-title">Abilities & Ranks</h2>
               <small id="abilityRuleHint" class="text-muted"></small>
-              <div id="abilityCards" class="ability-grid ability-layout mt-10"></div>
+              <div id="abilityCards" class="ability-grid ability-layout"></div>
             </div>
           </div>
         </div>

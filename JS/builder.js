@@ -151,6 +151,7 @@ async function initBuilder() {
     initChampionModal();
     renderRunePanel();
     renderAbilityCards();
+    renderStats();
     setStatus("");
   } catch (error) {
     console.error(error);
@@ -247,7 +248,8 @@ function renderChampionSelect() {
   Object.keys(BUILDER.champions).forEach((name) => {
     (BUILDER.champions[name].tags || []).forEach((tag) => BUILDER.champTags.add(tag));
   });
-  document.getElementById("championPickerBtn").textContent = "Select champion";
+  document.getElementById("championPickerBtn").innerHTML = "+";
+  document.getElementById("championPickerBtn").setAttribute("aria-label", "Select champion");
 }
 
 function initChampionModal() {
@@ -335,10 +337,8 @@ async function setChampion(name) {
   const splashUrl = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`;
   document.body.style.setProperty("--builder-splash-url", splashUrl);
   document.getElementById("runesCard").style.setProperty("--rune-splash-url", RUNE_DATA.paths[BUILDER.runeSelections.primaryPath].splash);
-  document.getElementById("championPickerBtn").textContent = name;
-
-  document.getElementById("selectedChampionBadge").classList.remove("hidden");
-  document.getElementById("selectedChampionBadge").innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.championData.image.full}" alt="${name}">`;
+  document.getElementById("championPickerBtn").innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.championData.image.full}" alt="${name}">`;
+  document.getElementById("championPickerBtn").setAttribute("aria-label", `Selected champion: ${name}`);
 
   enforceAbilityRules();
   renderAbilityCards();
@@ -563,8 +563,32 @@ function getRuneStats() {
 
 function renderStats() {
   const root = document.getElementById("statsTable");
+  const emptyRows = [
+    { name: "HP", icon: "❤️" },
+    { name: "MP", icon: "🔷" },
+    { name: "HP/5", icon: "💚" },
+    { name: "MP/5", icon: "💙" },
+    { name: "AD", icon: "🗡️" },
+    { name: "AP", icon: "✨" },
+    { name: "Range", icon: "🏹" },
+    { name: "AH", icon: "⏱️" },
+    { name: "Arm", icon: "🛡️" },
+    { name: "MR", icon: "🔮" },
+    { name: "AS", icon: "⚡" },
+    { name: "MS", icon: "👟" },
+    { name: "Crit %", icon: "🎯" },
+    { name: "Crit Dmg", icon: "💥" },
+  ];
+  const renderPairedRows = (rows) => {
+    const pairRows = [];
+    for (let i = 0; i < rows.length; i += 2) {
+      pairRows.push([rows[i], rows[i + 1] || null]);
+    }
+    return `<table class="stats-table">${pairRows.map(([left, right]) => `<tr><td class="stats-label"><span class="stat-icon">${left.icon}</span>${left.name}</td><td class="stats-value" title="${left.eq || ''}">${left.displayValue}</td>${right ? `<td class="stats-label"><span class="stat-icon">${right.icon}</span>${right.name}</td><td class="stats-value" title="${right.eq || ''}">${right.displayValue}</td>` : '<td class="stats-label"></td><td class="stats-value"></td>'}</tr>`).join("")}</table>`;
+  };
+
   if (!BUILDER.championData) {
-    root.innerHTML = "<p class='text-muted'>Select a champion to view stats.</p>";
+    root.innerHTML = renderPairedRows(emptyRows.map((row) => ({ ...row, displayValue: "--" })));
     return;
   }
 
@@ -605,12 +629,10 @@ function renderStats() {
     { name: "Crit Dmg", icon: "💥", value: critDamage, eq: `${(base.critdamage ? base.critdamage * 100 : 175).toFixed(1)} + ${item.critDamage.toFixed(1)} + ${rune.critDamage.toFixed(1)}` },
   ];
 
-  const pairRows = [];
-  for (let i = 0; i < rows.length; i += 2) {
-    pairRows.push([rows[i], rows[i + 1] || null]);
-  }
-
-  root.innerHTML = `<table class="stats-table">${pairRows.map(([left, right]) => `<tr><td class="stats-label"><span class="stat-icon">${left.icon}</span>${left.name}</td><td class="stats-value" title="${left.eq}">${left.value.toFixed(left.name === "AS" ? 3 : 1)}</td>${right ? `<td class="stats-label"><span class="stat-icon">${right.icon}</span>${right.name}</td><td class="stats-value" title="${right.eq}">${right.value.toFixed(right.name === "AS" ? 3 : 1)}</td>` : '<td class="stats-label"></td><td class="stats-value"></td>'}</tr>`).join("")}</table>`;
+  root.innerHTML = renderPairedRows(rows.map((row) => ({
+    ...row,
+    displayValue: row.value.toFixed(row.name === "AS" ? 3 : 1),
+  })));
 }
 
 function renderRunePanel() {
