@@ -213,32 +213,44 @@ function buildCdtbItemsById(cdtbData) {
   return byId;
 }
 
+function readNumericStat(entry, base, aliases) {
+  for (const key of aliases) {
+    const v = entry?.[key];
+    if (v !== undefined && v !== null && v !== "") return Number(v) || 0;
+  }
+  for (const key of aliases) {
+    const v = base?.[key];
+    if (v !== undefined && v !== null && v !== "") return Number(v) || 0;
+  }
+  return 0;
+}
+
 function buildMergedItemStats(ddragonStats, cdtbEntry) {
   const base = { ...(ddragonStats || {}) };
   if (!cdtbEntry) return base;
 
   const cdtbStats = {
-    FlatHPPoolMod: Number(cdtbEntry?.mFlatHPPoolMod ?? base.FlatHPPoolMod ?? 0),
-    FlatMPPoolMod: Number(cdtbEntry?.mFlatMPPoolMod ?? base.FlatMPPoolMod ?? 0),
-    FlatPhysicalDamageMod: Number(cdtbEntry?.mFlatPhysicalDamageMod ?? base.FlatPhysicalDamageMod ?? 0),
-    FlatMagicDamageMod: Number(cdtbEntry?.mFlatMagicDamageMod ?? base.FlatMagicDamageMod ?? 0),
-    FlatArmorMod: Number(cdtbEntry?.mFlatArmorMod ?? base.FlatArmorMod ?? 0),
-    FlatSpellBlockMod: Number(cdtbEntry?.mFlatSpellBlockMod ?? base.FlatSpellBlockMod ?? 0),
-    PercentAttackSpeedMod: Number(cdtbEntry?.mPercentAttackSpeedMod ?? base.PercentAttackSpeedMod ?? 0),
-    FlatMovementSpeedMod: Number(cdtbEntry?.mFlatMovementSpeedMod ?? base.FlatMovementSpeedMod ?? 0),
-    PercentMovementSpeedMod: Number(cdtbEntry?.mPercentMovementSpeedMod ?? base.PercentMovementSpeedMod ?? 0),
-    FlatHPRegenMod: Number(cdtbEntry?.mFlatHPRegenMod ?? base.FlatHPRegenMod ?? 0),
-    FlatMPRegenMod: Number(cdtbEntry?.mFlatMPRegenMod ?? base.FlatMPRegenMod ?? 0),
-    PercentBaseHPRegenMod: Number(cdtbEntry?.mPercentBaseHPRegenMod ?? cdtbEntry?.mPercentHPRegenMod ?? base.PercentBaseHPRegenMod ?? base.PercentHPRegenMod ?? 0),
-    PercentBaseMPRegenMod: Number(cdtbEntry?.mPercentBaseMPRegenMod ?? cdtbEntry?.mPercentMPRegenMod ?? base.PercentBaseMPRegenMod ?? base.PercentMPRegenMod ?? 0),
-    FlatCritChanceMod: Number(cdtbEntry?.mFlatCritChanceMod ?? base.FlatCritChanceMod ?? 0),
-    PercentCritChanceMod: Number(cdtbEntry?.mPercentCritChanceMod ?? base.PercentCritChanceMod ?? 0),
-    FlatCritDamageMod: Number(cdtbEntry?.mFlatCritDamageMod ?? base.FlatCritDamageMod ?? 0),
-    PercentCritDamageMod: Number(cdtbEntry?.mPercentCritDamageMod ?? base.PercentCritDamageMod ?? 0),
-    FlatAttackRangeMod: Number(cdtbEntry?.mFlatAttackRangeMod ?? base.FlatAttackRangeMod ?? 0),
+    FlatHPPoolMod: readNumericStat(cdtbEntry, base, ["mFlatHPPoolMod", "flatHPPoolMod", "FlatHPPoolMod"]),
+    FlatMPPoolMod: readNumericStat(cdtbEntry, base, ["mFlatMPPoolMod", "flatMPPoolMod", "FlatMPPoolMod"]),
+    FlatPhysicalDamageMod: readNumericStat(cdtbEntry, base, ["mFlatPhysicalDamageMod", "flatPhysicalDamageMod", "FlatPhysicalDamageMod"]),
+    FlatMagicDamageMod: readNumericStat(cdtbEntry, base, ["mFlatMagicDamageMod", "flatMagicDamageMod", "FlatMagicDamageMod"]),
+    FlatArmorMod: readNumericStat(cdtbEntry, base, ["mFlatArmorMod", "flatArmorMod", "FlatArmorMod"]),
+    FlatSpellBlockMod: readNumericStat(cdtbEntry, base, ["mFlatSpellBlockMod", "flatSpellBlockMod", "FlatSpellBlockMod"]),
+    PercentAttackSpeedMod: readNumericStat(cdtbEntry, base, ["mPercentAttackSpeedMod", "percentAttackSpeedMod", "PercentAttackSpeedMod"]),
+    FlatMovementSpeedMod: readNumericStat(cdtbEntry, base, ["mFlatMovementSpeedMod", "flatMovementSpeedMod", "FlatMovementSpeedMod"]),
+    PercentMovementSpeedMod: readNumericStat(cdtbEntry, base, ["mPercentMovementSpeedMod", "percentMovementSpeedMod", "PercentMovementSpeedMod"]),
+    FlatHPRegenMod: readNumericStat(cdtbEntry, base, ["mFlatHPRegenMod", "flatHPRegenMod", "FlatHPRegenMod"]),
+    FlatMPRegenMod: readNumericStat(cdtbEntry, base, ["mFlatMPRegenMod", "flatMPRegenMod", "FlatMPRegenMod"]),
+    PercentBaseHPRegenMod: readNumericStat(cdtbEntry, base, ["mPercentBaseHPRegenMod", "percentBaseHPRegenMod", "mPercentHPRegenMod", "percentHPRegenMod", "PercentBaseHPRegenMod", "PercentHPRegenMod"]),
+    PercentBaseMPRegenMod: readNumericStat(cdtbEntry, base, ["mPercentBaseMPRegenMod", "percentBaseMPRegenMod", "mPercentMPRegenMod", "percentMPRegenMod", "PercentBaseMPRegenMod", "PercentMPRegenMod"]),
+    FlatCritChanceMod: readNumericStat(cdtbEntry, base, ["mFlatCritChanceMod", "flatCritChanceMod", "FlatCritChanceMod"]),
+    PercentCritChanceMod: readNumericStat(cdtbEntry, base, ["mPercentCritChanceMod", "percentCritChanceMod", "PercentCritChanceMod"]),
+    FlatCritDamageMod: readNumericStat(cdtbEntry, base, ["mFlatCritDamageMod", "flatCritDamageMod", "FlatCritDamageMod"]),
+    PercentCritDamageMod: readNumericStat(cdtbEntry, base, ["mPercentCritDamageMod", "percentCritDamageMod", "PercentCritDamageMod"]),
+    FlatAttackRangeMod: readNumericStat(cdtbEntry, base, ["mFlatAttackRangeMod", "flatAttackRangeMod", "FlatAttackRangeMod"]),
   };
 
-  const haste = Number(cdtbEntry?.mAbilityHasteMod ?? cdtbEntry?.mFlatHasteMod ?? base.FlatHasteMod ?? base.FlatAbilityHasteMod ?? 0);
+  const haste = readNumericStat(cdtbEntry, base, ["mAbilityHasteMod", "mFlatHasteMod", "flatHasteMod", "FlatHasteMod", "FlatAbilityHasteMod", "AbilityHaste"]);
   cdtbStats.FlatHasteMod = haste;
   cdtbStats.FlatAbilityHasteMod = haste;
   cdtbStats.AbilityHaste = haste;
@@ -447,7 +459,7 @@ function renderModalItemDetail(id) {
   const pctStats = new Set(["PercentBaseHPRegenMod", "PercentBaseMPRegenMod", "PercentAttackSpeedMod", "PercentMovementSpeedMod", "PercentCritChanceMod", "PercentCritDamageMod"]);
   const statLines = Object.entries(item.stats || {})
     .filter(([, v]) => Number(v) !== 0)
-    .map(([k, v]) => `<div>${statNameMap[k] || k}: ${Number(v)}${pctStats.has(k) ? "%" : ""}</div>`)
+    .map(([k, v]) => `<div>${statNameMap[k] || k}: ${pctStats.has(k) ? `${(Number(v) * 100).toFixed(1)}%` : Number(v)}</div>`)
     .join("");
   root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div><div class='mt-10'>${item.description || ""}</div><button class='btn btn-sm mt-10' onclick="setSlotItem('${id}')">Select this item</button><button class='btn btn-sm mt-10 ml-5' onclick="setSlotItem('')">Clear slot</button>`;
 }
@@ -536,9 +548,9 @@ function getItemStats() {
     totals.hp += s.FlatHPPoolMod || 0;
     totals.mp += s.FlatMPPoolMod || 0;
     totals.hp5 += s.FlatHPRegenMod || 0;
-    totals.hp5PctBase += s.PercentBaseHPRegenMod || s.PercentHPRegenMod || 0;
+    totals.hp5PctBase += ((s.PercentBaseHPRegenMod || s.PercentHPRegenMod || 0) * 100);
     totals.mp5 += s.FlatMPRegenMod || 0;
-    totals.mp5PctBase += s.PercentBaseMPRegenMod || s.PercentMPRegenMod || 0;
+    totals.mp5PctBase += ((s.PercentBaseMPRegenMod || s.PercentMPRegenMod || 0) * 100);
     totals.ad += s.FlatPhysicalDamageMod || 0;
     totals.ap += s.FlatMagicDamageMod || 0;
     totals.armor += s.FlatArmorMod || 0;
