@@ -48,8 +48,6 @@ node --check JS/builder.js
 - `JS/champLookup.js` — loads champion data from Data Dragon and renders splash/lore/abilities.
 - `JS/itemLookup.js` — loads Data Dragon item list + CommunityDragon calculation payloads, applies filters, dedupes items, and renders readable formula details.
 - `JS/builder.js` — champion/item/level setup logic, item modal UX, ability rank validation, and stat rendering.
-- `JS/app.js` — earlier experimental app controller (kept for reference while migrating logic into focused page modules).
-- `JS/LoLBuilder.js` — legacy prototype logic retained for reference/debugging.
 
 ### CSS
 - `CSS/lolBuilder.css` — project-specific layout/theme styles for all pages.

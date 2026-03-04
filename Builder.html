@@ -91,21 +91,23 @@
   </div>
 
   <div id="champModal" class="item-modal hidden" role="dialog" aria-modal="true">
-    <div class="item-modal-body item-modal-wide">
+    <div class="item-modal-body item-modal-wide champ-modal-body">
       <div class="item-modal-header">
         <h3>Select Champion</h3>
         <button class="btn btn-sm" type="button" onclick="closeChampionModal()">Close</button>
       </div>
-      <div class="row row-eq-spacing">
-        <div class="col-lg-3 col-12">
+      <div class="champ-modal-toolbar">
+        <div class="champ-toolbar-left">
           <input id="modalChampSearch" class="form-control" placeholder="Search champions" />
-          <div id="modalChampFilters" class="tag-filters tag-filters-column mt-10"></div>
+          <div id="modalChampFilters" class="tag-filters champ-filter-row mt-10"></div>
         </div>
-        <div class="col-lg-4 col-12">
+      </div>
+      <div class="row row-eq-spacing champ-modal-layout">
+        <div class="col-lg-9 col-12 champ-modal-grid-col">
           <p id="modalChampResults" class="text-muted"></p>
-          <div id="modalChampGrid" class="item-icon-grid mt-10"></div>
+          <div id="modalChampGrid" class="item-icon-grid champ-icon-grid mt-10"></div>
         </div>
-        <div class="col-lg-5 col-12">
+        <div class="col-lg-3 col-12 champ-modal-preview-col">
           <div id="modalChampDetail" class="item-detail-panel"></div>
         </div>
       </div>
