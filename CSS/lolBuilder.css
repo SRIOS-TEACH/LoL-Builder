@@ -806,6 +806,32 @@ body {
   width: 100%;
 }
 
+.ability-detail-text {
+  line-height: 1.35;
+}
+
+.ability-detail-number {
+  color: #ffcd85;
+  font-weight: 600;
+}
+
+.ability-detail-eq {
+  color: #9cc7ff;
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+.ability-detail-missing {
+  color: #b6c8eb;
+  border-bottom: 1px dotted #6f88be;
+}
+
+.ability-damage-physical { color: #ff9d4d; }
+.ability-damage-magic { color: #9ac0ff; }
+.ability-damage-true { color: #f1f1f1; }
+.ability-healing { color: #7ff3b3; }
+.ability-status { color: #ffe17d; }
+
 .item-slots {
   grid-template-columns: repeat(6, minmax(48px, 1fr));
 }

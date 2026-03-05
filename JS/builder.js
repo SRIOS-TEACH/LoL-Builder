@@ -13,6 +13,7 @@ const BUILDER = {
   modalItemFiltered: [],
   modalChampFiltered: [],
   championDetailCache: {},
+  cdragonAbilityData: null,
   championModalRequestId: 0,
   runeModalTarget: null,
   runeSelections: {
@@ -341,10 +342,39 @@ function runeImgTag(meta, className = "") {
   return `<img class="${className}" src="${meta.icon || fallback}" alt="${meta.name}" data-fallback="${fallback}" onerror="this.onerror=null;this.src=this.dataset.fallback">`;
 }
 
+function normalizeCdragonChampionPath(name) {
+  return String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+async function loadCdragonAbilityData(championName) {
+  const pathName = normalizeCdragonChampionPath(championName);
+  const url = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
+  const raw = await fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  if (!raw) return null;
+
+  const bySlot = {};
+  Object.values(raw).forEach((entry) => {
+    if (entry?.__type !== "AbilityObject" || !entry.mRootSpell || !entry.mName) return;
+    const m = String(entry.mName).match(/([QWER])Ability$/i);
+    if (!m) return;
+    const slot = m[1].toLowerCase();
+    const root = raw[entry.mRootSpell];
+    const spell = root?.mSpell;
+    if (!spell) return;
+    bySlot[slot] = {
+      dataValues: spell.DataValues || [],
+      calculations: spell.mSpellCalculations || {},
+    };
+  });
+
+  return bySlot;
+}
+
 async function setChampion(name) {
   const details = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion/${name}.json`).then((r) => r.json());
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
+  BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name);
   BUILDER.abilityRanks = { q: 1, w: 0, e: 0, r: 0 };
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
 
@@ -501,6 +531,200 @@ function parseByRank(valueBurn, rank) {
   return parts[Math.max(0, Math.min(parts.length - 1, rank - 1))] || parts[0] || "-";
 }
 
+function getComputedChampionStatsForTooltips() {
+  if (!BUILDER.championData) return null;
+  const base = BUILDER.championData.stats;
+  const item = getItemStats();
+  const rune = getRuneStats();
+  const L = BUILDER.level;
+
+  const baseAd = base.attackdamage + base.attackdamageperlevel * (L - 1);
+  const totalAd = baseAd + item.ad + rune.ad;
+  const baseAp = 0;
+  const totalAp = baseAp + item.ap + rune.ap;
+  const baseArmor = base.armor + base.armorperlevel * (L - 1);
+  const totalArmor = baseArmor + item.armor + rune.armor;
+  const baseMr = base.spellblock + base.spellblockperlevel * (L - 1);
+  const totalMr = baseMr + item.mr + rune.mr;
+  const baseHp = base.hp + base.hpperlevel * (L - 1);
+  const totalHp = baseHp + item.hp + rune.hp;
+  const baseMp = base.mp + base.mpperlevel * (L - 1);
+  const totalMp = baseMp + item.mp + rune.mp;
+
+  return {
+    ap: totalAp,
+    totalAd,
+    bonusAd: totalAd - baseAd,
+    armor: totalArmor,
+    bonusArmor: totalArmor - baseArmor,
+    mr: totalMr,
+    bonusMr: totalMr - baseMr,
+    hp: totalHp,
+    bonusHp: totalHp - baseHp,
+    mp: totalMp,
+    bonusMp: totalMp - baseMp,
+  };
+}
+
+function getSpellScalingSource(link, stats) {
+  const map = {
+    spelldamage: { value: stats.ap, label: "AP" },
+    bonusattackdamage: { value: stats.bonusAd, label: "bonus AD" },
+    attackdamage: { value: stats.totalAd, label: "AD" },
+    armor: { value: stats.armor, label: "Armor" },
+    bonusarmor: { value: stats.bonusArmor, label: "bonus Armor" },
+    spellblock: { value: stats.mr, label: "MR" },
+    bonusspellblock: { value: stats.bonusMr, label: "bonus MR" },
+    health: { value: stats.hp, label: "HP" },
+    bonushealth: { value: stats.bonusHp, label: "bonus HP" },
+    mana: { value: stats.mp, label: "Mana" },
+    bonusmana: { value: stats.bonusMp, label: "bonus Mana" },
+  };
+  return map[String(link || "").toLowerCase()] || null;
+}
+
+function getSpellDataValue(dataValues, tokenName, rank) {
+  const list = (dataValues || []).find((d) => String(d?.mName || "").toLowerCase() === String(tokenName || "").toLowerCase());
+  if (!list || !Array.isArray(list.mValues) || !list.mValues.length) return null;
+  const idx = Math.max(0, Math.min(list.mValues.length - 1, rank - 1));
+  const current = Number(list.mValues[idx]) || 0;
+  const rankValues = list.mValues.slice(0, 5).map((v) => Number(v || 0));
+  return { current, rankValues };
+}
+
+function getCalcStatSource(part, stats) {
+  const dataValueName = String(part?.mDataValue || "").toLowerCase();
+  if (dataValueName.includes("ap")) return { value: stats.ap, label: "AP" };
+  if (dataValueName.includes("bonusad")) return { value: stats.bonusAd, label: "bonus AD" };
+  if (dataValueName.includes("ad")) return { value: stats.totalAd, label: "AD" };
+  if (dataValueName.includes("health")) return { value: stats.hp, label: "HP" };
+
+  const statCode = Number(part?.mStat);
+  if (statCode === 2) return { value: stats.totalAd, label: "AD" };
+  if (statCode === 1 || statCode === 0 || Number.isNaN(statCode)) return { value: stats.ap, label: "AP" };
+  return { value: stats.ap, label: `Stat ${statCode}` };
+}
+
+function evaluateGameCalculation(calc, dataValues, rank, stats) {
+  if (!calc || !Array.isArray(calc.mFormulaParts)) return null;
+  const terms = [];
+  let total = 0;
+  calc.mFormulaParts.forEach((part) => {
+    const t = String(part?.__type || "");
+    if (t === "NumberCalculationPart") {
+      const val = Number(part?.mNumber || 0);
+      total += val;
+      terms.push({ label: val.toFixed(2), value: val });
+      return;
+    }
+    if (t === "NamedDataValueCalculationPart") {
+      const data = getSpellDataValue(dataValues, part?.mDataValue, rank);
+      if (!data) return;
+      total += data.current;
+      terms.push({ label: String(part?.mDataValue || "Value"), value: data.current });
+      return;
+    }
+    if (t === "StatByCoefficientCalculationPart") {
+      const src = getCalcStatSource(part, stats);
+      const coeff = Number(part?.mCoefficient || 0);
+      const val = src.value * coeff;
+      total += val;
+      terms.push({ label: `${coeff.toFixed(2)}×${src.label}`, value: val });
+      return;
+    }
+    if (t === "StatByNamedDataValueCalculationPart") {
+      const src = getCalcStatSource(part, stats);
+      const coeffData = getSpellDataValue(dataValues, part?.mDataValue, rank);
+      const coeff = coeffData ? coeffData.current : 0;
+      const val = src.value * coeff;
+      total += val;
+      terms.push({ label: `${String(part?.mDataValue || "coef")}×${src.label}`, value: val });
+    }
+  });
+  return { total, terms, displayAsPercent: !!calc.mDisplayAsPercent };
+}
+
+function buildDetailedAbilityText(spell, rank, spellKey) {
+  const raw = spell.tooltip || spell.description || "";
+  const safeRank = Math.max(1, Number(rank) || 1);
+  const stats = getComputedChampionStatsForTooltips();
+  const vars = Object.fromEntries((spell.vars || []).map((v) => [String(v.key || "").toLowerCase(), v]));
+  const cdragonSpell = BUILDER.cdragonAbilityData?.[spellKey] || null;
+  const calcEntries = Object.entries(cdragonSpell?.calculations || {}).map(([k, calc]) => {
+    const evaluated = stats ? evaluateGameCalculation(calc, cdragonSpell?.dataValues || [], safeRank, stats) : null;
+    return [String(k).toLowerCase(), evaluated];
+  });
+  const calcLookup = Object.fromEntries(calcEntries);
+
+  const knownTokens = {
+    cost: parseByRank(spell.costBurn, safeRank),
+    cooldown: parseByRank(spell.cooldownBurn, safeRank),
+    range: parseByRank(spell.rangeBurn, safeRank),
+    abilityresourcename: (spell.costType || "").replace(/<[^>]+>/g, "").replace(/[{}`]/g, "").trim() || "Mana",
+  };
+
+  const replaced = raw.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (full, tokenRaw) => {
+    const token = String(tokenRaw || "").trim().toLowerCase();
+
+    if (knownTokens[token] && knownTokens[token] !== "-") {
+      return `<span class="ability-detail-number">${knownTokens[token]}</span>`;
+    }
+
+    const isNextLevel = token.endsWith("nl");
+    const baseToken = isNextLevel ? token.slice(0, -2) : token;
+
+    const calc = calcLookup[baseToken];
+    if (calc) {
+      const shown = calc.displayAsPercent ? calc.total * 100 : calc.total;
+      const suffix = calc.displayAsPercent ? "%" : "";
+      const eq = calc.terms.map((t) => `${t.label}=${(calc.displayAsPercent ? t.value * 100 : t.value).toFixed(1)}`).join(" + ");
+      return `<span class="ability-detail-number">${shown.toFixed(1)}${suffix} <span class="ability-detail-eq">(${eq})</span></span>`;
+    }
+
+    const dataValue = getSpellDataValue(cdragonSpell?.dataValues || [], baseToken, Math.min(5, safeRank + (isNextLevel ? 1 : 0)));
+    if (dataValue) {
+      const rankValues = dataValue.rankValues.map((v) => v.toFixed(1)).join(" / ");
+      return `<span class="ability-detail-number">${dataValue.current.toFixed(1)} <span class="ability-detail-eq">[${rankValues}]</span></span>`;
+    }
+
+    const effectMatch = token.match(/^e(\d+)$/);
+    if (effectMatch) {
+      const idx = Number(effectMatch[1]);
+      const arr = spell.effect?.[idx] || [];
+      if (!arr.length) return `<span class="ability-detail-missing">${tokenRaw}</span>`;
+      const rankIndex = Math.max(0, Math.min(arr.length - 1, safeRank - 1));
+      const current = Number(arr[rankIndex]) || 0;
+      const rankValues = arr.map((v) => Number(v || 0).toFixed(1)).join(" / ");
+      return `<span class="ability-detail-number">${current.toFixed(1)} <span class="ability-detail-eq">[${rankValues}]</span></span>`;
+    }
+
+    if (/^[af]\d+$/.test(token) && stats) {
+      const v = vars[token];
+      if (!v) return `<span class="ability-detail-missing">${tokenRaw}</span>`;
+      const source = getSpellScalingSource(v.link, stats);
+      if (!source) return `<span class="ability-detail-missing">${tokenRaw}</span>`;
+      const coeffRaw = Array.isArray(v.coeff) ? (v.coeff[Math.max(0, Math.min(v.coeff.length - 1, safeRank - 1))] ?? v.coeff[0]) : v.coeff;
+      const coeff = Number(coeffRaw || 0);
+      const scaled = coeff * source.value;
+      return `<span class="ability-detail-number">${scaled.toFixed(1)} <span class="ability-detail-eq">(${coeff.toFixed(2)} × ${source.label})</span></span>`;
+    }
+
+    return `<span class="ability-detail-missing">${tokenRaw}</span>`;
+  });
+
+  return replaced
+    .replace(/<physicalDamage>/gi, '<span class="ability-damage-physical">')
+    .replace(/<\/physicalDamage>/gi, '</span>')
+    .replace(/<magicDamage>/gi, '<span class="ability-damage-magic">')
+    .replace(/<\/magicDamage>/gi, '</span>')
+    .replace(/<trueDamage>/gi, '<span class="ability-damage-true">')
+    .replace(/<\/trueDamage>/gi, '</span>')
+    .replace(/<healing>/gi, '<span class="ability-healing">')
+    .replace(/<\/healing>/gi, '</span>')
+    .replace(/<status>/gi, '<span class="ability-status">')
+    .replace(/<\/status>/gi, '</span>');
+}
+
 function renderAbilityCards() {
   const root = document.getElementById("abilityCards");
   if (!BUILDER.championData) {
@@ -520,7 +744,8 @@ function renderAbilityCards() {
     const cd = parseByRank(spell.cooldownBurn, rank);
     const cost = parseByRank(spell.costBurn, rank);
     const range = parseByRank(spell.rangeBurn, rank);
-    return `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p>${spell.description}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div></div>`;
+    const detail = buildDetailedAbilityText(spell, rank || 1, key);
+    return `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div></div>`;
   }).join("");
 
   root.innerHTML = passive + spells;
