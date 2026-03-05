@@ -587,6 +587,10 @@ function renderModalItemDetail(id) {
     .sort((a, b) => a.label.localeCompare(b.label))
     .map((row) => `<div>${row.label}: ${row.isPct ? `${(row.value * 100).toFixed(1)}%` : row.value}</div>`)
     .join("");
+  const passiveLabels = extractPassiveLabelsFromText(stripHtml(item.description || ""));
+  const passiveLines = passiveLabels.length
+    ? `<div class='mt-10'><strong>Passives</strong>${passiveLabels.map((label) => `<div>${label}</div>`).join("")}</div>`
+    : "";
 
   const shared = getItemLookupShared();
   let enhancedDescription = item.description || "";
@@ -610,7 +614,7 @@ function renderModalItemDetail(id) {
     }
   }
 
-  root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div>${extractedFormulaRows}<div class='mt-10'>${enhancedDescription}</div><button class='btn btn-sm mt-10' onclick="setSlotItem('${id}')">Select this item</button><button class='btn btn-sm mt-10 ml-5' onclick="setSlotItem('')">Clear slot</button>`;
+  root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div>${passiveLines}${extractedFormulaRows}<div class='mt-10'>${enhancedDescription}</div><button class='btn btn-sm mt-10' onclick="setSlotItem('${id}')">Select this item</button><button class='btn btn-sm mt-10 ml-5' onclick="setSlotItem('')">Clear slot</button>`;
 }
 
 function setSlotItem(itemId) {
@@ -651,25 +655,145 @@ function parseByRank(valueBurn, rank) {
   return parts[Math.max(0, Math.min(parts.length - 1, rank - 1))] || parts[0] || "-";
 }
 
-function getComputedChampionStatsForTooltips() {
+function stripHtml(input) {
+  return String(input || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function extractPassiveLabelsFromText(text) {
+  const labels = [];
+  const re = /(?:UNIQUE\s+)?PASSIVE\s*(?:-|:)?\s*([A-Za-z0-9' ]+)?/gi;
+  let match;
+  while ((match = re.exec(text))) {
+    const raw = String(match[1] || "").trim();
+    labels.push(raw || "Passive");
+  }
+  return Array.from(new Set(labels));
+}
+
+function buildPassiveLedger(itemTotals, runeTotals) {
+  const selectedItems = BUILDER.itemSlots
+    .filter((id) => id && BUILDER.items[id])
+    .map((id) => ({ id: String(id), item: BUILDER.items[id] }));
+  const passiveEffects = [];
+  const statMods = { ad: 0, ap: 0 };
+
+  selectedItems.forEach(({ id, item }) => {
+    const clean = stripHtml(item.description);
+    extractPassiveLabelsFromText(clean).forEach((label) => {
+      passiveEffects.push({ source: "Item", owner: item.name, label, impact: "Contextual" });
+    });
+
+    if (id === "3089") {
+      const apAmp = (itemTotals.ap + runeTotals.ap) * 0.30;
+      if (apAmp > 0) {
+        statMods.ap += apAmp;
+        passiveEffects.push({ source: "Item", owner: item.name, label: "Magical Opus", impact: `+${apAmp.toFixed(1)} AP (30% amplification)` });
+      }
+    }
+
+    if (id === "3042" && BUILDER.championData) {
+      const b = BUILDER.championData.stats;
+      const L = BUILDER.level;
+      const totalMana = b.mp + b.mpperlevel * (L - 1) + itemTotals.mp + runeTotals.mp;
+      const bonusAd = totalMana * 0.02;
+      if (bonusAd > 0) {
+        statMods.ad += bonusAd;
+        passiveEffects.push({ source: "Item", owner: item.name, label: "Awe", impact: `+${bonusAd.toFixed(1)} AD (2% max mana)` });
+      }
+    }
+
+    if (id === "3040" && BUILDER.championData) {
+      const b = BUILDER.championData.stats;
+      const L = BUILDER.level;
+      const baseMana = b.mp + b.mpperlevel * (L - 1);
+      const bonusMana = Math.max(0, itemTotals.mp + runeTotals.mp);
+      const bonusAp = bonusMana * 0.02;
+      if (bonusAp > 0) {
+        statMods.ap += bonusAp;
+        passiveEffects.push({ source: "Item", owner: item.name, label: "Awe", impact: `+${bonusAp.toFixed(1)} AP (2% bonus mana)` });
+      }
+      if (baseMana > 0) {
+        passiveEffects.push({ source: "Item", owner: item.name, label: "Mana context", impact: `Base mana ${baseMana.toFixed(1)}` });
+      }
+    }
+  });
+
+  if (BUILDER.championData?.passive) {
+    const champPassiveName = BUILDER.championData.passive.name || "Passive";
+    passiveEffects.push({ source: "Champion", owner: BUILDER.selectedChampion, label: champPassiveName, impact: "Champion passive identified" });
+  }
+
+  return { passiveEffects, statMods };
+}
+
+function computeDerivedBuildStats() {
   if (!BUILDER.championData) return null;
   const base = BUILDER.championData.stats;
   const item = getItemStats();
   const rune = getRuneStats();
   const L = BUILDER.level;
 
+  const ledger = buildPassiveLedger(item, rune);
+  const passiveAd = ledger.statMods.ad;
+  const passiveAp = ledger.statMods.ap;
+
+  const hp = (base.hp + base.hpperlevel * (L - 1) + item.hp + rune.hp);
+  const baseHp5 = base.hpregen + base.hpregenperlevel * (L - 1);
+  const hp5 = (baseHp5 * (1 + item.hp5PctBase / 100) + item.hp5 + rune.hp5);
+  const mp = (base.mp + base.mpperlevel * (L - 1) + item.mp + rune.mp);
+  const baseMp5 = base.mpregen + base.mpregenperlevel * (L - 1);
+  const mp5 = (baseMp5 * (1 + item.mp5PctBase / 100) + item.mp5 + rune.mp5);
+  const ad = (base.attackdamage + base.attackdamageperlevel * (L - 1) + item.ad + rune.ad + passiveAd);
+  const ap = item.ap + rune.ap + passiveAp;
+  const armor = (base.armor + base.armorperlevel * (L - 1) + item.armor + rune.armor);
+  const mr = (base.spellblock + base.spellblockperlevel * (L - 1) + item.mr + rune.mr);
+  const asTotal = base.attackspeed * (1 + (base.attackspeedperlevel * (L - 1)) / 100) * (1 + (item.asPct + rune.asPct) / 100);
+  const abilityHaste = item.haste + rune.haste;
+  const critChance = (base.crit + base.critperlevel * (L - 1) + item.critChance + rune.critChance);
+  const critDamage = (base.critdamage ? base.critdamage * 100 : 175) + item.critDamage + rune.critDamage;
+  const attackRange = (base.attackrange || 0) + item.attackRange + rune.attackRange;
+  const moveSpeed = (base.movespeed + item.msFlat + rune.msFlat) * (1 + (item.msPct + rune.msPct) / 100);
+
+  return {
+    base,
+    item,
+    rune,
+    level: L,
+    hp,
+    hp5,
+    mp,
+    mp5,
+    ad,
+    ap,
+    armor,
+    mr,
+    asTotal,
+    abilityHaste,
+    critChance,
+    critDamage,
+    attackRange,
+    moveSpeed,
+    passiveLedger: ledger,
+  };
+}
+
+function getComputedChampionStatsForTooltips() {
+  const computed = computeDerivedBuildStats();
+  if (!computed) return null;
+  const { base, item, rune, level: L, ad, ap, armor, mr, hp, mp } = computed;
+
   const baseAd = base.attackdamage + base.attackdamageperlevel * (L - 1);
-  const totalAd = baseAd + item.ad + rune.ad;
+  const totalAd = ad;
   const baseAp = 0;
-  const totalAp = baseAp + item.ap + rune.ap;
+  const totalAp = ap;
   const baseArmor = base.armor + base.armorperlevel * (L - 1);
-  const totalArmor = baseArmor + item.armor + rune.armor;
+  const totalArmor = armor;
   const baseMr = base.spellblock + base.spellblockperlevel * (L - 1);
-  const totalMr = baseMr + item.mr + rune.mr;
+  const totalMr = mr;
   const baseHp = base.hp + base.hpperlevel * (L - 1);
-  const totalHp = baseHp + item.hp + rune.hp;
+  const totalHp = hp;
   const baseMp = base.mp + base.mpperlevel * (L - 1);
-  const totalMp = baseMp + item.mp + rune.mp;
+  const totalMp = mp;
 
   return {
     ap: totalAp,
@@ -1187,35 +1311,22 @@ function renderStats() {
     return;
   }
 
-  const base = BUILDER.championData.stats;
-  const item = getItemStats();
-  const rune = getRuneStats();
-  const L = BUILDER.level;
-
-  const hp = (base.hp + base.hpperlevel * (L - 1) + item.hp + rune.hp);
-  const baseHp5 = base.hpregen + base.hpregenperlevel * (L - 1);
-  const hp5 = (baseHp5 * (1 + item.hp5PctBase / 100) + item.hp5 + rune.hp5);
-  const mp = (base.mp + base.mpperlevel * (L - 1) + item.mp + rune.mp);
-  const baseMp5 = base.mpregen + base.mpregenperlevel * (L - 1);
-  const mp5 = (baseMp5 * (1 + item.mp5PctBase / 100) + item.mp5 + rune.mp5);
-  const ad = (base.attackdamage + base.attackdamageperlevel * (L - 1) + item.ad + rune.ad);
-  const ap = item.ap + rune.ap;
-  const armor = (base.armor + base.armorperlevel * (L - 1) + item.armor + rune.armor);
-  const mr = (base.spellblock + base.spellblockperlevel * (L - 1) + item.mr + rune.mr);
-  const asTotal = base.attackspeed * (1 + (base.attackspeedperlevel * (L - 1)) / 100) * (1 + (item.asPct + rune.asPct) / 100);
-  const abilityHaste = item.haste + rune.haste;
-  const critChance = (base.crit + base.critperlevel * (L - 1) + item.critChance + rune.critChance);
-  const critDamage = (base.critdamage ? base.critdamage * 100 : 175) + item.critDamage + rune.critDamage;
-  const attackRange = (base.attackrange || 0) + item.attackRange + rune.attackRange;
-  const moveSpeed = (base.movespeed + item.msFlat + rune.msFlat) * (1 + (item.msPct + rune.msPct) / 100);
+  const computed = computeDerivedBuildStats();
+  if (!computed) return;
+  const {
+    base, item, rune, level: L,
+    hp, hp5, mp, mp5, ad, ap, armor, mr,
+    asTotal, abilityHaste, critChance, critDamage, attackRange, moveSpeed,
+    passiveLedger,
+  } = computed;
 
   const rows = [
     { name: "HP", icon: "❤️", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
     { name: "MP", icon: "🔷", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
     { name: "HP/5", icon: "💚", value: hp5, eq: `(${base.hpregen.toFixed(1)} + ${base.hpregenperlevel.toFixed(2)}*${L - 1}) * (1 + ${item.hp5PctBase.toFixed(1)}%) + ${item.hp5.toFixed(1)} + ${rune.hp5.toFixed(1)}` },
     { name: "MP/5", icon: "💙", value: mp5, eq: `(${base.mpregen.toFixed(1)} + ${base.mpregenperlevel.toFixed(2)}*${L - 1}) * (1 + ${item.mp5PctBase.toFixed(1)}%) + ${item.mp5.toFixed(1)} + ${rune.mp5.toFixed(1)}` },
-    { name: "AD", icon: "🗡️", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)}` },
-    { name: "AP", icon: "✨", value: ap, eq: `0 + ${item.ap.toFixed(1)} + ${rune.ap.toFixed(1)}` },
+    { name: "AD", icon: "🗡️", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)} + passive(${passiveLedger.statMods.ad.toFixed(1)})` },
+    { name: "AP", icon: "✨", value: ap, eq: `0 + ${item.ap.toFixed(1)} + ${rune.ap.toFixed(1)} + passive(${passiveLedger.statMods.ap.toFixed(1)})` },
     { name: "Range", icon: "🏹", value: attackRange, eq: `${(base.attackrange || 0).toFixed(1)} + ${item.attackRange.toFixed(1)} + ${rune.attackRange.toFixed(1)}` },
     { name: "AH", icon: "⏱️", value: abilityHaste, eq: `0 + ${item.haste.toFixed(1)} + ${rune.haste.toFixed(1)}` },
     { name: "Arm", icon: "🛡️", value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${L - 1} + ${item.armor.toFixed(1)} + ${rune.armor.toFixed(1)}` },
@@ -1230,7 +1341,7 @@ function renderStats() {
     { name: "Tenacity", icon: "🦶", value: 0, eq: `${item.tenacity.toFixed(1)}%` },
   ];
 
-  root.innerHTML = renderPairedRows(rows.map((row) => {
+  const tableHtml = renderPairedRows(rows.map((row) => {
     if (row.name === "ARPen") return { ...row, displayValue: `${item.arPenFlat.toFixed(1)}/${item.arPenPct.toFixed(1)}%` };
     if (row.name === "MRPen") return { ...row, displayValue: `${item.mrPenFlat.toFixed(1)}/${item.mrPenPct.toFixed(1)}%` };
     if (row.name === "Lifesteal") return { ...row, displayValue: `${item.physicalVamp.toFixed(1)}%/${item.omniVamp.toFixed(1)}%` };
@@ -1240,6 +1351,12 @@ function renderStats() {
       displayValue: row.value.toFixed(row.name === "AS" ? 3 : 1),
     };
   }));
+
+  const passiveRows = passiveLedger.passiveEffects
+    .map((effect) => `<li><strong>${effect.source}: ${effect.owner}</strong> — ${effect.label}${effect.impact ? ` <span class="text-muted">(${effect.impact})</span>` : ""}</li>`)
+    .join("");
+
+  root.innerHTML = `${tableHtml}<div class="passive-ledger mt-10"><strong>Detected Passives</strong>${passiveRows ? `<ul>${passiveRows}</ul>` : "<div class='text-muted'>No passive effects detected.</div>"}</div>`;
 }
 
 function renderRunePanel() {
