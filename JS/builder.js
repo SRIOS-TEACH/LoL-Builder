@@ -700,14 +700,11 @@ function resolveItemDescriptionHtml(item, itemId = "") {
   return html;
 }
 
-<<<<<<< codex/fix-auto-attack-damage-calculations
 /**
  * Extracts passive/on-hit/unique sections from an item tooltip and returns display-ready rows.
  * @param {string} descriptionHtml Tooltip html.
  * @returns {{label: string, impact: string}[]} Passive rows.
  */
-=======
->>>>>>> main
 function extractPassiveDescriptionsFromHtml(descriptionHtml) {
   const html = String(descriptionHtml || "");
   if (!html) return [];
