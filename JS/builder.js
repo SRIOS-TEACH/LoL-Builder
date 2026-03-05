@@ -173,48 +173,22 @@ function wireLevelOptions() {
 
 const BUILDER_FORCE_INCLUDE_ITEM_IDS = new Set(["3040", "3042", "3121"]);
 
+function getItemLookupShared() {
+  return (typeof window !== "undefined" && window.ItemLookupShared) ? window.ItemLookupShared : null;
+}
+
 function isPurchasableBuilderItem(id, item) {
+  const shared = getItemLookupShared();
+  if (shared?.isPurchasableItem) return shared.isPurchasableItem(id, item);
   if (BUILDER_FORCE_INCLUDE_ITEM_IDS.has(String(id))) return true;
   const mapEnabled = Object.values(item.maps || {}).some(Boolean);
   return item.gold?.purchasable && mapEnabled && !item.requiredAlly;
 }
 
-function dedupeByNameWithMapPriority(itemEntries, preferredMaps = [11]) {
-  const byName = {};
-
-  function rankItem(id, item) {
-    const maps = item.maps || {};
-    const selectedIdx = preferredMaps.findIndex((mapId) => maps[mapId]);
-    const enabledMapCount = Object.values(maps).filter(Boolean).length;
-    const numericId = Number(id);
-    return {
-      selectedIdx: selectedIdx === -1 ? Number.MAX_SAFE_INTEGER : selectedIdx,
-      enabledMapCount,
-      numericId,
-    };
-  }
-
-  function isBetterCandidate(incoming, current) {
-    if (incoming.selectedIdx !== current.selectedIdx) return incoming.selectedIdx < current.selectedIdx;
-    if (incoming.enabledMapCount !== current.enabledMapCount) return incoming.enabledMapCount > current.enabledMapCount;
-    return incoming.numericId < current.numericId;
-  }
-
-  itemEntries.forEach(([id, item]) => {
-    const key = String(item.name || "").trim().toLowerCase();
-    if (!key) return;
-    const current = byName[key];
-    if (!current) {
-      byName[key] = { id, item };
-      return;
-    }
-
-    const currentRank = rankItem(current.id, current.item);
-    const incomingRank = rankItem(id, item);
-    if (isBetterCandidate(incomingRank, currentRank)) byName[key] = { id, item };
-  });
-
-  return Object.values(byName).map(({ id, item }) => [id, item]);
+function dedupeBuilderItems(itemEntries, preferredMaps = [11]) {
+  const shared = getItemLookupShared();
+  if (shared?.dedupeByNameWithMapPriority) return shared.dedupeByNameWithMapPriority(itemEntries, new Set(preferredMaps));
+  return itemEntries;
 }
 
 async function loadBuilderData() {
@@ -230,7 +204,7 @@ async function loadBuilderData() {
   ]);
   const cdtbById = buildCdtbItemsById(cdtbData);
 
-  const dedupedItemEntries = dedupeByNameWithMapPriority(
+  const dedupedItemEntries = dedupeBuilderItems(
     Object.entries(items.data).filter(([id, item]) => isPurchasableBuilderItem(id, item)),
     [11],
   ).filter(([id, item]) => item.maps?.[11] || BUILDER_FORCE_INCLUDE_ITEM_IDS.has(String(id)));
@@ -242,6 +216,14 @@ async function loadBuilderData() {
     BUILDER.items[id] = mergedItem;
     (mergedItem.tags || []).forEach((tag) => BUILDER.itemTags.add(tag));
   });
+
+  const shared = getItemLookupShared();
+  if (shared?.getState) {
+    const state = shared.getState();
+    state.version = BUILDER.version;
+    state.items = BUILDER.items;
+    if (shared.loadCommunityDragonCalcs) await shared.loadCommunityDragonCalcs();
+  }
 }
 
 function buildCdtbItemsById(cdtbData) {
@@ -294,6 +276,14 @@ function buildMergedItemStats(ddragonStats, cdtbEntry) {
     FlatCritDamageMod: readNumericStat(cdtbEntry, base, ["mFlatCritDamageMod", "flatCritDamageMod", "FlatCritDamageMod"]),
     PercentCritDamageMod: readNumericStat(cdtbEntry, base, ["mPercentCritDamageMod", "percentCritDamageMod", "PercentCritDamageMod"]),
     FlatAttackRangeMod: readNumericStat(cdtbEntry, base, ["mFlatAttackRangeMod", "flatAttackRangeMod", "FlatAttackRangeMod"]),
+    FlatLethalityMod: readNumericStat(cdtbEntry, base, ["mFlatLethalityMod", "flatLethalityMod", "FlatLethalityMod"]),
+    PercentArmorPenetrationMod: readNumericStat(cdtbEntry, base, ["mPercentArmorPenetrationMod", "percentArmorPenetrationMod", "PercentArmorPenetrationMod"]),
+    FlatMagicPenetrationMod: readNumericStat(cdtbEntry, base, ["mFlatMagicPenetrationMod", "flatMagicPenetrationMod", "FlatMagicPenetrationMod"]),
+    PercentMagicPenetrationMod: readNumericStat(cdtbEntry, base, ["mPercentMagicPenetrationMod", "percentMagicPenetrationMod", "PercentMagicPenetrationMod"]),
+    PercentLifeStealMod: readNumericStat(cdtbEntry, base, ["mPercentLifeStealMod", "percentLifeStealMod", "PercentLifeStealMod"]),
+    PercentOmnivampMod: readNumericStat(cdtbEntry, base, ["mPercentOmnivampMod", "percentOmnivampMod", "PercentOmnivampMod"]),
+    PercentPhysicalVampMod: readNumericStat(cdtbEntry, base, ["mPercentPhysicalVampMod", "percentPhysicalVampMod", "PercentPhysicalVampMod"]),
+    PercentTenacityMod: readNumericStat(cdtbEntry, base, ["mPercentTenacityMod", "percentTenacityMod", "PercentTenacityMod"]),
   };
 
   const haste = readNumericStat(cdtbEntry, base, ["mAbilityHasteMod", "mFlatHasteMod", "flatHasteMod", "FlatHasteMod", "FlatAbilityHasteMod", "AbilityHaste"]);
@@ -581,7 +571,30 @@ function renderModalItemDetail(id) {
     .sort((a, b) => a.label.localeCompare(b.label))
     .map((row) => `<div>${row.label}: ${row.isPct ? `${(row.value * 100).toFixed(1)}%` : row.value}</div>`)
     .join("");
-  root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div><div class='mt-10'>${item.description || ""}</div><button class='btn btn-sm mt-10' onclick="setSlotItem('${id}')">Select this item</button><button class='btn btn-sm mt-10 ml-5' onclick="setSlotItem('')">Clear slot</button>`;
+
+  const shared = getItemLookupShared();
+  let enhancedDescription = item.description || "";
+  let extractedFormulaRows = "";
+  if (shared) {
+    const resolved = shared.resolveDescriptionFormulas ? shared.resolveDescriptionFormulas(item, enhancedDescription) : enhancedDescription;
+    let lines = [];
+    if (shared.buildExtractedFormulas) {
+      const extracted = shared.buildExtractedFormulas(String(id));
+      lines = extracted?.lines || [];
+    }
+    if (shared.injectDamageFormulaText) enhancedDescription = shared.injectDamageFormulaText(resolved, lines, String(id));
+    else enhancedDescription = resolved;
+    if (shared.injectActiveCooldown) enhancedDescription = shared.injectActiveCooldown(enhancedDescription, shared.inferActiveCooldownSeconds ? shared.inferActiveCooldownSeconds(String(id)) : null);
+    if (shared.emphasizeAbilityHeaders) enhancedDescription = shared.emphasizeAbilityHeaders(enhancedDescription);
+    if (shared.enhanceActiveTooltip) enhancedDescription = shared.enhanceActiveTooltip(enhancedDescription);
+    if (shared.colorizeStatsInHtml) enhancedDescription = shared.colorizeStatsInHtml(enhancedDescription);
+
+    if (lines.length) {
+      extractedFormulaRows = `<div class='mt-10'><strong>Effects</strong>${lines.map((line) => `<div>${line.name}: ${line.formula}</div>`).join("")}</div>`;
+    }
+  }
+
+  root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div>${extractedFormulaRows}<div class='mt-10'>${enhancedDescription}</div><button class='btn btn-sm mt-10' onclick="setSlotItem('${id}')">Select this item</button><button class='btn btn-sm mt-10 ml-5' onclick="setSlotItem('')">Clear slot</button>`;
 }
 
 function setSlotItem(itemId) {
@@ -1052,6 +1065,7 @@ function getItemStats() {
   const totals = {
     hp: 0, hp5: 0, hp5PctBase: 0, mp: 0, mp5: 0, mp5PctBase: 0, ad: 0, ap: 0, armor: 0, mr: 0,
     haste: 0, asPct: 0, critChance: 0, critDamage: 0, attackRange: 0, msFlat: 0, msPct: 0,
+    arPenFlat: 0, arPenPct: 0, mrPenFlat: 0, mrPenPct: 0, physicalVamp: 0, omniVamp: 0, tenacity: 0,
   };
   BUILDER.itemSlots.forEach((id) => {
     if (!id) return;
@@ -1079,6 +1093,13 @@ function getItemStats() {
     totals.attackRange += s.FlatAttackRangeMod || 0;
     totals.msFlat += s.FlatMovementSpeedMod || 0;
     totals.msPct += (s.PercentMovementSpeedMod || 0) * 100;
+    totals.arPenFlat += s.FlatLethalityMod || 0;
+    totals.arPenPct += (s.PercentArmorPenetrationMod || 0) * 100;
+    totals.mrPenFlat += s.FlatMagicPenetrationMod || 0;
+    totals.mrPenPct += (s.PercentMagicPenetrationMod || 0) * 100;
+    totals.physicalVamp += ((s.PercentPhysicalVampMod || 0) + (s.PercentLifeStealMod || 0)) * 100;
+    totals.omniVamp += (s.PercentOmnivampMod || 0) * 100;
+    totals.tenacity += (s.PercentTenacityMod || 0) * 100;
   });
   return totals;
 }
@@ -1087,6 +1108,7 @@ function getRuneStats() {
   const totals = {
     hp: 0, hp5: 0, hp5PctBase: 0, mp: 0, mp5: 0, mp5PctBase: 0, ad: 0, ap: 0, armor: 0, mr: 0,
     haste: 0, asPct: 0, critChance: 0, critDamage: 0, attackRange: 0, msFlat: 0, msPct: 0,
+    arPenFlat: 0, arPenPct: 0, mrPenFlat: 0, mrPenPct: 0, physicalVamp: 0, omniVamp: 0, tenacity: 0,
   };
   const selected = [
     ...BUILDER.runeSelections.primary,
@@ -1131,6 +1153,10 @@ function renderStats() {
     { name: "MS", icon: "👟" },
     { name: "Crit %", icon: "🎯" },
     { name: "Crit Dmg", icon: "💥" },
+    { name: "ARPen", icon: "🪓" },
+    { name: "MRPen", icon: "🔹" },
+    { name: "Lifesteal", icon: "🩸" },
+    { name: "Tenacity", icon: "🦶" },
   ];
   const renderPairedRows = (rows) => {
     const pairRows = [];
@@ -1182,12 +1208,22 @@ function renderStats() {
     { name: "MS", icon: "👟", value: moveSpeed, eq: `(${base.movespeed.toFixed(1)} + ${item.msFlat.toFixed(1)} + ${rune.msFlat.toFixed(1)}) * (1 + ${(item.msPct + rune.msPct).toFixed(1)}%)` },
     { name: "Crit %", icon: "🎯", value: critChance, eq: `${base.crit.toFixed(1)} + ${base.critperlevel.toFixed(1)}*${L - 1} + ${item.critChance.toFixed(1)} + ${rune.critChance.toFixed(1)}` },
     { name: "Crit Dmg", icon: "💥", value: critDamage, eq: `${(base.critdamage ? base.critdamage * 100 : 175).toFixed(1)} + ${item.critDamage.toFixed(1)} + ${rune.critDamage.toFixed(1)}` },
+    { name: "ARPen", icon: "🪓", value: 0, eq: `${item.arPenFlat.toFixed(1)} / ${item.arPenPct.toFixed(1)}%` },
+    { name: "MRPen", icon: "🔹", value: 0, eq: `${item.mrPenFlat.toFixed(1)} / ${item.mrPenPct.toFixed(1)}%` },
+    { name: "Lifesteal", icon: "🩸", value: 0, eq: `${item.physicalVamp.toFixed(1)}% / ${item.omniVamp.toFixed(1)}%` },
+    { name: "Tenacity", icon: "🦶", value: 0, eq: `${item.tenacity.toFixed(1)}%` },
   ];
 
-  root.innerHTML = renderPairedRows(rows.map((row) => ({
-    ...row,
-    displayValue: row.value.toFixed(row.name === "AS" ? 3 : 1),
-  })));
+  root.innerHTML = renderPairedRows(rows.map((row) => {
+    if (row.name === "ARPen") return { ...row, displayValue: `${item.arPenFlat.toFixed(1)}/${item.arPenPct.toFixed(1)}%` };
+    if (row.name === "MRPen") return { ...row, displayValue: `${item.mrPenFlat.toFixed(1)}/${item.mrPenPct.toFixed(1)}%` };
+    if (row.name === "Lifesteal") return { ...row, displayValue: `${item.physicalVamp.toFixed(1)}%/${item.omniVamp.toFixed(1)}%` };
+    if (row.name === "Tenacity") return { ...row, displayValue: `${item.tenacity.toFixed(1)}%` };
+    return {
+      ...row,
+      displayValue: row.value.toFixed(row.name === "AS" ? 3 : 1),
+    };
+  }));
 }
 
 function renderRunePanel() {

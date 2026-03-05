@@ -108,8 +108,8 @@ function itemMatchesSelectedMaps(item) {
 /**
  * Chooses one representative item id per normalized item name based on selected map priority.
  */
-function dedupeByNameWithMapPriority(itemEntries) {
-  const selectedOrder = MAP_OPTIONS.map((m) => m.id).filter((id) => ITEM_STATE.selectedMaps.has(id));
+function dedupeByNameWithMapPriority(itemEntries, selectedMaps = ITEM_STATE.selectedMaps) {
+  const selectedOrder = MAP_OPTIONS.map((m) => m.id).filter((id) => selectedMaps.has(id));
   const byName = {};
 
   function rankItem(id, item) {
@@ -1897,3 +1897,21 @@ function showItem(id) {
   document.getElementById("itemMeta").innerHTML = `<strong>Tags:</strong> ${(item.tags || []).join(", ") || "-"}`;
   document.getElementById("itemTooltipMain").innerHTML = colorizeStatsInHtml(tooltipMain);
 }
+
+
+window.ItemLookupShared = {
+  MAP_OPTIONS,
+  RAW_STAT_KEYS,
+  isPurchasableItem,
+  dedupeByNameWithMapPriority,
+  resolveDescriptionFormulas,
+  colorizeStatsInHtml,
+  buildExtractedFormulas,
+  injectDamageFormulaText,
+  emphasizeAbilityHeaders,
+  enhanceActiveTooltip,
+  inferActiveCooldownSeconds,
+  injectActiveCooldown,
+  loadCommunityDragonCalcs,
+  getState: () => ITEM_STATE,
+};
