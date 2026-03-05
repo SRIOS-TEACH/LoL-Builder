@@ -674,12 +674,15 @@ function extractPassiveLabelsFromText(text) {
   return Array.from(new Set(labels));
 }
 
+<<<<<<< codex/fix-auto-attack-damage-calculations
 /**
  * Resolves an item description using shared Item Lookup transformers so formulas/cooldowns are concrete.
  * @param {object} item Data Dragon item payload.
  * @param {string} itemId Numeric item id.
  * @returns {string} Enhanced item tooltip HTML.
  */
+=======
+>>>>>>> main
 function resolveItemDescriptionHtml(item, itemId = "") {
   const shared = getItemLookupShared();
   let html = String(item?.description || "");
@@ -700,11 +703,14 @@ function resolveItemDescriptionHtml(item, itemId = "") {
   return html;
 }
 
+<<<<<<< codex/fix-auto-attack-damage-calculations
 /**
  * Extracts passive/on-hit/unique sections from an item tooltip and returns display-ready rows.
  * @param {string} descriptionHtml Tooltip html.
  * @returns {{label: string, impact: string}[]} Passive rows.
  */
+=======
+>>>>>>> main
 function extractPassiveDescriptionsFromHtml(descriptionHtml) {
   const html = String(descriptionHtml || "");
   if (!html) return [];
