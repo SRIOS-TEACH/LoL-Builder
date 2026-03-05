@@ -202,7 +202,17 @@ async function loadBuilderData() {
     fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/item.json`).then((r) => r.json()),
     fetch("https://raw.communitydragon.org/latest/game/items.cdtb.bin.json").then((r) => r.json()).catch(() => null),
   ]);
-  const cdtbById = buildCdtbItemsById(cdtbData);
+  const cdtbByIdFallback = buildCdtbItemsById(cdtbData);
+
+  const shared = getItemLookupShared();
+  let sharedCdtbById = null;
+  if (shared?.getState) {
+    const state = shared.getState();
+    state.version = BUILDER.version;
+    state.items = items.data;
+    if (shared.loadCommunityDragonCalcs) await shared.loadCommunityDragonCalcs();
+    sharedCdtbById = state.cdragonById || null;
+  }
 
   const dedupedItemEntries = dedupeBuilderItems(
     Object.entries(items.data).filter(([id, item]) => isPurchasableBuilderItem(id, item)),
@@ -210,19 +220,17 @@ async function loadBuilderData() {
   ).filter(([id, item]) => item.maps?.[11] || BUILDER_FORCE_INCLUDE_ITEM_IDS.has(String(id)));
 
   dedupedItemEntries.forEach(([id, item]) => {
-    const cdtbEntry = cdtbById.get(String(id));
+    const cdtbEntry = sharedCdtbById?.[String(id)] || cdtbByIdFallback.get(String(id));
     const stats = buildMergedItemStats(item.stats || {}, cdtbEntry);
     const mergedItem = { ...item, stats };
     BUILDER.items[id] = mergedItem;
     (mergedItem.tags || []).forEach((tag) => BUILDER.itemTags.add(tag));
   });
 
-  const shared = getItemLookupShared();
   if (shared?.getState) {
     const state = shared.getState();
     state.version = BUILDER.version;
     state.items = BUILDER.items;
-    if (shared.loadCommunityDragonCalcs) await shared.loadCommunityDragonCalcs();
   }
 }
 
@@ -242,14 +250,22 @@ function buildCdtbItemsById(cdtbData) {
 }
 
 function readNumericStat(entry, base, aliases) {
-  for (const key of aliases) {
-    const v = entry?.[key];
-    if (v !== undefined && v !== null && v !== "") return Number(v) || 0;
-  }
-  for (const key of aliases) {
-    const v = base?.[key];
-    if (v !== undefined && v !== null && v !== "") return Number(v) || 0;
-  }
+  const entryValues = aliases
+    .map((key) => entry?.[key])
+    .filter((v) => v !== undefined && v !== null && v !== "")
+    .map((v) => Number(v) || 0);
+  const baseValues = aliases
+    .map((key) => base?.[key])
+    .filter((v) => v !== undefined && v !== null && v !== "")
+    .map((v) => Number(v) || 0);
+
+  const nonZeroEntry = entryValues.find((v) => v !== 0);
+  if (nonZeroEntry !== undefined) return nonZeroEntry;
+  const nonZeroBase = baseValues.find((v) => v !== 0);
+  if (nonZeroBase !== undefined) return nonZeroBase;
+
+  if (entryValues.length) return entryValues[0];
+  if (baseValues.length) return baseValues[0];
   return 0;
 }
 
