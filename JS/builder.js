@@ -171,9 +171,50 @@ function wireLevelOptions() {
   });
 }
 
-function isSummonersRiftItem(id, item) {
-  if (["3040", "3042", "3121"].includes(String(id))) return true;
-  return item.gold?.purchasable && item.maps?.[11] && !item.requiredAlly;
+const BUILDER_FORCE_INCLUDE_ITEM_IDS = new Set(["3040", "3042", "3121"]);
+
+function isPurchasableBuilderItem(id, item) {
+  if (BUILDER_FORCE_INCLUDE_ITEM_IDS.has(String(id))) return true;
+  const mapEnabled = Object.values(item.maps || {}).some(Boolean);
+  return item.gold?.purchasable && mapEnabled && !item.requiredAlly;
+}
+
+function dedupeByNameWithMapPriority(itemEntries, preferredMaps = [11]) {
+  const byName = {};
+
+  function rankItem(id, item) {
+    const maps = item.maps || {};
+    const selectedIdx = preferredMaps.findIndex((mapId) => maps[mapId]);
+    const enabledMapCount = Object.values(maps).filter(Boolean).length;
+    const numericId = Number(id);
+    return {
+      selectedIdx: selectedIdx === -1 ? Number.MAX_SAFE_INTEGER : selectedIdx,
+      enabledMapCount,
+      numericId,
+    };
+  }
+
+  function isBetterCandidate(incoming, current) {
+    if (incoming.selectedIdx !== current.selectedIdx) return incoming.selectedIdx < current.selectedIdx;
+    if (incoming.enabledMapCount !== current.enabledMapCount) return incoming.enabledMapCount > current.enabledMapCount;
+    return incoming.numericId < current.numericId;
+  }
+
+  itemEntries.forEach(([id, item]) => {
+    const key = String(item.name || "").trim().toLowerCase();
+    if (!key) return;
+    const current = byName[key];
+    if (!current) {
+      byName[key] = { id, item };
+      return;
+    }
+
+    const currentRank = rankItem(current.id, current.item);
+    const incomingRank = rankItem(id, item);
+    if (isBetterCandidate(incomingRank, currentRank)) byName[key] = { id, item };
+  });
+
+  return Object.values(byName).map(({ id, item }) => [id, item]);
 }
 
 async function loadBuilderData() {
@@ -189,8 +230,12 @@ async function loadBuilderData() {
   ]);
   const cdtbById = buildCdtbItemsById(cdtbData);
 
-  Object.entries(items.data).forEach(([id, item]) => {
-    if (!isSummonersRiftItem(id, item)) return;
+  const dedupedItemEntries = dedupeByNameWithMapPriority(
+    Object.entries(items.data).filter(([id, item]) => isPurchasableBuilderItem(id, item)),
+    [11],
+  ).filter(([id, item]) => item.maps?.[11] || BUILDER_FORCE_INCLUDE_ITEM_IDS.has(String(id)));
+
+  dedupedItemEntries.forEach(([id, item]) => {
     const cdtbEntry = cdtbById.get(String(id));
     const stats = buildMergedItemStats(item.stats || {}, cdtbEntry);
     const mergedItem = { ...item, stats };
@@ -508,11 +553,33 @@ function renderModalItemDetail(id) {
     FlatAttackRangeMod: "Attack Range",
     FlatHasteMod: "Ability Haste",
     FlatAbilityHasteMod: "Ability Haste",
+    AbilityHaste: "Ability Haste",
   };
   const pctStats = new Set(["PercentBaseHPRegenMod", "PercentBaseMPRegenMod", "PercentAttackSpeedMod", "PercentMovementSpeedMod", "PercentCritChanceMod", "PercentCritDamageMod"]);
-  const statLines = Object.entries(item.stats || {})
+  const statBuckets = new Map();
+  const aliasCanonical = {
+    FlatAbilityHasteMod: "FlatHasteMod",
+    AbilityHaste: "FlatHasteMod",
+    PercentHPRegenMod: "PercentBaseHPRegenMod",
+    PercentMPRegenMod: "PercentBaseMPRegenMod",
+  };
+  const seenCanonical = new Set();
+  Object.entries(item.stats || {})
     .filter(([, v]) => Number(v) !== 0)
-    .map(([k, v]) => `<div>${statNameMap[k] || k}: ${pctStats.has(k) ? `${(Number(v) * 100).toFixed(1)}%` : Number(v)}</div>`)
+    .forEach(([k, v]) => {
+      const canonical = aliasCanonical[k] || k;
+      if (seenCanonical.has(canonical)) return;
+      seenCanonical.add(canonical);
+      const label = statNameMap[canonical] || statNameMap[k] || canonical;
+      const isPct = pctStats.has(canonical) || pctStats.has(k);
+      const bucketKey = `${label}::${isPct ? 'pct' : 'flat'}`;
+      const current = statBuckets.get(bucketKey) || { label, isPct, value: 0 };
+      current.value += Number(v) || 0;
+      statBuckets.set(bucketKey, current);
+    });
+  const statLines = Array.from(statBuckets.values())
+    .sort((a, b) => a.label.localeCompare(b.label))
+    .map((row) => `<div>${row.label}: ${row.isPct ? `${(row.value * 100).toFixed(1)}%` : row.value}</div>`)
     .join("");
   root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div><div class='mt-10'>${item.description || ""}</div><button class='btn btn-sm mt-10' onclick="setSlotItem('${id}')">Select this item</button><button class='btn btn-sm mt-10 ml-5' onclick="setSlotItem('')">Clear slot</button>`;
 }
