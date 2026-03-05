@@ -56,8 +56,18 @@ node --check JS/builder.js
 ---
 
 ## Data sources
-- **Data Dragon**: stable champion/item catalog and icons.
-- **CommunityDragon**: richer item calculation payloads used for readable formula rendering.
-  - Mastery Icons: https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/
+- **Data Dragon** (version index + game data + art):
+  - Versions index: `https://ddragon.leagueoflegends.com/api/versions.json`
+  - Champion list: `https://ddragon.leagueoflegends.com/cdn/{version}/data/en_US/champion.json`
+  - Champion detail/abilities: `https://ddragon.leagueoflegends.com/cdn/{version}/data/en_US/champion/{champion}.json`
+  - Item list: `https://ddragon.leagueoflegends.com/cdn/{version}/data/en_US/item.json`
+  - Item icons: `https://ddragon.leagueoflegends.com/cdn/{version}/img/item/{itemId}.png`
+  - Champion passive icons: `https://ddragon.leagueoflegends.com/cdn/{version}/img/passive/{file}.png`
+  - Champion spell icons: `https://ddragon.leagueoflegends.com/cdn/{version}/img/spell/{file}.png`
+  - Champion splash art: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{champion}_0.jpg`
+- **Community Dragon** (advanced calculations + runtime assets):
+  - Item calculations: `https://raw.communitydragon.org/latest/game/items.cdtb.bin.json`
+  - Champion spell calculations: `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/en_us/v1/champions/{championId}.json`
+  - Rune/perk icons: `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/`
 
 ---
