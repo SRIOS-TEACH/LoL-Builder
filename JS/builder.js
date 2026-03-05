@@ -948,13 +948,19 @@ function renderAbilityCards() {
 
   const champ = BUILDER.championData;
   const passive = `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p>${champ.passive.description}</p></div>`;
+  const abilityHaste = getItemStats().haste + getRuneStats().haste;
+  const cooldownReductionPct = abilityHaste > 0 ? (abilityHaste / (abilityHaste + 100)) : 0;
 
   const spells = champ.spells.map((spell, i) => {
     const key = ["q", "w", "e", "r"][i];
     const max = abilityMaxByLevel(BUILDER.level, key);
     const opts = Array.from({ length: max + 1 }, (_, idx) => `<option value="${idx}">${idx}</option>`).join("");
     const rank = BUILDER.abilityRanks[key];
-    const cd = parseByRank(spell.cooldownBurn, rank);
+    const cdBase = parseByRank(spell.cooldownBurn, rank);
+    const cdNumeric = Number(cdBase);
+    const cd = Number.isFinite(cdNumeric) && cdNumeric > 0
+      ? `${(cdNumeric * (1 - cooldownReductionPct)).toFixed(2)} (base ${cdNumeric.toFixed(2)})`
+      : cdBase;
     const cost = parseByRank(spell.costBurn, rank);
     const range = parseByRank(spell.rangeBurn, rank);
     const detail = buildDetailedAbilityText(spell, rank, key);
