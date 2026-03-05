@@ -499,6 +499,7 @@ function setSlotItem(itemId) {
   BUILDER.itemSlots[BUILDER.activeSlot] = itemId;
   refreshSlotLabels();
   renderStats();
+  renderAbilityCards();
   closeItemModal();
 }
 
@@ -699,13 +700,16 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
     cooldown: parseByRank(spell.cooldownBurn, safeRank),
     range: parseByRank(spell.rangeBurn, safeRank),
     abilityresourcename: (spell.costType || "").replace(/<[^>]+>/g, "").replace(/[{}`]/g, "").trim() || "Mana",
+    spellmodifierdescriptionappend: "",
   };
 
   const replaced = raw.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (full, tokenRaw) => {
     const token = String(tokenRaw || "").trim().toLowerCase();
 
-    if (knownTokens[token] && knownTokens[token] !== "-") {
-      return `<span class="ability-detail-number">${knownTokens[token]}</span>`;
+    if (Object.prototype.hasOwnProperty.call(knownTokens, token)) {
+      const v = knownTokens[token];
+      if (v === "" || v === "-") return "";
+      return `<span class="ability-detail-number">${v}</span>`;
     }
 
     const isNextLevel = token.endsWith("nl");
@@ -720,33 +724,31 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
 
     const dataValue = getSpellDataValue(cdragonSpell?.dataValues || [], baseToken, Math.min(5, safeRank + (isNextLevel ? 1 : 0)));
     if (dataValue) {
-      const rankValues = dataValue.rankValues.map((v) => v.toFixed(1)).join(" / ");
-      return `<span class="ability-detail-number">${dataValue.current.toFixed(1)} <span class="ability-detail-eq">[${rankValues}]</span></span>`;
+      return `<span class="ability-detail-number">${formatAbilityNumber(dataValue.current)}</span>`;
     }
 
     const effectMatch = token.match(/^e(\d+)$/);
     if (effectMatch) {
       const idx = Number(effectMatch[1]);
       const arr = spell.effect?.[idx] || [];
-      if (!arr.length) return `<span class="ability-detail-missing">${tokenRaw}</span>`;
+      if (!arr.length) return "";
       const rankIndex = Math.max(0, Math.min(arr.length - 1, safeRank - 1));
       const current = Number(arr[rankIndex]) || 0;
-      const rankValues = arr.map((v) => Number(v || 0).toFixed(1)).join(" / ");
-      return `<span class="ability-detail-number">${current.toFixed(1)} <span class="ability-detail-eq">[${rankValues}]</span></span>`;
+      return `<span class="ability-detail-number">${formatAbilityNumber(current)}</span>`;
     }
 
     if (/^[af]\d+$/.test(token) && stats) {
       const v = vars[token];
-      if (!v) return `<span class="ability-detail-missing">${tokenRaw}</span>`;
+      if (!v) return "";
       const source = getSpellScalingSource(v.link, stats);
-      if (!source) return `<span class="ability-detail-missing">${tokenRaw}</span>`;
+      if (!source) return "";
       const coeffRaw = Array.isArray(v.coeff) ? (v.coeff[getRankedValueIndex(v.coeff, safeRank)] ?? v.coeff[0]) : v.coeff;
       const coeff = Number(coeffRaw || 0);
       const scaled = coeff * source.value;
       return `<span class="ability-detail-number">${formatAbilityNumber(scaled)} <span class="ability-detail-eq">(${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(source.label)})</span></span>`;
     }
 
-    return `<span class="ability-detail-missing">${tokenRaw}</span>`;
+    return "";
   });
 
   return replaced
@@ -759,7 +761,10 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
     .replace(/<healing>/gi, '<span class="ability-healing">')
     .replace(/<\/healing>/gi, '</span>')
     .replace(/<status>/gi, '<span class="ability-status">')
-    .replace(/<\/status>/gi, '</span>');
+    .replace(/<\/status>/gi, '</span>')
+    .replace(/[{}]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
 
 function renderAbilityCards() {
@@ -1111,5 +1116,6 @@ function selectRuneOption(id) {
   }
   renderRunePanel();
   renderStats();
+  renderAbilityCards();
   closeRuneModal();
 }
