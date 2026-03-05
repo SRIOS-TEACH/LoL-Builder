@@ -353,14 +353,37 @@ async function loadCdragonAbilityData(championName) {
   if (!raw) return null;
 
   const bySlot = {};
+  const canonicalPrefix = `/spells/${pathName}`.toLowerCase();
+  const candidatesBySlot = { q: [], w: [], e: [], r: [] };
+
   Object.values(raw).forEach((entry) => {
     if (entry?.__type !== "AbilityObject" || !entry.mRootSpell || !entry.mName) return;
     const m = String(entry.mName).match(/([QWER])Ability$/i);
     if (!m) return;
     const slot = m[1].toLowerCase();
-    const root = raw[entry.mRootSpell];
+    const rootPath = String(entry.mRootSpell || "");
+    const root = raw[rootPath];
     const spell = root?.mSpell;
     if (!spell) return;
+
+    const entryName = String(entry.mName || "").toLowerCase();
+    const exactAbilityName = `${pathName}${slot}ability`;
+    const score = [
+      entryName === exactAbilityName,
+      entryName.endsWith(`${slot}ability`) && entryName.includes(pathName),
+      rootPath.toLowerCase().includes(canonicalPrefix),
+      rootPath.toLowerCase().includes(`/${pathName}${slot}ability/`),
+      Object.keys(spell.mSpellCalculations || {}).length > 0,
+      Array.isArray(spell.DataValues) && spell.DataValues.length > 0,
+    ].reduce((acc, ok, idx) => acc + (ok ? (20 - idx) : 0), 0);
+
+    candidatesBySlot[slot].push({ score, spell });
+  });
+
+  Object.entries(candidatesBySlot).forEach(([slot, candidates]) => {
+    if (!candidates.length) return;
+    candidates.sort((a, b) => b.score - a.score);
+    const spell = candidates[0].spell;
     bySlot[slot] = {
       dataValues: spell.DataValues || [],
       calculations: spell.mSpellCalculations || {},
@@ -642,43 +665,173 @@ function formatAbilityNumber(value, isPercent = false) {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
-function evaluateGameCalculation(calc, dataValues, rank, stats) {
-  if (!calc || !Array.isArray(calc.mFormulaParts)) return null;
-  const terms = [];
-  let total = 0;
-  calc.mFormulaParts.forEach((part) => {
-    const t = String(part?.__type || "");
-    if (t === "NumberCalculationPart") {
-      const val = Number(part?.mNumber || 0);
-      total += val;
-      terms.push({ text: formatAbilityNumber(val), value: val });
-      return;
+function evaluateCalculationPart(part, dataValues, rank, stats) {
+  const t = String(part?.__type || "");
+  if (t === "NumberCalculationPart") {
+    const val = Number(part?.mNumber || 0);
+    return { value: val, text: formatAbilityNumber(val) };
+  }
+  if (t === "NamedDataValueCalculationPart") {
+    const data = getSpellDataValue(dataValues, part?.mDataValue, rank);
+    if (!data) return null;
+    return { value: data.current, text: formatAbilityNumber(data.current) };
+  }
+  if (t === "StatByCoefficientCalculationPart") {
+    const src = getCalcStatSource(part, stats);
+    const coeff = Number(part?.mCoefficient || 0);
+    return { value: src.value * coeff, text: `${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}` };
+  }
+  if (t === "StatByNamedDataValueCalculationPart") {
+    const src = getCalcStatSource(part, stats);
+    const coeffData = getSpellDataValue(dataValues, part?.mDataValue, rank);
+    const coeff = coeffData ? coeffData.current : 0;
+    return { value: src.value * coeff, text: `${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}` };
+  }
+  if (t === "SumOfSubPartsCalculationPart") {
+    const parts = (part?.mSubparts || []).map((sub) => evaluateCalculationPart(sub, dataValues, rank, stats)).filter(Boolean);
+    if (!parts.length) return null;
+    return { value: parts.reduce((a, b) => a + b.value, 0), text: parts.map((p) => p.text).join(" + ") };
+  }
+  if (t === "ByCharLevelBreakpointsCalculationPart") {
+    const level = Math.max(1, Number(BUILDER.level) || 1);
+    const base = Number(part?.mLevel1Value || 0);
+    const bonus = (part?.mBreakpoints || []).reduce((acc, bp) => {
+      if (level >= Number(bp?.mLevel || 1)) return acc + Number(bp?.mAdditionalBonusAtThisLevel || 0);
+      return acc;
+    }, 0);
+    const value = base + bonus;
+    return { value, text: formatAbilityNumber(value) };
+  }
+  return null;
+}
+
+function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
+  if (!calc) return null;
+  const ctype = String(calc.__type || "");
+
+  if (ctype === "GameCalculationModified") {
+    const key = String(calc.mModifiedGameCalculation || "");
+    if (!calculationsMap || !key || seen.has(key)) return null;
+    seen.add(key);
+    const base = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, seen);
+    const mult = evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats);
+    if (!base || !mult) return null;
+    return {
+      total: base.total * mult.value,
+      terms: [{ text: `${formatAbilityNumber(base.total)} × (${mult.text})`, value: base.total * mult.value }],
+      displayAsPercent: !!calc.mDisplayAsPercent,
+    };
+  }
+
+  if (!Array.isArray(calc.mFormulaParts)) return null;
+  const parts = calc.mFormulaParts
+    .map((part) => evaluateCalculationPart(part, dataValues, rank, stats))
+    .filter(Boolean);
+  if (!parts.length) return null;
+
+  return {
+    total: parts.reduce((a, b) => a + b.value, 0),
+    terms: parts.map((p) => ({ text: p.text, value: p.value })),
+    displayAsPercent: !!calc.mDisplayAsPercent,
+  };
+}
+
+function resolveAbilityToken(tokenRaw, ctx) {
+  const token = String(tokenRaw || "").trim().toLowerCase();
+
+  const resolveSimple = (baseToken, localCtx = ctx) => {
+    if (Object.prototype.hasOwnProperty.call(localCtx.knownTokens, baseToken)) {
+      const v = localCtx.knownTokens[baseToken];
+      if (v === "" || v === "-") return { html: "", numeric: null };
+      const parsed = Number(v);
+      return {
+        html: `<span class="ability-detail-number">${v}</span>`,
+        numeric: Number.isFinite(parsed) ? parsed : null,
+      };
     }
-    if (t === "NamedDataValueCalculationPart") {
-      const data = getSpellDataValue(dataValues, part?.mDataValue, rank);
-      if (!data) return;
-      total += data.current;
-      terms.push({ text: formatAbilityNumber(data.current), value: data.current });
-      return;
+
+    let normalizedToken = baseToken;
+    if (normalizedToken.endsWith("tooltip")) normalizedToken = normalizedToken.slice(0, -7);
+    if (normalizedToken.includes("gamemodeinteger")) return { html: "", numeric: null };
+
+    let calc = localCtx.calcLookup[normalizedToken];
+    if (!calc) {
+      const fuzzyKey = Object.keys(localCtx.calcLookup || {}).find((k) => k.includes(normalizedToken) || normalizedToken.includes(k));
+      if (fuzzyKey) calc = localCtx.calcLookup[fuzzyKey];
     }
-    if (t === "StatByCoefficientCalculationPart") {
-      const src = getCalcStatSource(part, stats);
-      const coeff = Number(part?.mCoefficient || 0);
-      const val = src.value * coeff;
-      total += val;
-      terms.push({ text: `${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}`, value: val });
-      return;
+    if (calc) {
+      const shown = calc.displayAsPercent ? (calc.total * 100) : calc.total;
+      const eq = calc.terms.map((t) => t.text).join(" + ");
+      return {
+        html: `<span class="ability-detail-number">${formatAbilityNumber(shown, calc.displayAsPercent)} <span class="ability-detail-eq">(${eq})</span></span>`,
+        numeric: shown,
+      };
     }
-    if (t === "StatByNamedDataValueCalculationPart") {
-      const src = getCalcStatSource(part, stats);
-      const coeffData = getSpellDataValue(dataValues, part?.mDataValue, rank);
-      const coeff = coeffData ? coeffData.current : 0;
-      const val = src.value * coeff;
-      total += val;
-      terms.push({ text: `${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}`, value: val });
+
+    let dataValue = getSpellDataValue(localCtx.cdragonSpell?.dataValues || [], normalizedToken, localCtx.safeRank);
+    if (!dataValue) {
+      const dv = (localCtx.cdragonSpell?.dataValues || []).map((d) => String(d?.mName || "").toLowerCase());
+      const fuzzyDv = dv.find((k) => k.includes(normalizedToken) || normalizedToken.includes(k));
+      if (fuzzyDv) dataValue = getSpellDataValue(localCtx.cdragonSpell?.dataValues || [], fuzzyDv, localCtx.safeRank);
     }
-  });
-  return { total, terms, displayAsPercent: !!calc.mDisplayAsPercent };
+    if (dataValue) {
+      return {
+        html: `<span class="ability-detail-number">${formatAbilityNumber(dataValue.current)}</span>`,
+        numeric: dataValue.current,
+      };
+    }
+
+    const effectMatch = normalizedToken.match(/^e(\d+)$/);
+    if (effectMatch) {
+      const idx = Math.max(1, Number(effectMatch[1]));
+      const arr = localCtx.spell.effect?.[idx] || [];
+      if (!arr.length) return null;
+      const rankIndex = Math.max(0, Math.min(arr.length - 1, localCtx.safeRank - 1));
+      const current = Number(arr[rankIndex]) || 0;
+      return {
+        html: `<span class="ability-detail-number">${formatAbilityNumber(current)}</span>`,
+        numeric: current,
+      };
+    }
+
+    if (/^[af]\d+$/.test(baseToken) && localCtx.stats) {
+      const v = localCtx.vars[baseToken];
+      if (!v) return null;
+      const source = getSpellScalingSource(v.link, localCtx.stats);
+      if (!source) return null;
+      const coeffRaw = Array.isArray(v.coeff) ? (v.coeff[getRankedValueIndex(v.coeff, localCtx.safeRank)] ?? v.coeff[0]) : v.coeff;
+      const coeff = Number(coeffRaw || 0);
+      const scaled = coeff * source.value;
+      return {
+        html: `<span class="ability-detail-number">${formatAbilityNumber(scaled)} <span class="ability-detail-eq">(${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(source.label)})</span></span>`,
+        numeric: scaled,
+      };
+    }
+
+    return null;
+  };
+
+  const isNextLevel = token.endsWith("nl");
+  const baseToken = isNextLevel ? token.slice(0, -2) : token;
+  const nextRank = Math.min(5, ctx.safeRank + 1);
+  const simpleCtx = { ...ctx, safeRank: isNextLevel ? nextRank : ctx.safeRank };
+
+  const multMatch = baseToken.match(/^([a-z0-9_]+)\*(-?\d+(?:\.\d+)?)$/);
+  if (multMatch) {
+    const left = resolveSimple(multMatch[1], simpleCtx);
+    if (!left || left.numeric === null) return null;
+    const mult = Number(multMatch[2]);
+    const value = left.numeric * mult;
+    return {
+      html: `<span class="ability-detail-number">${formatAbilityNumber(value)}</span>`,
+      numeric: value,
+    };
+  }
+
+  const direct = resolveSimple(baseToken, simpleCtx);
+  if (direct) return direct;
+
+  return null;
 }
 
 function buildDetailedAbilityText(spell, rank, spellKey) {
@@ -690,7 +843,7 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
   const vars = Object.fromEntries((spell.vars || []).map((v) => [String(v.key || "").toLowerCase(), v]));
   const cdragonSpell = BUILDER.cdragonAbilityData?.[spellKey] || null;
   const calcEntries = Object.entries(cdragonSpell?.calculations || {}).map(([k, calc]) => {
-    const evaluated = stats ? evaluateGameCalculation(calc, cdragonSpell?.dataValues || [], safeRank, stats) : null;
+    const evaluated = stats ? evaluateGameCalculation(calc, cdragonSpell?.dataValues || [], safeRank, stats, cdragonSpell?.calculations || {}) : null;
     return [String(k).toLowerCase(), evaluated];
   });
   const calcLookup = Object.fromEntries(calcEntries);
@@ -703,52 +856,10 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
     spellmodifierdescriptionappend: "",
   };
 
+  const ctx = { spell, safeRank, stats, vars, cdragonSpell, calcLookup, knownTokens };
   const replaced = raw.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (full, tokenRaw) => {
-    const token = String(tokenRaw || "").trim().toLowerCase();
-
-    if (Object.prototype.hasOwnProperty.call(knownTokens, token)) {
-      const v = knownTokens[token];
-      if (v === "" || v === "-") return "";
-      return `<span class="ability-detail-number">${v}</span>`;
-    }
-
-    const isNextLevel = token.endsWith("nl");
-    const baseToken = isNextLevel ? token.slice(0, -2) : token;
-
-    const calc = calcLookup[baseToken];
-    if (calc) {
-      const shown = calc.displayAsPercent ? (calc.total * 100) : calc.total;
-      const eq = calc.terms.map((t) => t.text).join(" + ");
-      return `<span class="ability-detail-number">${formatAbilityNumber(shown, calc.displayAsPercent)} <span class="ability-detail-eq">(${eq})</span></span>`;
-    }
-
-    const dataValue = getSpellDataValue(cdragonSpell?.dataValues || [], baseToken, Math.min(5, safeRank + (isNextLevel ? 1 : 0)));
-    if (dataValue) {
-      return `<span class="ability-detail-number">${formatAbilityNumber(dataValue.current)}</span>`;
-    }
-
-    const effectMatch = token.match(/^e(\d+)$/);
-    if (effectMatch) {
-      const idx = Number(effectMatch[1]);
-      const arr = spell.effect?.[idx] || [];
-      if (!arr.length) return "";
-      const rankIndex = Math.max(0, Math.min(arr.length - 1, safeRank - 1));
-      const current = Number(arr[rankIndex]) || 0;
-      return `<span class="ability-detail-number">${formatAbilityNumber(current)}</span>`;
-    }
-
-    if (/^[af]\d+$/.test(token) && stats) {
-      const v = vars[token];
-      if (!v) return "";
-      const source = getSpellScalingSource(v.link, stats);
-      if (!source) return "";
-      const coeffRaw = Array.isArray(v.coeff) ? (v.coeff[getRankedValueIndex(v.coeff, safeRank)] ?? v.coeff[0]) : v.coeff;
-      const coeff = Number(coeffRaw || 0);
-      const scaled = coeff * source.value;
-      return `<span class="ability-detail-number">${formatAbilityNumber(scaled)} <span class="ability-detail-eq">(${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(source.label)})</span></span>`;
-    }
-
-    return "";
+    const resolved = resolveAbilityToken(tokenRaw, ctx);
+    return resolved ? resolved.html : "";
   });
 
   return replaced
@@ -766,6 +877,66 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
     .replace(/\s{2,}/g, " ")
     .trim();
 }
+
+async function runAbilityTagResolutionAudit(sampleChampionNames = null) {
+  const names = Array.isArray(sampleChampionNames) && sampleChampionNames.length
+    ? sampleChampionNames
+    : Object.keys(BUILDER.champions || {});
+  const report = [];
+
+  for (const name of names) {
+    const details = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion/${name}.json`).then((r) => r.json()).catch(() => null);
+    const champ = details?.data?.[name];
+    if (!champ) continue;
+    const cdragonAbilityData = await loadCdragonAbilityData(name);
+
+    champ.spells.forEach((spell, idx) => {
+      const spellKey = ["q", "w", "e", "r"][idx];
+      const tooltip = spell.tooltip || "";
+      const tokens = Array.from(tooltip.matchAll(/\{\{\s*([^}]+?)\s*\}\}/g)).map((m) => String(m[1] || "").trim());
+
+      const stats = {
+        ap: 0,
+        totalAd: champ.stats.attackdamage,
+        bonusAd: 0,
+        armor: champ.stats.armor,
+        bonusArmor: 0,
+        mr: champ.stats.spellblock,
+        bonusMr: 0,
+        hp: champ.stats.hp,
+        bonusHp: 0,
+        mp: champ.stats.mp,
+        bonusMp: 0,
+      };
+      const vars = Object.fromEntries((spell.vars || []).map((v) => [String(v.key || "").toLowerCase(), v]));
+      const cdragonSpell = cdragonAbilityData?.[spellKey] || null;
+      const safeRank = 1;
+      const calcLookup = Object.fromEntries(Object.entries(cdragonSpell?.calculations || {}).map(([k, calc]) => {
+        const evaluated = evaluateGameCalculation(calc, cdragonSpell?.dataValues || [], safeRank, stats, cdragonSpell?.calculations || {});
+        return [String(k).toLowerCase(), evaluated];
+      }));
+      const knownTokens = {
+        cost: parseByRank(spell.costBurn, safeRank),
+        cooldown: parseByRank(spell.cooldownBurn, safeRank),
+        range: parseByRank(spell.rangeBurn, safeRank),
+        abilityresourcename: (spell.costType || "").replace(/<[^>]+>/g, "").replace(/[{}`]/g, "").trim() || "Mana",
+        spellmodifierdescriptionappend: "",
+      };
+      const ctx = { spell, safeRank, stats, vars, cdragonSpell, calcLookup, knownTokens };
+
+      const unresolved = tokens.filter((tokenRaw) => !resolveAbilityToken(tokenRaw, ctx)).map((t) => t.toLowerCase());
+      if (unresolved.length) {
+        report.push({ champion: name, spell: spellKey.toUpperCase(), unresolved: Array.from(new Set(unresolved)) });
+      }
+    });
+  }
+
+  console.groupCollapsed(`Ability tag resolution audit: ${report.length} issue(s)`);
+  report.forEach((row) => console.log(`${row.champion} ${row.spell}:`, row.unresolved.join(", ")));
+  console.groupEnd();
+  return report;
+}
+window.runAbilityTagResolutionAudit = runAbilityTagResolutionAudit;
 
 function renderAbilityCards() {
   const root = document.getElementById("abilityCards");
