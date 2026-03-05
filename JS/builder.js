@@ -153,6 +153,9 @@ async function initBuilder() {
     renderRunePanel();
     renderAbilityCards();
     renderStats();
+    document.getElementById("passiveModal").addEventListener("click", (event) => {
+      if (event.target.id === "passiveModal") closePassiveModal();
+    });
     setStatus("");
   } catch (error) {
     console.error(error);
@@ -790,24 +793,70 @@ function computeDerivedBuildStats() {
 }
 
 function renderPassivePanel(passiveLedger) {
-  const root = document.getElementById("passivePanel");
+  const root = document.getElementById("passiveModalList");
   if (!root) return;
   if (!passiveLedger) {
-    root.innerHTML = "<div class='text-muted'>Select a champion to inspect passive effects.</div>";
+    root.innerHTML = "<div class='ability-card'><p class='text-muted'>Select a champion to inspect passive effects.</p></div>";
     return;
   }
   const rows = passiveLedger.passiveEffects
-    .map((effect) => `<li><strong>${effect.source}: ${effect.owner}</strong> — ${effect.label}${effect.impact ? ` <span class="text-muted">(${effect.impact})</span>` : ""}</li>`)
+    .map((effect) => `<div class='ability-card'><strong>${effect.source}: ${effect.owner}</strong><div>${effect.label}</div>${effect.impact ? `<div class='text-muted'>${effect.impact}</div>` : ""}</div>`)
     .join("");
-  root.innerHTML = `<strong>Detected Passives</strong>${rows ? `<ul>${rows}</ul>` : "<div class='text-muted'>No passive effects detected.</div>"}`;
+  root.innerHTML = rows || "<div class='ability-card'><p class='text-muted'>No passive effects detected.</p></div>";
 }
 
 function togglePassivePanel() {
-  const panel = document.getElementById("passivePanel");
-  const btn = document.getElementById("passiveToggleBtn");
-  if (!panel || !btn) return;
-  const open = panel.classList.toggle("hidden") === false;
-  btn.textContent = open ? "Passives ▲" : "Passives";
+  document.getElementById("passiveModal").classList.remove("hidden");
+  const computed = computeDerivedBuildStats();
+  renderPassivePanel(computed?.passiveLedger || null);
+}
+
+function closePassiveModal() {
+  document.getElementById("passiveModal").classList.add("hidden");
+}
+
+function getChampionPassiveRangeBonus() {
+  if (!BUILDER.championData) return 0;
+  if (BUILDER.selectedChampion === "Tristana") {
+    return ((Number(BUILDER.level) || 1) - 1) * (136 / 17);
+  }
+  return 0;
+}
+
+function computeAutoAttackProfile(computed) {
+  const item = computed.item;
+  const ap = computed.ap;
+  const baseOnHitRows = [];
+  let onHitDamage = 0;
+
+  BUILDER.itemSlots.forEach((id) => {
+    if (!id) return;
+    if (id === "3115") {
+      const v = 15 + 0.2 * ap;
+      onHitDamage += v;
+      baseOnHitRows.push(`Nashor's Tooth ${v.toFixed(1)}`);
+    }
+    if (id === "3091") {
+      const v = 80;
+      onHitDamage += v;
+      baseOnHitRows.push(`Wit's End ${v.toFixed(1)}`);
+    }
+    if (id === "3153") {
+      const v = 30;
+      onHitDamage += v;
+      baseOnHitRows.push(`Blade of the Ruined King ${v.toFixed(1)}+HP%`);
+    }
+    if (id === "3100") {
+      const v = 1.5 * computed.base.attackdamage;
+      onHitDamage += v;
+      baseOnHitRows.push(`Lich Bane ${v.toFixed(1)}`);
+    }
+  });
+
+  const autoAttackDamage = computed.ad + onHitDamage;
+  const attackDps = autoAttackDamage * computed.asTotal;
+  const attackRange = computed.attackRange + getChampionPassiveRangeBonus();
+  return { autoAttackDamage, attackDps, attackRange, onHitRows: baseOnHitRows };
 }
 
 function summarizePassiveNumericData(cdragonPassive) {
@@ -1250,8 +1299,14 @@ function renderAbilityCards() {
   }
 
   const champ = BUILDER.championData;
+  const computed = computeDerivedBuildStats();
+  const attack = computed ? computeAutoAttackProfile(computed) : null;
   const passiveText = buildDetailedPassiveText();
-  const passive = `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p class="ability-detail-text">${passiveText}</p></div>`;
+  const passive = `<div class="ability-card ability-passive-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p class="ability-detail-text">${passiveText}</p></div>`;
+  const attackCard = `<div class="ability-card ability-attack-card"><div class="ability-head"><strong>Attack</strong></div>
+  <div><strong>Auto-Attack Damage:</strong> ${attack ? `${attack.autoAttackDamage.toFixed(1)} (${computed.ad.toFixed(1)}${attack.onHitRows.map((r) => ` + ${r}`).join("") || ""})` : "-"}</div>
+  <div><strong>Attack DPS:</strong> ${attack ? `${attack.attackDps.toFixed(1)} (${attack.autoAttackDamage.toFixed(1)} × ${computed.asTotal.toFixed(3)})` : "-"}</div>
+  <div><strong>Attack Range:</strong> ${attack ? attack.attackRange.toFixed(1) : "-"}</div></div>`;
   const abilityHaste = getItemStats().haste + getRuneStats().haste;
   const cooldownReductionPct = abilityHaste > 0 ? (abilityHaste / (abilityHaste + 100)) : 0;
 
@@ -1271,7 +1326,7 @@ function renderAbilityCards() {
     return `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div></div>`;
   }).join("");
 
-  root.innerHTML = passive + spells;
+  root.innerHTML = passive + attackCard + spells;
   ["q", "w", "e", "r"].forEach((k) => {
     const el = document.getElementById(`rank_${k}`);
     if (!el) return;

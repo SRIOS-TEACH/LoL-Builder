@@ -40,7 +40,6 @@
                 </div>
                 <div class="passive-controls">
                   <button id="passiveToggleBtn" class="btn btn-sm" type="button" onclick="togglePassivePanel()">Passives</button>
-                  <div id="passivePanel" class="passive-panel hidden"></div>
                 </div>
               </div>
             </div>
@@ -117,6 +116,16 @@
         <button class="btn btn-sm" type="button" onclick="closeRuneModal()">Close</button>
       </div>
       <div id="runeModalList" class="rune-option-list"></div>
+    </div>
+  </div>
+
+  <div id="passiveModal" class="item-modal hidden" role="dialog" aria-modal="true">
+    <div class="item-modal-body rune-modal-body">
+      <div class="item-modal-header">
+        <h3>Detected Passives</h3>
+        <button class="btn btn-sm" type="button" onclick="closePassiveModal()">Close</button>
+      </div>
+      <div id="passiveModalList" class="passive-modal-list"></div>
     </div>
   </div>
 
