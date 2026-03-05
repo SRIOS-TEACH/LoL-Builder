@@ -405,13 +405,14 @@ async function loadCdragonAbilityData(championName) {
 
   const bySlot = {};
   const canonicalPrefix = `/spells/${pathName}`.toLowerCase();
-  const candidatesBySlot = { q: [], w: [], e: [], r: [] };
+  const candidatesBySlot = { p: [], q: [], w: [], e: [], r: [] };
 
   Object.values(raw).forEach((entry) => {
     if (entry?.__type !== "AbilityObject" || !entry.mRootSpell || !entry.mName) return;
     const m = String(entry.mName).match(/([QWER])Ability$/i);
-    if (!m) return;
-    const slot = m[1].toLowerCase();
+    const isPassive = /passiveability$/i.test(String(entry.mName || "")) || /passive$/i.test(String(entry.mName || ""));
+    if (!m && !isPassive) return;
+    const slot = isPassive ? "p" : m[1].toLowerCase();
     const rootPath = String(entry.mRootSpell || "");
     const root = raw[rootPath];
     const spell = root?.mSpell;
@@ -675,7 +676,9 @@ function buildPassiveLedger(itemTotals, runeTotals) {
     .filter((id) => id && BUILDER.items[id])
     .map((id) => ({ id: String(id), item: BUILDER.items[id] }));
   const passiveEffects = [];
-  const statMods = { ad: 0, ap: 0 };
+  const additiveMods = { ad: 0, ap: 0 };
+  let apMultiplier = 1;
+  let hasRabadon = false;
 
   selectedItems.forEach(({ id, item }) => {
     const clean = stripHtml(item.description);
@@ -684,11 +687,9 @@ function buildPassiveLedger(itemTotals, runeTotals) {
     });
 
     if (id === "3089") {
-      const apAmp = (itemTotals.ap + runeTotals.ap) * 0.30;
-      if (apAmp > 0) {
-        statMods.ap += apAmp;
-        passiveEffects.push({ source: "Item", owner: item.name, label: "Magical Opus", impact: `+${apAmp.toFixed(1)} AP (30% amplification)` });
-      }
+      hasRabadon = true;
+      apMultiplier *= 1.30;
+      passiveEffects.push({ source: "Item", owner: item.name, label: "Magical Opus", impact: "AP multiplier queued (applied after additive passives)" });
     }
 
     if (id === "3042" && BUILDER.championData) {
@@ -697,7 +698,7 @@ function buildPassiveLedger(itemTotals, runeTotals) {
       const totalMana = b.mp + b.mpperlevel * (L - 1) + itemTotals.mp + runeTotals.mp;
       const bonusAd = totalMana * 0.02;
       if (bonusAd > 0) {
-        statMods.ad += bonusAd;
+        additiveMods.ad += bonusAd;
         passiveEffects.push({ source: "Item", owner: item.name, label: "Awe", impact: `+${bonusAd.toFixed(1)} AD (2% max mana)` });
       }
     }
@@ -709,7 +710,7 @@ function buildPassiveLedger(itemTotals, runeTotals) {
       const bonusMana = Math.max(0, itemTotals.mp + runeTotals.mp);
       const bonusAp = bonusMana * 0.02;
       if (bonusAp > 0) {
-        statMods.ap += bonusAp;
+        additiveMods.ap += bonusAp;
         passiveEffects.push({ source: "Item", owner: item.name, label: "Awe", impact: `+${bonusAp.toFixed(1)} AP (2% bonus mana)` });
       }
       if (baseMana > 0) {
@@ -721,6 +722,17 @@ function buildPassiveLedger(itemTotals, runeTotals) {
   if (BUILDER.championData?.passive) {
     const champPassiveName = BUILDER.championData.passive.name || "Passive";
     passiveEffects.push({ source: "Champion", owner: BUILDER.selectedChampion, label: champPassiveName, impact: "Champion passive identified" });
+  }
+
+  const apBeforeMultiplier = itemTotals.ap + runeTotals.ap + additiveMods.ap;
+  const apAmp = Math.max(0, apBeforeMultiplier * (apMultiplier - 1));
+  const statMods = {
+    ad: additiveMods.ad,
+    ap: additiveMods.ap + apAmp,
+  };
+
+  if (hasRabadon && apAmp > 0) {
+    passiveEffects.push({ source: "Item", owner: "Rabadon's Deathcap", label: "Magical Opus", impact: `+${apAmp.toFixed(1)} AP (multipliers applied last)` });
   }
 
   return { passiveEffects, statMods };
@@ -775,6 +787,77 @@ function computeDerivedBuildStats() {
     moveSpeed,
     passiveLedger: ledger,
   };
+}
+
+function renderPassivePanel(passiveLedger) {
+  const root = document.getElementById("passivePanel");
+  if (!root) return;
+  if (!passiveLedger) {
+    root.innerHTML = "<div class='text-muted'>Select a champion to inspect passive effects.</div>";
+    return;
+  }
+  const rows = passiveLedger.passiveEffects
+    .map((effect) => `<li><strong>${effect.source}: ${effect.owner}</strong> — ${effect.label}${effect.impact ? ` <span class="text-muted">(${effect.impact})</span>` : ""}</li>`)
+    .join("");
+  root.innerHTML = `<strong>Detected Passives</strong>${rows ? `<ul>${rows}</ul>` : "<div class='text-muted'>No passive effects detected.</div>"}`;
+}
+
+function togglePassivePanel() {
+  const panel = document.getElementById("passivePanel");
+  const btn = document.getElementById("passiveToggleBtn");
+  if (!panel || !btn) return;
+  const open = panel.classList.toggle("hidden") === false;
+  btn.textContent = open ? "Passives ▲" : "Passives";
+}
+
+function summarizePassiveNumericData(cdragonPassive) {
+  const rows = (cdragonPassive?.dataValues || [])
+    .map((d) => {
+      const vals = (d.mValues || []).map((v) => Number(v) || 0).filter((v, i, arr) => Number.isFinite(v) && (v !== 0 || arr.every((x) => x === 0)));
+      if (!vals.length) return null;
+      const nonZero = vals.filter((v) => v !== 0);
+      if (!nonZero.length) return null;
+      const shown = vals.slice(0, 6).map((v) => (Number.isInteger(v) ? String(v) : v.toFixed(2))).join("/");
+      const label = String(d.mName || "Value").replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2");
+      return `${label}: ${shown}`;
+    })
+    .filter(Boolean)
+    .slice(0, 3);
+  return rows;
+}
+
+function buildDetailedPassiveText() {
+  if (!BUILDER.championData?.passive) return "";
+  const passive = BUILDER.championData.passive;
+  const template = String(passive.description || "");
+  const tokenRe = /{{\s*([^{}]+?)\s*}}/g;
+  const cdragonPassive = BUILDER.cdragonAbilityData?.p || null;
+
+  if (!cdragonPassive) return template;
+
+  const dummySpell = { effectBurn: [], vars: [], costType: "" };
+  const ctx = {
+    spell: dummySpell,
+    safeRank: 1,
+    stats: getComputedChampionStatsForTooltips() || {
+      ap: 0, totalAd: 0, bonusAd: 0, armor: 0, bonusArmor: 0, mr: 0, bonusMr: 0, hp: 0, bonusHp: 0, mp: 0, bonusMp: 0,
+    },
+    vars: [],
+    cdragonSpell: cdragonPassive,
+    calcLookup: cdragonPassive.calculations || {},
+    knownTokens: {
+      championlevel: Number(BUILDER.level) || 1,
+    },
+  };
+
+  const resolved = template.replace(tokenRe, (full, tokenRaw) => {
+    const resolved = resolveAbilityToken(tokenRaw, ctx);
+    return resolved ? resolved.html : full;
+  });
+
+  const numericSummary = summarizePassiveNumericData(cdragonPassive);
+  if (!numericSummary.length) return resolved;
+  return `${resolved}<br><span class="ability-detail-eq">${numericSummary.join(" • ")}</span>`;
 }
 
 function getComputedChampionStatsForTooltips() {
@@ -1167,7 +1250,8 @@ function renderAbilityCards() {
   }
 
   const champ = BUILDER.championData;
-  const passive = `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p>${champ.passive.description}</p></div>`;
+  const passiveText = buildDetailedPassiveText();
+  const passive = `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p class="ability-detail-text">${passiveText}</p></div>`;
   const abilityHaste = getItemStats().haste + getRuneStats().haste;
   const cooldownReductionPct = abilityHaste > 0 ? (abilityHaste / (abilityHaste + 100)) : 0;
 
@@ -1308,6 +1392,7 @@ function renderStats() {
 
   if (!BUILDER.championData) {
     root.innerHTML = renderPairedRows(emptyRows.map((row) => ({ ...row, displayValue: "--" })));
+    renderPassivePanel(null);
     return;
   }
 
@@ -1352,11 +1437,8 @@ function renderStats() {
     };
   }));
 
-  const passiveRows = passiveLedger.passiveEffects
-    .map((effect) => `<li><strong>${effect.source}: ${effect.owner}</strong> — ${effect.label}${effect.impact ? ` <span class="text-muted">(${effect.impact})</span>` : ""}</li>`)
-    .join("");
-
-  root.innerHTML = `${tableHtml}<div class="passive-ledger mt-10"><strong>Detected Passives</strong>${passiveRows ? `<ul>${passiveRows}</ul>` : "<div class='text-muted'>No passive effects detected.</div>"}</div>`;
+  root.innerHTML = tableHtml;
+  renderPassivePanel(passiveLedger);
 }
 
 function renderRunePanel() {
