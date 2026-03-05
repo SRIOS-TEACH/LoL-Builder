@@ -674,6 +674,49 @@ function extractPassiveLabelsFromText(text) {
   return Array.from(new Set(labels));
 }
 
+function resolveItemDescriptionHtml(item, itemId = "") {
+  const shared = getItemLookupShared();
+  let html = String(item?.description || "");
+  if (!shared) return html;
+  if (shared.resolveDescriptionFormulas) html = shared.resolveDescriptionFormulas(item, html);
+
+  let lines = [];
+  if (shared.buildExtractedFormulas) {
+    const extracted = shared.buildExtractedFormulas(String(itemId || ""));
+    lines = extracted?.lines || [];
+  }
+  if (shared.injectDamageFormulaText) html = shared.injectDamageFormulaText(html, lines, String(itemId || ""));
+  if (shared.injectActiveCooldown) {
+    const cd = shared.inferActiveCooldownSeconds ? shared.inferActiveCooldownSeconds(String(itemId || "")) : null;
+    html = shared.injectActiveCooldown(html, cd);
+  }
+  if (shared.enhanceActiveTooltip) html = shared.enhanceActiveTooltip(html);
+  return html;
+}
+
+function extractPassiveDescriptionsFromHtml(descriptionHtml) {
+  const html = String(descriptionHtml || "");
+  if (!html) return [];
+
+  const normalized = html.replace(/<br\s*\/?>/gi, "\n");
+  const rows = [];
+  const sectionRe = /<(passive|onhit|unique)>\s*([^<]*)\s*<\/\1>\s*([\s\S]*?)(?=<(?:passive|onhit|unique|active)>|$)/gi;
+  let match;
+  while ((match = sectionRe.exec(normalized))) {
+    const type = String(match[1] || "").toUpperCase();
+    const label = stripHtml(match[2] || "").trim() || type;
+    const desc = stripHtml(match[3] || "").trim();
+    if (!desc) continue;
+    rows.push({ label, impact: desc });
+  }
+
+  if (rows.length) return rows;
+
+  const fallback = stripHtml(html);
+  const labelFallbacks = extractPassiveLabelsFromText(fallback);
+  return labelFallbacks.map((label) => ({ label, impact: fallback }));
+}
+
 function buildPassiveLedger(itemTotals, runeTotals) {
   const selectedItems = BUILDER.itemSlots
     .filter((id) => id && BUILDER.items[id])
@@ -684,9 +727,9 @@ function buildPassiveLedger(itemTotals, runeTotals) {
   let hasRabadon = false;
 
   selectedItems.forEach(({ id, item }) => {
-    const clean = stripHtml(item.description);
-    extractPassiveLabelsFromText(clean).forEach((label) => {
-      passiveEffects.push({ source: "Item", owner: item.name, label, impact: "Contextual" });
+    const resolvedDescriptionHtml = resolveItemDescriptionHtml(item, id);
+    extractPassiveDescriptionsFromHtml(resolvedDescriptionHtml).forEach(({ label, impact }) => {
+      passiveEffects.push({ source: "Item", owner: item.name, label, impact });
     });
 
     if (id === "3089") {
@@ -837,7 +880,7 @@ function computeAutoAttackProfile(computed) {
       baseOnHitRows.push(`Nashor's Tooth ${v.toFixed(1)}`);
     }
     if (id === "3091") {
-      const v = 80;
+      const v = 45;
       onHitDamage += v;
       baseOnHitRows.push(`Wit's End ${v.toFixed(1)}`);
     }
