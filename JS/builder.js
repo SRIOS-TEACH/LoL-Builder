@@ -13,6 +13,7 @@ const BUILDER = {
   modalItemFiltered: [],
   modalChampFiltered: [],
   championDetailCache: {},
+  cdragonAbilityData: null,
   championModalRequestId: 0,
   runeModalTarget: null,
   runeSelections: {
@@ -151,6 +152,7 @@ async function initBuilder() {
     initChampionModal();
     renderRunePanel();
     renderAbilityCards();
+    renderStats();
     setStatus("");
   } catch (error) {
     console.error(error);
@@ -212,23 +214,44 @@ function buildCdtbItemsById(cdtbData) {
   return byId;
 }
 
+function readNumericStat(entry, base, aliases) {
+  for (const key of aliases) {
+    const v = entry?.[key];
+    if (v !== undefined && v !== null && v !== "") return Number(v) || 0;
+  }
+  for (const key of aliases) {
+    const v = base?.[key];
+    if (v !== undefined && v !== null && v !== "") return Number(v) || 0;
+  }
+  return 0;
+}
+
 function buildMergedItemStats(ddragonStats, cdtbEntry) {
   const base = { ...(ddragonStats || {}) };
   if (!cdtbEntry) return base;
 
   const cdtbStats = {
-    FlatHPPoolMod: Number(cdtbEntry?.mFlatHPPoolMod ?? base.FlatHPPoolMod ?? 0),
-    FlatMPPoolMod: Number(cdtbEntry?.mFlatMPPoolMod ?? base.FlatMPPoolMod ?? 0),
-    FlatPhysicalDamageMod: Number(cdtbEntry?.mFlatPhysicalDamageMod ?? base.FlatPhysicalDamageMod ?? 0),
-    FlatMagicDamageMod: Number(cdtbEntry?.mFlatMagicDamageMod ?? base.FlatMagicDamageMod ?? 0),
-    FlatArmorMod: Number(cdtbEntry?.mFlatArmorMod ?? base.FlatArmorMod ?? 0),
-    FlatSpellBlockMod: Number(cdtbEntry?.mFlatSpellBlockMod ?? base.FlatSpellBlockMod ?? 0),
-    PercentAttackSpeedMod: Number(cdtbEntry?.mPercentAttackSpeedMod ?? base.PercentAttackSpeedMod ?? 0),
-    FlatMovementSpeedMod: Number(cdtbEntry?.mFlatMovementSpeedMod ?? base.FlatMovementSpeedMod ?? 0),
-    PercentMovementSpeedMod: Number(cdtbEntry?.mPercentMovementSpeedMod ?? base.PercentMovementSpeedMod ?? 0),
+    FlatHPPoolMod: readNumericStat(cdtbEntry, base, ["mFlatHPPoolMod", "flatHPPoolMod", "FlatHPPoolMod"]),
+    FlatMPPoolMod: readNumericStat(cdtbEntry, base, ["mFlatMPPoolMod", "flatMPPoolMod", "FlatMPPoolMod"]),
+    FlatPhysicalDamageMod: readNumericStat(cdtbEntry, base, ["mFlatPhysicalDamageMod", "flatPhysicalDamageMod", "FlatPhysicalDamageMod"]),
+    FlatMagicDamageMod: readNumericStat(cdtbEntry, base, ["mFlatMagicDamageMod", "flatMagicDamageMod", "FlatMagicDamageMod"]),
+    FlatArmorMod: readNumericStat(cdtbEntry, base, ["mFlatArmorMod", "flatArmorMod", "FlatArmorMod"]),
+    FlatSpellBlockMod: readNumericStat(cdtbEntry, base, ["mFlatSpellBlockMod", "flatSpellBlockMod", "FlatSpellBlockMod"]),
+    PercentAttackSpeedMod: readNumericStat(cdtbEntry, base, ["mPercentAttackSpeedMod", "percentAttackSpeedMod", "PercentAttackSpeedMod"]),
+    FlatMovementSpeedMod: readNumericStat(cdtbEntry, base, ["mFlatMovementSpeedMod", "flatMovementSpeedMod", "FlatMovementSpeedMod"]),
+    PercentMovementSpeedMod: readNumericStat(cdtbEntry, base, ["mPercentMovementSpeedMod", "percentMovementSpeedMod", "PercentMovementSpeedMod"]),
+    FlatHPRegenMod: readNumericStat(cdtbEntry, base, ["mFlatHPRegenMod", "flatHPRegenMod", "FlatHPRegenMod"]),
+    FlatMPRegenMod: readNumericStat(cdtbEntry, base, ["mFlatMPRegenMod", "flatMPRegenMod", "FlatMPRegenMod"]),
+    PercentBaseHPRegenMod: readNumericStat(cdtbEntry, base, ["mPercentBaseHPRegenMod", "percentBaseHPRegenMod", "mPercentHPRegenMod", "percentHPRegenMod", "PercentBaseHPRegenMod", "PercentHPRegenMod"]),
+    PercentBaseMPRegenMod: readNumericStat(cdtbEntry, base, ["mPercentBaseMPRegenMod", "percentBaseMPRegenMod", "mPercentMPRegenMod", "percentMPRegenMod", "PercentBaseMPRegenMod", "PercentMPRegenMod"]),
+    FlatCritChanceMod: readNumericStat(cdtbEntry, base, ["mFlatCritChanceMod", "flatCritChanceMod", "FlatCritChanceMod"]),
+    PercentCritChanceMod: readNumericStat(cdtbEntry, base, ["mPercentCritChanceMod", "percentCritChanceMod", "PercentCritChanceMod"]),
+    FlatCritDamageMod: readNumericStat(cdtbEntry, base, ["mFlatCritDamageMod", "flatCritDamageMod", "FlatCritDamageMod"]),
+    PercentCritDamageMod: readNumericStat(cdtbEntry, base, ["mPercentCritDamageMod", "percentCritDamageMod", "PercentCritDamageMod"]),
+    FlatAttackRangeMod: readNumericStat(cdtbEntry, base, ["mFlatAttackRangeMod", "flatAttackRangeMod", "FlatAttackRangeMod"]),
   };
 
-  const haste = Number(cdtbEntry?.mAbilityHasteMod ?? cdtbEntry?.mFlatHasteMod ?? base.FlatHasteMod ?? base.FlatAbilityHasteMod ?? 0);
+  const haste = readNumericStat(cdtbEntry, base, ["mAbilityHasteMod", "mFlatHasteMod", "flatHasteMod", "FlatHasteMod", "FlatAbilityHasteMod", "AbilityHaste"]);
   cdtbStats.FlatHasteMod = haste;
   cdtbStats.FlatAbilityHasteMod = haste;
   cdtbStats.AbilityHaste = haste;
@@ -240,7 +263,8 @@ function renderChampionSelect() {
   Object.keys(BUILDER.champions).forEach((name) => {
     (BUILDER.champions[name].tags || []).forEach((tag) => BUILDER.champTags.add(tag));
   });
-  document.getElementById("championPickerBtn").textContent = "Select champion";
+  document.getElementById("championPickerBtn").innerHTML = "+";
+  document.getElementById("championPickerBtn").setAttribute("aria-label", "Select champion");
 }
 
 function initChampionModal() {
@@ -318,20 +342,47 @@ function runeImgTag(meta, className = "") {
   return `<img class="${className}" src="${meta.icon || fallback}" alt="${meta.name}" data-fallback="${fallback}" onerror="this.onerror=null;this.src=this.dataset.fallback">`;
 }
 
+function normalizeCdragonChampionPath(name) {
+  return String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+async function loadCdragonAbilityData(championName) {
+  const pathName = normalizeCdragonChampionPath(championName);
+  const url = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
+  const raw = await fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  if (!raw) return null;
+
+  const bySlot = {};
+  Object.values(raw).forEach((entry) => {
+    if (entry?.__type !== "AbilityObject" || !entry.mRootSpell || !entry.mName) return;
+    const m = String(entry.mName).match(/([QWER])Ability$/i);
+    if (!m) return;
+    const slot = m[1].toLowerCase();
+    const root = raw[entry.mRootSpell];
+    const spell = root?.mSpell;
+    if (!spell) return;
+    bySlot[slot] = {
+      dataValues: spell.DataValues || [],
+      calculations: spell.mSpellCalculations || {},
+    };
+  });
+
+  return bySlot;
+}
+
 async function setChampion(name) {
   const details = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion/${name}.json`).then((r) => r.json());
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
+  BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name);
   BUILDER.abilityRanks = { q: 1, w: 0, e: 0, r: 0 };
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
 
   const splashUrl = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`;
   document.body.style.setProperty("--builder-splash-url", splashUrl);
   document.getElementById("runesCard").style.setProperty("--rune-splash-url", RUNE_DATA.paths[BUILDER.runeSelections.primaryPath].splash);
-  document.getElementById("championPickerBtn").textContent = name;
-
-  document.getElementById("selectedChampionBadge").classList.remove("hidden");
-  document.getElementById("selectedChampionBadge").innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.championData.image.full}" alt="${name}">`;
+  document.getElementById("championPickerBtn").innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.championData.image.full}" alt="${name}">`;
+  document.getElementById("championPickerBtn").setAttribute("aria-label", `Selected champion: ${name}`);
 
   enforceAbilityRules();
   renderAbilityCards();
@@ -413,7 +464,33 @@ function renderModalItemDetail(id) {
     return;
   }
   const item = BUILDER.items[id];
-  const statLines = Object.entries(item.stats || {}).filter(([, v]) => Number(v) !== 0).map(([k, v]) => `<div>${k}: ${v}</div>`).join("");
+  const statNameMap = {
+    FlatHPPoolMod: "Health",
+    FlatMPPoolMod: "Mana",
+    FlatHPRegenMod: "HP/5",
+    FlatMPRegenMod: "MP/5",
+    PercentBaseHPRegenMod: "Base HP Regen %",
+    PercentBaseMPRegenMod: "Base MP Regen %",
+    FlatPhysicalDamageMod: "Attack Damage",
+    FlatMagicDamageMod: "Ability Power",
+    FlatArmorMod: "Armor",
+    FlatSpellBlockMod: "Magic Resist",
+    PercentAttackSpeedMod: "Attack Speed %",
+    FlatMovementSpeedMod: "Move Speed",
+    PercentMovementSpeedMod: "Move Speed %",
+    FlatCritChanceMod: "Crit Chance",
+    PercentCritChanceMod: "Crit Chance %",
+    FlatCritDamageMod: "Crit Damage",
+    PercentCritDamageMod: "Crit Damage %",
+    FlatAttackRangeMod: "Attack Range",
+    FlatHasteMod: "Ability Haste",
+    FlatAbilityHasteMod: "Ability Haste",
+  };
+  const pctStats = new Set(["PercentBaseHPRegenMod", "PercentBaseMPRegenMod", "PercentAttackSpeedMod", "PercentMovementSpeedMod", "PercentCritChanceMod", "PercentCritDamageMod"]);
+  const statLines = Object.entries(item.stats || {})
+    .filter(([, v]) => Number(v) !== 0)
+    .map(([k, v]) => `<div>${statNameMap[k] || k}: ${pctStats.has(k) ? `${(Number(v) * 100).toFixed(1)}%` : Number(v)}</div>`)
+    .join("");
   root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div><div class='mt-10'>${item.description || ""}</div><button class='btn btn-sm mt-10' onclick="setSlotItem('${id}')">Select this item</button><button class='btn btn-sm mt-10 ml-5' onclick="setSlotItem('')">Clear slot</button>`;
 }
 
@@ -422,6 +499,7 @@ function setSlotItem(itemId) {
   BUILDER.itemSlots[BUILDER.activeSlot] = itemId;
   refreshSlotLabels();
   renderStats();
+  renderAbilityCards();
   closeItemModal();
 }
 
@@ -454,6 +532,241 @@ function parseByRank(valueBurn, rank) {
   return parts[Math.max(0, Math.min(parts.length - 1, rank - 1))] || parts[0] || "-";
 }
 
+function getComputedChampionStatsForTooltips() {
+  if (!BUILDER.championData) return null;
+  const base = BUILDER.championData.stats;
+  const item = getItemStats();
+  const rune = getRuneStats();
+  const L = BUILDER.level;
+
+  const baseAd = base.attackdamage + base.attackdamageperlevel * (L - 1);
+  const totalAd = baseAd + item.ad + rune.ad;
+  const baseAp = 0;
+  const totalAp = baseAp + item.ap + rune.ap;
+  const baseArmor = base.armor + base.armorperlevel * (L - 1);
+  const totalArmor = baseArmor + item.armor + rune.armor;
+  const baseMr = base.spellblock + base.spellblockperlevel * (L - 1);
+  const totalMr = baseMr + item.mr + rune.mr;
+  const baseHp = base.hp + base.hpperlevel * (L - 1);
+  const totalHp = baseHp + item.hp + rune.hp;
+  const baseMp = base.mp + base.mpperlevel * (L - 1);
+  const totalMp = baseMp + item.mp + rune.mp;
+
+  return {
+    ap: totalAp,
+    totalAd,
+    bonusAd: totalAd - baseAd,
+    armor: totalArmor,
+    bonusArmor: totalArmor - baseArmor,
+    mr: totalMr,
+    bonusMr: totalMr - baseMr,
+    hp: totalHp,
+    bonusHp: totalHp - baseHp,
+    mp: totalMp,
+    bonusMp: totalMp - baseMp,
+  };
+}
+
+function getSpellScalingSource(link, stats) {
+  const map = {
+    spelldamage: { value: stats.ap, label: "AP" },
+    bonusattackdamage: { value: stats.bonusAd, label: "bonus AD" },
+    attackdamage: { value: stats.totalAd, label: "AD" },
+    armor: { value: stats.armor, label: "Armor" },
+    bonusarmor: { value: stats.bonusArmor, label: "bonus Armor" },
+    spellblock: { value: stats.mr, label: "MR" },
+    bonusspellblock: { value: stats.bonusMr, label: "bonus MR" },
+    health: { value: stats.hp, label: "HP" },
+    bonushealth: { value: stats.bonusHp, label: "bonus HP" },
+    mana: { value: stats.mp, label: "Mana" },
+    bonusmana: { value: stats.bonusMp, label: "bonus Mana" },
+  };
+  return map[String(link || "").toLowerCase()] || null;
+}
+
+function getRankedValueIndex(values, rank) {
+  if (!Array.isArray(values) || !values.length) return 0;
+  const clampedRank = Math.max(0, Number(rank) || 0);
+  // CommunityDragon spell arrays commonly have a sentinel value at index 0 and real ranks at 1..N.
+  if (values.length >= 7) {
+    return Math.max(0, Math.min(values.length - 1, clampedRank));
+  }
+  return Math.max(0, Math.min(values.length - 1, clampedRank - 1));
+}
+
+function getSpellDataValue(dataValues, tokenName, rank) {
+  const list = (dataValues || []).find((d) => String(d?.mName || "").toLowerCase() === String(tokenName || "").toLowerCase());
+  if (!list || !Array.isArray(list.mValues) || !list.mValues.length) return null;
+  const idx = getRankedValueIndex(list.mValues, rank);
+  const current = Number(list.mValues[idx]) || 0;
+
+  const rankValues = [];
+  for (let i = 1; i <= 5; i += 1) {
+    const ridx = getRankedValueIndex(list.mValues, i);
+    rankValues.push(Number(list.mValues[ridx] || 0));
+  }
+  return { current, rankValues };
+}
+
+function getCalcStatSource(part, stats) {
+  const dataValueName = String(part?.mDataValue || "").toLowerCase();
+  if (dataValueName.includes("ap")) return { value: stats.ap, label: "AP" };
+  if (dataValueName.includes("bonusad")) return { value: stats.bonusAd, label: "bonus AD" };
+  if (dataValueName.includes("ad")) return { value: stats.totalAd, label: "AD" };
+  if (dataValueName.includes("health")) return { value: stats.hp, label: "HP" };
+
+  const statCode = Number(part?.mStat);
+  if (statCode === 2) return { value: stats.totalAd, label: "AD" };
+  if (statCode === 1 || statCode === 0 || Number.isNaN(statCode)) return { value: stats.ap, label: "AP" };
+  return { value: stats.ap, label: `Stat ${statCode}` };
+}
+
+function formatAbilityStatLabel(label) {
+  const m = {
+    "bonus ad": "BonusAD",
+    ad: "AD",
+    ap: "AP",
+    hp: "HP",
+    mana: "Mana",
+    armor: "Armor",
+    "bonus armor": "BonusArmor",
+    mr: "MR",
+    "bonus mr": "BonusMR",
+  };
+  return m[String(label || "").toLowerCase()] || String(label || "Stat").replace(/\s+/g, "");
+}
+
+function formatAbilityNumber(value, isPercent = false) {
+  const n = Number(value || 0);
+  if (isPercent) return `${n.toFixed(1)}%`;
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+function evaluateGameCalculation(calc, dataValues, rank, stats) {
+  if (!calc || !Array.isArray(calc.mFormulaParts)) return null;
+  const terms = [];
+  let total = 0;
+  calc.mFormulaParts.forEach((part) => {
+    const t = String(part?.__type || "");
+    if (t === "NumberCalculationPart") {
+      const val = Number(part?.mNumber || 0);
+      total += val;
+      terms.push({ text: formatAbilityNumber(val), value: val });
+      return;
+    }
+    if (t === "NamedDataValueCalculationPart") {
+      const data = getSpellDataValue(dataValues, part?.mDataValue, rank);
+      if (!data) return;
+      total += data.current;
+      terms.push({ text: formatAbilityNumber(data.current), value: data.current });
+      return;
+    }
+    if (t === "StatByCoefficientCalculationPart") {
+      const src = getCalcStatSource(part, stats);
+      const coeff = Number(part?.mCoefficient || 0);
+      const val = src.value * coeff;
+      total += val;
+      terms.push({ text: `${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}`, value: val });
+      return;
+    }
+    if (t === "StatByNamedDataValueCalculationPart") {
+      const src = getCalcStatSource(part, stats);
+      const coeffData = getSpellDataValue(dataValues, part?.mDataValue, rank);
+      const coeff = coeffData ? coeffData.current : 0;
+      const val = src.value * coeff;
+      total += val;
+      terms.push({ text: `${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}`, value: val });
+    }
+  });
+  return { total, terms, displayAsPercent: !!calc.mDisplayAsPercent };
+}
+
+function buildDetailedAbilityText(spell, rank, spellKey) {
+  const raw = spell.tooltip || spell.description || "";
+  const rawRank = Number(rank) || 0;
+  if (rawRank <= 0) return spell.description || "";
+  const safeRank = Math.max(1, rawRank);
+  const stats = getComputedChampionStatsForTooltips();
+  const vars = Object.fromEntries((spell.vars || []).map((v) => [String(v.key || "").toLowerCase(), v]));
+  const cdragonSpell = BUILDER.cdragonAbilityData?.[spellKey] || null;
+  const calcEntries = Object.entries(cdragonSpell?.calculations || {}).map(([k, calc]) => {
+    const evaluated = stats ? evaluateGameCalculation(calc, cdragonSpell?.dataValues || [], safeRank, stats) : null;
+    return [String(k).toLowerCase(), evaluated];
+  });
+  const calcLookup = Object.fromEntries(calcEntries);
+
+  const knownTokens = {
+    cost: parseByRank(spell.costBurn, safeRank),
+    cooldown: parseByRank(spell.cooldownBurn, safeRank),
+    range: parseByRank(spell.rangeBurn, safeRank),
+    abilityresourcename: (spell.costType || "").replace(/<[^>]+>/g, "").replace(/[{}`]/g, "").trim() || "Mana",
+    spellmodifierdescriptionappend: "",
+  };
+
+  const replaced = raw.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (full, tokenRaw) => {
+    const token = String(tokenRaw || "").trim().toLowerCase();
+
+    if (Object.prototype.hasOwnProperty.call(knownTokens, token)) {
+      const v = knownTokens[token];
+      if (v === "" || v === "-") return "";
+      return `<span class="ability-detail-number">${v}</span>`;
+    }
+
+    const isNextLevel = token.endsWith("nl");
+    const baseToken = isNextLevel ? token.slice(0, -2) : token;
+
+    const calc = calcLookup[baseToken];
+    if (calc) {
+      const shown = calc.displayAsPercent ? (calc.total * 100) : calc.total;
+      const eq = calc.terms.map((t) => t.text).join(" + ");
+      return `<span class="ability-detail-number">${formatAbilityNumber(shown, calc.displayAsPercent)} <span class="ability-detail-eq">(${eq})</span></span>`;
+    }
+
+    const dataValue = getSpellDataValue(cdragonSpell?.dataValues || [], baseToken, Math.min(5, safeRank + (isNextLevel ? 1 : 0)));
+    if (dataValue) {
+      return `<span class="ability-detail-number">${formatAbilityNumber(dataValue.current)}</span>`;
+    }
+
+    const effectMatch = token.match(/^e(\d+)$/);
+    if (effectMatch) {
+      const idx = Number(effectMatch[1]);
+      const arr = spell.effect?.[idx] || [];
+      if (!arr.length) return "";
+      const rankIndex = Math.max(0, Math.min(arr.length - 1, safeRank - 1));
+      const current = Number(arr[rankIndex]) || 0;
+      return `<span class="ability-detail-number">${formatAbilityNumber(current)}</span>`;
+    }
+
+    if (/^[af]\d+$/.test(token) && stats) {
+      const v = vars[token];
+      if (!v) return "";
+      const source = getSpellScalingSource(v.link, stats);
+      if (!source) return "";
+      const coeffRaw = Array.isArray(v.coeff) ? (v.coeff[getRankedValueIndex(v.coeff, safeRank)] ?? v.coeff[0]) : v.coeff;
+      const coeff = Number(coeffRaw || 0);
+      const scaled = coeff * source.value;
+      return `<span class="ability-detail-number">${formatAbilityNumber(scaled)} <span class="ability-detail-eq">(${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(source.label)})</span></span>`;
+    }
+
+    return "";
+  });
+
+  return replaced
+    .replace(/<physicalDamage>/gi, '<span class="ability-damage-physical">')
+    .replace(/<\/physicalDamage>/gi, '</span>')
+    .replace(/<magicDamage>/gi, '<span class="ability-damage-magic">')
+    .replace(/<\/magicDamage>/gi, '</span>')
+    .replace(/<trueDamage>/gi, '<span class="ability-damage-true">')
+    .replace(/<\/trueDamage>/gi, '</span>')
+    .replace(/<healing>/gi, '<span class="ability-healing">')
+    .replace(/<\/healing>/gi, '</span>')
+    .replace(/<status>/gi, '<span class="ability-status">')
+    .replace(/<\/status>/gi, '</span>')
+    .replace(/[{}]/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function renderAbilityCards() {
   const root = document.getElementById("abilityCards");
   if (!BUILDER.championData) {
@@ -463,7 +776,7 @@ function renderAbilityCards() {
   }
 
   const champ = BUILDER.championData;
-  const passive = `<div class="ability-card"><strong>Passive - ${champ.passive.name}</strong><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><p>${champ.passive.description}</p></div>`;
+  const passive = `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p>${champ.passive.description}</p></div>`;
 
   const spells = champ.spells.map((spell, i) => {
     const key = ["q", "w", "e", "r"][i];
@@ -473,7 +786,8 @@ function renderAbilityCards() {
     const cd = parseByRank(spell.cooldownBurn, rank);
     const cost = parseByRank(spell.costBurn, rank);
     const range = parseByRank(spell.rangeBurn, rank);
-    return `<div class="ability-card"><strong>${key.toUpperCase()} - ${spell.name}</strong><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><p>${spell.description}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div></div>`;
+    const detail = buildDetailedAbilityText(spell, rank, key);
+    return `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div></div>`;
   }).join("");
 
   root.innerHTML = passive + spells;
@@ -491,12 +805,19 @@ function renderAbilityCards() {
 }
 
 function getItemStats() {
-  const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0 };
+  const totals = {
+    hp: 0, hp5: 0, hp5PctBase: 0, mp: 0, mp5: 0, mp5PctBase: 0, ad: 0, ap: 0, armor: 0, mr: 0,
+    haste: 0, asPct: 0, critChance: 0, critDamage: 0, attackRange: 0, msFlat: 0, msPct: 0,
+  };
   BUILDER.itemSlots.forEach((id) => {
     if (!id) return;
     const s = BUILDER.items[id].stats || {};
     totals.hp += s.FlatHPPoolMod || 0;
     totals.mp += s.FlatMPPoolMod || 0;
+    totals.hp5 += s.FlatHPRegenMod || 0;
+    totals.hp5PctBase += ((s.PercentBaseHPRegenMod || s.PercentHPRegenMod || 0) * 100);
+    totals.mp5 += s.FlatMPRegenMod || 0;
+    totals.mp5PctBase += ((s.PercentBaseMPRegenMod || s.PercentMPRegenMod || 0) * 100);
     totals.ad += s.FlatPhysicalDamageMod || 0;
     totals.ap += s.FlatMagicDamageMod || 0;
     totals.armor += s.FlatArmorMod || 0;
@@ -509,12 +830,20 @@ function getItemStats() {
       ?? 0,
     );
     totals.asPct += (s.PercentAttackSpeedMod || 0) * 100;
+    totals.critChance += ((s.FlatCritChanceMod || 0) + (s.PercentCritChanceMod || 0)) * 100;
+    totals.critDamage += ((s.FlatCritDamageMod || 0) + (s.PercentCritDamageMod || 0)) * 100;
+    totals.attackRange += s.FlatAttackRangeMod || 0;
+    totals.msFlat += s.FlatMovementSpeedMod || 0;
+    totals.msPct += (s.PercentMovementSpeedMod || 0) * 100;
   });
   return totals;
 }
 
 function getRuneStats() {
-  const totals = { hp: 0, mp: 0, ad: 0, ap: 0, armor: 0, mr: 0, haste: 0, asPct: 0 };
+  const totals = {
+    hp: 0, hp5: 0, hp5PctBase: 0, mp: 0, mp5: 0, mp5PctBase: 0, ad: 0, ap: 0, armor: 0, mr: 0,
+    haste: 0, asPct: 0, critChance: 0, critDamage: 0, attackRange: 0, msFlat: 0, msPct: 0,
+  };
   const selected = [
     ...BUILDER.runeSelections.primary,
     ...BUILDER.runeSelections.secondary,
@@ -543,8 +872,32 @@ function getRuneStats() {
 
 function renderStats() {
   const root = document.getElementById("statsTable");
+  const emptyRows = [
+    { name: "HP", icon: "❤️" },
+    { name: "MP", icon: "🔷" },
+    { name: "HP/5", icon: "💚" },
+    { name: "MP/5", icon: "💙" },
+    { name: "AD", icon: "🗡️" },
+    { name: "AP", icon: "✨" },
+    { name: "Range", icon: "🏹" },
+    { name: "AH", icon: "⏱️" },
+    { name: "Arm", icon: "🛡️" },
+    { name: "MR", icon: "🔮" },
+    { name: "AS", icon: "⚡" },
+    { name: "MS", icon: "👟" },
+    { name: "Crit %", icon: "🎯" },
+    { name: "Crit Dmg", icon: "💥" },
+  ];
+  const renderPairedRows = (rows) => {
+    const pairRows = [];
+    for (let i = 0; i < rows.length; i += 2) {
+      pairRows.push([rows[i], rows[i + 1] || null]);
+    }
+    return `<table class="stats-table">${pairRows.map(([left, right]) => `<tr><td class="stats-label"><span class="stat-icon">${left.icon}</span>${left.name}</td><td class="stats-value" title="${left.eq || ''}">${left.displayValue}</td>${right ? `<td class="stats-label"><span class="stat-icon">${right.icon}</span>${right.name}</td><td class="stats-value" title="${right.eq || ''}">${right.displayValue}</td>` : '<td class="stats-label"></td><td class="stats-value"></td>'}</tr>`).join("")}</table>`;
+  };
+
   if (!BUILDER.championData) {
-    root.innerHTML = "<p class='text-muted'>Select a champion to view stats.</p>";
+    root.innerHTML = renderPairedRows(emptyRows.map((row) => ({ ...row, displayValue: "--" })));
     return;
   }
 
@@ -554,25 +907,43 @@ function renderStats() {
   const L = BUILDER.level;
 
   const hp = (base.hp + base.hpperlevel * (L - 1) + item.hp + rune.hp);
+  const baseHp5 = base.hpregen + base.hpregenperlevel * (L - 1);
+  const hp5 = (baseHp5 * (1 + item.hp5PctBase / 100) + item.hp5 + rune.hp5);
   const mp = (base.mp + base.mpperlevel * (L - 1) + item.mp + rune.mp);
+  const baseMp5 = base.mpregen + base.mpregenperlevel * (L - 1);
+  const mp5 = (baseMp5 * (1 + item.mp5PctBase / 100) + item.mp5 + rune.mp5);
   const ad = (base.attackdamage + base.attackdamageperlevel * (L - 1) + item.ad + rune.ad);
+  const ap = item.ap + rune.ap;
   const armor = (base.armor + base.armorperlevel * (L - 1) + item.armor + rune.armor);
   const mr = (base.spellblock + base.spellblockperlevel * (L - 1) + item.mr + rune.mr);
   const asTotal = base.attackspeed * (1 + (base.attackspeedperlevel * (L - 1)) / 100) * (1 + (item.asPct + rune.asPct) / 100);
   const abilityHaste = item.haste + rune.haste;
+  const critChance = (base.crit + base.critperlevel * (L - 1) + item.critChance + rune.critChance);
+  const critDamage = (base.critdamage ? base.critdamage * 100 : 175) + item.critDamage + rune.critDamage;
+  const attackRange = (base.attackrange || 0) + item.attackRange + rune.attackRange;
+  const moveSpeed = (base.movespeed + item.msFlat + rune.msFlat) * (1 + (item.msPct + rune.msPct) / 100);
 
   const rows = [
-    { name: "HP", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
-    { name: "MP", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
-    { name: "AD", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)}` },
-    { name: "AP", value: item.ap + rune.ap, eq: `0 + ${item.ap.toFixed(1)} + ${rune.ap.toFixed(1)}` },
-    { name: "Armor", value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${L - 1} + ${item.armor.toFixed(1)} + ${rune.armor.toFixed(1)}` },
-    { name: "MR", value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${L - 1} + ${item.mr.toFixed(1)} + ${rune.mr.toFixed(1)}` },
-    { name: "Attack Speed", value: asTotal, eq: `${base.attackspeed.toFixed(3)} * level mult * (1 + ${(item.asPct + rune.asPct).toFixed(1)}%)` },
-    { name: "Ability Haste", value: abilityHaste, eq: `0 + ${item.haste.toFixed(1)} + ${rune.haste.toFixed(1)}` },
+    { name: "HP", icon: "❤️", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
+    { name: "MP", icon: "🔷", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
+    { name: "HP/5", icon: "💚", value: hp5, eq: `(${base.hpregen.toFixed(1)} + ${base.hpregenperlevel.toFixed(2)}*${L - 1}) * (1 + ${item.hp5PctBase.toFixed(1)}%) + ${item.hp5.toFixed(1)} + ${rune.hp5.toFixed(1)}` },
+    { name: "MP/5", icon: "💙", value: mp5, eq: `(${base.mpregen.toFixed(1)} + ${base.mpregenperlevel.toFixed(2)}*${L - 1}) * (1 + ${item.mp5PctBase.toFixed(1)}%) + ${item.mp5.toFixed(1)} + ${rune.mp5.toFixed(1)}` },
+    { name: "AD", icon: "🗡️", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)}` },
+    { name: "AP", icon: "✨", value: ap, eq: `0 + ${item.ap.toFixed(1)} + ${rune.ap.toFixed(1)}` },
+    { name: "Range", icon: "🏹", value: attackRange, eq: `${(base.attackrange || 0).toFixed(1)} + ${item.attackRange.toFixed(1)} + ${rune.attackRange.toFixed(1)}` },
+    { name: "AH", icon: "⏱️", value: abilityHaste, eq: `0 + ${item.haste.toFixed(1)} + ${rune.haste.toFixed(1)}` },
+    { name: "Arm", icon: "🛡️", value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${L - 1} + ${item.armor.toFixed(1)} + ${rune.armor.toFixed(1)}` },
+    { name: "MR", icon: "🔮", value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${L - 1} + ${item.mr.toFixed(1)} + ${rune.mr.toFixed(1)}` },
+    { name: "AS", icon: "⚡", value: asTotal, eq: `${base.attackspeed.toFixed(3)} * level mult * (1 + ${(item.asPct + rune.asPct).toFixed(1)}%)` },
+    { name: "MS", icon: "👟", value: moveSpeed, eq: `(${base.movespeed.toFixed(1)} + ${item.msFlat.toFixed(1)} + ${rune.msFlat.toFixed(1)}) * (1 + ${(item.msPct + rune.msPct).toFixed(1)}%)` },
+    { name: "Crit %", icon: "🎯", value: critChance, eq: `${base.crit.toFixed(1)} + ${base.critperlevel.toFixed(1)}*${L - 1} + ${item.critChance.toFixed(1)} + ${rune.critChance.toFixed(1)}` },
+    { name: "Crit Dmg", icon: "💥", value: critDamage, eq: `${(base.critdamage ? base.critdamage * 100 : 175).toFixed(1)} + ${item.critDamage.toFixed(1)} + ${rune.critDamage.toFixed(1)}` },
   ];
 
-  root.innerHTML = `<table class="stats-table">${rows.map((r) => `<tr><td class="stats-label">${r.name}</td><td class="stats-value" title="${r.eq}">${r.value.toFixed(r.name === "Attack Speed" ? 3 : 1)}</td></tr>`).join("")}</table>`;
+  root.innerHTML = renderPairedRows(rows.map((row) => ({
+    ...row,
+    displayValue: row.value.toFixed(row.name === "AS" ? 3 : 1),
+  })));
 }
 
 function renderRunePanel() {
@@ -590,21 +961,25 @@ function renderRunePanel() {
 
   root.innerHTML = `
     <div class="rune-column-block">
-      <div class="rune-column-title"><button class='btn btn-sm' onclick="openRuneModal('primaryPath_0')">${primaryPath.name}</button></div>
+      <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' onclick="openRuneModal('primaryPath_0')"><img src="${primaryPath.icon}" alt="${primaryPath.name}"><span>${primaryPath.name}</span></button></div>
       ${renderSlot(BUILDER.runeSelections.primary[0], "Keystone", "primary_0")}
       ${renderSlot(BUILDER.runeSelections.primary[1], "Row 1", "primary_1")}
       ${renderSlot(BUILDER.runeSelections.primary[2], "Row 2", "primary_2")}
       ${renderSlot(BUILDER.runeSelections.primary[3], "Row 3", "primary_3")}
     </div>
     <div class="rune-column-block">
-      <div class="rune-column-title"><button class='btn btn-sm' onclick="openRuneModal('secondaryPath_0')">${secondaryPath.name}</button></div>
+      <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' onclick="openRuneModal('secondaryPath_0')"><img src="${secondaryPath.icon}" alt="${secondaryPath.name}"><span>${secondaryPath.name}</span></button></div>
       <div class='rune-subsection-title'>Secondary Runes</div>
       ${renderSlot(BUILDER.runeSelections.secondary[0], "Secondary 1", "secondary_0")}
       ${renderSlot(BUILDER.runeSelections.secondary[1], "Secondary 2", "secondary_1")}
+    </div>
+    <div class="rune-shard-row-wrap">
       <div class='rune-subsection-title rune-subsection-title-shards'>Stat Shards</div>
-      ${renderSlot(BUILDER.runeSelections.shards[0], "Shard 1", "shard_0")}
-      ${renderSlot(BUILDER.runeSelections.shards[1], "Shard 2", "shard_1")}
-      ${renderSlot(BUILDER.runeSelections.shards[2], "Shard 3", "shard_2")}
+      <div class="rune-shard-row">
+        ${renderSlot(BUILDER.runeSelections.shards[0], "Shard 1", "shard_0")}
+        ${renderSlot(BUILDER.runeSelections.shards[1], "Shard 2", "shard_1")}
+        ${renderSlot(BUILDER.runeSelections.shards[2], "Shard 3", "shard_2")}
+      </div>
     </div>
   `;
 }
@@ -649,13 +1024,21 @@ function ensureSecondarySelectionsValid() {
 
 function getRuneOptions(target) {
   if (target.startsWith("primaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as primary path`, icon: p.icon }));
-  if (target.startsWith("secondaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as secondary path`, icon: p.icon }));
+  if (target.startsWith("secondaryPath")) {
+    return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({
+      id,
+      name: p.name,
+      desc: id === BUILDER.runeSelections.primaryPath ? "Secondary path cannot match primary path" : `Set ${p.name} as secondary path`,
+      icon: p.icon,
+      disabled: id === BUILDER.runeSelections.primaryPath,
+    }));
+  }
   if (target.startsWith("primary")) {
     const rowIndex = Number(target.split("_")[1]);
     const rows = RUNE_DATA.paths[BUILDER.runeSelections.primaryPath]?.primaryRows || [];
     return (rows[rowIndex] || []).map((id) => ({ id, ...getRuneMeta(id) }));
   }
-  if (target.startsWith("secondary")) {
+  if (/^secondary_\d+$/.test(target)) {
     const slot = Number(target.split("_")[1]);
     const other = BUILDER.runeSelections.secondary[slot === 0 ? 1 : 0];
     const blockedRow = getSecondaryRowIndex(BUILDER.runeSelections.secondaryPath, other);
@@ -683,11 +1066,11 @@ function openRuneModal(target) {
   document.getElementById("runeModalTitle").textContent = "Select Rune Option";
   const optionBtn = (o) => {
     const disabled = o.disabled ? "disabled" : "";
-    const lockNote = o.disabled ? "Pick from a different secondary row" : (o.desc || "");
+    const lockNote = o.disabled ? (o.desc || "This option is unavailable") : (o.desc || "");
     return `<button class="rune-option-btn ${o.disabled ? "is-disabled" : ""}" ${disabled} onclick="selectRuneOption('${o.id}')">${runeImgTag(o)}<div><div class="rune-option-name">${o.name}</div><div class="rune-option-desc">${lockNote}</div></div></button>`;
   };
 
-  if (target.startsWith("secondary")) {
+  if (/^secondary_\d+$/.test(target)) {
     const groups = [0, 1, 2]
       .map((rowIndex) => options.filter((o) => o.rowIndex === rowIndex))
       .filter((group) => group.length);
@@ -718,13 +1101,21 @@ function selectRuneOption(id) {
   if (group === "primaryPath") {
     BUILDER.runeSelections.primaryPath = id;
     BUILDER.runeSelections.primary = getPathPrimaryDefaults(id);
+    if (BUILDER.runeSelections.secondaryPath === id) {
+      const fallbackSecondary = Object.keys(RUNE_DATA.paths).find((pathId) => pathId !== id) || id;
+      BUILDER.runeSelections.secondaryPath = fallbackSecondary;
+      BUILDER.runeSelections.secondary = getPathSecondaryDefaults(fallbackSecondary);
+    }
   }
   if (group === "secondaryPath") {
-    BUILDER.runeSelections.secondaryPath = id;
-    BUILDER.runeSelections.secondary = getPathSecondaryDefaults(id);
+    if (id !== BUILDER.runeSelections.primaryPath) {
+      BUILDER.runeSelections.secondaryPath = id;
+      BUILDER.runeSelections.secondary = getPathSecondaryDefaults(id);
+    }
     ensureSecondarySelectionsValid();
   }
   renderRunePanel();
   renderStats();
+  renderAbilityCards();
   closeRuneModal();
 }
