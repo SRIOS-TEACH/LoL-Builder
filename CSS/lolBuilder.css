@@ -822,6 +822,19 @@ body {
   height: 44px;
 }
 
+.ability-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ability-head .ability-icon {
+  margin: 0;
+  width: 44px;
+  height: 44px;
+}
+
 .ability-rank-row {
   margin: 0.35rem 0;
 }
