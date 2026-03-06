@@ -1107,7 +1107,9 @@ function formatAbilityNumber(value, isPercent = false) {
 }
 
 function evaluateCalculationPart(part, dataValues, rank, stats) {
+  if (!part) return null;
   const t = String(part?.__type || "");
+
   if (t === "NumberCalculationPart") {
     const val = Number(part?.mNumber || 0);
     return { value: val, text: formatAbilityNumber(val) };
@@ -1128,11 +1130,6 @@ function evaluateCalculationPart(part, dataValues, rank, stats) {
     const coeff = coeffData ? coeffData.current : 0;
     return { value: src.value * coeff, text: `${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}` };
   }
-  if (t === "SumOfSubPartsCalculationPart") {
-    const parts = (part?.mSubparts || []).map((sub) => evaluateCalculationPart(sub, dataValues, rank, stats)).filter(Boolean);
-    if (!parts.length) return null;
-    return { value: parts.reduce((a, b) => a + b.value, 0), text: parts.map((p) => p.text).join(" + ") };
-  }
   if (t === "ByCharLevelBreakpointsCalculationPart") {
     const level = Math.max(1, Number(BUILDER.level) || 1);
     const base = Number(part?.mLevel1Value || 0);
@@ -1143,6 +1140,72 @@ function evaluateCalculationPart(part, dataValues, rank, stats) {
     const value = base + bonus;
     return { value, text: formatAbilityNumber(value) };
   }
+
+  const evaluateChildren = () => {
+    const out = [];
+    const directArrayKeys = ["mSubparts", "mParts"];
+    directArrayKeys.forEach((key) => {
+      (part?.[key] || []).forEach((sub) => {
+        const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats);
+        if (evaluated) out.push(evaluated);
+      });
+    });
+
+    const directPartKeys = ["mPart", "mPart1", "mPart2", "mPart3", "mPart4", "mMultiplier", "mAddend", "mRemainder", "mSubPart"];
+    directPartKeys.forEach((key) => {
+      const sub = part?.[key];
+      if (!sub || typeof sub !== "object") return;
+      const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats);
+      if (evaluated) out.push(evaluated);
+    });
+
+    return out;
+  };
+
+  if (/SumOfSubParts/i.test(t)) {
+    const parts = evaluateChildren();
+    if (!parts.length) return null;
+    return { value: parts.reduce((a, b) => a + b.value, 0), text: parts.map((p) => p.text).join(" + ") };
+  }
+
+  if (/ProductOfSubParts|Multiply|Multiplicative/i.test(t)) {
+    const parts = evaluateChildren();
+    if (!parts.length) return null;
+    return { value: parts.reduce((acc, row) => acc * row.value, 1), text: parts.map((p) => p.text).join(" × ") };
+  }
+
+  if (/Difference|Subtract/i.test(t)) {
+    const parts = evaluateChildren();
+    if (!parts.length) return null;
+    if (parts.length === 1) return parts[0];
+    return { value: parts.slice(1).reduce((acc, row) => acc - row.value, parts[0].value), text: `${parts[0].text} - ${parts.slice(1).map((p) => p.text).join(" - ")}` };
+  }
+
+  if (/Ratio|Divide/i.test(t)) {
+    const parts = evaluateChildren();
+    if (parts.length < 2 || parts[1].value === 0) return null;
+    return { value: parts[0].value / parts[1].value, text: `${parts[0].text} / ${parts[1].text}` };
+  }
+
+  if (/Clamp|Min|Max/i.test(t)) {
+    const parts = evaluateChildren();
+    if (!parts.length) return null;
+    const head = parts[0].value;
+    const floor = Number(part?.mFloor ?? part?.mMinimum ?? Number.NEGATIVE_INFINITY);
+    const ceil = Number(part?.mCeiling ?? part?.mMaximum ?? Number.POSITIVE_INFINITY);
+    const value = Math.min(Math.max(head, floor), ceil);
+    return { value, text: formatAbilityNumber(value) };
+  }
+
+  if (typeof part?.mCoefficient === "number" || part?.mDataValue || typeof part?.mStat !== "undefined") {
+    const src = getCalcStatSource(part, stats);
+    const coeffData = part?.mDataValue ? getSpellDataValue(dataValues, part?.mDataValue, rank) : null;
+    const coeffRaw = coeffData ? coeffData.current : Number(part?.mCoefficient || 0);
+    if (coeffRaw !== 0) {
+      return { value: src.value * coeffRaw, text: `${(coeffRaw * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}` };
+    }
+  }
+
   return null;
 }
 
@@ -1177,6 +1240,32 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
   };
 }
 
+function normalizeCalcToken(token) {
+  return String(token || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function findBestCalcTokenMatch(calcLookup, token) {
+  const keys = Object.keys(calcLookup || {});
+  if (!keys.length) return null;
+  const normalizedToken = normalizeCalcToken(token);
+  const scored = keys.map((key) => {
+    const normalizedKey = normalizeCalcToken(key);
+    let score = -1;
+    if (normalizedKey === normalizedToken) score = 1000;
+    else if (normalizedKey.includes(normalizedToken)) score = 700 - (normalizedKey.length - normalizedToken.length);
+    else if (normalizedToken.includes(normalizedKey)) score = 500 - (normalizedToken.length - normalizedKey.length);
+    else {
+      const strippedToken = normalizedToken.replace(/^(base|bonus|total)/, "").replace(/(damage|value|amount)$/g, "");
+      const strippedKey = normalizedKey.replace(/^(base|bonus|total)/, "").replace(/(damage|value|amount)$/g, "");
+      if (strippedKey && strippedToken && (strippedKey.includes(strippedToken) || strippedToken.includes(strippedKey))) {
+        score = 300 - Math.abs(strippedKey.length - strippedToken.length);
+      }
+    }
+    return { key, score };
+  }).filter((row) => row.score >= 0).sort((a, b) => b.score - a.score);
+  return scored.length ? scored[0].key : null;
+}
+
 function resolveAbilityToken(tokenRaw, ctx) {
   const token = String(tokenRaw || "").trim().toLowerCase();
 
@@ -1197,7 +1286,7 @@ function resolveAbilityToken(tokenRaw, ctx) {
 
     let calc = localCtx.calcLookup[normalizedToken];
     if (!calc) {
-      const fuzzyKey = Object.keys(localCtx.calcLookup || {}).find((k) => k.includes(normalizedToken) || normalizedToken.includes(k));
+      const fuzzyKey = findBestCalcTokenMatch(localCtx.calcLookup || {}, normalizedToken);
       if (fuzzyKey) calc = localCtx.calcLookup[fuzzyKey];
     }
     if (calc) {
