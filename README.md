@@ -31,6 +31,8 @@ Before committing JavaScript changes, you can run fast syntax checks from the re
 node --check JS/champLookup.js
 node --check JS/itemLookup.js
 node --check JS/builder.js
+node tests/itemPolicy.test.js
+node tests/abilityRules.test.js
 ```
 
 ---
@@ -45,9 +47,18 @@ node --check JS/builder.js
 - `Builder.html` — Build sandbox UI shell.
 
 ### JavaScript
+- `JS/shared/apiClient.js` — shared Data Dragon / Community Dragon fetch helpers.
+- `JS/shared/itemPolicy.js` — shared item eligibility and map-priority dedupe helpers.
+- `JS/shared/abilityRules.js` — shared ability rank constraints and normalization helpers.
 - `JS/champLookup.js` — loads champion data from Data Dragon and renders splash/lore/abilities.
 - `JS/itemLookup.js` — loads Data Dragon item list + CommunityDragon calculation payloads, applies filters, dedupes items, and renders readable formula details.
 - `JS/builder.js` — champion/item/level setup logic, item modal UX, ability rank validation, and stat rendering.
+
+### Additional docs
+- `docs/ARCHITECTURE.md` — high-level ownership and module boundaries.
+- `docs/CONTRIBUTING.md` — coding conventions and contributor workflow.
+- `docs/DATA_SOURCES.md` — external payload inventory and purpose.
+- `docs/TESTING.md` — syntax, unit, and manual smoke checks.
 
 ### CSS
 - `CSS/lolBuilder.css` — project-specific layout/theme styles for all pages.
