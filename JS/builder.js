@@ -497,7 +497,6 @@ async function setChampion(name) {
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
   BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name);
-  BUILDER.abilityRanks = { q: 1, w: 0, e: 0, r: 0 };
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
 
   const splashUrl = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`;
