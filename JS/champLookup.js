@@ -17,9 +17,8 @@ const CHAMP_STATE = { version: "", champions: {}, selected: "" };
  * Bootstraps the Champion Lookup page by loading versions/champions and wiring UI events.
  */
 async function initChampionLookup() {
-  const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
-  CHAMP_STATE.version = versions[0];
-  const championJson = await fetch(`https://ddragon.leagueoflegends.com/cdn/${CHAMP_STATE.version}/data/en_US/champion.json`).then((r) => r.json());
+  CHAMP_STATE.version = await window.ApiClient.fetchLatestVersion();
+  const championJson = await window.ApiClient.fetchChampionIndex(CHAMP_STATE.version);
   CHAMP_STATE.champions = championJson.data;
 
   const select = document.getElementById("champSelect");
@@ -38,7 +37,7 @@ async function initChampionLookup() {
  */
 async function renderChampion(name) {
   CHAMP_STATE.selected = name;
-  const details = await fetch(`https://ddragon.leagueoflegends.com/cdn/${CHAMP_STATE.version}/data/en_US/champion/${name}.json`).then((r) => r.json());
+  const details = await window.ApiClient.fetchChampionDetails(CHAMP_STATE.version, name);
   const champ = details.data[name];
 
   document.getElementById("champSelect").value = name;
@@ -63,3 +62,5 @@ async function renderChampion(name) {
 
   document.getElementById("abilities").innerHTML = passiveCard + spellCards;
 }
+
+document.addEventListener("DOMContentLoaded", initChampionLookup);

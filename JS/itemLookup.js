@@ -48,17 +48,11 @@ const RAW_STAT_KEYS = {
 /**
  * Supported map filters for the item browser.
  */
-const MAP_OPTIONS = [
-  { id: 11, label: "Summoners Rift" },
-  { id: 12, label: "ARAM" },
-  { id: 30, label: "Arena" },
-];
+const MAP_OPTIONS = window.ItemPolicy.MAP_OPTIONS;
 
 /**
  * Items forced into catalog even if Data Dragon marks them special-case.
  */
-const FORCE_INCLUDE_ITEM_IDS = new Set(["3040", "3042", "3121"]);
-
 /**
  * Keyword->color rules for tooltip highlighting.
  */
@@ -89,9 +83,7 @@ const STAT_COLOR_RULES = [
  * Returns true when an item should be considered purchasable by the app.
  */
 function isPurchasableItem(id, item) {
-  if (FORCE_INCLUDE_ITEM_IDS.has(String(id))) return true;
-  const mapEnabled = Object.values(item.maps || {}).some(Boolean);
-  return item.gold?.purchasable && mapEnabled && !item.requiredAlly;
+  return window.ItemPolicy.isPurchasableItem(id, item);
 }
 
 /**
@@ -106,39 +98,7 @@ function itemMatchesSelectedMaps(item) {
  * Deduplicates item entries by normalized item name and keeps best map candidate.
  */
 function dedupeByNameWithMapPriority(itemEntries, selectedMaps = ITEM_STATE.selectedMaps) {
-  const selectedOrder = MAP_OPTIONS.map((m) => m.id).filter((id) => selectedMaps.has(id));
-  const byName = {};
-
-  const rankItem = (id, item) => {
-    const maps = item.maps || {};
-    const selectedIdx = selectedOrder.findIndex((mapId) => maps[mapId]);
-    const enabledMapCount = Object.values(maps).filter(Boolean).length;
-    return {
-      selectedIdx: selectedIdx === -1 ? Number.MAX_SAFE_INTEGER : selectedIdx,
-      enabledMapCount,
-      numericId: Number(id),
-    };
-  };
-
-  itemEntries.forEach(([id, item]) => {
-    const key = String(item.name || "").trim().toLowerCase();
-    if (!key) return;
-    if (!byName[key]) {
-      byName[key] = { id, item };
-      return;
-    }
-    const current = byName[key];
-    const incomingRank = rankItem(id, item);
-    const currentRank = rankItem(current.id, current.item);
-    const better = incomingRank.selectedIdx < currentRank.selectedIdx
-      || (incomingRank.selectedIdx === currentRank.selectedIdx && incomingRank.enabledMapCount > currentRank.enabledMapCount)
-      || (incomingRank.selectedIdx === currentRank.selectedIdx
-        && incomingRank.enabledMapCount === currentRank.enabledMapCount
-        && incomingRank.numericId < currentRank.numericId);
-    if (better) byName[key] = { id, item };
-  });
-
-  return Object.values(byName).map(({ id, item }) => [id, item]);
+  return window.ItemPolicy.dedupeByNameWithMapPriority(itemEntries, selectedMaps);
 }
 
 /**
@@ -456,10 +416,9 @@ function enhanceActiveTooltip(descriptionHtml) {
  * Loads Data Dragon version + item catalog + optional Community Dragon formulas.
  */
 async function initItemLookup() {
-  const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
-  ITEM_STATE.version = versions[0];
-
-  const itemJson = await fetch(`https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/data/en_US/item.json`).then((r) => r.json());
+  if (!document.getElementById("itemSearch")) return;
+  ITEM_STATE.version = await window.ApiClient.fetchLatestVersion();
+  const itemJson = await window.ApiClient.fetchItemIndex(ITEM_STATE.version);
   ITEM_STATE.items = Object.fromEntries(Object.entries(itemJson.data || {}).filter(([id, item]) => isPurchasableItem(id, item)));
 
   await loadCommunityDragonCalcs();
@@ -468,6 +427,11 @@ async function initItemLookup() {
   Object.values(ITEM_STATE.items).forEach((item) => (item.tags || []).forEach((tag) => ITEM_STATE.tags.add(tag)));
 
   document.getElementById("itemSearch").addEventListener("input", applyItemFilters);
+  document.getElementById("itemGrid").addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-item-id]");
+    if (!btn) return;
+    showItem(btn.dataset.itemId);
+  });
   renderTagFilters("itemFilters", applyItemFilters);
   renderMapFilters("mapFilters", applyItemFilters);
   applyItemFilters();
@@ -550,7 +514,7 @@ function renderItemGrid() {
   grid.innerHTML = ITEM_STATE.filteredIds.map((id) => {
     const item = ITEM_STATE.items[id];
     const selectedClass = ITEM_STATE.selectedId === id ? " item-button-selected" : "";
-    return `<button class="item-button-icon${selectedClass}" onclick="showItem('${id}')" title="${item.name}" aria-label="${item.name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png" alt="${item.name}"></button>`;
+    return `<button class="item-button-icon${selectedClass}" data-item-id="${id}" title="${item.name}" aria-label="${item.name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png" alt="${item.name}"></button>`;
   }).join("");
 }
 
@@ -608,3 +572,5 @@ window.ItemLookupShared = {
   loadCommunityDragonCalcs,
   getState: () => ITEM_STATE,
 };
+
+document.addEventListener("DOMContentLoaded", initItemLookup);

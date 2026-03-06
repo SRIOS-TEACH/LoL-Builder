@@ -153,6 +153,7 @@ async function initBuilder() {
     renderRunePanel();
     renderAbilityCards();
     renderStats();
+    wireBuilderUiEvents();
     document.getElementById("passiveModal").addEventListener("click", (event) => {
       if (event.target.id === "passiveModal") closePassiveModal();
     });
@@ -161,6 +162,52 @@ async function initBuilder() {
     console.error(error);
     setStatus("Failed to load data. Check internet connection and refresh.", true);
   }
+}
+
+function wireBuilderUiEvents() {
+  document.getElementById("championPickerBtn").addEventListener("click", openChampionModal);
+  document.getElementById("passiveToggleBtn").addEventListener("click", togglePassivePanel);
+  document.getElementById("clearModalFiltersBtn").addEventListener("click", clearModalFilters);
+  document.getElementById("closeItemModalBtn").addEventListener("click", closeItemModal);
+  document.getElementById("closeChampModalBtn").addEventListener("click", closeChampionModal);
+  document.getElementById("closeRuneModalBtn").addEventListener("click", closeRuneModal);
+  document.getElementById("closePassiveModalBtn").addEventListener("click", closePassiveModal);
+
+  document.getElementById("modalChampGrid").addEventListener("mouseover", (event) => {
+    const btn = event.target.closest("[data-champ]");
+    if (!btn) return;
+    renderChampionModalDetail(btn.dataset.champ);
+  });
+  document.getElementById("modalChampGrid").addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-champ]");
+    if (!btn) return;
+    setChampionFromModal(btn.dataset.champ);
+  });
+  document.getElementById("itemSlots").addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-slot]");
+    if (!btn) return;
+    openItemModal(Number(btn.dataset.slot));
+  });
+  document.getElementById("modalItemGrid").addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-item-id]");
+    if (!btn) return;
+    renderModalItemDetail(btn.dataset.itemId);
+  });
+  document.getElementById("modalItemDetail").addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-set-item-id]");
+    if (!btn) return;
+    setSlotItem(btn.dataset.setItemId);
+  });
+  document.getElementById("runePanel").addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-rune-target]");
+    if (!btn) return;
+    openRuneModal(btn.dataset.runeTarget);
+  });
+  document.getElementById("runeModalList").addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-rune-option-id]");
+    if (!btn || btn.disabled) return;
+    selectRuneOption(btn.dataset.runeOptionId);
+  });
 }
 
 function wireLevelOptions() {
@@ -174,7 +221,7 @@ function wireLevelOptions() {
   });
 }
 
-const BUILDER_FORCE_INCLUDE_ITEM_IDS = new Set(["3040", "3042", "3121"]);
+const BUILDER_FORCE_INCLUDE_ITEM_IDS = window.ItemPolicy.FORCE_INCLUDE_ITEM_IDS;
 
 function getItemLookupShared() {
   return (typeof window !== "undefined" && window.ItemLookupShared) ? window.ItemLookupShared : null;
@@ -183,27 +230,24 @@ function getItemLookupShared() {
 function isPurchasableBuilderItem(id, item) {
   const shared = getItemLookupShared();
   if (shared?.isPurchasableItem) return shared.isPurchasableItem(id, item);
-  if (BUILDER_FORCE_INCLUDE_ITEM_IDS.has(String(id))) return true;
-  const mapEnabled = Object.values(item.maps || {}).some(Boolean);
-  return item.gold?.purchasable && mapEnabled && !item.requiredAlly;
+  return window.ItemPolicy.isPurchasableItem(id, item);
 }
 
 function dedupeBuilderItems(itemEntries, preferredMaps = [11]) {
   const shared = getItemLookupShared();
   if (shared?.dedupeByNameWithMapPriority) return shared.dedupeByNameWithMapPriority(itemEntries, new Set(preferredMaps));
-  return itemEntries;
+  return window.ItemPolicy.dedupeByNameWithMapPriority(itemEntries, new Set(preferredMaps));
 }
 
 async function loadBuilderData() {
-  const versions = await fetch("https://ddragon.leagueoflegends.com/api/versions.json").then((r) => r.json());
-  BUILDER.version = versions[0];
+  BUILDER.version = await window.ApiClient.fetchLatestVersion();
 
-  const champions = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion.json`).then((r) => r.json());
+  const champions = await window.ApiClient.fetchChampionIndex(BUILDER.version);
   BUILDER.champions = champions.data;
 
   const [items, cdtbData] = await Promise.all([
-    fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/item.json`).then((r) => r.json()),
-    fetch("https://raw.communitydragon.org/latest/game/items.cdtb.bin.json").then((r) => r.json()).catch(() => null),
+    window.ApiClient.fetchItemIndex(BUILDER.version),
+    window.ApiClient.fetchCommunityDragonItems().catch(() => null),
   ]);
   const cdtbByIdFallback = buildCdtbItemsById(cdtbData);
 
@@ -354,7 +398,7 @@ function renderChampionModalGrid() {
 
   document.getElementById("modalChampResults").textContent = `${BUILDER.modalChampFiltered.length} champions`;
   document.getElementById("modalChampGrid").innerHTML = BUILDER.modalChampFiltered
-    .map((name) => `<button class="item-button-icon" data-champ="${name}" onmouseenter="renderChampionModalDetail(this.dataset.champ)" onclick="setChampionFromModal(this.dataset.champ)" title="${name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.champions[name].image.full}" alt="${name}"></button>`)
+    .map((name) => `<button class="item-button-icon" data-champ="${name}" title="${name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.champions[name].image.full}" alt="${name}"></button>`)
     .join("");
   renderChampionModalDetail(BUILDER.modalChampFiltered[0] || null);
 }
@@ -371,7 +415,7 @@ async function renderChampionModalDetail(name) {
   root.innerHTML = `<h3>${name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${c.image.full}' alt='${name}'><p><strong>Tags:</strong> ${(c.tags || []).join(", ")}</p><p>${c.blurb}</p><div class='champ-ability-strip'><span class='text-muted'>Loading abilities...</span></div>`;
 
   if (!BUILDER.championDetailCache[name]) {
-    const data = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion/${name}.json`).then((r) => r.json()).catch(() => null);
+    const data = await window.ApiClient.fetchChampionDetails(BUILDER.version, name).catch(() => null);
     BUILDER.championDetailCache[name] = data?.data?.[name] || null;
   }
   if (reqId !== BUILDER.championModalRequestId) return;
@@ -449,7 +493,7 @@ async function loadCdragonAbilityData(championName) {
 }
 
 async function setChampion(name) {
-  const details = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion/${name}.json`).then((r) => r.json());
+  const details = await window.ApiClient.fetchChampionDetails(BUILDER.version, name);
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
   BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name);
@@ -469,7 +513,7 @@ async function setChampion(name) {
 
 function renderItemSlots() {
   const root = document.getElementById("itemSlots");
-  root.innerHTML = BUILDER.itemSlots.map((_, i) => `<button class="item-slot-btn" onclick="openItemModal(${i})"><div id="slotText${i}" class="item-slot-empty">+</div></button>`).join("");
+  root.innerHTML = BUILDER.itemSlots.map((_, i) => `<button class="item-slot-btn" data-slot="${i}"><div id="slotText${i}" class="item-slot-empty">+</div></button>`).join("");
   refreshSlotLabels();
 }
 
@@ -530,7 +574,7 @@ function renderModalItemGrid() {
   const ids = BUILDER.modalItemFiltered;
   document.getElementById("modalResultsCount").textContent = `${ids.length} items shown`;
   document.getElementById("modalItemGrid").innerHTML = ids
-    .map((id) => `<button class="item-button-icon" onclick="renderModalItemDetail('${id}')" title="${BUILDER.items[id].name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${BUILDER.items[id].name}"></button>`)
+    .map((id) => `<button class="item-button-icon" data-item-id="${id}" title="${BUILDER.items[id].name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${BUILDER.items[id].name}"></button>`)
     .join("");
   renderModalItemDetail(ids[0] || null);
 }
@@ -618,7 +662,7 @@ function renderModalItemDetail(id) {
     }
   }
 
-  root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div>${passiveLines}${extractedFormulaRows}<div class='mt-10'>${enhancedDescription}</div><button class='btn btn-sm mt-10' onclick="setSlotItem('${id}')">Select this item</button><button class='btn btn-sm mt-10 ml-5' onclick="setSlotItem('')">Clear slot</button>`;
+  root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div>${passiveLines}${extractedFormulaRows}<div class='mt-10'>${enhancedDescription}</div><button class='btn btn-sm mt-10' data-set-item-id='${id}'>Select this item</button><button class='btn btn-sm mt-10 ml-5' data-set-item-id=''>Clear slot</button>`;
 }
 
 function setSlotItem(itemId) {
@@ -631,25 +675,11 @@ function setSlotItem(itemId) {
 }
 
 function abilityMaxByLevel(level, spellKey) {
-  if (spellKey === "r") {
-    if (level >= 16) return 3;
-    if (level >= 11) return 2;
-    if (level >= 6) return 1;
-    return 0;
-  }
-  return Math.min(5, Math.ceil(level / 2));
+  return window.AbilityRules.abilityMaxByLevel(level, spellKey);
 }
 
 function enforceAbilityRules() {
-  ["q", "w", "e", "r"].forEach((k) => {
-    BUILDER.abilityRanks[k] = Math.min(BUILDER.abilityRanks[k], abilityMaxByLevel(BUILDER.level, k));
-  });
-  let total = Object.values(BUILDER.abilityRanks).reduce((a, b) => a + b, 0);
-  while (total > BUILDER.level) {
-    const pick = ["q", "w", "e", "r"].sort((a, b) => BUILDER.abilityRanks[b] - BUILDER.abilityRanks[a]).find((k) => BUILDER.abilityRanks[k] > 0);
-    BUILDER.abilityRanks[pick] -= 1;
-    total -= 1;
-  }
+  BUILDER.abilityRanks = window.AbilityRules.enforceAbilityRules(BUILDER.level, BUILDER.abilityRanks);
 }
 
 function parseByRank(valueBurn, rank) {
@@ -1296,7 +1326,7 @@ async function runAbilityTagResolutionAudit(sampleChampionNames = null) {
   const report = [];
 
   for (const name of names) {
-    const details = await fetch(`https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/data/en_US/champion/${name}.json`).then((r) => r.json()).catch(() => null);
+    const details = await window.ApiClient.fetchChampionDetails(BUILDER.version, name).catch(() => null);
     const champ = details?.data?.[name];
     if (!champ) continue;
     const cdragonAbilityData = await loadCdragonAbilityData(name);
@@ -1563,21 +1593,21 @@ function renderRunePanel() {
 
   const renderSlot = (id, label, target) => {
     const rune = getRuneMeta(id);
-    return `<div class="rune-slot-row"><button class="rune-slot-btn" onclick="openRuneModal('${target}')">${runeImgTag(rune)}</button><div class="rune-slot-label"><span class='rune-slot-kicker'>${label}</span><strong>${rune.name}</strong></div></div>`;
+    return `<div class="rune-slot-row"><button class="rune-slot-btn" data-rune-target="${target}">${runeImgTag(rune)}</button><div class="rune-slot-label"><span class='rune-slot-kicker'>${label}</span><strong>${rune.name}</strong></div></div>`;
   };
 
   ensureSecondarySelectionsValid();
 
   root.innerHTML = `
     <div class="rune-column-block">
-      <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' onclick="openRuneModal('primaryPath_0')"><img src="${primaryPath.icon}" alt="${primaryPath.name}"><span>${primaryPath.name}</span></button></div>
+      <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="primaryPath_0"><img src="${primaryPath.icon}" alt="${primaryPath.name}"><span>${primaryPath.name}</span></button></div>
       ${renderSlot(BUILDER.runeSelections.primary[0], "Keystone", "primary_0")}
       ${renderSlot(BUILDER.runeSelections.primary[1], "Row 1", "primary_1")}
       ${renderSlot(BUILDER.runeSelections.primary[2], "Row 2", "primary_2")}
       ${renderSlot(BUILDER.runeSelections.primary[3], "Row 3", "primary_3")}
     </div>
     <div class="rune-column-block">
-      <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' onclick="openRuneModal('secondaryPath_0')"><img src="${secondaryPath.icon}" alt="${secondaryPath.name}"><span>${secondaryPath.name}</span></button></div>
+      <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="secondaryPath_0"><img src="${secondaryPath.icon}" alt="${secondaryPath.name}"><span>${secondaryPath.name}</span></button></div>
       <div class='rune-subsection-title'>Secondary Runes</div>
       ${renderSlot(BUILDER.runeSelections.secondary[0], "Secondary 1", "secondary_0")}
       ${renderSlot(BUILDER.runeSelections.secondary[1], "Secondary 2", "secondary_1")}
@@ -1676,7 +1706,7 @@ function openRuneModal(target) {
   const optionBtn = (o) => {
     const disabled = o.disabled ? "disabled" : "";
     const lockNote = o.disabled ? (o.desc || "This option is unavailable") : (o.desc || "");
-    return `<button class="rune-option-btn ${o.disabled ? "is-disabled" : ""}" ${disabled} onclick="selectRuneOption('${o.id}')">${runeImgTag(o)}<div><div class="rune-option-name">${o.name}</div><div class="rune-option-desc">${lockNote}</div></div></button>`;
+    return `<button class="rune-option-btn ${o.disabled ? "is-disabled" : ""}" ${disabled} data-rune-option-id="${o.id}">${runeImgTag(o)}<div><div class="rune-option-name">${o.name}</div><div class="rune-option-desc">${lockNote}</div></div></button>`;
   };
 
   if (/^secondary_\d+$/.test(target)) {
@@ -1728,3 +1758,5 @@ function selectRuneOption(id) {
   renderAbilityCards();
   closeRuneModal();
 }
+
+document.addEventListener("DOMContentLoaded", initBuilder);
