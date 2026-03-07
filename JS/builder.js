@@ -444,12 +444,71 @@ function normalizeCdragonChampionPath(name) {
   return String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-async function loadCdragonAbilityData(championName) {
-  const pathName = normalizeCdragonChampionPath(championName);
-  const url = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
-  const raw = await fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  if (!raw) return null;
+function normalizeCdragonRecordPath(path) {
+  return String(path || "").replace(/\\/g, "/").replace(/^\/+/, "").toLowerCase();
+}
 
+function resolveCdragonRecord(raw, index, path) {
+  if (!path) return null;
+  const key = index.get(normalizeCdragonRecordPath(path));
+  return key ? raw[key] : null;
+}
+
+function extractCdragonSpell(spellRecord) {
+  const spell = spellRecord?.mSpell || null;
+  if (!spell) return null;
+  return {
+    dataValues: spell.mDataValues || spell.DataValues || [],
+    calculations: spell.mSpellCalculations || {},
+  };
+}
+
+function extractAbilityDataFromRoot(raw, championName, pathName) {
+  const pathIndex = new Map(Object.keys(raw || {}).map((key) => [normalizeCdragonRecordPath(key), key]));
+  const rootCandidates = [
+    `Characters/${championName}/CharacterRecords/Root`,
+    `Characters/${pathName}/CharacterRecords/Root`,
+  ];
+  const rootPath = rootCandidates
+    .map((candidate) => pathIndex.get(normalizeCdragonRecordPath(candidate)))
+    .find(Boolean)
+    || pathIndex.get(`characters/${pathName}/characterrecords/root`)
+    || Array.from(pathIndex.entries()).find(([k]) => k.endsWith(`/characters/${pathName}/characterrecords/root`) || k.endsWith(`/characterrecords/root`))?.[1]
+    || null;
+
+  const root = rootPath ? raw[rootPath] : null;
+  const abilities = Array.isArray(root?.mAbilities) ? root.mAbilities : [];
+  if (!abilities.length) return null;
+
+  const slotByIndex = ["q", "w", "e", "r", "p"];
+  const bySlot = {};
+
+  abilities.slice(0, slotByIndex.length).forEach((abilityPath, idx) => {
+    const slot = slotByIndex[idx];
+    const abilityRecord = resolveCdragonRecord(raw, pathIndex, abilityPath);
+    const childSpells = Array.isArray(abilityRecord?.mChildSpells) ? abilityRecord.mChildSpells : [];
+    if (!childSpells.length) return;
+
+    const primaryChildPath = childSpells[0];
+    const primaryChild = resolveCdragonRecord(raw, pathIndex, primaryChildPath);
+    let parsed = extractCdragonSpell(primaryChild);
+
+    if (!parsed) {
+      const fallbackChild = childSpells
+        .map((path) => resolveCdragonRecord(raw, pathIndex, path))
+        .map((entry) => extractCdragonSpell(entry))
+        .find(Boolean);
+      parsed = fallbackChild || null;
+    }
+
+    if (!parsed) return;
+    bySlot[slot] = parsed;
+  });
+
+  return Object.keys(bySlot).length ? bySlot : null;
+}
+
+function extractAbilityDataByScan(raw, pathName) {
   const bySlot = {};
   const canonicalPrefix = `/spells/${pathName}`.toLowerCase();
   const candidatesBySlot = { p: [], q: [], w: [], e: [], r: [] };
@@ -462,8 +521,8 @@ async function loadCdragonAbilityData(championName) {
     const slot = isPassive ? "p" : m[1].toLowerCase();
     const rootPath = String(entry.mRootSpell || "");
     const root = raw[rootPath];
-    const spell = root?.mSpell;
-    if (!spell) return;
+    const parsed = extractCdragonSpell(root);
+    if (!parsed) return;
 
     const entryName = String(entry.mName || "").toLowerCase();
     const exactAbilityName = `${pathName}${slot}ability`;
@@ -472,24 +531,31 @@ async function loadCdragonAbilityData(championName) {
       entryName.endsWith(`${slot}ability`) && entryName.includes(pathName),
       rootPath.toLowerCase().includes(canonicalPrefix),
       rootPath.toLowerCase().includes(`/${pathName}${slot}ability/`),
-      Object.keys(spell.mSpellCalculations || {}).length > 0,
-      Array.isArray(spell.DataValues) && spell.DataValues.length > 0,
+      Object.keys(parsed.calculations || {}).length > 0,
+      Array.isArray(parsed.dataValues) && parsed.dataValues.length > 0,
     ].reduce((acc, ok, idx) => acc + (ok ? (20 - idx) : 0), 0);
 
-    candidatesBySlot[slot].push({ score, spell });
+    candidatesBySlot[slot].push({ score, parsed });
   });
 
   Object.entries(candidatesBySlot).forEach(([slot, candidates]) => {
     if (!candidates.length) return;
     candidates.sort((a, b) => b.score - a.score);
-    const spell = candidates[0].spell;
-    bySlot[slot] = {
-      dataValues: spell.DataValues || [],
-      calculations: spell.mSpellCalculations || {},
-    };
+    bySlot[slot] = candidates[0].parsed;
   });
 
-  return bySlot;
+  return Object.keys(bySlot).length ? bySlot : null;
+}
+
+async function loadCdragonAbilityData(championName) {
+  const pathName = normalizeCdragonChampionPath(championName);
+  const url = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
+  const raw = await fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  if (!raw) return null;
+
+  return extractAbilityDataFromRoot(raw, championName, pathName)
+    || extractAbilityDataByScan(raw, pathName)
+    || null;
 }
 
 async function setChampion(name) {
@@ -497,7 +563,6 @@ async function setChampion(name) {
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
   BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name);
-  BUILDER.abilityRanks = { q: 1, w: 0, e: 0, r: 0 };
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
 
   const splashUrl = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`;
@@ -1209,6 +1274,52 @@ function evaluateCalculationPart(part, dataValues, rank, stats) {
   return null;
 }
 
+function applyGameCalculationModifiers(calc, result, dataValues, rank, stats) {
+  if (!calc || !result) return result;
+
+  const multiplier = evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats);
+  if (multiplier) {
+    const multiplied = result.total * multiplier.value;
+    result = {
+      ...result,
+      total: multiplied,
+      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) × (${multiplier.text})`, value: multiplied }],
+    };
+  }
+
+  const addend = evaluateCalculationPart(calc.mAddend, dataValues, rank, stats);
+  if (addend) {
+    const added = result.total + addend.value;
+    result = {
+      ...result,
+      total: added,
+      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) + (${addend.text})`, value: added }],
+    };
+  }
+
+  const subtrahend = evaluateCalculationPart(calc.mSubtrahend, dataValues, rank, stats);
+  if (subtrahend) {
+    const subtracted = result.total - subtrahend.value;
+    result = {
+      ...result,
+      total: subtracted,
+      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) - (${subtrahend.text})`, value: subtracted }],
+    };
+  }
+
+  const divider = evaluateCalculationPart(calc.mDivider, dataValues, rank, stats);
+  if (divider && divider.value !== 0) {
+    const divided = result.total / divider.value;
+    result = {
+      ...result,
+      total: divided,
+      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) / (${divider.text})`, value: divided }],
+    };
+  }
+
+  return result;
+}
+
 function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
   if (!calc) return null;
   const ctype = String(calc.__type || "");
@@ -1218,13 +1329,18 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
     if (!calculationsMap || !key || seen.has(key)) return null;
     seen.add(key);
     const base = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, seen);
-    const mult = evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats);
-    if (!base || !mult) return null;
-    return {
-      total: base.total * mult.value,
-      terms: [{ text: `${formatAbilityNumber(base.total)} × (${mult.text})`, value: base.total * mult.value }],
-      displayAsPercent: !!calc.mDisplayAsPercent,
-    };
+    if (!base) return null;
+    return applyGameCalculationModifiers(
+      calc,
+      {
+        total: base.total,
+        terms: base.terms,
+        displayAsPercent: !!calc.mDisplayAsPercent,
+      },
+      dataValues,
+      rank,
+      stats,
+    );
   }
 
   if (!Array.isArray(calc.mFormulaParts)) return null;
@@ -1233,11 +1349,17 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
     .filter(Boolean);
   if (!parts.length) return null;
 
-  return {
-    total: parts.reduce((a, b) => a + b.value, 0),
-    terms: parts.map((p) => ({ text: p.text, value: p.value })),
-    displayAsPercent: !!calc.mDisplayAsPercent,
-  };
+  return applyGameCalculationModifiers(
+    calc,
+    {
+      total: parts.reduce((a, b) => a + b.value, 0),
+      terms: parts.map((p) => ({ text: p.text, value: p.value })),
+      displayAsPercent: !!calc.mDisplayAsPercent,
+    },
+    dataValues,
+    rank,
+    stats,
+  );
 }
 
 function normalizeCalcToken(token) {
@@ -1270,16 +1392,6 @@ function resolveAbilityToken(tokenRaw, ctx) {
   const token = String(tokenRaw || "").trim().toLowerCase();
 
   const resolveSimple = (baseToken, localCtx = ctx) => {
-    if (Object.prototype.hasOwnProperty.call(localCtx.knownTokens, baseToken)) {
-      const v = localCtx.knownTokens[baseToken];
-      if (v === "" || v === "-") return { html: "", numeric: null };
-      const parsed = Number(v);
-      return {
-        html: `<span class="ability-detail-number">${v}</span>`,
-        numeric: Number.isFinite(parsed) ? parsed : null,
-      };
-    }
-
     let normalizedToken = baseToken;
     if (normalizedToken.endsWith("tooltip")) normalizedToken = normalizedToken.slice(0, -7);
     if (normalizedToken.includes("gamemodeinteger")) return { html: "", numeric: null };
@@ -1335,6 +1447,16 @@ function resolveAbilityToken(tokenRaw, ctx) {
       return {
         html: `<span class="ability-detail-number">${formatAbilityNumber(scaled)} <span class="ability-detail-eq">(${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(source.label)})</span></span>`,
         numeric: scaled,
+      };
+    }
+
+    if (Object.prototype.hasOwnProperty.call(localCtx.knownTokens, baseToken)) {
+      const v = localCtx.knownTokens[baseToken];
+      if (v === "" || v === "-") return { html: "", numeric: null };
+      const parsed = Number(v);
+      return {
+        html: `<span class="ability-detail-number">${v}</span>`,
+        numeric: Number.isFinite(parsed) ? parsed : null,
       };
     }
 
