@@ -444,12 +444,71 @@ function normalizeCdragonChampionPath(name) {
   return String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-async function loadCdragonAbilityData(championName) {
-  const pathName = normalizeCdragonChampionPath(championName);
-  const url = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
-  const raw = await fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  if (!raw) return null;
+function normalizeCdragonRecordPath(path) {
+  return String(path || "").replace(/\\/g, "/").replace(/^\/+/, "").toLowerCase();
+}
 
+function resolveCdragonRecord(raw, index, path) {
+  if (!path) return null;
+  const key = index.get(normalizeCdragonRecordPath(path));
+  return key ? raw[key] : null;
+}
+
+function extractCdragonSpell(spellRecord) {
+  const spell = spellRecord?.mSpell || null;
+  if (!spell) return null;
+  return {
+    dataValues: spell.mDataValues || spell.DataValues || [],
+    calculations: spell.mSpellCalculations || {},
+  };
+}
+
+function extractAbilityDataFromRoot(raw, championName, pathName) {
+  const pathIndex = new Map(Object.keys(raw || {}).map((key) => [normalizeCdragonRecordPath(key), key]));
+  const rootCandidates = [
+    `Characters/${championName}/CharacterRecords/Root`,
+    `Characters/${pathName}/CharacterRecords/Root`,
+  ];
+  const rootPath = rootCandidates
+    .map((candidate) => pathIndex.get(normalizeCdragonRecordPath(candidate)))
+    .find(Boolean)
+    || pathIndex.get(`characters/${pathName}/characterrecords/root`)
+    || Array.from(pathIndex.entries()).find(([k]) => k.endsWith(`/characters/${pathName}/characterrecords/root`) || k.endsWith(`/characterrecords/root`))?.[1]
+    || null;
+
+  const root = rootPath ? raw[rootPath] : null;
+  const abilities = Array.isArray(root?.mAbilities) ? root.mAbilities : [];
+  if (!abilities.length) return null;
+
+  const slotByIndex = ["q", "w", "e", "r", "p"];
+  const bySlot = {};
+
+  abilities.slice(0, slotByIndex.length).forEach((abilityPath, idx) => {
+    const slot = slotByIndex[idx];
+    const abilityRecord = resolveCdragonRecord(raw, pathIndex, abilityPath);
+    const childSpells = Array.isArray(abilityRecord?.mChildSpells) ? abilityRecord.mChildSpells : [];
+    if (!childSpells.length) return;
+
+    const primaryChildPath = childSpells[0];
+    const primaryChild = resolveCdragonRecord(raw, pathIndex, primaryChildPath);
+    let parsed = extractCdragonSpell(primaryChild);
+
+    if (!parsed) {
+      const fallbackChild = childSpells
+        .map((path) => resolveCdragonRecord(raw, pathIndex, path))
+        .map((entry) => extractCdragonSpell(entry))
+        .find(Boolean);
+      parsed = fallbackChild || null;
+    }
+
+    if (!parsed) return;
+    bySlot[slot] = parsed;
+  });
+
+  return Object.keys(bySlot).length ? bySlot : null;
+}
+
+function extractAbilityDataByScan(raw, pathName) {
   const bySlot = {};
   const canonicalPrefix = `/spells/${pathName}`.toLowerCase();
   const candidatesBySlot = { p: [], q: [], w: [], e: [], r: [] };
@@ -462,8 +521,8 @@ async function loadCdragonAbilityData(championName) {
     const slot = isPassive ? "p" : m[1].toLowerCase();
     const rootPath = String(entry.mRootSpell || "");
     const root = raw[rootPath];
-    const spell = root?.mSpell;
-    if (!spell) return;
+    const parsed = extractCdragonSpell(root);
+    if (!parsed) return;
 
     const entryName = String(entry.mName || "").toLowerCase();
     const exactAbilityName = `${pathName}${slot}ability`;
@@ -472,24 +531,31 @@ async function loadCdragonAbilityData(championName) {
       entryName.endsWith(`${slot}ability`) && entryName.includes(pathName),
       rootPath.toLowerCase().includes(canonicalPrefix),
       rootPath.toLowerCase().includes(`/${pathName}${slot}ability/`),
-      Object.keys(spell.mSpellCalculations || {}).length > 0,
-      Array.isArray(spell.DataValues) && spell.DataValues.length > 0,
+      Object.keys(parsed.calculations || {}).length > 0,
+      Array.isArray(parsed.dataValues) && parsed.dataValues.length > 0,
     ].reduce((acc, ok, idx) => acc + (ok ? (20 - idx) : 0), 0);
 
-    candidatesBySlot[slot].push({ score, spell });
+    candidatesBySlot[slot].push({ score, parsed });
   });
 
   Object.entries(candidatesBySlot).forEach(([slot, candidates]) => {
     if (!candidates.length) return;
     candidates.sort((a, b) => b.score - a.score);
-    const spell = candidates[0].spell;
-    bySlot[slot] = {
-      dataValues: spell.DataValues || [],
-      calculations: spell.mSpellCalculations || {},
-    };
+    bySlot[slot] = candidates[0].parsed;
   });
 
-  return bySlot;
+  return Object.keys(bySlot).length ? bySlot : null;
+}
+
+async function loadCdragonAbilityData(championName) {
+  const pathName = normalizeCdragonChampionPath(championName);
+  const url = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
+  const raw = await fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  if (!raw) return null;
+
+  return extractAbilityDataFromRoot(raw, championName, pathName)
+    || extractAbilityDataByScan(raw, pathName)
+    || null;
 }
 
 async function setChampion(name) {
