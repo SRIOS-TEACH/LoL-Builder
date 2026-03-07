@@ -1274,6 +1274,52 @@ function evaluateCalculationPart(part, dataValues, rank, stats) {
   return null;
 }
 
+function applyGameCalculationModifiers(calc, result, dataValues, rank, stats) {
+  if (!calc || !result) return result;
+
+  const multiplier = evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats);
+  if (multiplier) {
+    const multiplied = result.total * multiplier.value;
+    result = {
+      ...result,
+      total: multiplied,
+      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) × (${multiplier.text})`, value: multiplied }],
+    };
+  }
+
+  const addend = evaluateCalculationPart(calc.mAddend, dataValues, rank, stats);
+  if (addend) {
+    const added = result.total + addend.value;
+    result = {
+      ...result,
+      total: added,
+      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) + (${addend.text})`, value: added }],
+    };
+  }
+
+  const subtrahend = evaluateCalculationPart(calc.mSubtrahend, dataValues, rank, stats);
+  if (subtrahend) {
+    const subtracted = result.total - subtrahend.value;
+    result = {
+      ...result,
+      total: subtracted,
+      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) - (${subtrahend.text})`, value: subtracted }],
+    };
+  }
+
+  const divider = evaluateCalculationPart(calc.mDivider, dataValues, rank, stats);
+  if (divider && divider.value !== 0) {
+    const divided = result.total / divider.value;
+    result = {
+      ...result,
+      total: divided,
+      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) / (${divider.text})`, value: divided }],
+    };
+  }
+
+  return result;
+}
+
 function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
   if (!calc) return null;
   const ctype = String(calc.__type || "");
@@ -1283,13 +1329,18 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
     if (!calculationsMap || !key || seen.has(key)) return null;
     seen.add(key);
     const base = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, seen);
-    const mult = evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats);
-    if (!base || !mult) return null;
-    return {
-      total: base.total * mult.value,
-      terms: [{ text: `${formatAbilityNumber(base.total)} × (${mult.text})`, value: base.total * mult.value }],
-      displayAsPercent: !!calc.mDisplayAsPercent,
-    };
+    if (!base) return null;
+    return applyGameCalculationModifiers(
+      calc,
+      {
+        total: base.total,
+        terms: base.terms,
+        displayAsPercent: !!calc.mDisplayAsPercent,
+      },
+      dataValues,
+      rank,
+      stats,
+    );
   }
 
   if (!Array.isArray(calc.mFormulaParts)) return null;
@@ -1298,11 +1349,17 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
     .filter(Boolean);
   if (!parts.length) return null;
 
-  return {
-    total: parts.reduce((a, b) => a + b.value, 0),
-    terms: parts.map((p) => ({ text: p.text, value: p.value })),
-    displayAsPercent: !!calc.mDisplayAsPercent,
-  };
+  return applyGameCalculationModifiers(
+    calc,
+    {
+      total: parts.reduce((a, b) => a + b.value, 0),
+      terms: parts.map((p) => ({ text: p.text, value: p.value })),
+      displayAsPercent: !!calc.mDisplayAsPercent,
+    },
+    dataValues,
+    rank,
+    stats,
+  );
 }
 
 function normalizeCalcToken(token) {
@@ -1335,16 +1392,6 @@ function resolveAbilityToken(tokenRaw, ctx) {
   const token = String(tokenRaw || "").trim().toLowerCase();
 
   const resolveSimple = (baseToken, localCtx = ctx) => {
-    if (Object.prototype.hasOwnProperty.call(localCtx.knownTokens, baseToken)) {
-      const v = localCtx.knownTokens[baseToken];
-      if (v === "" || v === "-") return { html: "", numeric: null };
-      const parsed = Number(v);
-      return {
-        html: `<span class="ability-detail-number">${v}</span>`,
-        numeric: Number.isFinite(parsed) ? parsed : null,
-      };
-    }
-
     let normalizedToken = baseToken;
     if (normalizedToken.endsWith("tooltip")) normalizedToken = normalizedToken.slice(0, -7);
     if (normalizedToken.includes("gamemodeinteger")) return { html: "", numeric: null };
@@ -1400,6 +1447,16 @@ function resolveAbilityToken(tokenRaw, ctx) {
       return {
         html: `<span class="ability-detail-number">${formatAbilityNumber(scaled)} <span class="ability-detail-eq">(${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(source.label)})</span></span>`,
         numeric: scaled,
+      };
+    }
+
+    if (Object.prototype.hasOwnProperty.call(localCtx.knownTokens, baseToken)) {
+      const v = localCtx.knownTokens[baseToken];
+      if (v === "" || v === "-") return { html: "", numeric: null };
+      const parsed = Number(v);
+      return {
+        html: `<span class="ability-detail-number">${v}</span>`,
+        numeric: Number.isFinite(parsed) ? parsed : null,
       };
     }
 
