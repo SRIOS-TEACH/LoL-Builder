@@ -31,8 +31,6 @@ Before committing JavaScript changes, you can run fast syntax checks from the re
 node --check JS/champLookup.js
 node --check JS/itemLookup.js
 node --check JS/builder.js
-node tests/itemPolicy.test.js
-node tests/abilityRules.test.js
 ```
 
 ---
@@ -58,7 +56,6 @@ node tests/abilityRules.test.js
 - `docs/ARCHITECTURE.md` — high-level ownership and module boundaries.
 - `docs/CONTRIBUTING.md` — coding conventions and contributor workflow.
 - `docs/DATA_SOURCES.md` — external payload inventory and purpose.
-- `docs/TESTING.md` — syntax, unit, and manual smoke checks.
 
 ### CSS
 - `CSS/lolBuilder.css` — project-specific layout/theme styles for all pages.

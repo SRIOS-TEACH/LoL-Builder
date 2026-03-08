@@ -1523,11 +1523,10 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
   const vars = Object.fromEntries((spell.vars || []).map((v) => [String(v.key || "").toLowerCase(), v]));
   
   const cdragonSpell = BUILDER.cdragonAbilityData?.[spellKey] || null;
-  const calcEntries = Object.entries(cdragonSpell?.calculations || {}).map(([k, calc]) => {
+  const calcLookup = Object.fromEntries(Object.entries(cdragonSpell?.calculations || {}).map(([k, calc]) => {
     const evaluated = stats ? evaluateGameCalculation(calc, cdragonSpell?.dataValues || [], safeRank, stats, cdragonSpell?.calculations || {}) : null;
     return [String(k).toLowerCase(), evaluated];
-  });
-  const calcLookup = Object.fromEntries(calcEntries);
+  }));
 
   const knownTokens = {
     cost: parseByRank(spell.costBurn, safeRank),
@@ -1558,66 +1557,6 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
     .replace(/\s{2,}/g, " ")
     .trim();
 }
-
-async function runAbilityTagResolutionAudit(sampleChampionNames = null) {
-  const names = Array.isArray(sampleChampionNames) && sampleChampionNames.length
-    ? sampleChampionNames
-    : Object.keys(BUILDER.champions || {});
-  const report = [];
-
-  for (const name of names) {
-    const details = await window.ApiClient.fetchChampionDetails(BUILDER.version, name).catch(() => null);
-    const champ = details?.data?.[name];
-    if (!champ) continue;
-    const cdragonAbilityData = await loadCdragonAbilityData(name);
-
-    champ.spells.forEach((spell, idx) => {
-      const spellKey = ["q", "w", "e", "r"][idx];
-      const tooltip = spell.tooltip || "";
-      const tokens = Array.from(tooltip.matchAll(/\{\{\s*([^}]+?)\s*\}\}/g)).map((m) => String(m[1] || "").trim());
-
-      const stats = {
-        ap: 0,
-        totalAd: champ.stats.attackdamage,
-        bonusAd: 0,
-        armor: champ.stats.armor,
-        bonusArmor: 0,
-        mr: champ.stats.spellblock,
-        bonusMr: 0,
-        hp: champ.stats.hp,
-        bonusHp: 0,
-        mp: champ.stats.mp,
-        bonusMp: 0,
-      };
-      const vars = Object.fromEntries((spell.vars || []).map((v) => [String(v.key || "").toLowerCase(), v]));
-      const cdragonSpell = cdragonAbilityData?.[spellKey] || null;
-      const safeRank = 1;
-      const calcLookup = Object.fromEntries(Object.entries(cdragonSpell?.calculations || {}).map(([k, calc]) => {
-        const evaluated = evaluateGameCalculation(calc, cdragonSpell?.dataValues || [], safeRank, stats, cdragonSpell?.calculations || {});
-        return [String(k).toLowerCase(), evaluated];
-      }));
-      const knownTokens = {
-        cost: parseByRank(spell.costBurn, safeRank),
-        cooldown: parseByRank(spell.cooldownBurn, safeRank),
-        range: parseByRank(spell.rangeBurn, safeRank),
-        abilityresourcename: (spell.costType || "").replace(/<[^>]+>/g, "").replace(/[{}`]/g, "").trim() || "Mana",
-        spellmodifierdescriptionappend: "",
-      };
-      const ctx = { spell, safeRank, stats, vars, cdragonSpell, calcLookup, knownTokens };
-
-      const unresolved = tokens.filter((tokenRaw) => !resolveAbilityToken(tokenRaw, ctx)).map((t) => t.toLowerCase());
-      if (unresolved.length) {
-        report.push({ champion: name, spell: spellKey.toUpperCase(), unresolved: Array.from(new Set(unresolved)) });
-      }
-    });
-  }
-
-  console.groupCollapsed(`Ability tag resolution audit: ${report.length} issue(s)`);
-  report.forEach((row) => console.log(`${row.champion} ${row.spell}:`, row.unresolved.join(", ")));
-  console.groupEnd();
-  return report;
-}
-window.runAbilityTagResolutionAudit = runAbilityTagResolutionAudit;
 
 function renderAbilityCards() {
   const root = document.getElementById("abilityCards");
