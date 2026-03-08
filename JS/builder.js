@@ -200,13 +200,8 @@ function dedupeBuilderItems(itemEntries, preferredMaps = [11]) {
   return window.ItemPolicy.dedupeByNameWithMapPriority(itemEntries, new Set(preferredMaps));
 }
 
-async function loadBuilderData() {
-  BUILDER.version = await window.ApiClient.fetchLatestVersion();
-  await hydrateRunesFromDdragon(BUILDER.version);
 
-  const champions = await window.ApiClient.fetchChampionIndex(BUILDER.version);
-  BUILDER.champions = champions.data;
-
+async function hydrateRunesFromDdragon() {
   const runesReforged = await window.ApiClient.fetchRunesReforged();
   ingestRunesReforged(runesReforged);
 
@@ -217,6 +212,16 @@ async function loadBuilderData() {
   BUILDER.runeSelections.secondaryPath = defaultSecondary;
   BUILDER.runeSelections.primary = getPathPrimaryDefaults(defaultPrimary);
   BUILDER.runeSelections.secondary = getPathSecondaryDefaults(defaultSecondary);
+}
+
+async function loadBuilderData() {
+  BUILDER.version = await window.ApiClient.fetchLatestVersion();
+  await hydrateRunesFromDdragon(BUILDER.version);
+
+  const champions = await window.ApiClient.fetchChampionIndex(BUILDER.version);
+  BUILDER.champions = champions.data;
+
+  await hydrateRunesFromDdragon();
 
   const [items, cdtbData] = await Promise.all([
     window.ApiClient.fetchItemIndex(BUILDER.version),
@@ -1872,6 +1877,44 @@ function renderRunePanel() {
       const rune = getRuneMeta(runeId);
       const active = selected.has(runeId) ? "is-active" : "";
       return `<button class="rune-grid-btn ${active}" data-rune-choice-target="${getSecondaryChoiceTarget(runeId)}" data-rune-choice-id="${runeId}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc}`)}" aria-label="${rune.name}">${runeImgTag(rune)}</button>`;
+    }).join("")).join("")}</div>`;
+  };
+
+  const escapeAttr = (value) => String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/'/g, "&#39;");
+
+  const renderPrimaryRuneGrid = () => {
+    const rows = primaryPath.primaryRows || [];
+    return `<div class="rune-subpanel-grid rune-subpanel-grid-primary">${rows.map((row, rowIndex) => row.map((runeId) => {
+      const rune = getRuneMeta(runeId);
+      const active = BUILDER.runeSelections.primary[rowIndex] === runeId ? "is-active" : "";
+      return `<button type="button" class="rune-grid-btn ${active}" data-rune-choice-target="primary_${rowIndex}" data-rune-choice-id="${runeId}" data-desc="${escapeAttr(`${rune.name}: ${rune.longDesc || rune.desc}`)}" aria-label="${rune.name}">${runeImgTag(rune)}</button>`;
+    }).join("")).join("")}</div>`;
+  };
+
+  const getSecondaryChoiceTarget = (runeId) => {
+    const row = getSecondaryRowIndex(BUILDER.runeSelections.secondaryPath, runeId);
+    const [first, second] = BUILDER.runeSelections.secondary;
+    if (runeId === first) return "secondary_0";
+    if (runeId === second) return "secondary_1";
+    const firstRow = getSecondaryRowIndex(BUILDER.runeSelections.secondaryPath, first);
+    const secondRow = getSecondaryRowIndex(BUILDER.runeSelections.secondaryPath, second);
+    if (row === firstRow) return "secondary_1";
+    if (row === secondRow) return "secondary_0";
+    return "secondary_0";
+  };
+
+  const renderSecondaryRuneGrid = () => {
+    const rows = getSecondaryRows(BUILDER.runeSelections.secondaryPath);
+    const selected = new Set(BUILDER.runeSelections.secondary);
+    return `<div class="rune-subpanel-grid">${rows.map((row) => row.map((runeId) => {
+      const rune = getRuneMeta(runeId);
+      const active = selected.has(runeId) ? "is-active" : "";
+      return `<button type="button" class="rune-grid-btn ${active}" data-rune-choice-target="${getSecondaryChoiceTarget(runeId)}" data-rune-choice-id="${runeId}" data-desc="${escapeAttr(`${rune.name}: ${rune.longDesc || rune.desc}`)}" aria-label="${rune.name}">${runeImgTag(rune)}</button>`;
     }).join("")).join("")}</div>`;
   };
 
