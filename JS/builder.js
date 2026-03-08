@@ -476,10 +476,8 @@ function extractAbilityDataFromRoot(raw, championName, pathName) {
     `Characters/${pathName}/CharacterRecords/Root`,
   ];
   const rootPath = rootCandidates
-    .map((candidate) => pathIndex.get(normalizeCdragonRecordPath(candidate)))
+    .map((candidate) => pathIndex.get(candidate))
     .find(Boolean)
-    || pathIndex.get(`characters/${pathName}/characterrecords/root`)
-    || Array.from(pathIndex.entries()).find(([k]) => k.endsWith(`/characters/${pathName}/characterrecords/root`) || k.endsWith(`/characterrecords/root`))?.[1]
     || null;
 
   const root = rootPath ? raw[rootPath] : null;
