@@ -199,6 +199,12 @@ function wireBuilderUiEvents() {
     setSlotItem(btn.dataset.setItemId);
   });
   document.getElementById("runePanel").addEventListener("click", (event) => {
+    const quickBtn = event.target.closest("[data-rune-choice-target][data-rune-choice-id]");
+    if (quickBtn && !quickBtn.disabled) {
+      BUILDER.runeModalTarget = quickBtn.dataset.runeChoiceTarget;
+      selectRuneOption(quickBtn.dataset.runeChoiceId);
+      return;
+    }
     const btn = event.target.closest("[data-rune-target]");
     if (!btn) return;
     openRuneModal(btn.dataset.runeTarget);
@@ -1843,21 +1849,54 @@ function renderRunePanel() {
     return `<div class="rune-slot-row"><button class="rune-slot-btn" data-rune-target="${target}">${runeImgTag(rune)}</button><div class="rune-slot-label"><span class='rune-slot-kicker'>${label}</span><strong>${rune.name}</strong></div></div>`;
   };
 
+  const escapeAttr = (value) => String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/'/g, "&#39;");
+
+  const renderPrimaryRuneGrid = () => {
+    const rows = primaryPath.primaryRows || [];
+    return `<div class="rune-subpanel-grid rune-subpanel-grid-primary">${rows.map((row, rowIndex) => row.map((runeId) => {
+      const rune = getRuneMeta(runeId);
+      const active = BUILDER.runeSelections.primary[rowIndex] === runeId ? "is-active" : "";
+      return `<button class="rune-grid-btn ${active}" data-rune-choice-target="primary_${rowIndex}" data-rune-choice-id="${runeId}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc}`)}" aria-label="${rune.name}">${runeImgTag(rune)}</button>`;
+    }).join("")).join("")}</div>`;
+  };
+
+  const getSecondaryChoiceTarget = (runeId) => {
+    const row = getSecondaryRowIndex(BUILDER.runeSelections.secondaryPath, runeId);
+    const [first, second] = BUILDER.runeSelections.secondary;
+    if (runeId === first) return "secondary_0";
+    if (runeId === second) return "secondary_1";
+    const firstRow = getSecondaryRowIndex(BUILDER.runeSelections.secondaryPath, first);
+    const secondRow = getSecondaryRowIndex(BUILDER.runeSelections.secondaryPath, second);
+    if (row === firstRow) return "secondary_1";
+    if (row === secondRow) return "secondary_0";
+    return "secondary_0";
+  };
+
+  const renderSecondaryRuneGrid = () => {
+    const rows = getSecondaryRows(BUILDER.runeSelections.secondaryPath);
+    const selected = new Set(BUILDER.runeSelections.secondary);
+    return `<div class="rune-subpanel-grid">${rows.map((row) => row.map((runeId) => {
+      const rune = getRuneMeta(runeId);
+      const active = selected.has(runeId) ? "is-active" : "";
+      return `<button class="rune-grid-btn ${active}" data-rune-choice-target="${getSecondaryChoiceTarget(runeId)}" data-rune-choice-id="${runeId}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc}`)}" aria-label="${rune.name}">${runeImgTag(rune)}</button>`;
+    }).join("")).join("")}</div>`;
+  };
+
   ensureSecondarySelectionsValid();
 
   root.innerHTML = `
     <div class="rune-column-block">
       <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="primaryPath_0"><img src="${primaryPath.icon}" alt="${primaryPath.name}"><span>${primaryPath.name}</span></button></div>
-      ${renderSlot(BUILDER.runeSelections.primary[0], "Keystone", "primary_0")}
-      ${renderSlot(BUILDER.runeSelections.primary[1], "Row 1", "primary_1")}
-      ${renderSlot(BUILDER.runeSelections.primary[2], "Row 2", "primary_2")}
-      ${renderSlot(BUILDER.runeSelections.primary[3], "Row 3", "primary_3")}
+      ${renderPrimaryRuneGrid()}
     </div>
     <div class="rune-column-block">
       <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="secondaryPath_0"><img src="${secondaryPath.icon}" alt="${secondaryPath.name}"><span>${secondaryPath.name}</span></button></div>
-      <div class='rune-subsection-title'>Secondary Runes</div>
-      ${renderSlot(BUILDER.runeSelections.secondary[0], "Secondary 1", "secondary_0")}
-      ${renderSlot(BUILDER.runeSelections.secondary[1], "Secondary 2", "secondary_1")}
+      ${renderSecondaryRuneGrid()}
     </div>
     <div class="rune-shard-row-wrap">
       <div class='rune-subsection-title rune-subsection-title-shards'>Stat Shards</div>
