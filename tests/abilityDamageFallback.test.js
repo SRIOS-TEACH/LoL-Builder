@@ -56,4 +56,30 @@ const calc = {
 const result = window.__evaluateGameCalculation(calc, dataValues, 2, stats, {});
 assert.strictEqual(result.total, 60);
 
+const calcMap = {
+  basedamage: {
+    __type: 'GameCalculation',
+    mFormulaParts: [{ __type: 'NumberCalculationPart', mNumber: 25 }],
+    mDisplayAsPercent: false,
+  },
+  totaldamage: {
+    __type: 'GameCalculation',
+    mFormulaParts: [{ __type: 'SumOfSubPartsCalculationPart', mSubParts: [
+      { __type: 'NumberCalculationPart', mNumber: 10 },
+      { __type: 'NumberCalculationPart', mNumber: 15 },
+    ] }],
+    mDisplayAsPercent: false,
+  },
+};
+
+const conditionalCalc = {
+  __type: 'GameCalculationConditional',
+  mDefaultGameCalculation: 'basedamage',
+};
+const conditionalEval = window.__evaluateGameCalculation(conditionalCalc, dataValues, 1, stats, calcMap);
+assert.strictEqual(conditionalEval.total, 25);
+
+const subPartsEval = window.__evaluateGameCalculation(calcMap.totaldamage, dataValues, 1, stats, calcMap);
+assert.strictEqual(subPartsEval.total, 25);
+
 console.log('ability calculation coverage tests passed');
