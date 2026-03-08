@@ -151,7 +151,7 @@ function slugifyRuneName(name) {
 
 function toDdragonPerkIcon(version, iconPath) {
   if (!iconPath) return "";
-  return `https://ddragon.canisback.com/img/${String(iconPath).replace(/^\/+/, "")}`;
+  return `https://ddragon.leagueoflegends.com/cdn/img/${String(iconPath).replace(/^\/+/, "")}`;
 }
 
 function stripHtmlTags(text) {
