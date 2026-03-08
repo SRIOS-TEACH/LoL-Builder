@@ -16,7 +16,7 @@
 - Keep derived values computed in helper functions; avoid ad-hoc mutations in render methods.
 
 ## Before opening a PR
-1. Run syntax checks listed in `docs/TESTING.md`.
+1. Run syntax checks for the edited JavaScript files (for example: `node --check JS/builder.js`).
 2. Validate core flows manually:
    - Champion lookup renders champion and abilities.
    - Item lookup search/filter/detail interactions work.
