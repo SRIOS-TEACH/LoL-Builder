@@ -732,6 +732,10 @@ body {
   align-items: center;
 }
 
+.rune-option-btn > div {
+  min-width: 0;
+}
+
 .rune-option-btn:hover {
   border-color: #90b3ff;
   background: rgba(27, 51, 95, 0.93);
@@ -771,14 +775,17 @@ body {
 }
 
 .rune-option-name {
-  font-size: 1.16rem;
+  font-size: 1.02rem;
   font-weight: 800;
-  line-height: 1.05;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .rune-option-desc {
-  font-size: 0.9rem;
+  font-size: 0.86rem;
+  line-height: 1.2;
   color: #d0dcfb;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 780px) {
