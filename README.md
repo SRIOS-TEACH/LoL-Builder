@@ -31,8 +31,6 @@ Before committing JavaScript changes, you can run fast syntax checks from the re
 node --check JS/champLookup.js
 node --check JS/itemLookup.js
 node --check JS/builder.js
-node tests/itemPolicy.test.js
-node tests/abilityRules.test.js
 ```
 
 ---
@@ -58,7 +56,6 @@ node tests/abilityRules.test.js
 - `docs/ARCHITECTURE.md` — high-level ownership and module boundaries.
 - `docs/CONTRIBUTING.md` — coding conventions and contributor workflow.
 - `docs/DATA_SOURCES.md` — external payload inventory and purpose.
-- `docs/TESTING.md` — syntax, unit, and manual smoke checks.
 
 ### CSS
 - `CSS/lolBuilder.css` — project-specific layout/theme styles for all pages.
@@ -78,7 +75,8 @@ node tests/abilityRules.test.js
   - Champion splash art: `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/{champion}_0.jpg`
 - **Community Dragon** (advanced calculations + runtime assets):
   - Item calculations: `https://raw.communitydragon.org/latest/game/items.cdtb.bin.json`
-  - Champion spell calculations: `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/en_us/v1/champions/{championId}.json`
+  - Champion spell calculations: `https://raw.communitydragon.org/latest/game/data/characters/ashe/ashe.bin.json`
+  - Champion Descriptions: `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/en_us/v1/champions/{championId}.json`
   - Rune/perk icons: `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/`
 
 ---
