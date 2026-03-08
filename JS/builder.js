@@ -1136,6 +1136,7 @@ function formatAbilityNumber(value, isPercent = false) {
 }
 
 function evaluateCalculationPart(part, dataValues, rank, stats) {
+  console.log("here");
   if (!part) return null;
   const t = String(part?.__type || "");
 
@@ -1144,7 +1145,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats) {
     return { value: val, text: formatAbilityNumber(val) };
   }
   if (t === "NamedDataValueCalculationPart") {
-    console.log("here");
+    
     const data = getSpellDataValue(dataValues, part?.mDataValue, rank);
     if (!data) return null;
     return { value: data.current, text: formatAbilityNumber(data.current) };
