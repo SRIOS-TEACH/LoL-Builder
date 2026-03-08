@@ -784,6 +784,7 @@ body {
   font-size: 0.9rem;
   line-height: 1.25;
   color: #d0dcfb;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 780px) {
