@@ -708,6 +708,102 @@ body {
   margin-bottom: 0.1rem;
 }
 
+.rune-secondary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.rune-secondary-cell {
+  position: relative;
+  border: 1px solid rgba(95, 127, 190, 0.72);
+  border-radius: 999px;
+  background: rgba(10, 18, 36, 0.75);
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  padding: 0;
+}
+
+.rune-secondary-cell img {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  filter: grayscale(0.98) brightness(0.78);
+  opacity: 0.85;
+}
+
+.rune-secondary-cell.is-selected {
+  border-color: #efc96e;
+  box-shadow: 0 0 0 2px rgba(239, 201, 110, 0.28);
+}
+
+.rune-secondary-cell.is-selected img {
+  filter: none;
+  opacity: 1;
+}
+
+.rune-secondary-hover-desc {
+  position: absolute;
+  bottom: calc(100% + 0.3rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 200px;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: #eaf2ff;
+  background: rgba(5, 12, 28, 0.95);
+  border: 1px solid rgba(130, 162, 229, 0.6);
+  border-radius: 6px;
+  padding: 0.3rem 0.4rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+  z-index: 3;
+  white-space: normal;
+}
+
+.rune-secondary-cell:hover .rune-secondary-hover-desc,
+.rune-secondary-cell:focus-visible .rune-secondary-hover-desc {
+  opacity: 1;
+}
+
+
+.rune-shard-icon-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.rune-shard-icon-btn {
+  position: relative;
+  border: 1px solid rgba(95, 127, 190, 0.72);
+  border-radius: 999px;
+  background: rgba(10, 18, 36, 0.75);
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  padding: 0;
+}
+
+.rune-shard-icon-btn img {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+}
+
+.rune-shard-icon-btn:hover .rune-secondary-hover-desc,
+.rune-shard-icon-btn:focus-visible .rune-secondary-hover-desc {
+  opacity: 1;
+}
+
 .rune-modal-body {
   width: min(900px, 96vw);
 }
