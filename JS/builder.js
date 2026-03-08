@@ -21,7 +21,7 @@ const BUILDER = {
     secondaryPath: "precision",
     primary: ["arcane-comet", "manaflow-band", "absolute-focus", "gathering-storm"],
     secondary: ["legend-haste", "cut-down"],
-    shards: ["adaptive-force", "adaptive-force", "scaling-health"],
+    shards: ["adaptive-force", "adaptive-force", "health"],
   },
 };
 
@@ -126,15 +126,90 @@ const RUNE_DATA = {
     "magical-footwear": { name: "Magical Footwear", desc: "Get free boots at 12 min.", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Inspiration/MagicalFootwear/MagicalFootwear.png" },
     "biscuit-delivery": { name: "Biscuit Delivery", desc: "Periodic lane sustain biscuits.", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Inspiration/BiscuitDelivery/BiscuitDelivery.png" },
     "cosmic-insight": { name: "Cosmic Insight", desc: "Summoner and item haste.", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/Styles/Inspiration/CosmicInsight/CosmicInsight.png" },
-    "adaptive-force": { name: "Adaptive", desc: "+9 Adaptive Force", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsAdaptiveForceIcon.png" },
-    "attack-speed": { name: "Attack Speed", desc: "+10% Attack Speed", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsAttackSpeedIcon.png" },
+    "adaptive-force": { name: "Adaptive Force", desc: "+9 Adaptive Force", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsAdaptiveForceIcon.png" },
+    "attack-speed": { name: "Attack Speed", desc: "+10% bonus Attack Speed", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsAttackSpeedIcon.png" },
     "ability-haste": { name: "Ability Haste", desc: "+8 Ability Haste", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsCDRScalingIcon.png" },
-    "scaling-health": { name: "Scaling Health", desc: "+10-180 Health", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsHealthScalingIcon.png" },
-    "armor": { name: "Armor", desc: "+6 Armor", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsArmorIcon.png" },
-    "magic-resist": { name: "Magic Resist", desc: "+10 Magic Resist", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsMagicResIcon.png" },
+    "move-speed": { name: "Move Speed", desc: "+2.5% bonus Move Speed", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsMovementSpeedIcon.png" },
+    "scaling-health": { name: "Scaling Health", desc: "+10-200 Bonus Health", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsHealthScalingIcon.png" },
+    "health": { name: "Health", desc: "+65 Bonus Health", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsHealthPlusIcon.png" },
+    "tenacity-slow-resist": { name: "Tenacity & Slow Resist", desc: "+15% Tenacity and Slow Resist", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsTenacityIcon.png" },
   },
-  shardOptions: ["adaptive-force", "attack-speed", "ability-haste", "scaling-health", "armor", "magic-resist"],
+  shardOptions: ["adaptive-force", "attack-speed", "ability-haste", "move-speed", "scaling-health", "health", "tenacity-slow-resist"],
 };
+
+const RUNE_PATH_ID_TO_KEY = {
+  7200: "domination",
+  7201: "precision",
+  7202: "sorcery",
+  7203: "inspiration",
+  7204: "resolve",
+};
+
+function slugifyRuneName(name) {
+  return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function toDdragonPerkIcon(version, iconPath) {
+  if (!iconPath) return "";
+  return `https://ddragon.canisback.com/img/${String(iconPath).replace(/^\/+/, "")}`;
+}
+
+function stripHtmlTags(text) {
+  return String(text || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function buildPathDefaults(paths) {
+  return Object.fromEntries(
+    Object.entries(paths).map(([id, path]) => [
+      id,
+      (path.primaryRows || []).map((row) => row[0]).filter(Boolean).slice(0, 4),
+    ]),
+  );
+}
+
+function isApAdaptiveChampion() {
+  const tags = new Set(BUILDER.championData?.tags || []);
+  if (tags.has("Mage")) return true;
+  if (tags.has("Marksman") || tags.has("Fighter")) return false;
+  return true;
+}
+
+async function hydrateRunesFromDdragon(version) {
+  const runes = await window.ApiClient.fetchRunesReforged(version).catch(() => null);
+  if (!Array.isArray(runes) || !runes.length) return;
+
+  const nextPaths = { ...RUNE_DATA.paths };
+  const nextLookup = { ...RUNE_DATA.runeLookup };
+
+  runes.forEach((path) => {
+    const key = RUNE_PATH_ID_TO_KEY[path.id];
+    if (!key) return;
+
+    const pathIcon = toDdragonPerkIcon(version, path.icon);
+    const primaryRows = (path.slots || []).map((slot) => (slot.runes || []).map((rune) => {
+      const slug = slugifyRuneName(rune.name);
+      nextLookup[slug] = {
+        name: rune.name,
+        desc: stripHtmlTags(rune.longDesc || rune.shortDesc || ""),
+        icon: toDdragonPerkIcon(version, rune.icon),
+      };
+      return slug;
+    }));
+
+    nextPaths[key] = {
+      ...nextPaths[key],
+      name: path.name,
+      icon: pathIcon || nextPaths[key]?.icon || "",
+      splash: `url(${pathIcon || nextPaths[key]?.icon || ""})`,
+      primaryRows: primaryRows.length ? primaryRows : (nextPaths[key]?.primaryRows || []),
+    };
+  });
+
+  RUNE_DATA.paths = nextPaths;
+  RUNE_DATA.runeLookup = nextLookup;
+  RUNE_DATA.pathDefaults = buildPathDefaults(nextPaths);
+}
+
 function setStatus(message, isError = false) {
   const el = document.getElementById("builderStatus");
   el.textContent = message || "";
@@ -199,12 +274,12 @@ function wireBuilderUiEvents() {
     setSlotItem(btn.dataset.setItemId);
   });
   document.getElementById("runePanel").addEventListener("click", (event) => {
-    const quickBtn = event.target.closest("[data-rune-choice-target][data-rune-choice-id]");
-    if (quickBtn && !quickBtn.disabled) {
-      BUILDER.runeModalTarget = quickBtn.dataset.runeChoiceTarget;
-      selectRuneOption(quickBtn.dataset.runeChoiceId);
+    const secondaryRuneBtn = event.target.closest("[data-secondary-rune-id]");
+    if (secondaryRuneBtn) {
+      selectSecondaryRuneDirect(secondaryRuneBtn.dataset.secondaryRuneId);
       return;
     }
+
     const btn = event.target.closest("[data-rune-target]");
     if (!btn) return;
     openRuneModal(btn.dataset.runeTarget);
@@ -247,6 +322,7 @@ function dedupeBuilderItems(itemEntries, preferredMaps = [11]) {
 
 async function loadBuilderData() {
   BUILDER.version = await window.ApiClient.fetchLatestVersion();
+  await hydrateRunesFromDdragon(BUILDER.version);
 
   const champions = await window.ApiClient.fetchChampionIndex(BUILDER.version);
   BUILDER.champions = champions.data;
@@ -1740,12 +1816,17 @@ function getRuneStats() {
   selected.forEach((runeId) => {
     if (runeId === "ability-haste") totals.haste += 8;
     if (runeId === "attack-speed") totals.asPct += 10;
-    if (runeId === "scaling-health") totals.hp += 10 + (BUILDER.level - 1) * 10;
+    if (runeId === "scaling-health") totals.hp += 10 + ((BUILDER.level - 1) * 190) / 17;
+    if (runeId === "health") totals.hp += 65;
+    if (runeId === "move-speed") totals.msPct += 2.5;
+    if (runeId === "tenacity-slow-resist") totals.tenacity += 15;
     if (runeId === "armor") totals.armor += 6;
     if (runeId === "magic-resist") totals.mr += 10;
 
-    // Adaptive force currently modeled as AP in this lightweight builder.
-    if (runeId === "adaptive-force") totals.ap += 9;
+    if (runeId === "adaptive-force") {
+      if (isApAdaptiveChampion()) totals.ap += 9;
+      else totals.ad += 9 * 0.6;
+    }
 
     // Sorcery: +5 Ability Haste at level 5 and again at level 8.
     if (runeId === "transcendence") {
@@ -1848,6 +1929,22 @@ function renderRunePanel() {
     const rune = getRuneMeta(id);
     return `<div class="rune-slot-row"><button class="rune-slot-btn" data-rune-target="${target}">${runeImgTag(rune)}</button><div class="rune-slot-label"><span class='rune-slot-kicker'>${label}</span><strong>${rune.name}</strong></div></div>`;
   };
+  const renderShardIcon = (slotIndex) => {
+    const rune = getRuneMeta(BUILDER.runeSelections.shards[slotIndex]);
+    return `<button class="rune-shard-icon-btn" data-rune-target="shard_${slotIndex}" type="button">${runeImgTag(rune)}<span class="rune-secondary-hover-desc">${rune.desc || rune.name}</span></button>`;
+  };
+  const renderSecondaryGrid = () => {
+    const rows = getSecondaryRows(BUILDER.runeSelections.secondaryPath);
+    const selected = new Set(BUILDER.runeSelections.secondary);
+    return rows
+      .flat()
+      .map((runeId) => {
+        const rune = getRuneMeta(runeId);
+        const isSelected = selected.has(runeId);
+        return `<button class="rune-secondary-cell ${isSelected ? "is-selected" : ""}" data-secondary-rune-id="${runeId}" type="button">${runeImgTag(rune)}<span class="rune-secondary-hover-desc">${rune.desc || rune.name}</span></button>`;
+      })
+      .join("");
+  };
 
   const escapeAttr = (value) => String(value || "")
     .replace(/&/g, "&amp;")
@@ -1896,17 +1993,32 @@ function renderRunePanel() {
     </div>
     <div class="rune-column-block">
       <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="secondaryPath_0"><img src="${secondaryPath.icon}" alt="${secondaryPath.name}"><span>${secondaryPath.name}</span></button></div>
-      ${renderSecondaryRuneGrid()}
-    </div>
-    <div class="rune-shard-row-wrap">
+      <div class='rune-subsection-title'>Secondary Runes</div>
+      <div class="rune-secondary-grid">${renderSecondaryGrid()}</div>
       <div class='rune-subsection-title rune-subsection-title-shards'>Stat Shards</div>
-      <div class="rune-shard-row">
-        ${renderSlot(BUILDER.runeSelections.shards[0], "Shard 1", "shard_0")}
-        ${renderSlot(BUILDER.runeSelections.shards[1], "Shard 2", "shard_1")}
-        ${renderSlot(BUILDER.runeSelections.shards[2], "Shard 3", "shard_2")}
-      </div>
+      <div class="rune-shard-icon-row">${renderShardIcon(0)}${renderShardIcon(1)}${renderShardIcon(2)}</div>
     </div>
   `;
+}
+
+function selectSecondaryRuneDirect(id) {
+  const pathId = BUILDER.runeSelections.secondaryPath;
+  const clickedRow = getSecondaryRowIndex(pathId, id);
+  if (clickedRow < 0 || BUILDER.runeSelections.secondary.includes(id)) return;
+
+  const [a, b] = BUILDER.runeSelections.secondary;
+  const rowA = getSecondaryRowIndex(pathId, a);
+  const rowB = getSecondaryRowIndex(pathId, b);
+
+  if (rowA === clickedRow) BUILDER.runeSelections.secondary[0] = id;
+  else if (rowB === clickedRow) BUILDER.runeSelections.secondary[1] = id;
+  else if (rowA < 0) BUILDER.runeSelections.secondary[0] = id;
+  else BUILDER.runeSelections.secondary[1] = id;
+
+  ensureSecondarySelectionsValid();
+  renderRunePanel();
+  renderStats();
+  renderAbilityCards();
 }
 
 function flattenSecondaryOptions(pathId) {
@@ -1978,8 +2090,8 @@ function getRuneOptions(target) {
   const shardRow = Number(target.split("_")[1]);
   const perRow = [
     ["adaptive-force", "attack-speed", "ability-haste"],
-    ["adaptive-force", "scaling-health"],
-    ["scaling-health", "armor", "magic-resist"],
+    ["adaptive-force", "move-speed", "scaling-health"],
+    ["health", "tenacity-slow-resist", "scaling-health"],
   ];
   return (perRow[shardRow] || RUNE_DATA.shardOptions).map((id) => ({ id, ...getRuneMeta(id) }));
 }
