@@ -463,7 +463,11 @@ function extractCdragonSpell(spellRecord) {
   };
 }
 
-function extractAbilityDataFromRoot(raw, championName, pathName) {
+function normalizeSpellRecordName(name) {
+  return String(name || "").replace(/[^a-z0-9]/gi, "").toLowerCase();
+}
+
+function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) {
   const pathIndex = new Map(Object.keys(raw || {}).map((key) => [normalizeCdragonRecordPath(key), key]));
   const rootCandidates = [
     `Characters/${championName}/CharacterRecords/Root`,
@@ -478,12 +482,43 @@ function extractAbilityDataFromRoot(raw, championName, pathName) {
   const abilities = Array.isArray(root?.mAbilities) ? root.mAbilities : [];
   if (!abilities.length) return null;
 
-  const slotByIndex = ["q", "w", "e", "r", "p"];
+  const abilityByName = new Map();
+
+  abilities.forEach((abilityPath) => {
+    const abilityRecord = resolveCdragonRecord(raw, pathIndex, abilityPath);
+    if (!abilityRecord) return;
+    const thisName = normalizeSpellRecordName(abilityRecord?.mScriptName || abilityRecord?.mObjectPath || abilityRecord?.mName);
+    if (thisName) abilityByName.set(thisName, abilityRecord);
+  });
+
   const bySlot = {};
 
-  abilities.slice(0, slotByIndex.length).forEach((abilityPath, idx) => {
-    const slot = slotByIndex[idx];
-    const abilityRecord = resolveCdragonRecord(raw, pathIndex, abilityPath);
+  ddSpells.forEach((spell, idx) => {
+    const slot = ["q", "w", "e", "r"][idx];
+    if (!slot) return;
+
+    const nameCandidates = [
+      `Characters/${championName}/Spells/${spell?.name}Ability`,
+      `Characters/${pathName}/Spells/${spell?.name}Ability`,
+      `Characters/${championName}/Spells/${spell?.id}Ability`,
+      `Characters/${pathName}/Spells/${spell?.id}Ability`,
+      spell?.name,
+      spell?.id,
+    ].filter(Boolean);
+
+    let abilityRecord = nameCandidates
+      .map((candidate) => resolveCdragonRecord(raw, pathIndex, candidate))
+      .find(Boolean)
+      || null;
+
+    if (!abilityRecord) {
+      const normalizedCandidates = nameCandidates.map((candidate) => normalizeSpellRecordName(candidate));
+      abilityRecord = normalizedCandidates
+        .map((candidate) => abilityByName.get(candidate))
+        .find(Boolean)
+        || null;
+    }
+
     const childSpells = Array.isArray(abilityRecord?.mChildSpells) ? abilityRecord.mChildSpells : [];
     if (!childSpells.length) return;
 
@@ -503,16 +538,31 @@ function extractAbilityDataFromRoot(raw, championName, pathName) {
     bySlot[slot] = parsed;
   });
 
+  const passivePathCandidates = [
+    `Characters/${championName}/Spells/${championName}PassiveAbility`,
+    `Characters/${pathName}/Spells/${pathName}PassiveAbility`,
+  ];
+  const passiveRecord = passivePathCandidates
+    .map((candidate) => resolveCdragonRecord(raw, pathIndex, candidate))
+    .find(Boolean)
+    || null;
+  if (passiveRecord) {
+    const childSpells = Array.isArray(passiveRecord?.mChildSpells) ? passiveRecord.mChildSpells : [];
+    const primaryChild = resolveCdragonRecord(raw, pathIndex, childSpells[0]);
+    const parsed = extractCdragonSpell(primaryChild);
+    if (parsed) bySlot.p = parsed;
+  }
+
   return Object.keys(bySlot).length ? bySlot : null;
 }
 
-async function loadCdragonAbilityData(championName) {
+async function loadCdragonAbilityData(championName, ddSpells = []) {
   const pathName = normalizeCdragonChampionPath(championName);
   const url = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
   const raw = await fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   if (!raw) return null;
 
-  return extractAbilityDataFromRoot(raw, championName, pathName)
+  return extractAbilityDataFromRoot(raw, championName, pathName, ddSpells)
     || null;
 }
 
@@ -520,7 +570,7 @@ async function setChampion(name) {
   const details = await window.ApiClient.fetchChampionDetails(BUILDER.version, name);
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
-  BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name);
+  BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name, BUILDER.championData?.spells || []);
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
 
   const splashUrl = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`;
@@ -1138,8 +1188,20 @@ function formatCalculationTerms(terms, fallbackValue = 0) {
   return joined || formatAbilityNumber(fallbackValue);
 }
 
-function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
-  if (!part) return null;
+function makeMissingCalc(reason, fallbackValue = 0) {
+  return { value: fallbackValue, text: `[calc-missing: ${reason}]`, missing: true };
+}
+
+function makeMissingGameCalculation(reason, displayAsPercent = false) {
+  return {
+    total: 0,
+    terms: [{ text: `[calc-missing: ${reason}]`, value: 0, missing: true }],
+    displayAsPercent: !!displayAsPercent,
+  };
+}
+
+function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap = null, seen = new Set(), tracePath = "part") {
+  if (!part) return makeMissingCalc(`${tracePath} has no part payload`);
   const t = String(part?.__type || "");
 
   if (t === "NumberCalculationPart") {
@@ -1149,7 +1211,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
   if (t === "NamedDataValueCalculationPart") {
     
     const data = getSpellDataValue(dataValues, part?.mDataValue, rank);
-    if (!data) return null;
+    if (!data) return makeMissingCalc(`${tracePath} NamedDataValue ${part?.mDataValue || "<empty>"} not found`);
     return { value: data.current, text: formatAbilityNumber(data.current) };
   }
   if (t === "StatByCoefficientCalculationPart") {
@@ -1160,7 +1222,8 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
   if (t === "StatByNamedDataValueCalculationPart") {
     const src = getCalcStatSource(part, stats);
     const coeffData = getSpellDataValue(dataValues, part?.mDataValue, rank);
-    const coeff = coeffData ? coeffData.current : 0;
+    const coeff = coeffData ? coeffData.current : null;
+    if (coeff === null) return makeMissingCalc(`${tracePath} StatByNamedDataValue ${part?.mDataValue || "<empty>"} missing`);
     return { value: src.value * coeff, text: `${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}` };
   }
   if (t === "ByCharLevelBreakpointsCalculationPart") {
@@ -1175,20 +1238,21 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
   }
 
   const resolveReferencedGameCalculation = (ref) => {
-    if (!ref) return null;
+    if (!ref) return makeMissingCalc(`${tracePath} has empty game calculation reference`);
     if (typeof ref === "object") {
       const evaluated = evaluateGameCalculation(ref, dataValues, rank, stats, calculationsMap, new Set(seen));
-      if (!evaluated) return null;
+      if (!evaluated) return makeMissingCalc(`${tracePath} inline game calculation unresolved`);
       return { value: evaluated.total, text: formatCalculationTerms(evaluated.terms, evaluated.total) };
     }
     const key = String(ref || "");
-    if (!calculationsMap || !key || seen.has(key)) return null;
+    if (!calculationsMap || !key) return makeMissingGameCalculation(`${tracePath} missing calculations map or key`, calc.mDisplayAsPercent);
+    if (seen.has(key)) return makeMissingGameCalculation(`${tracePath} circular reference ${key}`, calc.mDisplayAsPercent);
     const target = calculationsMap[key];
-    if (!target) return null;
+    if (!target) return makeMissingCalc(`${tracePath} referenced game calculation not found: ${key}`);
     const scopedSeen = new Set(seen);
     scopedSeen.add(key);
     const evaluated = evaluateGameCalculation(target, dataValues, rank, stats, calculationsMap, scopedSeen);
-    if (!evaluated) return null;
+    if (!evaluated) return makeMissingCalc(`${tracePath} referenced game calculation unresolved: ${key}`);
     return { value: evaluated.total, text: formatCalculationTerms(evaluated.terms, evaluated.total) };
   };
 
@@ -1197,7 +1261,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     const directArrayKeys = ["mSubparts", "mSubParts", "mParts", "mFormulaParts"];
     directArrayKeys.forEach((key) => {
       (part?.[key] || []).forEach((sub) => {
-        const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats, calculationsMap, seen);
+        const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.${key}`);
         if (evaluated) out.push(evaluated);
       });
     });
@@ -1206,7 +1270,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     directPartKeys.forEach((key) => {
       const sub = part?.[key];
       if (!sub || typeof sub !== "object") return;
-      const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats, calculationsMap, seen);
+      const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.${key}`);
       if (evaluated) out.push(evaluated);
     });
 
@@ -1220,32 +1284,33 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
 
   if (/SumOfSubParts/i.test(t)) {
     const parts = evaluateChildren();
-    if (!parts.length) return null;
+    if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, calc.mDisplayAsPercent);
     return { value: parts.reduce((a, b) => a + b.value, 0), text: parts.map((p) => p.text).join(" + ") };
   }
 
   if (/ProductOfSubParts|Multiply|Multiplicative/i.test(t)) {
     const parts = evaluateChildren();
-    if (!parts.length) return null;
+    if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, calc.mDisplayAsPercent);
     return { value: parts.reduce((acc, row) => acc * row.value, 1), text: parts.map((p) => p.text).join(" × ") };
   }
 
   if (/Difference|Subtract/i.test(t)) {
     const parts = evaluateChildren();
-    if (!parts.length) return null;
+    if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, calc.mDisplayAsPercent);
     if (parts.length === 1) return parts[0];
     return { value: parts.slice(1).reduce((acc, row) => acc - row.value, parts[0].value), text: `${parts[0].text} - ${parts.slice(1).map((p) => p.text).join(" - ")}` };
   }
 
   if (/Ratio|Divide/i.test(t)) {
     const parts = evaluateChildren();
-    if (parts.length < 2 || parts[1].value === 0) return null;
+    if (parts.length < 2) return makeMissingCalc(`${tracePath} ${t} requires 2 parts`);
+    if (parts[1].value === 0) return makeMissingCalc(`${tracePath} ${t} divider is zero`);
     return { value: parts[0].value / parts[1].value, text: `${parts[0].text} / ${parts[1].text}` };
   }
 
   if (/Clamp|Min|Max/i.test(t)) {
     const parts = evaluateChildren();
-    if (!parts.length) return null;
+    if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, calc.mDisplayAsPercent);
     const head = parts[0].value;
     const floor = Number(part?.mFloor ?? part?.mMinimum ?? Number.NEGATIVE_INFINITY);
     const ceil = Number(part?.mCeiling ?? part?.mMaximum ?? Number.POSITIVE_INFINITY);
@@ -1260,19 +1325,20 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     if (coeffRaw !== 0) {
       return { value: src.value * coeffRaw, text: `${(coeffRaw * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}` };
     }
+    return makeMissingCalc(`${tracePath} has stat coefficient part with zero/empty coefficient`);
   }
 
   const referencedGameCalc = resolveReferencedGameCalculation(part?.mGameCalculation || part?.mModifiedGameCalculation);
   if (referencedGameCalc) return referencedGameCalc;
 
-  return null;
+  return makeMissingCalc(`${tracePath} unsupported part type: ${t || "<unknown>"}`);
 }
 
 function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
   if (!calc || !result) return result;
 
   const multiplier = evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats, calculationsMap, seen);
-  if (multiplier) {
+  if (multiplier && !multiplier.missing) {
     const multiplied = result.total * multiplier.value;
     result = {
       ...result,
@@ -1282,7 +1348,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
   }
 
   const addend = evaluateCalculationPart(calc.mAddend, dataValues, rank, stats, calculationsMap, seen);
-  if (addend) {
+  if (addend && !addend.missing) {
     const added = result.total + addend.value;
     result = {
       ...result,
@@ -1292,7 +1358,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
   }
 
   const subtrahend = evaluateCalculationPart(calc.mSubtrahend, dataValues, rank, stats, calculationsMap, seen);
-  if (subtrahend) {
+  if (subtrahend && !subtrahend.missing) {
     const subtracted = result.total - subtrahend.value;
     result = {
       ...result,
@@ -1302,7 +1368,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
   }
 
   const divider = evaluateCalculationPart(calc.mDivider, dataValues, rank, stats, calculationsMap, seen);
-  if (divider && divider.value !== 0) {
+  if (divider && !divider.missing && divider.value !== 0) {
     const divided = result.total / divider.value;
     result = {
       ...result,
@@ -1314,15 +1380,16 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
   return result;
 }
 
-function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
+function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap = null, seen = new Set(), tracePath = "calc") {
   if (!calc) return null;
   const ctype = String(calc.__type || "");
 
   if (ctype === "GameCalculationModified") {
     const key = String(calc.mModifiedGameCalculation || "");
-    if (!calculationsMap || !key || seen.has(key)) return null;
+    if (!calculationsMap || !key) return makeMissingGameCalculation(`${tracePath} missing calculations map or key`, calc.mDisplayAsPercent);
+    if (seen.has(key)) return makeMissingGameCalculation(`${tracePath} circular reference ${key}`, calc.mDisplayAsPercent);
     seen.add(key);
-    const base = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, seen);
+    const base = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, seen, `${tracePath}.modified(${key})`);
     if (!base) return null;
     return applyGameCalculationModifiers(
       calc,
@@ -1349,7 +1416,7 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
     for (const candidate of conditionalParts) {
       if (!candidate) continue;
       if (typeof candidate === "object") {
-        const evaluated = evaluateGameCalculation(candidate, dataValues, rank, stats, calculationsMap, new Set(seen));
+        const evaluated = evaluateGameCalculation(candidate, dataValues, rank, stats, calculationsMap, new Set(seen), `${tracePath}.conditional`);
         if (evaluated) return evaluated;
         continue;
       }
@@ -1357,7 +1424,7 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
       if (!calculationsMap || !key || seen.has(key) || !calculationsMap[key]) continue;
       const scopedSeen = new Set(seen);
       scopedSeen.add(key);
-      const evaluated = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, scopedSeen);
+      const evaluated = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, scopedSeen, `${tracePath}.conditional(${key})`);
       if (evaluated) return evaluated;
     }
   }
@@ -1367,11 +1434,11 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
     : Array.isArray(calc.mFormula)
       ? calc.mFormula
       : null;
-  if (!Array.isArray(formulaParts)) return null;
+  if (!Array.isArray(formulaParts)) return makeMissingGameCalculation(`${tracePath} has no formula parts`, calc.mDisplayAsPercent);
   const parts = formulaParts
-    .map((part) => evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap, seen))
+    .map((part, index) => evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.part${index}`))
     .filter(Boolean);
-  if (!parts.length) return null;
+  if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, calc.mDisplayAsPercent);
 
   return applyGameCalculationModifiers(
     calc,
@@ -1539,7 +1606,8 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
   const ctx = { spell, safeRank, stats, vars, cdragonSpell, calcLookup, knownTokens };
   const replaced = raw.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (full, tokenRaw) => {
     const resolved = resolveAbilityToken(tokenRaw, ctx);
-    return resolved ? resolved.html : "";
+    if (resolved) return resolved.html;
+    return `<span class="ability-detail-missing">[token-missing: ${String(tokenRaw || "").trim()}]</span>`;
   });
 
   return replaced
