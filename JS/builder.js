@@ -199,12 +199,6 @@ function wireBuilderUiEvents() {
     setSlotItem(btn.dataset.setItemId);
   });
   document.getElementById("runePanel").addEventListener("click", (event) => {
-    const secondaryRuneBtn = event.target.closest("[data-secondary-rune-id]");
-    if (secondaryRuneBtn) {
-      selectSecondaryRuneDirect(secondaryRuneBtn.dataset.secondaryRuneId);
-      return;
-    }
-
     const btn = event.target.closest("[data-rune-target]");
     if (!btn) return;
     openRuneModal(btn.dataset.runeTarget);
@@ -1841,18 +1835,6 @@ function renderRunePanel() {
     const rune = getRuneMeta(id);
     return `<div class="rune-slot-row"><button class="rune-slot-btn" data-rune-target="${target}">${runeImgTag(rune)}</button><div class="rune-slot-label"><span class='rune-slot-kicker'>${label}</span><strong>${rune.name}</strong></div></div>`;
   };
-  const renderSecondaryGrid = () => {
-    const rows = getSecondaryRows(BUILDER.runeSelections.secondaryPath);
-    const selected = new Set(BUILDER.runeSelections.secondary);
-    return rows
-      .flat()
-      .map((runeId) => {
-        const rune = getRuneMeta(runeId);
-        const isSelected = selected.has(runeId);
-        return `<button class="rune-secondary-cell ${isSelected ? "is-selected" : ""}" data-secondary-rune-id="${runeId}" type="button">${runeImgTag(rune)}<span class="rune-secondary-hover-desc">${rune.desc || rune.name}</span></button>`;
-      })
-      .join("");
-  };
 
   ensureSecondarySelectionsValid();
 
@@ -1867,7 +1849,8 @@ function renderRunePanel() {
     <div class="rune-column-block">
       <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="secondaryPath_0"><img src="${secondaryPath.icon}" alt="${secondaryPath.name}"><span>${secondaryPath.name}</span></button></div>
       <div class='rune-subsection-title'>Secondary Runes</div>
-      <div class="rune-secondary-grid">${renderSecondaryGrid()}</div>
+      ${renderSlot(BUILDER.runeSelections.secondary[0], "Secondary 1", "secondary_0")}
+      ${renderSlot(BUILDER.runeSelections.secondary[1], "Secondary 2", "secondary_1")}
     </div>
     <div class="rune-shard-row-wrap">
       <div class='rune-subsection-title rune-subsection-title-shards'>Stat Shards</div>
@@ -1878,26 +1861,6 @@ function renderRunePanel() {
       </div>
     </div>
   `;
-}
-
-function selectSecondaryRuneDirect(id) {
-  const pathId = BUILDER.runeSelections.secondaryPath;
-  const clickedRow = getSecondaryRowIndex(pathId, id);
-  if (clickedRow < 0 || BUILDER.runeSelections.secondary.includes(id)) return;
-
-  const [a, b] = BUILDER.runeSelections.secondary;
-  const rowA = getSecondaryRowIndex(pathId, a);
-  const rowB = getSecondaryRowIndex(pathId, b);
-
-  if (rowA === clickedRow) BUILDER.runeSelections.secondary[0] = id;
-  else if (rowB === clickedRow) BUILDER.runeSelections.secondary[1] = id;
-  else if (rowA < 0) BUILDER.runeSelections.secondary[0] = id;
-  else BUILDER.runeSelections.secondary[1] = id;
-
-  ensureSecondarySelectionsValid();
-  renderRunePanel();
-  renderStats();
-  renderAbilityCards();
 }
 
 function flattenSecondaryOptions(pathId) {
