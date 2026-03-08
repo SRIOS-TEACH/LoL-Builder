@@ -25,6 +25,10 @@
     return fetchJson(`https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/item.json`);
   }
 
+  function fetchRunesReforged(version) {
+    return fetchJson(`https://ddragon.leagueoflegends.com/cdn/${version}/data/en_US/runesReforged.json`);
+  }
+
   function fetchCommunityDragonItems() {
     return fetchJson("https://raw.communitydragon.org/latest/game/items.cdtb.bin.json");
   }
@@ -39,6 +43,7 @@
     fetchChampionIndex,
     fetchChampionDetails,
     fetchItemIndex,
+    fetchRunesReforged,
     fetchCommunityDragonItems,
     fetchRunesReforged,
   };
