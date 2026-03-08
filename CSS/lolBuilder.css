@@ -732,6 +732,10 @@ body {
   align-items: center;
 }
 
+.rune-option-btn > div {
+  min-width: 0;
+}
+
 .rune-option-btn:hover {
   border-color: #90b3ff;
   background: rgba(27, 51, 95, 0.93);
@@ -760,7 +764,7 @@ body {
 
 .rune-option-group-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.45rem;
 }
 
@@ -771,13 +775,14 @@ body {
 }
 
 .rune-option-name {
-  font-size: 1.16rem;
+  font-size: 1.1rem;
   font-weight: 800;
-  line-height: 1.05;
+  line-height: 1.1;
 }
 
 .rune-option-desc {
   font-size: 0.9rem;
+  line-height: 1.25;
   color: #d0dcfb;
 }
 
