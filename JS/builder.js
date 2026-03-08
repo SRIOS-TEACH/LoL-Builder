@@ -36,7 +36,7 @@ const RUNE_DATA = {
     armor: { name: "Armor", desc: "+6 Armor", longDesc: "+6 Armor", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsArmorIcon.png" },
     "magic-resist": { name: "Magic Resist", desc: "+10 Magic Resist", longDesc: "+10 Magic Resist", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsMagicResIcon.png" },
   },
-  shardOptions: ["adaptive-force", "attack-speed", "ability-haste", "scaling-health", "armor", "magic-resist"],
+  shardOptions: ["adaptive-force", "attack-speed", "ability-haste", "move-speed", "scaling-health", "health", "tenacity-slow-resist"],
 };
 
 function setStatus(message, isError = false) {
@@ -202,6 +202,7 @@ function dedupeBuilderItems(itemEntries, preferredMaps = [11]) {
 
 async function loadBuilderData() {
   BUILDER.version = await window.ApiClient.fetchLatestVersion();
+  await hydrateRunesFromDdragon(BUILDER.version);
 
   const champions = await window.ApiClient.fetchChampionIndex(BUILDER.version);
   BUILDER.champions = champions.data;
@@ -1706,12 +1707,17 @@ function getRuneStats() {
   selected.forEach((runeId) => {
     if (runeId === "ability-haste") totals.haste += 8;
     if (runeId === "attack-speed") totals.asPct += 10;
-    if (runeId === "scaling-health") totals.hp += 10 + (BUILDER.level - 1) * 10;
+    if (runeId === "scaling-health") totals.hp += 10 + ((BUILDER.level - 1) * 190) / 17;
+    if (runeId === "health") totals.hp += 65;
+    if (runeId === "move-speed") totals.msPct += 2.5;
+    if (runeId === "tenacity-slow-resist") totals.tenacity += 15;
     if (runeId === "armor") totals.armor += 6;
     if (runeId === "magic-resist") totals.mr += 10;
 
-    // Adaptive force currently modeled as AP in this lightweight builder.
-    if (runeId === "adaptive-force") totals.ap += 9;
+    if (runeId === "adaptive-force") {
+      if (isApAdaptiveChampion()) totals.ap += 9;
+      else totals.ad += 9 * 0.6;
+    }
 
     // Sorcery: +5 Ability Haste at level 5 and again at level 8.
     if (runeId === "transcendence") {
@@ -1814,6 +1820,60 @@ function renderRunePanel() {
     const rune = getRuneMeta(id);
     return `<div class="rune-slot-row"><button class="rune-slot-btn" data-rune-target="${target}">${runeImgTag(rune)}</button><div class="rune-slot-label"><span class='rune-slot-kicker'>${label}</span><strong>${rune.name}</strong></div></div>`;
   };
+  const renderShardIcon = (slotIndex) => {
+    const rune = getRuneMeta(BUILDER.runeSelections.shards[slotIndex]);
+    return `<button class="rune-shard-icon-btn" data-rune-target="shard_${slotIndex}" type="button">${runeImgTag(rune)}<span class="rune-secondary-hover-desc">${rune.desc || rune.name}</span></button>`;
+  };
+  const renderSecondaryGrid = () => {
+    const rows = getSecondaryRows(BUILDER.runeSelections.secondaryPath);
+    const selected = new Set(BUILDER.runeSelections.secondary);
+    return rows
+      .flat()
+      .map((runeId) => {
+        const rune = getRuneMeta(runeId);
+        const isSelected = selected.has(runeId);
+        return `<button class="rune-secondary-cell ${isSelected ? "is-selected" : ""}" data-secondary-rune-id="${runeId}" type="button">${runeImgTag(rune)}<span class="rune-secondary-hover-desc">${rune.desc || rune.name}</span></button>`;
+      })
+      .join("");
+  };
+
+  const escapeAttr = (value) => String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/'/g, "&#39;");
+
+  const renderPrimaryRuneGrid = () => {
+    const rows = primaryPath.primaryRows || [];
+    return `<div class="rune-subpanel-grid rune-subpanel-grid-primary">${rows.map((row, rowIndex) => row.map((runeId) => {
+      const rune = getRuneMeta(runeId);
+      const active = BUILDER.runeSelections.primary[rowIndex] === runeId ? "is-active" : "";
+      return `<button class="rune-grid-btn ${active}" data-rune-choice-target="primary_${rowIndex}" data-rune-choice-id="${runeId}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc}`)}" aria-label="${rune.name}">${runeImgTag(rune)}</button>`;
+    }).join("")).join("")}</div>`;
+  };
+
+  const getSecondaryChoiceTarget = (runeId) => {
+    const row = getSecondaryRowIndex(BUILDER.runeSelections.secondaryPath, runeId);
+    const [first, second] = BUILDER.runeSelections.secondary;
+    if (runeId === first) return "secondary_0";
+    if (runeId === second) return "secondary_1";
+    const firstRow = getSecondaryRowIndex(BUILDER.runeSelections.secondaryPath, first);
+    const secondRow = getSecondaryRowIndex(BUILDER.runeSelections.secondaryPath, second);
+    if (row === firstRow) return "secondary_1";
+    if (row === secondRow) return "secondary_0";
+    return "secondary_0";
+  };
+
+  const renderSecondaryRuneGrid = () => {
+    const rows = getSecondaryRows(BUILDER.runeSelections.secondaryPath);
+    const selected = new Set(BUILDER.runeSelections.secondary);
+    return `<div class="rune-subpanel-grid">${rows.map((row) => row.map((runeId) => {
+      const rune = getRuneMeta(runeId);
+      const active = selected.has(runeId) ? "is-active" : "";
+      return `<button class="rune-grid-btn ${active}" data-rune-choice-target="${getSecondaryChoiceTarget(runeId)}" data-rune-choice-id="${runeId}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc}`)}" aria-label="${rune.name}">${runeImgTag(rune)}</button>`;
+    }).join("")).join("")}</div>`;
+  };
 
   const escapeAttr = (value) => String(value || "")
     .replace(/&/g, "&amp;")
@@ -1866,13 +1926,29 @@ function renderRunePanel() {
     </div>
     <div class="rune-shard-row-wrap">
       <div class='rune-subsection-title rune-subsection-title-shards'>Stat Shards</div>
-      <div class="rune-shard-row">
-        ${renderSlot(BUILDER.runeSelections.shards[0], "Shard 1", "shard_0")}
-        ${renderSlot(BUILDER.runeSelections.shards[1], "Shard 2", "shard_1")}
-        ${renderSlot(BUILDER.runeSelections.shards[2], "Shard 3", "shard_2")}
-      </div>
+      <div class="rune-shard-icon-row">${renderShardIcon(0)}${renderShardIcon(1)}${renderShardIcon(2)}</div>
     </div>
   `;
+}
+
+function selectSecondaryRuneDirect(id) {
+  const pathId = BUILDER.runeSelections.secondaryPath;
+  const clickedRow = getSecondaryRowIndex(pathId, id);
+  if (clickedRow < 0 || BUILDER.runeSelections.secondary.includes(id)) return;
+
+  const [a, b] = BUILDER.runeSelections.secondary;
+  const rowA = getSecondaryRowIndex(pathId, a);
+  const rowB = getSecondaryRowIndex(pathId, b);
+
+  if (rowA === clickedRow) BUILDER.runeSelections.secondary[0] = id;
+  else if (rowB === clickedRow) BUILDER.runeSelections.secondary[1] = id;
+  else if (rowA < 0) BUILDER.runeSelections.secondary[0] = id;
+  else BUILDER.runeSelections.secondary[1] = id;
+
+  ensureSecondarySelectionsValid();
+  renderRunePanel();
+  renderStats();
+  renderAbilityCards();
 }
 
 function flattenSecondaryOptions(pathId) {
@@ -1964,8 +2040,8 @@ function getRuneOptions(target) {
   const shardRow = Number(target.split("_")[1]);
   const perRow = [
     ["adaptive-force", "attack-speed", "ability-haste"],
-    ["adaptive-force", "scaling-health"],
-    ["scaling-health", "armor", "magic-resist"],
+    ["adaptive-force", "move-speed", "scaling-health"],
+    ["health", "tenacity-slow-resist", "scaling-health"],
   ];
   return (perRow[shardRow] || RUNE_DATA.shardOptions).map((id) => ({ id, ...getRuneMeta(id) }));
 }
