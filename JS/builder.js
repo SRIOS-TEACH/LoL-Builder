@@ -476,10 +476,8 @@ function extractAbilityDataFromRoot(raw, championName, pathName) {
     `Characters/${pathName}/CharacterRecords/Root`,
   ];
   const rootPath = rootCandidates
-    .map((candidate) => pathIndex.get(normalizeCdragonRecordPath(candidate)))
+    .map((candidate) => pathIndex.get(candidate))
     .find(Boolean)
-    || pathIndex.get(`characters/${pathName}/characterrecords/root`)
-    || Array.from(pathIndex.entries()).find(([k]) => k.endsWith(`/characters/${pathName}/characterrecords/root`) || k.endsWith(`/characterrecords/root`))?.[1]
     || null;
 
   const root = rootPath ? raw[rootPath] : null;
@@ -514,45 +512,6 @@ function extractAbilityDataFromRoot(raw, championName, pathName) {
   return Object.keys(bySlot).length ? bySlot : null;
 }
 
-function extractAbilityDataByScan(raw, pathName) {
-  const bySlot = {};
-  const canonicalPrefix = `/spells/${pathName}`.toLowerCase();
-  const candidatesBySlot = { p: [], q: [], w: [], e: [], r: [] };
-
-  Object.values(raw).forEach((entry) => {
-    if (entry?.__type !== "AbilityObject" || !entry.mRootSpell || !entry.mName) return;
-    const m = String(entry.mName).match(/([QWER])Ability$/i);
-    const isPassive = /passiveability$/i.test(String(entry.mName || "")) || /passive$/i.test(String(entry.mName || ""));
-    if (!m && !isPassive) return;
-    const slot = isPassive ? "p" : m[1].toLowerCase();
-    const rootPath = String(entry.mRootSpell || "");
-    const root = raw[rootPath];
-    const parsed = extractCdragonSpell(root);
-    if (!parsed) return;
-
-    const entryName = String(entry.mName || "").toLowerCase();
-    const exactAbilityName = `${pathName}${slot}ability`;
-    const score = [
-      entryName === exactAbilityName,
-      entryName.endsWith(`${slot}ability`) && entryName.includes(pathName),
-      rootPath.toLowerCase().includes(canonicalPrefix),
-      rootPath.toLowerCase().includes(`/${pathName}${slot}ability/`),
-      Object.keys(parsed.calculations || {}).length > 0,
-      Array.isArray(parsed.dataValues) && parsed.dataValues.length > 0,
-    ].reduce((acc, ok, idx) => acc + (ok ? (20 - idx) : 0), 0);
-
-    candidatesBySlot[slot].push({ score, parsed });
-  });
-
-  Object.entries(candidatesBySlot).forEach(([slot, candidates]) => {
-    if (!candidates.length) return;
-    candidates.sort((a, b) => b.score - a.score);
-    bySlot[slot] = candidates[0].parsed;
-  });
-
-  return Object.keys(bySlot).length ? bySlot : null;
-}
-
 async function loadCdragonAbilityData(championName) {
   const pathName = normalizeCdragonChampionPath(championName);
   const url = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
@@ -560,7 +519,6 @@ async function loadCdragonAbilityData(championName) {
   if (!raw) return null;
 
   return extractAbilityDataFromRoot(raw, championName, pathName)
-    || extractAbilityDataByScan(raw, pathName)
     || null;
 }
 
@@ -1186,6 +1144,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     return { value: val, text: formatAbilityNumber(val) };
   }
   if (t === "NamedDataValueCalculationPart") {
+    
     const data = getSpellDataValue(dataValues, part?.mDataValue, rank);
     if (!data) return null;
     return { value: data.current, text: formatAbilityNumber(data.current) };
@@ -1553,10 +1512,13 @@ function resolveAbilityToken(tokenRaw, ctx) {
 function buildDetailedAbilityText(spell, rank, spellKey) {
   const raw = spell.tooltip || spell.description || "";
   const rawRank = Number(rank) || 0;
+  
   if (rawRank <= 0) return spell.description || "";
+  
   const safeRank = Math.max(1, rawRank);
   const stats = getComputedChampionStatsForTooltips();
   const vars = Object.fromEntries((spell.vars || []).map((v) => [String(v.key || "").toLowerCase(), v]));
+  
   const cdragonSpell = BUILDER.cdragonAbilityData?.[spellKey] || null;
   const calcEntries = Object.entries(cdragonSpell?.calculations || {}).map(([k, calc]) => {
     const evaluated = stats ? evaluateGameCalculation(calc, cdragonSpell?.dataValues || [], safeRank, stats, cdragonSpell?.calculations || {}) : null;
