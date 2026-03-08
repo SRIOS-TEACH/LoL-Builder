@@ -1135,6 +1135,15 @@ function formatAbilityNumber(value, isPercent = false) {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
+function formatCalculationTerms(terms, fallbackValue = 0) {
+  if (!Array.isArray(terms)) return formatAbilityNumber(fallbackValue);
+  const joined = terms
+    .map((row) => String(row?.text || "").trim())
+    .filter(Boolean)
+    .join(" + ");
+  return joined || formatAbilityNumber(fallbackValue);
+}
+
 function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
   if (!part) return null;
   const t = String(part?.__type || "");
@@ -1176,7 +1185,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     if (typeof ref === "object") {
       const evaluated = evaluateGameCalculation(ref, dataValues, rank, stats, calculationsMap, new Set(seen));
       if (!evaluated) return null;
-      return { value: evaluated.total, text: evaluated.terms.map((trow) => trow.text).join(" + ") || formatAbilityNumber(evaluated.total) };
+      return { value: evaluated.total, text: formatCalculationTerms(evaluated.terms, evaluated.total) };
     }
     const key = String(ref || "");
     if (!calculationsMap || !key || seen.has(key)) return null;
@@ -1186,7 +1195,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     scopedSeen.add(key);
     const evaluated = evaluateGameCalculation(target, dataValues, rank, stats, calculationsMap, scopedSeen);
     if (!evaluated) return null;
-    return { value: evaluated.total, text: evaluated.terms.map((trow) => trow.text).join(" + ") || formatAbilityNumber(evaluated.total) };
+    return { value: evaluated.total, text: formatCalculationTerms(evaluated.terms, evaluated.total) };
   };
 
   const evaluateChildren = () => {
@@ -1274,7 +1283,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
     result = {
       ...result,
       total: multiplied,
-      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) × (${multiplier.text})`, value: multiplied }],
+      terms: [{ text: `(${formatCalculationTerms(result.terms, result.total)}) × (${multiplier.text})`, value: multiplied }],
     };
   }
 
@@ -1284,7 +1293,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
     result = {
       ...result,
       total: added,
-      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) + (${addend.text})`, value: added }],
+      terms: [{ text: `(${formatCalculationTerms(result.terms, result.total)}) + (${addend.text})`, value: added }],
     };
   }
 
@@ -1294,7 +1303,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
     result = {
       ...result,
       total: subtracted,
-      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) - (${subtrahend.text})`, value: subtracted }],
+      terms: [{ text: `(${formatCalculationTerms(result.terms, result.total)}) - (${subtrahend.text})`, value: subtracted }],
     };
   }
 
@@ -1304,7 +1313,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
     result = {
       ...result,
       total: divided,
-      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) / (${divider.text})`, value: divided }],
+      terms: [{ text: `(${formatCalculationTerms(result.terms, result.total)}) / (${divider.text})`, value: divided }],
     };
   }
 
@@ -1426,7 +1435,7 @@ function resolveAbilityToken(tokenRaw, ctx) {
     }
     if (calc) {
       const shown = calc.displayAsPercent ? (calc.total * 100) : calc.total;
-      const eq = calc.terms.map((t) => t.text).join(" + ");
+      const eq = formatCalculationTerms(calc.terms, shown);
       return {
         html: `<span class="ability-detail-number">${formatAbilityNumber(shown, calc.displayAsPercent)} <span class="ability-detail-eq">(${eq})</span></span>`,
         numeric: shown,
