@@ -33,6 +33,10 @@
     return fetchJson("https://raw.communitydragon.org/latest/game/items.cdtb.bin.json");
   }
 
+  function fetchRunesReforged() {
+    return fetchJson("https://ddragon.leagueoflegends.com/cdn/16.5.1/data/en_US/runesReforged.json");
+  }
+
   const api = {
     fetchJson,
     fetchLatestVersion,
@@ -41,6 +45,7 @@
     fetchItemIndex,
     fetchRunesReforged,
     fetchCommunityDragonItems,
+    fetchRunesReforged,
   };
 
   globalScope.ApiClient = api;
