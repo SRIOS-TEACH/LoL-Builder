@@ -1177,7 +1177,16 @@ function formatAbilityNumber(value, isPercent = false) {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
-function evaluateCalculationPart(part, dataValues, rank, stats) {
+function formatCalculationTerms(terms, fallbackValue = 0) {
+  if (!Array.isArray(terms)) return formatAbilityNumber(fallbackValue);
+  const joined = terms
+    .map((row) => String(row?.text || "").trim())
+    .filter(Boolean)
+    .join(" + ");
+  return joined || formatAbilityNumber(fallbackValue);
+}
+
+function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
   if (!part) return null;
   const t = String(part?.__type || "");
 
@@ -1212,21 +1221,44 @@ function evaluateCalculationPart(part, dataValues, rank, stats) {
     return { value, text: formatAbilityNumber(value) };
   }
 
+  const resolveReferencedGameCalculation = (ref) => {
+    if (!ref) return null;
+    if (typeof ref === "object") {
+      const evaluated = evaluateGameCalculation(ref, dataValues, rank, stats, calculationsMap, new Set(seen));
+      if (!evaluated) return null;
+      return { value: evaluated.total, text: formatCalculationTerms(evaluated.terms, evaluated.total) };
+    }
+    const key = String(ref || "");
+    if (!calculationsMap || !key || seen.has(key)) return null;
+    const target = calculationsMap[key];
+    if (!target) return null;
+    const scopedSeen = new Set(seen);
+    scopedSeen.add(key);
+    const evaluated = evaluateGameCalculation(target, dataValues, rank, stats, calculationsMap, scopedSeen);
+    if (!evaluated) return null;
+    return { value: evaluated.total, text: formatCalculationTerms(evaluated.terms, evaluated.total) };
+  };
+
   const evaluateChildren = () => {
     const out = [];
-    const directArrayKeys = ["mSubparts", "mParts"];
+    const directArrayKeys = ["mSubparts", "mSubParts", "mParts", "mFormulaParts"];
     directArrayKeys.forEach((key) => {
       (part?.[key] || []).forEach((sub) => {
-        const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats);
+        const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats, calculationsMap, seen);
         if (evaluated) out.push(evaluated);
       });
     });
 
-    const directPartKeys = ["mPart", "mPart1", "mPart2", "mPart3", "mPart4", "mMultiplier", "mAddend", "mRemainder", "mSubPart"];
+    const directPartKeys = ["mPart", "mPart1", "mPart2", "mPart3", "mPart4", "mPart5", "mMultiplier", "mAddend", "mRemainder", "mSubPart", "mSubPart1", "mSubPart2"];
     directPartKeys.forEach((key) => {
       const sub = part?.[key];
       if (!sub || typeof sub !== "object") return;
-      const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats);
+      const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats, calculationsMap, seen);
+      if (evaluated) out.push(evaluated);
+    });
+
+    ["mGameCalculation", "mModifiedGameCalculation", "mDefaultGameCalculation", "mConditionalGameCalculation"].forEach((key) => {
+      const evaluated = resolveReferencedGameCalculation(part?.[key]);
       if (evaluated) out.push(evaluated);
     });
 
@@ -1277,49 +1309,52 @@ function evaluateCalculationPart(part, dataValues, rank, stats) {
     }
   }
 
+  const referencedGameCalc = resolveReferencedGameCalculation(part?.mGameCalculation || part?.mModifiedGameCalculation);
+  if (referencedGameCalc) return referencedGameCalc;
+
   return null;
 }
 
-function applyGameCalculationModifiers(calc, result, dataValues, rank, stats) {
+function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
   if (!calc || !result) return result;
 
-  const multiplier = evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats);
+  const multiplier = evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats, calculationsMap, seen);
   if (multiplier) {
     const multiplied = result.total * multiplier.value;
     result = {
       ...result,
       total: multiplied,
-      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) × (${multiplier.text})`, value: multiplied }],
+      terms: [{ text: `(${formatCalculationTerms(result.terms, result.total)}) × (${multiplier.text})`, value: multiplied }],
     };
   }
 
-  const addend = evaluateCalculationPart(calc.mAddend, dataValues, rank, stats);
+  const addend = evaluateCalculationPart(calc.mAddend, dataValues, rank, stats, calculationsMap, seen);
   if (addend) {
     const added = result.total + addend.value;
     result = {
       ...result,
       total: added,
-      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) + (${addend.text})`, value: added }],
+      terms: [{ text: `(${formatCalculationTerms(result.terms, result.total)}) + (${addend.text})`, value: added }],
     };
   }
 
-  const subtrahend = evaluateCalculationPart(calc.mSubtrahend, dataValues, rank, stats);
+  const subtrahend = evaluateCalculationPart(calc.mSubtrahend, dataValues, rank, stats, calculationsMap, seen);
   if (subtrahend) {
     const subtracted = result.total - subtrahend.value;
     result = {
       ...result,
       total: subtracted,
-      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) - (${subtrahend.text})`, value: subtracted }],
+      terms: [{ text: `(${formatCalculationTerms(result.terms, result.total)}) - (${subtrahend.text})`, value: subtracted }],
     };
   }
 
-  const divider = evaluateCalculationPart(calc.mDivider, dataValues, rank, stats);
+  const divider = evaluateCalculationPart(calc.mDivider, dataValues, rank, stats, calculationsMap, seen);
   if (divider && divider.value !== 0) {
     const divided = result.total / divider.value;
     result = {
       ...result,
       total: divided,
-      terms: [{ text: `(${result.terms.map((t) => t.text).join(" + ")}) / (${divider.text})`, value: divided }],
+      terms: [{ text: `(${formatCalculationTerms(result.terms, result.total)}) / (${divider.text})`, value: divided }],
     };
   }
 
@@ -1346,12 +1381,42 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
       dataValues,
       rank,
       stats,
+      calculationsMap,
+      seen,
     );
   }
 
-  if (!Array.isArray(calc.mFormulaParts)) return null;
-  const parts = calc.mFormulaParts
-    .map((part) => evaluateCalculationPart(part, dataValues, rank, stats))
+  if (/Conditional/i.test(ctype)) {
+    const conditionalParts = [
+      calc.mConditionalGameCalculation,
+      calc.mGameCalculation,
+      calc.mDefaultGameCalculation,
+      calc.mFallbackGameCalculation,
+    ];
+    for (const candidate of conditionalParts) {
+      if (!candidate) continue;
+      if (typeof candidate === "object") {
+        const evaluated = evaluateGameCalculation(candidate, dataValues, rank, stats, calculationsMap, new Set(seen));
+        if (evaluated) return evaluated;
+        continue;
+      }
+      const key = String(candidate || "");
+      if (!calculationsMap || !key || seen.has(key) || !calculationsMap[key]) continue;
+      const scopedSeen = new Set(seen);
+      scopedSeen.add(key);
+      const evaluated = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, scopedSeen);
+      if (evaluated) return evaluated;
+    }
+  }
+
+  const formulaParts = Array.isArray(calc.mFormulaParts)
+    ? calc.mFormulaParts
+    : Array.isArray(calc.mFormula)
+      ? calc.mFormula
+      : null;
+  if (!Array.isArray(formulaParts)) return null;
+  const parts = formulaParts
+    .map((part) => evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap, seen))
     .filter(Boolean);
   if (!parts.length) return null;
 
@@ -1365,6 +1430,8 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
     dataValues,
     rank,
     stats,
+    calculationsMap,
+    seen,
   );
 }
 
@@ -1409,7 +1476,7 @@ function resolveAbilityToken(tokenRaw, ctx) {
     }
     if (calc) {
       const shown = calc.displayAsPercent ? (calc.total * 100) : calc.total;
-      const eq = calc.terms.map((t) => t.text).join(" + ");
+      const eq = formatCalculationTerms(calc.terms, shown);
       return {
         html: `<span class="ability-detail-number">${formatAbilityNumber(shown, calc.displayAsPercent)} <span class="ability-detail-eq">(${eq})</span></span>`,
         numeric: shown,
