@@ -764,7 +764,7 @@ body {
 
 .rune-option-group-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.45rem;
 }
 
@@ -775,15 +775,14 @@ body {
 }
 
 .rune-option-name {
-  font-size: 1.02rem;
+  font-size: 1.1rem;
   font-weight: 800;
   line-height: 1.1;
-  overflow-wrap: anywhere;
 }
 
 .rune-option-desc {
-  font-size: 0.86rem;
-  line-height: 1.2;
+  font-size: 0.9rem;
+  line-height: 1.25;
   color: #d0dcfb;
   overflow-wrap: anywhere;
 }
