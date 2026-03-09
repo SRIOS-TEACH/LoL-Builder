@@ -24,6 +24,24 @@ Open pages directly:
 - `http://127.0.0.1:8000/itemLookup.html`
 - `http://127.0.0.1:8000/Builder.html`
 
+
+### Unresolved ability-token triage report
+Generate a table of tooltip tokens that did not resolve cleanly against associated CDragon spell payloads:
+
+```bash
+node scripts/unresolved-ability-tokens.mjs
+```
+
+Optional filters:
+
+```bash
+node scripts/unresolved-ability-tokens.mjs --champions Aatrox,Akali,Akshan --limit 200
+```
+
+Outputs:
+- `artifacts/unresolved-tokens/unresolved-tokens.json`
+- `artifacts/unresolved-tokens/unresolved-tokens.md`
+
 ### Quick sanity checks
 Before committing JavaScript changes, you can run fast syntax checks from the repository root:
 
