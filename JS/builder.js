@@ -57,7 +57,8 @@ function toDdragonPerkIcon(version, iconPath) {
   return `https://ddragon.canisback.com/img/${String(iconPath).replace(/^\/+/, "")}`;
 }
 
-function stripHtmlTags(text) {
+// Shared format/strip helpers are centralized here to avoid redeclaration drift.
+function stripHtml(text) {
   return String(text || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
@@ -93,7 +94,7 @@ async function hydrateRunesFromDdragon(version) {
       const slug = slugifyRuneName(rune.name);
       nextLookup[slug] = {
         name: rune.name,
-        desc: stripHtmlTags(rune.longDesc || rune.shortDesc || ""),
+        desc: stripHtml(rune.longDesc || rune.shortDesc || ""),
         icon: toDdragonPerkIcon(version, rune.icon),
       };
       return slug;
@@ -220,10 +221,6 @@ function isPurchasableBuilderItem(id, item) {
 
 function runeKeyToId(key) {
   return String(key || "").replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase();
-}
-
-function stripHtml(text) {
-  return String(text || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function normalizeRuneIconPath(iconPath) {
@@ -812,10 +809,6 @@ function parseByRank(valueBurn, rank) {
   if (!valueBurn || valueBurn === "0") return "-";
   const parts = String(valueBurn).split("/");
   return parts[Math.max(0, Math.min(parts.length - 1, rank - 1))] || parts[0] || "-";
-}
-
-function stripHtml(input) {
-  return String(input || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function extractPassiveLabelsFromText(text) {
@@ -1970,31 +1963,6 @@ function renderRunePanel() {
       </div>
     </div>
   `;
-}
-
-function selectSecondaryRuneDirect(id) {
-  const pathId = BUILDER.runeSelections.secondaryPath;
-  const clickedRow = getSecondaryRowIndex(pathId, id);
-  if (clickedRow < 0 || BUILDER.runeSelections.secondary.includes(id)) return;
-
-  const [a, b] = BUILDER.runeSelections.secondary;
-  const rowA = getSecondaryRowIndex(pathId, a);
-  const rowB = getSecondaryRowIndex(pathId, b);
-
-  if (rowA === clickedRow) BUILDER.runeSelections.secondary[0] = id;
-  else if (rowB === clickedRow) BUILDER.runeSelections.secondary[1] = id;
-  else if (rowA < 0) BUILDER.runeSelections.secondary[0] = id;
-  else BUILDER.runeSelections.secondary[1] = id;
-
-  ensureSecondarySelectionsValid();
-  renderRunePanel();
-  renderStats();
-  renderAbilityCards();
-}
-
-function flattenSecondaryOptions(pathId) {
-  const rows = RUNE_DATA.paths[pathId]?.primaryRows || [];
-  return rows.slice(1).flat();
 }
 
 function getSecondaryRows(pathId) {
