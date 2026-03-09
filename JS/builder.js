@@ -32,9 +32,10 @@ const RUNE_DATA = {
     "adaptive-force": { name: "Adaptive", desc: "+9 Adaptive Force", longDesc: "+9 Adaptive Force", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsAdaptiveForceIcon.png" },
     "attack-speed": { name: "Attack Speed", desc: "+10% Attack Speed", longDesc: "+10% Attack Speed", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsAttackSpeedIcon.png" },
     "ability-haste": { name: "Ability Haste", desc: "+8 Ability Haste", longDesc: "+8 Ability Haste", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsCDRScalingIcon.png" },
-    "scaling-health": { name: "Scaling Health", desc: "+10-180 Health", longDesc: "+10-180 Health", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsHealthScalingIcon.png" },
-    armor: { name: "Armor", desc: "+6 Armor", longDesc: "+6 Armor", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsArmorIcon.png" },
-    "magic-resist": { name: "Magic Resist", desc: "+10 Magic Resist", longDesc: "+10 Magic Resist", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsMagicResIcon.png" },
+    "move-speed": { name: "Move Speed", desc: "+2.5% Move Speed", longDesc: "+2.5% Move Speed", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsMovementSpeedIcon.png" },
+    "scaling-health": { name: "Scaling Health", desc: "+10-200 Bonus Health", longDesc: "+10-200 Bonus Health", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsHealthScalingIcon.png" },
+    health: { name: "Health", desc: "+65 Bonus Health", longDesc: "+65 Bonus Health", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsHealthPlusIcon.png" },
+    "tenacity-slow-resist": { name: "Tenacity & Slow Resist", desc: "+15% Tenacity and Slow Resist", longDesc: "+15% Tenacity and Slow Resist", icon: "https://ddragon.leagueoflegends.com/cdn/img/perk-images/StatMods/StatModsTenacityIcon.png" },
   },
   shardOptions: ["adaptive-force", "attack-speed", "ability-haste", "move-speed", "scaling-health", "health", "tenacity-slow-resist"],
 };
@@ -72,7 +73,7 @@ function buildPathDefaults(paths) {
 function isApAdaptiveChampion() {
   const tags = new Set(BUILDER.championData?.tags || []);
   if (tags.has("Mage")) return true;
-  if (tags.has("Marksman") || tags.has("Fighter")) return false;
+  if (tags.has("Marksman") || tags.has("Fighter") || tags.has("Assassin")) return false;
   return true;
 }
 
@@ -1963,10 +1964,10 @@ function renderRunePanel() {
     <div class="rune-column-block">
       <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="secondaryPath_0"><img src="${secondaryPath.icon}" alt="${secondaryPath.name}"><span>${secondaryPath.name}</span></button></div>
       ${renderSecondaryRuneGrid()}
-    </div>
-    <div class="rune-shard-row-wrap">
-      <div class='rune-subsection-title rune-subsection-title-shards'>Stat Shards</div>
-      <div class="rune-shard-icon-row">${renderShardIcon(0)}${renderShardIcon(1)}${renderShardIcon(2)}</div>
+      <div class="rune-shard-row-wrap">
+        <div class='rune-subsection-title rune-subsection-title-shards'>Stat Shards</div>
+        <div class="rune-shard-icon-row">${renderShardIcon(0)}${renderShardIcon(1)}${renderShardIcon(2)}</div>
+      </div>
     </div>
   `;
 }
