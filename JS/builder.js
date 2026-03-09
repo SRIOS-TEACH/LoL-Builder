@@ -1252,7 +1252,7 @@ function makeMissingGameCalculation(reason, displayAsPercent = false) {
   };
 }
 
-function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap = null, seen = new Set(), tracePath = "part") {
+function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap = null, seen = new Set(), tracePath = "part", displayAsPercent = false) {
   if (!part) return makeMissingCalc(`${tracePath} has no part payload`);
   const t = String(part?.__type || "");
 
@@ -1292,18 +1292,18 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
   const resolveReferencedGameCalculation = (ref) => {
     if (!ref) return makeMissingCalc(`${tracePath} has empty game calculation reference`);
     if (typeof ref === "object") {
-      const evaluated = evaluateGameCalculation(ref, dataValues, rank, stats, calculationsMap, new Set(seen));
+      const evaluated = evaluateGameCalculation(ref, dataValues, rank, stats, calculationsMap, new Set(seen), `${tracePath}.inline`, displayAsPercent);
       if (!evaluated) return makeMissingCalc(`${tracePath} inline game calculation unresolved`);
       return { value: evaluated.total, text: formatCalculationTerms(evaluated.terms, evaluated.total) };
     }
     const key = String(ref || "");
-    if (!calculationsMap || !key) return makeMissingGameCalculation(`${tracePath} missing calculations map or key`, calc.mDisplayAsPercent);
-    if (seen.has(key)) return makeMissingGameCalculation(`${tracePath} circular reference ${key}`, calc.mDisplayAsPercent);
+    if (!calculationsMap || !key) return makeMissingCalc(`${tracePath} missing calculations map or key`);
+    if (seen.has(key)) return makeMissingCalc(`${tracePath} circular reference ${key}`);
     const target = calculationsMap[key];
     if (!target) return makeMissingCalc(`${tracePath} referenced game calculation not found: ${key}`);
     const scopedSeen = new Set(seen);
     scopedSeen.add(key);
-    const evaluated = evaluateGameCalculation(target, dataValues, rank, stats, calculationsMap, scopedSeen);
+    const evaluated = evaluateGameCalculation(target, dataValues, rank, stats, calculationsMap, scopedSeen, `${tracePath}.ref(${key})`, displayAsPercent);
     if (!evaluated) return makeMissingCalc(`${tracePath} referenced game calculation unresolved: ${key}`);
     return { value: evaluated.total, text: formatCalculationTerms(evaluated.terms, evaluated.total) };
   };
@@ -1313,7 +1313,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     const directArrayKeys = ["mSubparts", "mSubParts", "mParts", "mFormulaParts"];
     directArrayKeys.forEach((key) => {
       (part?.[key] || []).forEach((sub) => {
-        const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.${key}`);
+        const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.${key}`, displayAsPercent);
         if (evaluated) out.push(evaluated);
       });
     });
@@ -1322,7 +1322,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     directPartKeys.forEach((key) => {
       const sub = part?.[key];
       if (!sub || typeof sub !== "object") return;
-      const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.${key}`);
+      const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.${key}`, displayAsPercent);
       if (evaluated) out.push(evaluated);
     });
 
@@ -1336,19 +1336,19 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
 
   if (/SumOfSubParts/i.test(t)) {
     const parts = evaluateChildren();
-    if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, calc.mDisplayAsPercent);
+    if (!parts.length) return makeMissingCalc(`${tracePath} had no resolvable parts`);
     return { value: parts.reduce((a, b) => a + b.value, 0), text: parts.map((p) => p.text).join(" + ") };
   }
 
   if (/ProductOfSubParts|Multiply|Multiplicative/i.test(t)) {
     const parts = evaluateChildren();
-    if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, calc.mDisplayAsPercent);
+    if (!parts.length) return makeMissingCalc(`${tracePath} had no resolvable parts`);
     return { value: parts.reduce((acc, row) => acc * row.value, 1), text: parts.map((p) => p.text).join(" × ") };
   }
 
   if (/Difference|Subtract/i.test(t)) {
     const parts = evaluateChildren();
-    if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, calc.mDisplayAsPercent);
+    if (!parts.length) return makeMissingCalc(`${tracePath} had no resolvable parts`);
     if (parts.length === 1) return parts[0];
     return { value: parts.slice(1).reduce((acc, row) => acc - row.value, parts[0].value), text: `${parts[0].text} - ${parts.slice(1).map((p) => p.text).join(" - ")}` };
   }
@@ -1362,7 +1362,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
 
   if (/Clamp|Min|Max/i.test(t)) {
     const parts = evaluateChildren();
-    if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, calc.mDisplayAsPercent);
+    if (!parts.length) return makeMissingCalc(`${tracePath} had no resolvable parts`);
     const head = parts[0].value;
     const floor = Number(part?.mFloor ?? part?.mMinimum ?? Number.NEGATIVE_INFINITY);
     const ceil = Number(part?.mCeiling ?? part?.mMaximum ?? Number.POSITIVE_INFINITY);
@@ -1389,7 +1389,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
 function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
   if (!calc || !result) return result;
 
-  const multiplier = evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats, calculationsMap, seen);
+  const multiplier = evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent);
   if (multiplier && !multiplier.missing) {
     const multiplied = result.total * multiplier.value;
     result = {
@@ -1399,7 +1399,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
     };
   }
 
-  const addend = evaluateCalculationPart(calc.mAddend, dataValues, rank, stats, calculationsMap, seen);
+  const addend = evaluateCalculationPart(calc.mAddend, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent);
   if (addend && !addend.missing) {
     const added = result.total + addend.value;
     result = {
@@ -1409,7 +1409,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
     };
   }
 
-  const subtrahend = evaluateCalculationPart(calc.mSubtrahend, dataValues, rank, stats, calculationsMap, seen);
+  const subtrahend = evaluateCalculationPart(calc.mSubtrahend, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent);
   if (subtrahend && !subtrahend.missing) {
     const subtracted = result.total - subtrahend.value;
     result = {
@@ -1419,7 +1419,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
     };
   }
 
-  const divider = evaluateCalculationPart(calc.mDivider, dataValues, rank, stats, calculationsMap, seen);
+  const divider = evaluateCalculationPart(calc.mDivider, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent);
   if (divider && !divider.missing && divider.value !== 0) {
     const divided = result.total / divider.value;
     result = {
@@ -1432,23 +1432,24 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
   return result;
 }
 
-function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap = null, seen = new Set(), tracePath = "calc") {
+function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap = null, seen = new Set(), tracePath = "calc", displayAsPercent = null) {
   if (!calc) return null;
   const ctype = String(calc.__type || "");
+  const resolvedDisplayAsPercent = typeof displayAsPercent === "boolean" ? displayAsPercent : !!calc.mDisplayAsPercent;
 
   if (ctype === "GameCalculationModified") {
     const key = String(calc.mModifiedGameCalculation || "");
-    if (!calculationsMap || !key) return makeMissingGameCalculation(`${tracePath} missing calculations map or key`, calc.mDisplayAsPercent);
-    if (seen.has(key)) return makeMissingGameCalculation(`${tracePath} circular reference ${key}`, calc.mDisplayAsPercent);
+    if (!calculationsMap || !key) return makeMissingGameCalculation(`${tracePath} missing calculations map or key`, resolvedDisplayAsPercent);
+    if (seen.has(key)) return makeMissingGameCalculation(`${tracePath} circular reference ${key}`, resolvedDisplayAsPercent);
     seen.add(key);
-    const base = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, seen, `${tracePath}.modified(${key})`);
+    const base = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, seen, `${tracePath}.modified(${key})`, resolvedDisplayAsPercent);
     if (!base) return null;
     return applyGameCalculationModifiers(
       calc,
       {
         total: base.total,
         terms: base.terms,
-        displayAsPercent: !!calc.mDisplayAsPercent,
+        displayAsPercent: resolvedDisplayAsPercent,
       },
       dataValues,
       rank,
@@ -1468,7 +1469,7 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
     for (const candidate of conditionalParts) {
       if (!candidate) continue;
       if (typeof candidate === "object") {
-        const evaluated = evaluateGameCalculation(candidate, dataValues, rank, stats, calculationsMap, new Set(seen), `${tracePath}.conditional`);
+        const evaluated = evaluateGameCalculation(candidate, dataValues, rank, stats, calculationsMap, new Set(seen), `${tracePath}.conditional`, resolvedDisplayAsPercent);
         if (evaluated) return evaluated;
         continue;
       }
@@ -1476,7 +1477,7 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
       if (!calculationsMap || !key || seen.has(key) || !calculationsMap[key]) continue;
       const scopedSeen = new Set(seen);
       scopedSeen.add(key);
-      const evaluated = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, scopedSeen, `${tracePath}.conditional(${key})`);
+      const evaluated = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, scopedSeen, `${tracePath}.conditional(${key})`, resolvedDisplayAsPercent);
       if (evaluated) return evaluated;
     }
   }
@@ -1486,18 +1487,18 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
     : Array.isArray(calc.mFormula)
       ? calc.mFormula
       : null;
-  if (!Array.isArray(formulaParts)) return makeMissingGameCalculation(`${tracePath} has no formula parts`, calc.mDisplayAsPercent);
+  if (!Array.isArray(formulaParts)) return makeMissingGameCalculation(`${tracePath} has no formula parts`, resolvedDisplayAsPercent);
   const parts = formulaParts
-    .map((part, index) => evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.part${index}`))
+    .map((part, index) => evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.part${index}`, resolvedDisplayAsPercent))
     .filter(Boolean);
-  if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, calc.mDisplayAsPercent);
+  if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, resolvedDisplayAsPercent);
 
   return applyGameCalculationModifiers(
     calc,
     {
       total: parts.reduce((a, b) => a + b.value, 0),
       terms: parts.map((p) => ({ text: p.text, value: p.value })),
-      displayAsPercent: !!calc.mDisplayAsPercent,
+      displayAsPercent: resolvedDisplayAsPercent,
     },
     dataValues,
     rank,
