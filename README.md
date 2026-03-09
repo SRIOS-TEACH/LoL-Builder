@@ -42,6 +42,8 @@ Outputs:
 - `artifacts/unresolved-tokens/unresolved-tokens.json`
 - `artifacts/unresolved-tokens/unresolved-tokens.md`
 
+The markdown report includes: unresolved token, reason, selected CDragon record, local key matches, and global association hints from other spell records in the same champion payload.
+
 ### Quick sanity checks
 Before committing JavaScript changes, you can run fast syntax checks from the repository root:
 
