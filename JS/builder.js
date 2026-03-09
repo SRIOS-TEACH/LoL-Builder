@@ -41,6 +41,12 @@ const RUNE_DATA = {
 };
 
 const RUNE_PATH_ID_TO_KEY = {
+  8100: "domination",
+  8000: "precision",
+  8200: "sorcery",
+  8300: "inspiration",
+  8400: "resolve",
+  // Legacy fallback ids kept for compatibility with older/static payloads.
   7200: "domination",
   7201: "precision",
   7202: "sorcery",
