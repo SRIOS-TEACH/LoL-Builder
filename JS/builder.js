@@ -41,6 +41,12 @@ const RUNE_DATA = {
 };
 
 const RUNE_PATH_ID_TO_KEY = {
+  8100: "domination",
+  8000: "precision",
+  8200: "sorcery",
+  8300: "inspiration",
+  8400: "resolve",
+  // Legacy fallback ids kept for compatibility with older/static payloads.
   7200: "domination",
   7201: "precision",
   7202: "sorcery",
@@ -572,8 +578,11 @@ async function setChampion(name) {
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
 
   const splashUrl = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`;
+  const primaryRunePath = RUNE_DATA.paths[BUILDER.runeSelections.primaryPath]
+    || RUNE_DATA.paths[Object.keys(RUNE_DATA.paths)[0]]
+    || null;
   document.body.style.setProperty("--builder-splash-url", splashUrl);
-  document.getElementById("runesCard").style.setProperty("--rune-splash-url", RUNE_DATA.paths[BUILDER.runeSelections.primaryPath].splash);
+  document.getElementById("runesCard").style.setProperty("--rune-splash-url", primaryRunePath?.splash || "none");
   document.getElementById("championPickerBtn").innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.championData.image.full}" alt="${name}">`;
   document.getElementById("championPickerBtn").setAttribute("aria-label", `Selected champion: ${name}`);
 
@@ -1822,9 +1831,23 @@ function renderStats() {
 
 function renderRunePanel() {
   const root = document.getElementById("runePanel");
-  const primaryPath = RUNE_DATA.paths[BUILDER.runeSelections.primaryPath];
-  const secondaryPath = RUNE_DATA.paths[BUILDER.runeSelections.secondaryPath];
-  document.getElementById("runesCard").style.setProperty("--rune-splash-url", primaryPath.splash);
+  const pathIds = Object.keys(RUNE_DATA.paths);
+  const fallbackPrimaryPathId = pathIds[0] || "";
+  const primaryPathId = RUNE_DATA.paths[BUILDER.runeSelections.primaryPath] ? BUILDER.runeSelections.primaryPath : fallbackPrimaryPathId;
+  const fallbackSecondaryPathId = pathIds.find((id) => id !== primaryPathId) || primaryPathId;
+  const secondaryPathId = (BUILDER.runeSelections.secondaryPath !== primaryPathId && RUNE_DATA.paths[BUILDER.runeSelections.secondaryPath])
+    ? BUILDER.runeSelections.secondaryPath
+    : fallbackSecondaryPathId;
+  BUILDER.runeSelections.primaryPath = primaryPathId;
+  BUILDER.runeSelections.secondaryPath = secondaryPathId;
+  const primaryPath = RUNE_DATA.paths[primaryPathId] || null;
+  const secondaryPath = RUNE_DATA.paths[secondaryPathId] || null;
+  if (!primaryPath || !secondaryPath) {
+    root.innerHTML = "<p class='muted'>Rune data is unavailable.</p>";
+    document.getElementById("runesCard").style.setProperty("--rune-splash-url", "none");
+    return;
+  }
+  document.getElementById("runesCard").style.setProperty("--rune-splash-url", primaryPath.splash || "none");
 
   const renderSlot = (id, label, target) => {
     const rune = getRuneMeta(id);
