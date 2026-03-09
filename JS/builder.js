@@ -60,7 +60,7 @@ function slugifyRuneName(name) {
 
 function toDdragonPerkIcon(version, iconPath) {
   if (!iconPath) return "";
-  return `https://ddragon.canisback.com/img/${String(iconPath).replace(/^\/+/, "")}`;
+  return `http://ddragon.leagueoflegends.com/cdn/img/${String(iconPath).replace(/^\/+/, "")}`;
 }
 
 // Shared format/strip helpers are centralized here to avoid redeclaration drift.
