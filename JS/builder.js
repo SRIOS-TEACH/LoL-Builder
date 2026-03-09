@@ -765,27 +765,11 @@ function renderModalItemDetail(id) {
     ? `<div class='mt-10'><strong>Passives</strong>${passiveLabels.map((label) => `<div>${label}</div>`).join("")}</div>`
     : "";
 
-  const shared = getItemLookupShared();
-  let enhancedDescription = item.description || "";
-  let extractedFormulaRows = "";
-  if (shared) {
-    const resolved = shared.resolveDescriptionFormulas ? shared.resolveDescriptionFormulas(item, enhancedDescription) : enhancedDescription;
-    let lines = [];
-    if (shared.buildExtractedFormulas) {
-      const extracted = shared.buildExtractedFormulas(String(id));
-      lines = extracted?.lines || [];
-    }
-    if (shared.injectDamageFormulaText) enhancedDescription = shared.injectDamageFormulaText(resolved, lines, String(id));
-    else enhancedDescription = resolved;
-    if (shared.injectActiveCooldown) enhancedDescription = shared.injectActiveCooldown(enhancedDescription, shared.inferActiveCooldownSeconds ? shared.inferActiveCooldownSeconds(String(id)) : null);
-    if (shared.emphasizeAbilityHeaders) enhancedDescription = shared.emphasizeAbilityHeaders(enhancedDescription);
-    if (shared.enhanceActiveTooltip) enhancedDescription = shared.enhanceActiveTooltip(enhancedDescription);
-    if (shared.colorizeStatsInHtml) enhancedDescription = shared.colorizeStatsInHtml(enhancedDescription);
-
-    if (lines.length) {
-      extractedFormulaRows = `<div class='mt-10'><strong>Effects</strong>${lines.map((line) => `<div>${line.name}: ${line.formula}</div>`).join("")}</div>`;
-    }
-  }
+  const resolvedDescription = resolveItemDescriptionHtml(item, id, { forModal: true });
+  const enhancedDescription = resolvedDescription.html;
+  const extractedFormulaRows = resolvedDescription.formulaRows.length
+    ? `<div class='mt-10'><strong>Effects</strong>${resolvedDescription.formulaRows.map((line) => `<div>${line.name}: ${line.formula}</div>`).join("")}</div>`
+    : "";
 
   root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div>${passiveLines}${extractedFormulaRows}<div class='mt-10'>${enhancedDescription}</div><button class='btn btn-sm mt-10' data-set-item-id='${id}'>Select this item</button><button class='btn btn-sm mt-10 ml-5' data-set-item-id=''>Clear slot</button>`;
 }
@@ -833,26 +817,30 @@ function extractPassiveLabelsFromText(text) {
  * Resolves an item description using shared Item Lookup transformers so formulas/cooldowns are concrete.
  * @param {object} item Data Dragon item payload.
  * @param {string} itemId Numeric item id.
- * @returns {string} Enhanced item tooltip HTML.
+ * @param {object} options Resolution options.
+ * @param {boolean} [options.forModal=false] Applies modal-only formatting helpers.
+ * @returns {{html: string, formulaRows: {name: string, formula: string}[]}} Enhanced tooltip and extracted formulas.
  */
-function resolveItemDescriptionHtml(item, itemId = "") {
+function resolveItemDescriptionHtml(item, itemId = "", options = {}) {
+  const { forModal = false } = options;
   const shared = getItemLookupShared();
   let html = String(item?.description || "");
-  if (!shared) return html;
+  if (!shared) return { html, formulaRows: [] };
   if (shared.resolveDescriptionFormulas) html = shared.resolveDescriptionFormulas(item, html);
 
-  let lines = [];
-  if (shared.buildExtractedFormulas) {
-    const extracted = shared.buildExtractedFormulas(String(itemId || ""));
-    lines = extracted?.lines || [];
-  }
-  if (shared.injectDamageFormulaText) html = shared.injectDamageFormulaText(html, lines, String(itemId || ""));
+  const formulaRows = shared.buildExtractedFormulas
+    ? (shared.buildExtractedFormulas(String(itemId || ""))?.lines || [])
+    : [];
+
+  if (shared.injectDamageFormulaText) html = shared.injectDamageFormulaText(html, formulaRows, String(itemId || ""));
   if (shared.injectActiveCooldown) {
     const cd = shared.inferActiveCooldownSeconds ? shared.inferActiveCooldownSeconds(String(itemId || "")) : null;
     html = shared.injectActiveCooldown(html, cd);
   }
+  if (forModal && shared.emphasizeAbilityHeaders) html = shared.emphasizeAbilityHeaders(html);
   if (shared.enhanceActiveTooltip) html = shared.enhanceActiveTooltip(html);
-  return html;
+  if (forModal && shared.colorizeStatsInHtml) html = shared.colorizeStatsInHtml(html);
+  return { html, formulaRows };
 }
 
 /**
@@ -893,7 +881,7 @@ function buildPassiveLedger(itemTotals, runeTotals) {
   let hasRabadon = false;
 
   selectedItems.forEach(({ id, item }) => {
-    const resolvedDescriptionHtml = resolveItemDescriptionHtml(item, id);
+    const { html: resolvedDescriptionHtml } = resolveItemDescriptionHtml(item, id);
     extractPassiveDescriptionsFromHtml(resolvedDescriptionHtml).forEach(({ label, impact }) => {
       passiveEffects.push({ source: "Item", owner: item.name, label, impact });
     });
