@@ -471,6 +471,105 @@ function normalizeSpellRecordName(name) {
   return String(name || "").replace(/[^a-z0-9]/gi, "").toLowerCase();
 }
 
+const DEBUG_CDRAGON_CHILD_SELECTION = false;
+
+function extractTooltipTokens(tooltip) {
+  const tokens = new Set();
+  const rawTooltip = String(tooltip || "");
+  const re = /\{\{\s*([a-z0-9_]+)\s*\}\}/gi;
+  let match = re.exec(rawTooltip);
+  while (match) {
+    const token = normalizeSpellRecordName(match[1]);
+    if (token) tokens.add(token);
+    match = re.exec(rawTooltip);
+  }
+  return tokens;
+}
+
+function spellDataValueName(entry) {
+  return entry?.mName || entry?.mId || entry?.mDataValue || entry?.name || "";
+}
+
+function scoreSpellChildCandidate(parsed, tooltipTokens) {
+  if (!parsed) return null;
+
+  const calcKeys = Object.keys(parsed.calculations || {});
+  const calcKeySet = new Set(calcKeys.map((key) => normalizeSpellRecordName(key)).filter(Boolean));
+  const dataValues = Array.isArray(parsed.dataValues) ? parsed.dataValues : [];
+  const dataValueNames = dataValues
+    .map((entry) => normalizeSpellRecordName(spellDataValueName(entry)))
+    .filter(Boolean);
+  const dataValueSet = new Set(dataValueNames);
+
+  let overlapCount = 0;
+  (tooltipTokens || new Set()).forEach((token) => {
+    if (calcKeySet.has(token) || dataValueSet.has(token)) overlapCount += 1;
+  });
+
+  const calculationCount = calcKeys.length;
+  const dataValueCount = dataValues.length;
+  const score = (calculationCount * 4) + (dataValueCount * 2) + (overlapCount * 6);
+
+  return {
+    score,
+    overlapCount,
+    calculationCount,
+    dataValueCount,
+  };
+}
+
+function chooseBestSpellChild(raw, pathIndex, childSpellPaths, ddSpell, slot = "") {
+  const tooltipTokens = extractTooltipTokens(ddSpell?.tooltip);
+
+  const candidates = childSpellPaths
+    .map((path, index) => {
+      const record = resolveCdragonRecord(raw, pathIndex, path);
+      const parsed = extractCdragonSpell(record);
+      if (!parsed) return null;
+      const scoreMeta = scoreSpellChildCandidate(parsed, tooltipTokens);
+      return {
+        path,
+        index,
+        parsed,
+        score: scoreMeta?.score || 0,
+        overlapCount: scoreMeta?.overlapCount || 0,
+        calculationCount: scoreMeta?.calculationCount || 0,
+        dataValueCount: scoreMeta?.dataValueCount || 0,
+      };
+    })
+    .filter(Boolean);
+
+  if (!candidates.length) return null;
+
+  const best = candidates
+    .slice()
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (b.overlapCount !== a.overlapCount) return b.overlapCount - a.overlapCount;
+      if (b.calculationCount !== a.calculationCount) return b.calculationCount - a.calculationCount;
+      if (b.dataValueCount !== a.dataValueCount) return b.dataValueCount - a.dataValueCount;
+      return a.index - b.index;
+    })[0];
+
+  if (DEBUG_CDRAGON_CHILD_SELECTION) {
+    console.debug("[CDragon child selection]", {
+      slot,
+      ddSpell: ddSpell?.id || ddSpell?.name || "",
+      tooltipTokens: Array.from(tooltipTokens),
+      selected: { path: best.path, score: best.score, overlapCount: best.overlapCount, calculationCount: best.calculationCount, dataValueCount: best.dataValueCount },
+      candidates: candidates.map((candidate) => ({
+        path: candidate.path,
+        score: candidate.score,
+        overlapCount: candidate.overlapCount,
+        calculationCount: candidate.calculationCount,
+        dataValueCount: candidate.dataValueCount,
+      })),
+    });
+  }
+
+  return best.parsed;
+}
+
 function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) {
   const pathIndex = new Map(Object.keys(raw || {}).map((key) => [normalizeCdragonRecordPath(key), key]));
   const rootCandidates = [
@@ -526,10 +625,7 @@ function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) 
     const childSpells = Array.isArray(abilityRecord?.mChildSpells) ? abilityRecord.mChildSpells : [];
     if (!childSpells.length) return;
 
-    const primaryChildPath = childSpells[0];
-    const primaryChild = resolveCdragonRecord(raw, pathIndex, primaryChildPath);
-    let parsed = extractCdragonSpell(primaryChild);
-
+    let parsed = chooseBestSpellChild(raw, pathIndex, childSpells, spell, slot);
     if (!parsed) {
       const fallbackChild = childSpells
         .map((path) => resolveCdragonRecord(raw, pathIndex, path))
@@ -552,8 +648,11 @@ function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) 
     || null;
   if (passiveRecord) {
     const childSpells = Array.isArray(passiveRecord?.mChildSpells) ? passiveRecord.mChildSpells : [];
-    const primaryChild = resolveCdragonRecord(raw, pathIndex, childSpells[0]);
-    const parsed = extractCdragonSpell(primaryChild);
+    let parsed = chooseBestSpellChild(raw, pathIndex, childSpells, null, "p");
+    if (!parsed) {
+      const primaryChild = resolveCdragonRecord(raw, pathIndex, childSpells[0]);
+      parsed = extractCdragonSpell(primaryChild);
+    }
     if (parsed) bySlot.p = parsed;
   }
 
