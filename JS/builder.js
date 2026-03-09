@@ -1191,6 +1191,12 @@ function makeMissingGameCalculation(reason, displayAsPercent = false) {
   };
 }
 
+function hasNonEmptyCalculationReference(ref) {
+  if (ref === null || typeof ref === "undefined") return false;
+  if (typeof ref === "string") return ref.trim() !== "";
+  return true;
+}
+
 function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap = null, seen = new Set(), tracePath = "part", displayAsPercent = false) {
   if (!part) return makeMissingCalc(`${tracePath} has no part payload`);
   const t = String(part?.__type || "");
@@ -1229,7 +1235,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
   }
 
   const resolveReferencedGameCalculation = (ref) => {
-    if (!ref) return makeMissingCalc(`${tracePath} has empty game calculation reference`);
+    if (!hasNonEmptyCalculationReference(ref)) return makeMissingCalc(`${tracePath} has empty game calculation reference`);
     if (typeof ref === "object") {
       const evaluated = evaluateGameCalculation(ref, dataValues, rank, stats, calculationsMap, new Set(seen), `${tracePath}.inline`, displayAsPercent);
       if (!evaluated) return makeMissingCalc(`${tracePath} inline game calculation unresolved`);
@@ -1266,7 +1272,9 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     });
 
     ["mGameCalculation", "mModifiedGameCalculation", "mDefaultGameCalculation", "mConditionalGameCalculation"].forEach((key) => {
-      const evaluated = resolveReferencedGameCalculation(part?.[key]);
+      const ref = part?.[key];
+      if (!hasNonEmptyCalculationReference(ref)) return;
+      const evaluated = resolveReferencedGameCalculation(ref);
       if (evaluated) out.push(evaluated);
     });
 
@@ -1319,7 +1327,12 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     return makeMissingCalc(`${tracePath} has stat coefficient part with zero/empty coefficient`);
   }
 
-  const referencedGameCalc = resolveReferencedGameCalculation(part?.mGameCalculation || part?.mModifiedGameCalculation);
+  const fallbackReference = hasNonEmptyCalculationReference(part?.mGameCalculation)
+    ? part.mGameCalculation
+    : part?.mModifiedGameCalculation;
+  const referencedGameCalc = hasNonEmptyCalculationReference(fallbackReference)
+    ? resolveReferencedGameCalculation(fallbackReference)
+    : null;
   if (referencedGameCalc) return referencedGameCalc;
 
   return makeMissingCalc(`${tracePath} unsupported part type: ${t || "<unknown>"}`);
@@ -1328,7 +1341,9 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
 function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
   if (!calc || !result) return result;
 
-  const multiplier = evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent);
+  const multiplier = hasNonEmptyCalculationReference(calc?.mMultiplier)
+    ? evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent)
+    : null;
   if (multiplier && !multiplier.missing) {
     const multiplied = result.total * multiplier.value;
     result = {
@@ -1338,7 +1353,9 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
     };
   }
 
-  const addend = evaluateCalculationPart(calc.mAddend, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent);
+  const addend = hasNonEmptyCalculationReference(calc?.mAddend)
+    ? evaluateCalculationPart(calc.mAddend, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent)
+    : null;
   if (addend && !addend.missing) {
     const added = result.total + addend.value;
     result = {
@@ -1348,7 +1365,9 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
     };
   }
 
-  const subtrahend = evaluateCalculationPart(calc.mSubtrahend, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent);
+  const subtrahend = hasNonEmptyCalculationReference(calc?.mSubtrahend)
+    ? evaluateCalculationPart(calc.mSubtrahend, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent)
+    : null;
   if (subtrahend && !subtrahend.missing) {
     const subtracted = result.total - subtrahend.value;
     result = {
@@ -1358,7 +1377,9 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
     };
   }
 
-  const divider = evaluateCalculationPart(calc.mDivider, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent);
+  const divider = hasNonEmptyCalculationReference(calc?.mDivider)
+    ? evaluateCalculationPart(calc.mDivider, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent)
+    : null;
   if (divider && !divider.missing && divider.value !== 0) {
     const divided = result.total / divider.value;
     result = {
@@ -1377,6 +1398,9 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
   const resolvedDisplayAsPercent = typeof displayAsPercent === "boolean" ? displayAsPercent : !!calc.mDisplayAsPercent;
 
   if (ctype === "GameCalculationModified") {
+    if (!hasNonEmptyCalculationReference(calc?.mModifiedGameCalculation)) {
+      return makeMissingGameCalculation(`${tracePath} missing modified game calculation reference`, resolvedDisplayAsPercent);
+    }
     const key = String(calc.mModifiedGameCalculation || "");
     if (!calculationsMap || !key) return makeMissingGameCalculation(`${tracePath} missing calculations map or key`, resolvedDisplayAsPercent);
     if (seen.has(key)) return makeMissingGameCalculation(`${tracePath} circular reference ${key}`, resolvedDisplayAsPercent);
@@ -1406,7 +1430,7 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
       calc.mFallbackGameCalculation,
     ];
     for (const candidate of conditionalParts) {
-      if (!candidate) continue;
+      if (!hasNonEmptyCalculationReference(candidate)) continue;
       if (typeof candidate === "object") {
         const evaluated = evaluateGameCalculation(candidate, dataValues, rank, stats, calculationsMap, new Set(seen), `${tracePath}.conditional`, resolvedDisplayAsPercent);
         if (evaluated) return evaluated;
