@@ -1571,7 +1571,47 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
 }
 
 function normalizeCalcToken(token) {
-  return String(token || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return canonicalizeToken(token);
+}
+
+function canonicalizeToken(name) {
+  return String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function buildCanonicalTokenMap(keys = []) {
+  return keys.reduce((acc, key) => {
+    const canonical = canonicalizeToken(key);
+    if (!canonical || acc[canonical]) return acc;
+    acc[canonical] = key;
+    return acc;
+  }, {});
+}
+
+function getDeterministicTokenCandidates(token) {
+  const candidates = [];
+  const seen = new Set();
+  const add = (value) => {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    candidates.push(normalized);
+  };
+
+  const tryTrimEdge = (value) => {
+    add(value);
+    if (value.endsWith("_tooltip")) add(value.slice(0, -8));
+    if (value.endsWith("tooltip")) add(value.slice(0, -7));
+
+    ["base", "bonus", "total"].forEach((prefix) => {
+      if (value.startsWith(prefix) && value.length > prefix.length) add(value.slice(prefix.length));
+    });
+    ["base", "bonus", "total", "value", "amount", "damage"].forEach((suffix) => {
+      if (value.endsWith(suffix) && value.length > suffix.length) add(value.slice(0, -suffix.length));
+    });
+  };
+
+  tryTrimEdge(String(token || "").trim().toLowerCase());
+  return candidates;
 }
 
 function findBestCalcTokenMatch(calcLookup, token) {
@@ -1598,74 +1638,102 @@ function findBestCalcTokenMatch(calcLookup, token) {
 
 function resolveAbilityToken(tokenRaw, ctx) {
   const token = String(tokenRaw || "").trim().toLowerCase();
+  const denylist = new Set(["gamemodeinteger", "gamemodeinteger1", "gamemodeinteger2", "gamemodeinteger3"]);
 
   const resolveSimple = (baseToken, localCtx = ctx) => {
-    let normalizedToken = baseToken;
-    if (normalizedToken.endsWith("tooltip")) normalizedToken = normalizedToken.slice(0, -7);
-    if (normalizedToken.includes("gamemodeinteger")) return { html: "", numeric: null };
+    const candidates = getDeterministicTokenCandidates(baseToken);
 
-    let calc = localCtx.calcLookup[normalizedToken];
-    if (!calc) {
-      const fuzzyKey = findBestCalcTokenMatch(localCtx.calcLookup || {}, normalizedToken);
-      if (fuzzyKey) calc = localCtx.calcLookup[fuzzyKey];
-    }
-    if (calc) {
+    const resolveCalc = (lookupToken) => {
+      if (denylist.has(canonicalizeToken(lookupToken))) return { html: "", numeric: null };
+
+      let calc = localCtx.calcLookup[lookupToken];
+      if (!calc) {
+        const canonicalKey = localCtx.calcLookupCanonicalMap?.[canonicalizeToken(lookupToken)];
+        if (canonicalKey) calc = localCtx.calcLookup[canonicalKey];
+      }
+      if (!calc) {
+        const fuzzyKey = findBestCalcTokenMatch(localCtx.calcLookup || {}, lookupToken);
+        if (fuzzyKey) calc = localCtx.calcLookup[fuzzyKey];
+      }
+      if (!calc) return null;
+
       const shown = calc.displayAsPercent ? (calc.total * 100) : calc.total;
       const eq = formatCalculationTerms(calc.terms, shown);
       return {
         html: `<span class="ability-detail-number">${formatAbilityNumber(shown, calc.displayAsPercent)} <span class="ability-detail-eq">(${eq})</span></span>`,
         numeric: shown,
       };
-    }
+    };
 
-    let dataValue = getSpellDataValue(localCtx.cdragonSpell?.dataValues || [], normalizedToken, localCtx.safeRank);
-    if (!dataValue) {
-      const dv = (localCtx.cdragonSpell?.dataValues || []).map((d) => String(d?.mName || "").toLowerCase());
-      const fuzzyDv = dv.find((k) => k.includes(normalizedToken) || normalizedToken.includes(k));
-      if (fuzzyDv) dataValue = getSpellDataValue(localCtx.cdragonSpell?.dataValues || [], fuzzyDv, localCtx.safeRank);
-    }
-    if (dataValue) {
+    const resolveDataValue = (lookupToken) => {
+      let dataValue = getSpellDataValue(localCtx.cdragonSpell?.dataValues || [], lookupToken, localCtx.safeRank);
+      if (!dataValue) {
+        const canonicalKey = localCtx.dataValueCanonicalMap?.[canonicalizeToken(lookupToken)];
+        if (canonicalKey) dataValue = getSpellDataValue(localCtx.cdragonSpell?.dataValues || [], canonicalKey, localCtx.safeRank);
+      }
+      if (!dataValue) {
+        const dv = (localCtx.cdragonSpell?.dataValues || []).map((d) => String(d?.mName || "").toLowerCase());
+        const fuzzyDv = dv.find((k) => k.includes(lookupToken) || lookupToken.includes(k));
+        if (fuzzyDv) dataValue = getSpellDataValue(localCtx.cdragonSpell?.dataValues || [], fuzzyDv, localCtx.safeRank);
+      }
+      if (!dataValue) return null;
       return {
         html: `<span class="ability-detail-number">${formatAbilityNumber(dataValue.current)}</span>`,
         numeric: dataValue.current,
       };
-    }
+    };
 
-    const effectMatch = normalizedToken.match(/^e(\d+)$/);
-    if (effectMatch) {
-      const idx = Math.max(1, Number(effectMatch[1]));
-      const arr = localCtx.spell.effect?.[idx] || [];
-      if (!arr.length) return null;
-      const rankIndex = Math.max(0, Math.min(arr.length - 1, localCtx.safeRank - 1));
-      const current = Number(arr[rankIndex]) || 0;
-      return {
-        html: `<span class="ability-detail-number">${formatAbilityNumber(current)}</span>`,
-        numeric: current,
-      };
-    }
-
-    if (/^[af]\d+$/.test(baseToken) && localCtx.stats) {
-      const v = localCtx.vars[baseToken];
-      if (!v) return null;
-      const source = getSpellScalingSource(v.link, localCtx.stats);
-      if (!source) return null;
-      const coeffRaw = Array.isArray(v.coeff) ? (v.coeff[getRankedValueIndex(v.coeff, localCtx.safeRank)] ?? v.coeff[0]) : v.coeff;
-      const coeff = Number(coeffRaw || 0);
-      const scaled = coeff * source.value;
-      return {
-        html: `<span class="ability-detail-number">${formatAbilityNumber(scaled)} <span class="ability-detail-eq">(${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(source.label)})</span></span>`,
-        numeric: scaled,
-      };
-    }
-
-    if (Object.prototype.hasOwnProperty.call(localCtx.knownTokens, baseToken)) {
-      const v = localCtx.knownTokens[baseToken];
+    const resolveKnownToken = (lookupToken) => {
+      let key = lookupToken;
+      if (!Object.prototype.hasOwnProperty.call(localCtx.knownTokens, key)) {
+        key = localCtx.knownTokenCanonicalMap?.[canonicalizeToken(lookupToken)] || key;
+      }
+      if (!Object.prototype.hasOwnProperty.call(localCtx.knownTokens, key)) return null;
+      const v = localCtx.knownTokens[key];
       if (v === "" || v === "-") return { html: "", numeric: null };
       const parsed = Number(v);
       return {
         html: `<span class="ability-detail-number">${v}</span>`,
         numeric: Number.isFinite(parsed) ? parsed : null,
       };
+    };
+
+    for (const normalizedToken of candidates) {
+      const calcResolved = resolveCalc(normalizedToken);
+      if (calcResolved) return calcResolved;
+
+      const dataResolved = resolveDataValue(normalizedToken);
+      if (dataResolved) return dataResolved;
+
+      const effectMatch = normalizedToken.match(/^e(\d+)$/);
+      if (effectMatch) {
+        const idx = Math.max(1, Number(effectMatch[1]));
+        const arr = localCtx.spell.effect?.[idx] || [];
+        if (!arr.length) continue;
+        const rankIndex = Math.max(0, Math.min(arr.length - 1, localCtx.safeRank - 1));
+        const current = Number(arr[rankIndex]) || 0;
+        return {
+          html: `<span class="ability-detail-number">${formatAbilityNumber(current)}</span>`,
+          numeric: current,
+        };
+      }
+
+      if (/^[af]\d+$/.test(normalizedToken) && localCtx.stats) {
+        const v = localCtx.vars[normalizedToken];
+        if (!v) continue;
+        const source = getSpellScalingSource(v.link, localCtx.stats);
+        if (!source) continue;
+        const coeffRaw = Array.isArray(v.coeff) ? (v.coeff[getRankedValueIndex(v.coeff, localCtx.safeRank)] ?? v.coeff[0]) : v.coeff;
+        const coeff = Number(coeffRaw || 0);
+        const scaled = coeff * source.value;
+        return {
+          html: `<span class="ability-detail-number">${formatAbilityNumber(scaled)} <span class="ability-detail-eq">(${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(source.label)})</span></span>`,
+          numeric: scaled,
+        };
+      }
+
+      const knownResolved = resolveKnownToken(normalizedToken);
+      if (knownResolved) return knownResolved;
     }
 
     return null;
@@ -1718,7 +1786,22 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
     spellmodifierdescriptionappend: "",
   };
 
-  const ctx = { spell, safeRank, stats, vars, cdragonSpell, calcLookup, knownTokens };
+  const calcLookupCanonicalMap = buildCanonicalTokenMap(Object.keys(calcLookup));
+  const dataValueCanonicalMap = buildCanonicalTokenMap((cdragonSpell?.dataValues || []).map((d) => String(d?.mName || "").toLowerCase()));
+  const knownTokenCanonicalMap = buildCanonicalTokenMap(Object.keys(knownTokens));
+
+  const ctx = {
+    spell,
+    safeRank,
+    stats,
+    vars,
+    cdragonSpell,
+    calcLookup,
+    knownTokens,
+    calcLookupCanonicalMap,
+    dataValueCanonicalMap,
+    knownTokenCanonicalMap,
+  };
   const replaced = raw.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (full, tokenRaw) => {
     const resolved = resolveAbilityToken(tokenRaw, ctx);
     if (resolved) return resolved.html;
