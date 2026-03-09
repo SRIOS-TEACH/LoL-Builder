@@ -39,6 +39,79 @@ const RUNE_DATA = {
   shardOptions: ["adaptive-force", "attack-speed", "ability-haste", "move-speed", "scaling-health", "health", "tenacity-slow-resist"],
 };
 
+const RUNE_PATH_ID_TO_KEY = {
+  7200: "domination",
+  7201: "precision",
+  7202: "sorcery",
+  7203: "inspiration",
+  7204: "resolve",
+};
+
+function slugifyRuneName(name) {
+  return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function toDdragonPerkIcon(version, iconPath) {
+  if (!iconPath) return "";
+  return `https://ddragon.canisback.com/img/${String(iconPath).replace(/^\/+/, "")}`;
+}
+
+function stripHtmlTags(text) {
+  return String(text || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function buildPathDefaults(paths) {
+  return Object.fromEntries(
+    Object.entries(paths).map(([id, path]) => [
+      id,
+      (path.primaryRows || []).map((row) => row[0]).filter(Boolean).slice(0, 4),
+    ]),
+  );
+}
+
+function isApAdaptiveChampion() {
+  const tags = new Set(BUILDER.championData?.tags || []);
+  if (tags.has("Mage")) return true;
+  if (tags.has("Marksman") || tags.has("Fighter")) return false;
+  return true;
+}
+
+async function hydrateRunesFromDdragon(version) {
+  const runes = await window.ApiClient.fetchRunesReforged(version).catch(() => null);
+  if (!Array.isArray(runes) || !runes.length) return;
+
+  const nextPaths = { ...RUNE_DATA.paths };
+  const nextLookup = { ...RUNE_DATA.runeLookup };
+
+  runes.forEach((path) => {
+    const key = RUNE_PATH_ID_TO_KEY[path.id];
+    if (!key) return;
+
+    const pathIcon = toDdragonPerkIcon(version, path.icon);
+    const primaryRows = (path.slots || []).map((slot) => (slot.runes || []).map((rune) => {
+      const slug = slugifyRuneName(rune.name);
+      nextLookup[slug] = {
+        name: rune.name,
+        desc: stripHtmlTags(rune.longDesc || rune.shortDesc || ""),
+        icon: toDdragonPerkIcon(version, rune.icon),
+      };
+      return slug;
+    }));
+
+    nextPaths[key] = {
+      ...nextPaths[key],
+      name: path.name,
+      icon: pathIcon || nextPaths[key]?.icon || "",
+      splash: `url(${pathIcon || nextPaths[key]?.icon || ""})`,
+      primaryRows: primaryRows.length ? primaryRows : (nextPaths[key]?.primaryRows || []),
+    };
+  });
+
+  RUNE_DATA.paths = nextPaths;
+  RUNE_DATA.runeLookup = nextLookup;
+  RUNE_DATA.pathDefaults = buildPathDefaults(nextPaths);
+}
+
 function setStatus(message, isError = false) {
   const el = document.getElementById("builderStatus");
   el.textContent = message || "";
