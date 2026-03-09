@@ -71,6 +71,17 @@ function buildPathDefaults(paths) {
   );
 }
 
+function initializeRuneSelections() {
+  const pathIds = Object.keys(RUNE_DATA.paths);
+  const primaryPath = pathIds[0] || "";
+  const secondaryPath = pathIds.find((id) => id !== primaryPath) || primaryPath;
+
+  BUILDER.runeSelections.primaryPath = primaryPath;
+  BUILDER.runeSelections.secondaryPath = secondaryPath;
+  BUILDER.runeSelections.primary = getPathPrimaryDefaults(primaryPath);
+  BUILDER.runeSelections.secondary = getPathSecondaryDefaults(secondaryPath);
+}
+
 function isApAdaptiveChampion() {
   const tags = new Set(BUILDER.championData?.tags || []);
   if (tags.has("Mage")) return true;
@@ -112,6 +123,7 @@ async function hydrateRunesFromDdragon(version) {
   RUNE_DATA.paths = nextPaths;
   RUNE_DATA.runeLookup = nextLookup;
   RUNE_DATA.pathDefaults = buildPathDefaults(nextPaths);
+  initializeRuneSelections();
 }
 
 function setStatus(message, isError = false) {
@@ -218,71 +230,10 @@ function isPurchasableBuilderItem(id, item) {
   return window.ItemPolicy.isPurchasableItem(id, item);
 }
 
-
-function runeKeyToId(key) {
-  return String(key || "").replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toLowerCase();
-}
-
-function normalizeRuneIconPath(iconPath) {
-  if (!iconPath) return "";
-  if (/^https?:\/\//i.test(iconPath)) return iconPath;
-  return `https://ddragon.leagueoflegends.com/cdn/img/${String(iconPath).replace(/^\/+/, "")}`;
-}
-
-function ingestRunesReforged(runes) {
-  const parsedPaths = {};
-  const parsedDefaults = {};
-
-  (runes || []).forEach((style) => {
-    const pathId = runeKeyToId(style?.key || style?.name || style?.id);
-    const slots = Array.isArray(style?.slots) ? style.slots : [];
-    const primaryRows = slots.map((slot) => (slot?.runes || []).map((perk) => runeKeyToId(perk?.key || perk?.name || perk?.id)).filter(Boolean));
-    parsedPaths[pathId] = {
-      name: style?.name || pathId,
-      icon: normalizeRuneIconPath(style?.icon),
-      splash: `url(${normalizeRuneIconPath(style?.icon)})`,
-      primaryRows,
-    };
-
-    parsedDefaults[pathId] = primaryRows.map((row) => row[0]).filter(Boolean).slice(0, 4);
-
-    slots.forEach((slot) => {
-      (slot?.runes || []).forEach((perk) => {
-        const perkId = runeKeyToId(perk?.key || perk?.name || perk?.id);
-        if (!perkId) return;
-        const shortDesc = stripHtml(perk?.shortDesc);
-        const longDesc = stripHtml(perk?.longDesc) || shortDesc;
-        RUNE_DATA.runeLookup[perkId] = {
-          name: perk?.name || perkId,
-          desc: shortDesc,
-          longDesc,
-          icon: normalizeRuneIconPath(perk?.icon),
-        };
-      });
-    });
-  });
-
-  RUNE_DATA.paths = parsedPaths;
-  RUNE_DATA.pathDefaults = parsedDefaults;
-}
 function dedupeBuilderItems(itemEntries, preferredMaps = [11]) {
   const shared = getItemLookupShared();
   if (shared?.dedupeByNameWithMapPriority) return shared.dedupeByNameWithMapPriority(itemEntries, new Set(preferredMaps));
   return window.ItemPolicy.dedupeByNameWithMapPriority(itemEntries, new Set(preferredMaps));
-}
-
-
-async function hydrateRunesFromDdragon() {
-  const runesReforged = await window.ApiClient.fetchRunesReforged();
-  ingestRunesReforged(runesReforged);
-
-  const pathIds = Object.keys(RUNE_DATA.paths);
-  const defaultPrimary = pathIds[0] || "";
-  const defaultSecondary = pathIds.find((id) => id !== defaultPrimary) || defaultPrimary;
-  BUILDER.runeSelections.primaryPath = defaultPrimary;
-  BUILDER.runeSelections.secondaryPath = defaultSecondary;
-  BUILDER.runeSelections.primary = getPathPrimaryDefaults(defaultPrimary);
-  BUILDER.runeSelections.secondary = getPathSecondaryDefaults(defaultSecondary);
 }
 
 async function loadBuilderData() {
@@ -291,8 +242,6 @@ async function loadBuilderData() {
 
   const champions = await window.ApiClient.fetchChampionIndex(BUILDER.version);
   BUILDER.champions = champions.data;
-
-  await hydrateRunesFromDdragon();
 
   const [items, cdtbData] = await Promise.all([
     window.ApiClient.fetchItemIndex(BUILDER.version),
