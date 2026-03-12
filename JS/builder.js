@@ -2293,7 +2293,7 @@ function renderRunePanel() {
   };
   const renderShardIcon = (slotIndex) => {
     const rune = getRuneMeta(BUILDER.runeSelections.shards[slotIndex]);
-    return `<button class="rune-shard-icon-btn" data-rune-target="shard_${slotIndex}" type="button">${runeImgTag(rune)}<span class="rune-secondary-hover-desc">${rune.desc || rune.name}</span></button>`;
+    return `<button class="rune-grid-btn rune-shard-icon-btn" data-rune-target="shard_${slotIndex}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc || rune.name}`)}" aria-label="${rune.name}" type="button">${runeImgTag(rune)}</button>`;
   };
   const renderSecondaryGrid = () => {
     const rows = getSecondaryRows(BUILDER.runeSelections.secondaryPath);
@@ -2356,10 +2356,7 @@ function renderRunePanel() {
     <div class="rune-column-block">
       <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="secondaryPath_0"><img src="${secondaryPath.icon}" alt="${secondaryPath.name}"><span>${secondaryPath.name}</span></button></div>
       ${renderSecondaryRuneGrid()}
-      <div class="rune-shard-row-wrap">
-        <div class='rune-subsection-title rune-subsection-title-shards'>Stat Shards</div>
-        <div class="rune-shard-icon-row">${renderShardIcon(0)}${renderShardIcon(1)}${renderShardIcon(2)}</div>
-      </div>
+      <div class="rune-subpanel-grid rune-shard-icon-row">${renderShardIcon(0)}${renderShardIcon(1)}${renderShardIcon(2)}</div>
     </div>
   `;
 }
