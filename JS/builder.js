@@ -1667,6 +1667,8 @@ function getDeterministicTokenCandidates(token) {
 
   const tryTrimEdge = (value) => {
     add(value);
+    const effectAmountMatch = value.match(/^effect(\d+)amount$/);
+    if (effectAmountMatch) add(`e${effectAmountMatch[1]}`);
     if (value.endsWith("_tooltip")) add(value.slice(0, -8));
     if (value.endsWith("tooltip")) add(value.slice(0, -7));
 
@@ -1707,7 +1709,7 @@ function findBestCalcTokenMatch(calcLookup, token) {
 function resolveAbilityToken(tokenRaw, ctx) {
   const token = String(tokenRaw || "").trim().toLowerCase();
   const denylist = new Set(["gamemodeinteger", "gamemodeinteger1", "gamemodeinteger2", "gamemodeinteger3"]);
-  const qualifiedTokenMatch = token.match(/^spell\.([^:]+):(.+)$/);
+  const multiplierMatchRegex = /^(?<left>[a-z0-9_:.]+)\*(?<mult>-?\d+(?:\.\d+)?)$/;
 
   const getQualifiedCtx = (spellRefRaw, localCtx) => {
     const normalizedRef = normalizeSpellRecordName(spellRefRaw);
@@ -1830,45 +1832,42 @@ function resolveAbilityToken(tokenRaw, ctx) {
   const nextRank = Math.min(5, ctx.safeRank + 1);
   const simpleCtx = { ...ctx, safeRank: isNextLevel ? nextRank : ctx.safeRank };
 
-  const multMatch = baseToken.match(/^([a-z0-9_]+)\*(-?\d+(?:\.\d+)?)$/);
-  if (multMatch) {
-    const left = resolveSimple(multMatch[1], simpleCtx);
-    if (!left || left.numeric === null) return null;
-    const mult = Number(multMatch[2]);
-    const value = left.numeric * mult;
-    return {
-      html: `<span class="ability-detail-number">${formatAbilityNumber(value)}</span>`,
-      numeric: value,
-    };
-  }
-
-  const direct = resolveSimple(baseToken, simpleCtx);
-  if (direct) return direct;
-
-  if (qualifiedTokenMatch) {
-    const qualifiedCtx = getQualifiedCtx(qualifiedTokenMatch[1], simpleCtx);
-    const qualifiedBaseToken = String(qualifiedTokenMatch[2] || "").trim().toLowerCase();
-    if (qualifiedCtx && qualifiedBaseToken) {
-      const qualifiedMultMatch = qualifiedBaseToken.match(/^([a-z0-9_]+)\*(-?\d+(?:\.\d+)?)$/);
-      if (qualifiedMultMatch) {
-        const left = resolveSimple(qualifiedMultMatch[1], qualifiedCtx);
-        if (left && left.numeric !== null) {
-          const mult = Number(qualifiedMultMatch[2]);
-          const value = left.numeric * mult;
-          return {
-            html: `<span class="ability-detail-number">${formatAbilityNumber(value)}</span>`,
-            numeric: value,
-          };
-        }
-      }
-
-      const qualifiedDirect = resolveSimple(qualifiedBaseToken, qualifiedCtx);
-      if (qualifiedDirect) return qualifiedDirect;
-
-      const fallbackInCurrentSpell = resolveSimple(qualifiedBaseToken, simpleCtx);
-      if (fallbackInCurrentSpell) return fallbackInCurrentSpell;
+  const resolveWithMath = (candidateToken, localCtx, fallbackCtx = localCtx) => {
+    const multMatch = candidateToken.match(multiplierMatchRegex);
+    if (multMatch?.groups?.left && multMatch?.groups?.mult) {
+      const left = resolveToken(multMatch.groups.left, localCtx, fallbackCtx);
+      if (!left || left.numeric === null) return null;
+      const mult = Number(multMatch.groups.mult);
+      const value = left.numeric * mult;
+      return {
+        html: `<span class="ability-detail-number">${formatAbilityNumber(value)}</span>`,
+        numeric: value,
+      };
     }
-  }
+
+    return resolveSimple(candidateToken, localCtx);
+  };
+
+  const resolveToken = (candidateToken, localCtx, fallbackCtx = localCtx) => {
+    const qualifiedTokenMatch = candidateToken.match(/^spell\.([^:]+):(.+)$/);
+    if (qualifiedTokenMatch) {
+      const qualifiedCtx = getQualifiedCtx(qualifiedTokenMatch[1], localCtx);
+      const qualifiedBaseToken = String(qualifiedTokenMatch[2] || "").trim().toLowerCase();
+      if (qualifiedCtx && qualifiedBaseToken) {
+        const qualifiedResolved = resolveWithMath(qualifiedBaseToken, qualifiedCtx, fallbackCtx);
+        if (qualifiedResolved) return qualifiedResolved;
+
+        const fallbackResolved = resolveWithMath(qualifiedBaseToken, fallbackCtx, fallbackCtx);
+        if (fallbackResolved) return fallbackResolved;
+      }
+      return null;
+    }
+
+    return resolveWithMath(candidateToken, localCtx, fallbackCtx);
+  };
+
+  const direct = resolveToken(baseToken, simpleCtx, simpleCtx);
+  if (direct) return direct;
 
   return null;
 }
