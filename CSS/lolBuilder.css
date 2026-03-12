@@ -639,6 +639,10 @@ body {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.rune-shard-icon-row {
+  margin-top: 0.8rem;
+}
+
 .rune-grid-btn {
   width: 62px;
   height: 62px;
@@ -699,33 +703,6 @@ body {
   color: #9fb7ea;
   margin: 0.35rem 0 0.4rem;
   font-weight: 800;
-}
-
-.rune-subsection-title-shards {
-  margin-top: 0.7rem;
-  color: #b8cbf3;
-}
-
-.rune-shard-row-wrap {
-  grid-column: 1 / -1;
-  background: rgba(7, 18, 44, 0.74);
-  border: 1px solid rgba(112, 146, 224, 0.55);
-  border-radius: 12px;
-  padding: 0.6rem 0.7rem;
-}
-
-.rune-shard-row-wrap .rune-subsection-title-shards {
-  margin-top: 0;
-}
-
-.rune-shard-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-}
-
-.rune-shard-row .rune-slot-row {
-  margin-bottom: 0;
 }
 
 .rune-slot-row {
@@ -838,36 +815,6 @@ body {
 }
 
 
-.rune-shard-icon-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.45rem;
-}
-
-.rune-shard-icon-btn {
-  position: relative;
-  border: 1px solid rgba(95, 127, 190, 0.72);
-  border-radius: 999px;
-  background: rgba(10, 18, 36, 0.75);
-  width: 56px;
-  height: 56px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  justify-self: center;
-  padding: 0;
-}
-
-.rune-shard-icon-btn img {
-  width: 46px;
-  height: 46px;
-  border-radius: 999px;
-}
-
-.rune-shard-icon-btn:hover .rune-secondary-hover-desc,
-.rune-shard-icon-btn:focus-visible .rune-secondary-hover-desc {
-  opacity: 1;
-}
 
 .rune-modal-body {
   width: min(900px, 96vw);
