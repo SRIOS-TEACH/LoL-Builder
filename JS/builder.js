@@ -586,6 +586,43 @@ function buildSpellPayloadLookupEntry(lookup, payload, aliases = []) {
   aliases.forEach((alias) => addSpellPayloadAlias(lookup, payload, alias));
 }
 
+function getObjectPathTail(value) {
+  const path = String(value || "").trim();
+  if (!path) return "";
+  const segments = path.split("/").filter(Boolean);
+  return segments[segments.length - 1] || "";
+}
+
+function buildSpellAliasMetadata({ slot, spell = null, selectedChild = null, abilityRecord = null, nameCandidates = [] }) {
+  return {
+    slot,
+    scriptName: selectedChild?.record?.mScriptName || abilityRecord?.mScriptName || "",
+    objectPathTail: getObjectPathTail(
+      selectedChild?.record?.mObjectPath
+      || selectedChild?.path
+      || abilityRecord?.mObjectPath
+      || "",
+    ),
+    spellIdCandidate: String(spell?.id || ""),
+    spellNameCandidate: String(spell?.name || ""),
+    matchCandidates: nameCandidates.map((candidate) => String(candidate || "")).filter(Boolean),
+  };
+}
+
+function registerSpellPayloadAliases(byAlias, payload, metadata, aliases = []) {
+  aliases.forEach((aliasRaw) => {
+    const normalized = normalizeSpellRecordName(aliasRaw);
+    const canonical = canonicalizeToken(normalized);
+    if (!canonical || byAlias[canonical]) return;
+    byAlias[canonical] = {
+      payload,
+      metadata,
+      alias: normalized,
+      canonicalAlias: canonical,
+    };
+  });
+}
+
 function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) {
   const pathIndex = new Map(Object.keys(raw || {}).map((key) => [normalizeCdragonRecordPath(key), key]));
   const rootCandidates = [
@@ -612,6 +649,7 @@ function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) 
 
   const bySlot = {};
   const byRef = {};
+  const byAlias = {};
 
   ddSpells.forEach((spell, idx) => {
     const slot = ["q", "w", "e", "r"][idx];
@@ -655,19 +693,32 @@ function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) 
     if (!parsed) return;
     bySlot[slot] = parsed;
 
+    const metadata = buildSpellAliasMetadata({
+      slot,
+      spell,
+      selectedChild,
+      abilityRecord,
+      nameCandidates,
+    });
+
     const aliases = [
       slot,
       spell?.name,
       spell?.id,
+      ...nameCandidates,
       abilityRecord?.mScriptName,
       abilityRecord?.mObjectPath,
+      getObjectPathTail(abilityRecord?.mObjectPath),
       abilityRecord?.mName,
       selectedChild?.record?.mScriptName,
       selectedChild?.record?.mObjectPath,
+      getObjectPathTail(selectedChild?.record?.mObjectPath),
       selectedChild?.record?.mName,
       selectedChild?.path,
+      getObjectPathTail(selectedChild?.path),
     ];
     buildSpellPayloadLookupEntry(byRef, parsed, aliases);
+    registerSpellPayloadAliases(byAlias, parsed, metadata, aliases);
   });
 
   const passivePathCandidates = [
@@ -689,25 +740,38 @@ function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) 
     if (parsed) bySlot.p = parsed;
 
     if (parsed) {
+      const metadata = buildSpellAliasMetadata({
+        slot: "p",
+        spell: { id: `${championName}Passive`, name: "Passive" },
+        selectedChild,
+        abilityRecord: passiveRecord,
+        nameCandidates: passivePathCandidates,
+      });
       const aliases = [
         "p",
         "passive",
         `${championName}passive`,
         `${pathName}passive`,
+        ...passivePathCandidates,
         passiveRecord?.mScriptName,
         passiveRecord?.mObjectPath,
+        getObjectPathTail(passiveRecord?.mObjectPath),
         passiveRecord?.mName,
         selectedChild?.record?.mScriptName,
         selectedChild?.record?.mObjectPath,
+        getObjectPathTail(selectedChild?.record?.mObjectPath),
         selectedChild?.record?.mName,
         selectedChild?.path,
+        getObjectPathTail(selectedChild?.path),
       ];
       buildSpellPayloadLookupEntry(byRef, parsed, aliases);
+      registerSpellPayloadAliases(byAlias, parsed, metadata, aliases);
     }
   }
 
   if (!Object.keys(bySlot).length) return null;
   bySlot.byRef = byRef;
+  bySlot.byAlias = byAlias;
   return bySlot;
 }
 
@@ -1716,7 +1780,8 @@ function resolveAbilityToken(tokenRaw, ctx) {
     const canonicalRef = canonicalizeToken(normalizedRef);
     if (!canonicalRef) return null;
 
-    const payload = localCtx.allSpellPayloadByRef?.[canonicalRef];
+    const aliasEntry = localCtx.allSpellPayloadByAlias?.[canonicalRef] || null;
+    const payload = aliasEntry?.payload || localCtx.allSpellPayloadByRef?.[canonicalRef];
     if (!payload) return null;
 
     return {
@@ -1725,6 +1790,7 @@ function resolveAbilityToken(tokenRaw, ctx) {
       calcLookup: payload.calcLookup,
       calcLookupCanonicalMap: payload.calcLookupCanonicalMap,
       dataValueCanonicalMap: payload.dataValueCanonicalMap,
+      qualifiedSpellAlias: aliasEntry?.metadata || null,
     };
   };
 
@@ -1945,6 +2011,14 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
     acc[refKey] = buildResolvedSpellPayload(payload, safeRank, stats);
     return acc;
   }, {});
+  const allSpellPayloadByAlias = Object.entries(BUILDER.cdragonAbilityData?.byAlias || {}).reduce((acc, [aliasKey, entry]) => {
+    if (!entry?.payload) return acc;
+    acc[aliasKey] = {
+      ...entry,
+      payload: buildResolvedSpellPayload(entry.payload, safeRank, stats),
+    };
+    return acc;
+  }, {});
 
   const ctx = {
     spell,
@@ -1958,6 +2032,7 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
     dataValueCanonicalMap,
     knownTokenCanonicalMap,
     allSpellPayloadByRef,
+    allSpellPayloadByAlias,
   };
   const replaced = raw.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (full, tokenRaw) => {
     const resolved = resolveAbilityToken(tokenRaw, ctx);
