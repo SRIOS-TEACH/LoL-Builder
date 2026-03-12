@@ -1886,12 +1886,55 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
   const resolvedSpellPayload = buildResolvedSpellPayload(cdragonSpell, safeRank, stats);
   const calcLookup = resolvedSpellPayload.calcLookup;
 
+  const toCamelCase = (value) => String(value || "").replace(/[_-]+([a-z0-9])/gi, (_, chr) => chr.toUpperCase());
+  const getSpellRankValue = (rawValue) => {
+    if (rawValue === null || rawValue === undefined) return "-";
+    if (typeof rawValue === "string") {
+      if (rawValue.includes("/")) return parseByRank(rawValue, safeRank);
+      return rawValue || "-";
+    }
+    if (Array.isArray(rawValue)) {
+      if (!rawValue.length) return "-";
+      const idx = Math.max(0, Math.min(rawValue.length - 1, safeRank - 1));
+      const picked = rawValue[idx] ?? rawValue[0];
+      return picked === null || picked === undefined || picked === "" ? "-" : String(picked);
+    }
+    const numeric = Number(rawValue);
+    if (Number.isFinite(numeric)) return String(rawValue);
+    return String(rawValue || "-");
+  };
+  const getSpellTokenValue = (baseToken) => {
+    const token = String(baseToken || "").toLowerCase();
+    const camel = toCamelCase(token);
+    const candidateKeys = [
+      token,
+      `${token}burn`,
+      camel,
+      `${camel}Burn`,
+    ];
+    for (const key of candidateKeys) {
+      if (!Object.prototype.hasOwnProperty.call(spell, key)) continue;
+      const resolved = getSpellRankValue(spell[key]);
+      if (resolved !== "-") return resolved;
+    }
+    return "-";
+  };
+  const nearbyAmmoTokens = Object.fromEntries(
+    Object.keys(spell || {})
+      .filter((tokenKey) => /(ammo|recharge|stock)/i.test(String(tokenKey || "")))
+      .map((tokenKey) => [String(tokenKey || "").toLowerCase(), getSpellRankValue(spell[tokenKey])])
+      .filter(([, tokenValue]) => tokenValue !== "-")
+  );
+
   const knownTokens = {
     cost: parseByRank(spell.costBurn, safeRank),
     cooldown: parseByRank(spell.cooldownBurn, safeRank),
     range: parseByRank(spell.rangeBurn, safeRank),
+    maxammo: getSpellTokenValue("maxammo"),
+    ammorechargetime: getSpellTokenValue("ammorechargetime"),
     abilityresourcename: (spell.costType || "").replace(/<[^>]+>/g, "").replace(/[{}`]/g, "").trim() || "Mana",
     spellmodifierdescriptionappend: "",
+    ...nearbyAmmoTokens,
   };
 
   const calcLookupCanonicalMap = resolvedSpellPayload.calcLookupCanonicalMap;
