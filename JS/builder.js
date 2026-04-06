@@ -1399,12 +1399,27 @@ function getSpellDataValue(dataValues, tokenName, rank) {
       : [rawValues];
   if (!normalizedValues.length) return null;
 
-  const idx = getRankedValueIndex(normalizedValues, rank);
+  const champLevel = Math.max(1, Number(BUILDER.level) || 1);
+  const isLikelyChampionLevelSeries = normalizedValues.length >= 18 && normalizedValues.length !== 6 && normalizedValues.length !== 7;
+
+  const getChampionLevelIndex = (values, level) => {
+    if (!Array.isArray(values) || !values.length) return 0;
+    if (values.length >= 19) {
+      return Math.max(0, Math.min(values.length - 1, level));
+    }
+    return Math.max(0, Math.min(values.length - 1, level - 1));
+  };
+
+  const idx = isLikelyChampionLevelSeries
+    ? getChampionLevelIndex(normalizedValues, champLevel)
+    : getRankedValueIndex(normalizedValues, rank);
   const current = Number(normalizedValues[idx]) || 0;
 
   const rankValues = [];
   for (let i = 1; i <= 5; i += 1) {
-    const ridx = getRankedValueIndex(normalizedValues, i);
+    const ridx = isLikelyChampionLevelSeries
+      ? getChampionLevelIndex(normalizedValues, i)
+      : getRankedValueIndex(normalizedValues, i);
     rankValues.push(Number(normalizedValues[ridx] || 0));
   }
   return { current, rankValues };
