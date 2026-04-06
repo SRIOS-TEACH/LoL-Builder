@@ -1869,7 +1869,7 @@ function resolveAbilityToken(tokenRaw, ctx) {
         const canonicalKey = localCtx.calcLookupCanonicalMap?.[canonicalizeToken(lookupToken)];
         if (canonicalKey) calc = localCtx.calcLookup[canonicalKey];
       }
-      if (!calc) {
+      if (!calc && /(damage|dmg|value|amount)$/i.test(String(lookupToken || ""))) {
         const fuzzyKey = findBestCalcTokenMatch(localCtx.calcLookup || {}, lookupToken);
         if (fuzzyKey) calc = localCtx.calcLookup[fuzzyKey];
       }
