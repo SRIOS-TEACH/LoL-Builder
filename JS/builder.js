@@ -2357,7 +2357,7 @@ function renderRunePanel() {
   };
   const renderShardIcon = (slotIndex) => {
     const rune = getRuneMeta(BUILDER.runeSelections.shards[slotIndex]);
-    return `<button class="rune-grid-btn rune-shard-icon-btn" data-rune-target="shard_${slotIndex}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc || rune.name}`)}" aria-label="${rune.name}" type="button">${runeImgTag(rune)}</button>`;
+    return `<button class="rune-grid-btn rune-shard-icon-btn is-active" data-rune-target="shard_${slotIndex}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc || rune.name}`)}" aria-label="${rune.name}" type="button">${runeImgTag(rune)}</button>`;
   };
   const renderSecondaryGrid = () => {
     const rows = getSecondaryRows(BUILDER.runeSelections.secondaryPath);
