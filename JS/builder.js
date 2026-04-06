@@ -1410,6 +1410,53 @@ function getSpellDataValue(dataValues, tokenName, rank) {
   return { current, rankValues };
 }
 
+
+function evaluateByCharLevelBreakpointsPart(part, levelRaw) {
+  const level = Math.max(1, Number(levelRaw) || 1);
+  const num = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const directValues = Array.isArray(part?.mValues)
+    ? part.mValues
+    : Array.isArray(part?.values)
+      ? part.values
+      : null;
+  if (directValues?.length) {
+    const idx = Math.max(0, Math.min(directValues.length - 1, level - 1));
+    return num(directValues[idx]);
+  }
+
+  let value = num(part?.mLevel1Value ?? part?.mBaseValue ?? part?.mStartValue);
+  value += num(part?.mInitialBonusPerLevel ?? part?.mBonusPerLevel ?? part?.mAdditionalBonusPerLevel) * Math.max(0, level - 1);
+
+  const breakpoints = Array.isArray(part?.mBreakpoints)
+    ? part.mBreakpoints
+    : Array.isArray(part?.breakpoints)
+      ? part.breakpoints
+      : [];
+
+  breakpoints.forEach((bp) => {
+    const startLevel = Math.max(1, Number(bp?.mLevel ?? bp?.mStartLevel ?? bp?.mBreakpointLevel ?? 1) || 1);
+    if (level < startLevel) return;
+
+    value += num(bp?.mAdditionalBonusAtThisLevel ?? bp?.mBonusAtThisLevel ?? bp?.mFlatBonus ?? bp?.mSingleLevelBonus);
+
+    const perLevelAfter = num(
+      bp?.mAdditionalBonusPerLevelAtAndAfter
+      ?? bp?.mBonusPerLevelAtAndAfter
+      ?? bp?.mAdditionalBonusPerLevel
+      ?? bp?.mBonusPerLevel
+    );
+    if (perLevelAfter !== 0) {
+      value += perLevelAfter * Math.max(0, level - startLevel);
+    }
+  });
+
+  return value;
+}
+
 function getCalcStatSource(part, stats) {
   const dataValueName = String(part?.mDataValue || "").toLowerCase();
   if (dataValueName.includes("ap")) return { value: stats.ap, label: "AP" };
@@ -1503,13 +1550,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     return { value: src.value * coeff, text: `${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}` };
   }
   if (t === "ByCharLevelBreakpointsCalculationPart") {
-    const level = Math.max(1, Number(BUILDER.level) || 1);
-    const base = Number(part?.mLevel1Value || 0);
-    const bonus = (part?.mBreakpoints || []).reduce((acc, bp) => {
-      if (level >= Number(bp?.mLevel || 1)) return acc + Number(bp?.mAdditionalBonusAtThisLevel || 0);
-      return acc;
-    }, 0);
-    const value = base + bonus;
+    const value = evaluateByCharLevelBreakpointsPart(part, BUILDER.level);
     return { value, text: formatAbilityNumber(value) };
   }
 
