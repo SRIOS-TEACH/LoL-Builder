@@ -459,11 +459,57 @@ function resolveCdragonRecord(raw, index, path) {
 }
 
 function extractCdragonSpell(spellRecord) {
-  const spell = spellRecord?.mSpell || null;
-  if (!spell) return null;
+  const spellCandidates = [
+    spellRecord?.mSpell,
+    spellRecord?.mClientData?.mSpell,
+    spellRecord?.mSpellData,
+    spellRecord,
+  ].filter(Boolean);
+  if (!spellCandidates.length) return null;
+
+  const normalizeDataValues = (rawDataValues) => {
+    if (Array.isArray(rawDataValues)) return rawDataValues;
+    if (!rawDataValues || typeof rawDataValues !== "object") return [];
+    return Object.entries(rawDataValues).map(([name, entry]) => {
+      if (entry && typeof entry === "object") {
+        return {
+          mName: entry.mName || entry.name || entry.mDataValue || name,
+          mValues: entry.mValues || entry.values || entry.mValue || entry.value || [],
+        };
+      }
+      return { mName: name, mValues: [entry] };
+    });
+  };
+
+  const normalizeCalculations = (rawCalculations) => {
+    if (!rawCalculations || typeof rawCalculations !== "object") return {};
+    return rawCalculations;
+  };
+
+  const parsedCandidate = spellCandidates
+    .map((candidate) => ({
+      dataValues: normalizeDataValues(
+        candidate?.mDataValues
+        || candidate?.DataValues
+        || candidate?.dataValues
+        || candidate?.mDataValuesMap
+        || {},
+      ),
+      calculations: normalizeCalculations(
+        candidate?.mSpellCalculations
+        || candidate?.SpellCalculations
+        || candidate?.spellCalculations
+        || candidate?.mCalculations
+        || {},
+      ),
+    }))
+    .sort((a, b) => ((Object.keys(b.calculations || {}).length * 4) + (b.dataValues?.length || 0))
+      - ((Object.keys(a.calculations || {}).length * 4) + (a.dataValues?.length || 0)))[0];
+
+  if (!parsedCandidate) return null;
   return {
-    dataValues: spell.mDataValues || spell.DataValues || [],
-    calculations: spell.mSpellCalculations || {},
+    dataValues: parsedCandidate.dataValues || [],
+    calculations: parsedCandidate.calculations || {},
   };
 }
 
@@ -487,7 +533,7 @@ function extractTooltipTokens(tooltip) {
 }
 
 function spellDataValueName(entry) {
-  return entry?.mName || entry?.mId || entry?.mDataValue || entry?.name || "";
+  return entry?.mName || entry?.mId || entry?.mDataValue || entry?.name || entry?.mKey || entry?.key || "";
 }
 
 function scoreSpellChildCandidate(parsed, tooltipTokens) {
@@ -1338,15 +1384,28 @@ function getRankedValueIndex(values, rank) {
 }
 
 function getSpellDataValue(dataValues, tokenName, rank) {
-  const list = (dataValues || []).find((d) => String(d?.mName || "").toLowerCase() === String(tokenName || "").toLowerCase());
-  if (!list || !Array.isArray(list.mValues) || !list.mValues.length) return null;
-  const idx = getRankedValueIndex(list.mValues, rank);
-  const current = Number(list.mValues[idx]) || 0;
+  const normalizeDataValueToken = (value) => String(value || "").replace(/[^a-z0-9]/gi, "").toLowerCase();
+  const token = normalizeDataValueToken(tokenName);
+  const list = (dataValues || []).find((d) => normalizeDataValueToken(spellDataValueName(d)) === token);
+  if (!list) return null;
+
+  const rawValues = list.mValues || list.values || list.mValue || list.value || [];
+  const normalizedValues = Array.isArray(rawValues)
+    ? rawValues
+    : (rawValues && typeof rawValues === "object")
+      ? Object.keys(rawValues)
+        .sort((a, b) => Number(a) - Number(b))
+        .map((key) => rawValues[key])
+      : [rawValues];
+  if (!normalizedValues.length) return null;
+
+  const idx = getRankedValueIndex(normalizedValues, rank);
+  const current = Number(normalizedValues[idx]) || 0;
 
   const rankValues = [];
   for (let i = 1; i <= 5; i += 1) {
-    const ridx = getRankedValueIndex(list.mValues, i);
-    rankValues.push(Number(list.mValues[ridx] || 0));
+    const ridx = getRankedValueIndex(normalizedValues, i);
+    rankValues.push(Number(normalizedValues[ridx] || 0));
   }
   return { current, rankValues };
 }
@@ -1404,6 +1463,11 @@ function makeMissingGameCalculation(reason, displayAsPercent = false) {
     terms: [{ text: `[calc-missing: ${reason}]`, value: 0, missing: true }],
     displayAsPercent: !!displayAsPercent,
   };
+}
+
+function isMissingGameCalculation(result) {
+  if (!result || !Array.isArray(result.terms) || !result.terms.length) return true;
+  return result.terms.every((term) => term?.missing === true);
 }
 
 function hasNonEmptyCalculationReference(ref) {
@@ -1648,7 +1712,7 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
       if (!hasNonEmptyCalculationReference(candidate)) continue;
       if (typeof candidate === "object") {
         const evaluated = evaluateGameCalculation(candidate, dataValues, rank, stats, calculationsMap, new Set(seen), `${tracePath}.conditional`, resolvedDisplayAsPercent);
-        if (evaluated) return evaluated;
+        if (!isMissingGameCalculation(evaluated)) return evaluated;
         continue;
       }
       const key = String(candidate || "");
@@ -1656,7 +1720,7 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
       const scopedSeen = new Set(seen);
       scopedSeen.add(key);
       const evaluated = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, scopedSeen, `${tracePath}.conditional(${key})`, resolvedDisplayAsPercent);
-      if (evaluated) return evaluated;
+      if (!isMissingGameCalculation(evaluated)) return evaluated;
     }
   }
 
@@ -2293,7 +2357,7 @@ function renderRunePanel() {
   };
   const renderShardIcon = (slotIndex) => {
     const rune = getRuneMeta(BUILDER.runeSelections.shards[slotIndex]);
-    return `<button class="rune-grid-btn rune-shard-icon-btn" data-rune-target="shard_${slotIndex}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc || rune.name}`)}" aria-label="${rune.name}" type="button">${runeImgTag(rune)}</button>`;
+    return `<button class="rune-grid-btn rune-shard-icon-btn is-active" data-rune-target="shard_${slotIndex}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc || rune.name}`)}" aria-label="${rune.name}" type="button">${runeImgTag(rune)}</button>`;
   };
   const renderSecondaryGrid = () => {
     const rows = getSecondaryRows(BUILDER.runeSelections.secondaryPath);
