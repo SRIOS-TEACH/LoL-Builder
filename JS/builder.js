@@ -2002,6 +2002,77 @@ function resolveAbilityToken(tokenRaw, ctx) {
   return null;
 }
 
+
+function getSpellRankValueAt(spell, rawValue, safeRank) {
+  if (rawValue === null || rawValue === undefined) return "-";
+  if (typeof rawValue === "string") {
+    if (rawValue.includes("/")) return parseByRank(rawValue, safeRank);
+    return rawValue || "-";
+  }
+  if (Array.isArray(rawValue)) {
+    if (!rawValue.length) return "-";
+    const idx = Math.max(0, Math.min(rawValue.length - 1, safeRank - 1));
+    const picked = rawValue[idx] ?? rawValue[0];
+    return picked === null || picked === undefined || picked === "" ? "-" : String(picked);
+  }
+  const numeric = Number(rawValue);
+  if (Number.isFinite(numeric)) return String(rawValue);
+  return String(rawValue || "-");
+}
+
+function getSpellTokenValueAtRank(spell, baseToken, safeRank) {
+  const token = String(baseToken || "").toLowerCase();
+  const toCamelCase = (value) => String(value || "").replace(/[_-]+([a-z0-9])/gi, (_, chr) => chr.toUpperCase());
+  const camel = toCamelCase(token);
+  const candidateKeys = [token, `${token}burn`, camel, `${camel}Burn`];
+  for (const key of candidateKeys) {
+    if (!Object.prototype.hasOwnProperty.call(spell, key)) continue;
+    const resolved = getSpellRankValueAt(spell, spell[key], safeRank);
+    if (resolved !== "-") return resolved;
+  }
+  return "-";
+}
+
+function computeAbilityDpsDisplay(spell, rank, spellKey, cooldownReductionPct) {
+  const safeRank = Number(rank) || 0;
+  if (safeRank <= 0) return "-";
+
+  const cdBase = Number(parseByRank(spell.cooldownBurn, safeRank));
+  if (!Number.isFinite(cdBase) || cdBase <= 0) return "N/A";
+  const cooldown = cdBase * (1 - cooldownReductionPct);
+  if (!Number.isFinite(cooldown) || cooldown <= 0) return "N/A";
+
+  const detail = buildDetailedAbilityText(spell, safeRank, spellKey);
+  const detailLower = String(detail || "").toLowerCase();
+  if (/(on-?hit|basic attacks?|next [0-9]+ attacks?|for the next|while active)/i.test(detailLower)) return "N/A";
+
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = detail || "";
+  const damageNodes = wrapper.querySelectorAll(".ability-damage-physical, .ability-damage-magic, .ability-damage-true");
+
+  let totalDamage = 0;
+  damageNodes.forEach((node) => {
+    const sentence = String(node.parentElement?.textContent || node.textContent || "").toLowerCase();
+    if (/(secondary target|secondary targets|sweet ?spot|outer edge|inner area|center area|bonus against minions)/i.test(sentence)) return;
+    const nums = String(node.textContent || "").match(/-?\d+(?:\.\d+)?/g) || [];
+    if (!nums.length) return;
+    const first = Number(nums[0]);
+    if (!Number.isFinite(first) || first <= 0) return;
+    totalDamage += first;
+  });
+
+  if (!(totalDamage > 0)) return "N/A";
+  const dps = totalDamage / cooldown;
+  let label = `${dps.toFixed(1)} (${totalDamage.toFixed(1)} / ${cooldown.toFixed(2)})`;
+
+  const ammoRecharge = Number(getSpellTokenValueAtRank(spell, "ammorechargetime", safeRank));
+  if (Number.isFinite(ammoRecharge) && ammoRecharge > 0) {
+    const trueDps = totalDamage / ammoRecharge;
+    label += ` {${trueDps.toFixed(1)}}`;
+  }
+
+  return label;
+}
 function buildDetailedAbilityText(spell, rank, spellKey) {
   const raw = spell.tooltip || spell.description || "";
   const rawRank = Number(rank) || 0;
@@ -2016,43 +2087,11 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
   const resolvedSpellPayload = buildResolvedSpellPayload(cdragonSpell, safeRank, stats);
   const calcLookup = resolvedSpellPayload.calcLookup;
 
-  const toCamelCase = (value) => String(value || "").replace(/[_-]+([a-z0-9])/gi, (_, chr) => chr.toUpperCase());
-  const getSpellRankValue = (rawValue) => {
-    if (rawValue === null || rawValue === undefined) return "-";
-    if (typeof rawValue === "string") {
-      if (rawValue.includes("/")) return parseByRank(rawValue, safeRank);
-      return rawValue || "-";
-    }
-    if (Array.isArray(rawValue)) {
-      if (!rawValue.length) return "-";
-      const idx = Math.max(0, Math.min(rawValue.length - 1, safeRank - 1));
-      const picked = rawValue[idx] ?? rawValue[0];
-      return picked === null || picked === undefined || picked === "" ? "-" : String(picked);
-    }
-    const numeric = Number(rawValue);
-    if (Number.isFinite(numeric)) return String(rawValue);
-    return String(rawValue || "-");
-  };
-  const getSpellTokenValue = (baseToken) => {
-    const token = String(baseToken || "").toLowerCase();
-    const camel = toCamelCase(token);
-    const candidateKeys = [
-      token,
-      `${token}burn`,
-      camel,
-      `${camel}Burn`,
-    ];
-    for (const key of candidateKeys) {
-      if (!Object.prototype.hasOwnProperty.call(spell, key)) continue;
-      const resolved = getSpellRankValue(spell[key]);
-      if (resolved !== "-") return resolved;
-    }
-    return "-";
-  };
+  const getSpellTokenValue = (baseToken) => getSpellTokenValueAtRank(spell, baseToken, safeRank);
   const nearbyAmmoTokens = Object.fromEntries(
     Object.keys(spell || {})
       .filter((tokenKey) => /(ammo|recharge|stock)/i.test(String(tokenKey || "")))
-      .map((tokenKey) => [String(tokenKey || "").toLowerCase(), getSpellRankValue(spell[tokenKey])])
+      .map((tokenKey) => [String(tokenKey || "").toLowerCase(), getSpellRankValueAt(spell, spell[tokenKey], safeRank)])
       .filter(([, tokenValue]) => tokenValue !== "-")
   );
 
@@ -2153,7 +2192,7 @@ function renderAbilityCards() {
     const cost = parseByRank(spell.costBurn, rank);
     const range = parseByRank(spell.rangeBurn, rank);
     const detail = buildDetailedAbilityText(spell, rank, key);
-    return `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div></div>`;
+    return `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div><div><strong>DPS:</strong> ${computeAbilityDpsDisplay(spell, rank, key, cooldownReductionPct)}</div></div>`;
   }).join("");
 
   root.innerHTML = passive + attackCard + spells;
