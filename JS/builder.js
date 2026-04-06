@@ -1465,6 +1465,11 @@ function makeMissingGameCalculation(reason, displayAsPercent = false) {
   };
 }
 
+function isMissingGameCalculation(result) {
+  if (!result || !Array.isArray(result.terms) || !result.terms.length) return true;
+  return result.terms.every((term) => term?.missing === true);
+}
+
 function hasNonEmptyCalculationReference(ref) {
   if (ref === null || typeof ref === "undefined") return false;
   if (typeof ref === "string") return ref.trim() !== "";
@@ -1707,7 +1712,7 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
       if (!hasNonEmptyCalculationReference(candidate)) continue;
       if (typeof candidate === "object") {
         const evaluated = evaluateGameCalculation(candidate, dataValues, rank, stats, calculationsMap, new Set(seen), `${tracePath}.conditional`, resolvedDisplayAsPercent);
-        if (evaluated) return evaluated;
+        if (!isMissingGameCalculation(evaluated)) return evaluated;
         continue;
       }
       const key = String(candidate || "");
@@ -1715,7 +1720,7 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
       const scopedSeen = new Set(seen);
       scopedSeen.add(key);
       const evaluated = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, scopedSeen, `${tracePath}.conditional(${key})`, resolvedDisplayAsPercent);
-      if (evaluated) return evaluated;
+      if (!isMissingGameCalculation(evaluated)) return evaluated;
     }
   }
 
