@@ -835,6 +835,7 @@ async function setChampion(name) {
   const details = await window.ApiClient.fetchChampionDetails(BUILDER.version, name);
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
+  console.log(BUILDER.championData.stats);
   BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name, BUILDER.championData?.spells || []);
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
 
