@@ -91,6 +91,30 @@ const CDRAGON_TO_DDRAGON_STAT_KEY = {
   hpRegenPerLevel: "hpregenperlevel",
 };
 
+const DEFAULT_CHAMPION_BASE_STATS = {
+  hp: 0,
+  hpperlevel: 0,
+  mp: 0,
+  mpperlevel: 0,
+  hpregen: 0,
+  hpregenperlevel: 0,
+  mpregen: 0,
+  mpregenperlevel: 0,
+  attackdamage: 0,
+  attackdamageperlevel: 0,
+  attackspeed: 0,
+  attackspeedperlevel: 0,
+  armor: 0,
+  armorperlevel: 0,
+  spellblock: 0,
+  spellblockperlevel: 0,
+  movespeed: 0,
+  attackrange: 0,
+  crit: 0,
+  critperlevel: 0,
+  critdamage: 0,
+};
+
 function slugifyRuneName(name) {
   return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
@@ -935,6 +959,14 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
   return remappedStats;
 }
 
+function normalizeChampionBaseStats(stats) {
+  return Object.entries(DEFAULT_CHAMPION_BASE_STATS).reduce((acc, [key, fallback]) => {
+    const value = stats?.[key];
+    acc[key] = typeof value === "number" && Number.isFinite(value) ? value : fallback;
+    return acc;
+  }, {});
+}
+
 async function setChampion(name) {
   const details = await window.ApiClient.fetchChampionDetails(BUILDER.version, name);
   BUILDER.selectedChampion = name;
@@ -942,7 +974,9 @@ async function setChampion(name) {
   const pathName = normalizeCdragonChampionPath(name);
   const cdragonUrl = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
   const cdragonRaw = await fetch(cdragonUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  BUILDER.championData.stats = extractChampionStatsFromBinRoot(cdragonRaw, name, pathName);
+  BUILDER.championData.stats = normalizeChampionBaseStats(
+    extractChampionStatsFromBinRoot(cdragonRaw, name, pathName),
+  );
 
   BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name, BUILDER.championData?.spells || [], cdragonRaw);
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
