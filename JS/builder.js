@@ -89,10 +89,10 @@ const CDRAGON_TO_DDRAGON_STAT_KEY = {
   baseMoveSpeed: "movespeed",
   baseStaticHPRegen: "hpregen",
   hpRegenPerLevel: "hpregenperlevel",
-  arBase: "mp",
-  arPerLevel: "mpperlevel",
-  arBaseStaticRegen: "mpregen",
-  arRegenPerLevel: "mpregenperlevel",
+  arBase: "arBase",
+  arPerLevel: "arPerLevel",
+  arBaseStaticRegen: "arBaseStaticRegen",
+  arRegenPerLevel: "arRegenPerLevel",
   baseMP: "mp",
   mpPerLevel: "mpperlevel",
   baseStaticMPRegen: "mpregen",
@@ -977,6 +977,23 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
 
     return acc;
   }, {});
+
+  return remappedStats;
+}
+
+function normalizeChampionBaseStats(stats) {
+  return Object.entries(DEFAULT_CHAMPION_BASE_STATS).reduce((acc, [key, fallback]) => {
+    const value = stats?.[key];
+    acc[key] = typeof value === "number" && Number.isFinite(value) ? value : fallback;
+    return acc;
+  }, {});
+
+  statEntryCandidates.forEach((statEntry) => {
+    Object.values(CDRAGON_TO_DDRAGON_STAT_KEY).forEach((ddragonKey) => {
+      const value = statEntry[ddragonKey];
+      if (typeof value === "number" && Number.isFinite(value)) remappedStats[ddragonKey] = value;
+    });
+  });
 
   return remappedStats;
 }
