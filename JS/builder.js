@@ -932,6 +932,13 @@ function toCdragonCharacterName(championName, pathName) {
 function extractChampionStatsFromBinRoot(raw, championName, pathName) {
   if (!raw || typeof raw !== "object") return {};
 
+  const lowerPath = String(pathName || championName || "").toLowerCase();
+  const championKey = lowerPath.charAt(0).toUpperCase() + lowerPath.slice(1);
+  const root = raw[`Characters/${championKey}/CharacterRecords/Root`];
+  console.log(root);
+
+
+  /*
   const cdragonCharacterName = toCdragonCharacterName(championName, pathName);
   const rootKeyCandidates = [
     `Characters/${cdragonCharacterName}/CharacterRecords/Root`,
@@ -949,8 +956,22 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
   if (!rootKey) return {};
 
   const root = raw[rootKey];
+  */
   if (!root || typeof root !== "object") return {};
 
+    const cdragonStats = Object.entries(CDRAGON_STAT_HASH_TO_NAME).reduce((acc, [hashKey, statName]) => {
+    const value = root[hashKey];
+    if (typeof value === "number" && Number.isFinite(value)) acc[statName] = value;
+    return acc;
+  }, {});
+
+  return Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY).reduce((acc, [cdragonKey, ddragonKey]) => {
+    const value = cdragonStats[cdragonKey];
+    if (typeof value === "number" && Number.isFinite(value)) acc[ddragonKey] = value;
+    return acc;
+  }, {});
+}
+/*
   const statEntryCandidates = [
     Array.isArray(root.b35aa769) ? root.b35aa769[0] : null,
     root.mCharacterStats,
@@ -981,6 +1002,7 @@ console.log(acc);
   console.log(remappedStats);
   return remappedStats;
 }
+*/
 
 function normalizeChampionBaseStats(stats) {
   return Object.entries(DEFAULT_CHAMPION_BASE_STATS).reduce((acc, [key, fallback]) => {
@@ -1007,6 +1029,7 @@ async function setChampion(name) {
   const pathName = normalizeCdragonChampionPath(name);
   const cdragonUrl = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
   const cdragonRaw = await fetch(cdragonUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  
   BUILDER.championData.stats =extractChampionStatsFromBinRoot(cdragonRaw, name, pathName);
   console.log(BUILDER.championData.stats);
 
