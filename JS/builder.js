@@ -55,9 +55,9 @@ const RUNE_PATH_ID_TO_KEY = {
 };
 
 const CDRAGON_STAT_HASH_TO_NAME = {
-  "18956a21": "armorPerLevel",
-  "4af40dc3": "baseDamage",
-  "4d37af28": "hpPerLevel",
+  "{18956a21}": "armorPerLevel",
+  "{4af40dc3}": "baseDamage",
+  "{4d37af28}": "hpPerLevel",
   "836cc82a": "attackSpeed",
   "7bd4b298": "attackRange",
   "4f89c991": "attackSpeedRatio",
