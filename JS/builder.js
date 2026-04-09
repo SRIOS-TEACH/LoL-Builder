@@ -959,19 +959,25 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
   */
   if (!root || typeof root !== "object") return {};
 
-    const cdragonStats = Object.entries(CDRAGON_STAT_HASH_TO_NAME).reduce((acc, [hashKey, statName]) => {
+       const cdragonStats = {};
+  
+  for (const [hashKey, statName] of Object.entries(CDRAGON_STAT_HASH_TO_NAME)) {
     const value = root[hashKey];
-    if (typeof value === "number" && Number.isFinite(value)) acc[statName] = value;
-    return acc;
-  }, {});
+    console.log(root[hashKey];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      cdragonStats[statName] = value;
+    }
+  }
 
-  return Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY).reduce((acc, [cdragonKey, ddragonKey]) => {
+  const ddragonStats = {};
+  for (const [cdragonKey, ddragonKey] of Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY)) {
     const value = cdragonStats[cdragonKey];
-    console.log(value);
-    if (typeof value === "number" && Number.isFinite(value)) acc[ddragonKey] = value;
-    console.log(acc);
-    return acc;
-  }, {});
+    if (typeof value === "number" && Number.isFinite(value)) {
+      ddragonStats[ddragonKey] = value;
+    }
+  }
+
+  return ddragonStats;
 }
 /*
   const statEntryCandidates = [
