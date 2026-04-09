@@ -975,10 +975,10 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
       const directDdragon = CANONICAL_DDRAGON_STAT_KEYS[canonicalKey];
       if (directDdragon) acc[directDdragon] = value;
     });
-
+console.log(acc);
     return acc;
   }, {});
-
+  console.log(remappedStats);
   return remappedStats;
 }
 
@@ -999,14 +999,6 @@ function normalizeChampionBaseStats(stats) {
   return remappedStats;
 }
 
-function normalizeChampionBaseStats(stats) {
-  return Object.entries(DEFAULT_CHAMPION_BASE_STATS).reduce((acc, [key, fallback]) => {
-    const value = stats?.[key];
-    acc[key] = typeof value === "number" && Number.isFinite(value) ? value : fallback;
-    return acc;
-  }, {});
-}
-
 async function setChampion(name) {
   const details = await window.ApiClient.fetchChampionDetails(BUILDER.version, name);
   BUILDER.selectedChampion = name;
@@ -1015,9 +1007,7 @@ async function setChampion(name) {
   const pathName = normalizeCdragonChampionPath(name);
   const cdragonUrl = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
   const cdragonRaw = await fetch(cdragonUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  BUILDER.championData.stats = normalizeChampionBaseStats(
-    extractChampionStatsFromBinRoot(cdragonRaw, name, pathName),
-  );
+  BUILDER.championData.stats =extractChampionStatsFromBinRoot(cdragonRaw, name, pathName);
   console.log(BUILDER.championData.stats);
 
   BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name, BUILDER.championData?.spells || [], cdragonRaw);
