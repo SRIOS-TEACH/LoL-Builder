@@ -967,7 +967,9 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
 
   return Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY).reduce((acc, [cdragonKey, ddragonKey]) => {
     const value = cdragonStats[cdragonKey];
+    console.log(value);
     if (typeof value === "number" && Number.isFinite(value)) acc[ddragonKey] = value;
+    console.log(acc);
     return acc;
   }, {});
 }
