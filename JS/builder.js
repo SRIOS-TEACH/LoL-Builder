@@ -89,6 +89,19 @@ const CDRAGON_TO_DDRAGON_STAT_KEY = {
   baseMoveSpeed: "movespeed",
   baseStaticHPRegen: "hpregen",
   hpRegenPerLevel: "hpregenperlevel",
+  arBase: "arBase",
+  arPerLevel: "arPerLevel",
+  arBaseStaticRegen: "arBaseStaticRegen",
+  arRegenPerLevel: "arRegenPerLevel",
+  baseMP: "mp",
+  mpPerLevel: "mpperlevel",
+  baseStaticMPRegen: "mpregen",
+  mpRegenPerLevel: "mpregenperlevel",
+  baseSpellBlock: "spellblock",
+  spellBlockPerLevel: "spellblockperlevel",
+  baseCrit: "crit",
+  critPerLevel: "critperlevel",
+  baseCritDamage: "critdamage",
 };
 
 const DEFAULT_CHAMPION_BASE_STATS = {
@@ -114,6 +127,20 @@ const DEFAULT_CHAMPION_BASE_STATS = {
   critperlevel: 0,
   critdamage: 0,
 };
+
+function canonicalizeStatKey(key) {
+  return String(key || "").toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^m+/, "");
+}
+
+const CANONICAL_CDRAGON_TO_DDRAGON_STAT_KEY = Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY).reduce((acc, [fromKey, toKey]) => {
+  acc[canonicalizeStatKey(fromKey)] = toKey;
+  return acc;
+}, {});
+
+const CANONICAL_DDRAGON_STAT_KEYS = Object.keys(DEFAULT_CHAMPION_BASE_STATS).reduce((acc, key) => {
+  acc[canonicalizeStatKey(key)] = key;
+  return acc;
+}, {});
 
 function slugifyRuneName(name) {
   return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -931,21 +958,33 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
     root,
   ].filter((candidate) => candidate && typeof candidate === "object");
 
-  const mappedStats = statEntryCandidates.reduce((acc, statEntry) => {
+  const remappedStats = statEntryCandidates.reduce((acc, statEntry) => {
     Object.entries(CDRAGON_STAT_HASH_TO_NAME).forEach(([binKey, statName]) => {
       const value = statEntry[binKey];
-      if (typeof value === "number" && Number.isFinite(value)) acc[statName] = value;
+      const ddragonKey = CDRAGON_TO_DDRAGON_STAT_KEY[statName];
+      if (typeof value === "number" && Number.isFinite(value) && ddragonKey) acc[ddragonKey] = value;
     });
-    Object.keys(CDRAGON_TO_DDRAGON_STAT_KEY).forEach((cdragonKey) => {
-      const value = statEntry[cdragonKey];
-      if (typeof value === "number" && Number.isFinite(value)) acc[cdragonKey] = value;
+
+    Object.entries(statEntry).forEach(([rawKey, value]) => {
+      if (typeof value !== "number" || !Number.isFinite(value)) return;
+      const canonicalKey = canonicalizeStatKey(rawKey);
+      const ddragonFromCdragon = CANONICAL_CDRAGON_TO_DDRAGON_STAT_KEY[canonicalKey];
+      if (ddragonFromCdragon) acc[ddragonFromCdragon] = value;
+
+      const directDdragon = CANONICAL_DDRAGON_STAT_KEYS[canonicalKey];
+      if (directDdragon) acc[directDdragon] = value;
     });
+
     return acc;
   }, {});
 
-  const remappedStats = Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY).reduce((acc, [cdragonKey, ddragonKey]) => {
-    const value = mappedStats[cdragonKey];
-    if (typeof value === "number" && Number.isFinite(value)) acc[ddragonKey] = value;
+  return remappedStats;
+}
+
+function normalizeChampionBaseStats(stats) {
+  return Object.entries(DEFAULT_CHAMPION_BASE_STATS).reduce((acc, [key, fallback]) => {
+    const value = stats?.[key];
+    acc[key] = typeof value === "number" && Number.isFinite(value) ? value : fallback;
     return acc;
   }, {});
 
