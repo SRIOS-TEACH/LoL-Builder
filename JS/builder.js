@@ -54,6 +54,43 @@ const RUNE_PATH_ID_TO_KEY = {
   7204: "resolve",
 };
 
+const CDRAGON_STAT_HASH_TO_NAME = {
+  "18956a21": "armorPerLevel",
+  "4af40dc3": "baseDamage",
+  "4d37af28": "hpPerLevel",
+  "836cc82a": "attackSpeed",
+  "7bd4b298": "attackRange",
+  "4f89c991": "attackSpeedRatio",
+  "8662cf12": "baseHP",
+  "913157bb": "hpRegenPerLevel",
+  "9eedebad": "baseStaticHPRegen",
+  "b9f2b365": "attackSpeedPerLevel",
+  "e2b5d80d": "damagePerLevel",
+  "e62d9d92": "baseMoveSpeed",
+  "ea6100d5": "baseArmor",
+  "726ee5cd": "arBase",
+  "c4ab3550": "arBaseStaticRegen",
+  "6216bf7b": "arPerLevel",
+  "3a509002": "arRegenPerLevel",
+  "2290fc9a": "baseFactorHPRegen",
+  "452033bb": "arBaseFactorRegen",
+};
+
+const CDRAGON_TO_DDRAGON_STAT_KEY = {
+  baseDamage: "attackdamage",
+  damagePerLevel: "attackdamageperlevel",
+  baseHP: "hp",
+  hpPerLevel: "hpperlevel",
+  baseArmor: "armor",
+  armorPerLevel: "armorperlevel",
+  attackRange: "attackrange",
+  attackSpeed: "attackspeed",
+  attackSpeedPerLevel: "attackspeedperlevel",
+  baseMoveSpeed: "movespeed",
+  baseStaticHPRegen: "hpregen",
+  hpRegenPerLevel: "hpregenperlevel",
+};
+
 function slugifyRuneName(name) {
   return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
@@ -821,22 +858,81 @@ function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) 
   return bySlot;
 }
 
-async function loadCdragonAbilityData(championName, ddSpells = []) {
+async function loadCdragonAbilityData(championName, ddSpells = [], rawOverride = null) {
   const pathName = normalizeCdragonChampionPath(championName);
   const url = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
-  const raw = await fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const raw = rawOverride || await fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   if (!raw) return null;
 
   return extractAbilityDataFromRoot(raw, championName, pathName, ddSpells)
     || null;
 }
 
+function findCdragonStatSourceByTitle(node) {
+  const queue = [node];
+  while (queue.length) {
+    const current = queue.shift();
+    if (!current || typeof current !== "object") continue;
+    if (!Array.isArray(current) && (current.title === "{b35aa769}" || current.mTitle === "{b35aa769}")) return current;
+    Object.values(current).forEach((value) => {
+      if (value && typeof value === "object") queue.push(value);
+    });
+  }
+  return null;
+}
+
+function pickFirstStatEntry(statSource) {
+  if (!statSource) return null;
+  if (Array.isArray(statSource)) return statSource[0] && typeof statSource[0] === "object" ? statSource[0] : null;
+  if (typeof statSource !== "object") return null;
+
+  if (Array.isArray(statSource.b35aa769)) {
+    return statSource.b35aa769[0] && typeof statSource.b35aa769[0] === "object" ? statSource.b35aa769[0] : null;
+  }
+  if (Array.isArray(statSource.mValues)) {
+    return statSource.mValues[0] && typeof statSource.mValues[0] === "object" ? statSource.mValues[0] : null;
+  }
+  if (Array.isArray(statSource.values)) {
+    return statSource.values[0] && typeof statSource.values[0] === "object" ? statSource.values[0] : null;
+  }
+
+  const firstObjectValue = Object.values(statSource).find((value) => value && typeof value === "object" && !Array.isArray(value));
+  return firstObjectValue && typeof firstObjectValue === "object" ? firstObjectValue : null;
+}
+
+function extractChampionStatsFromBinRoot(raw) {
+  if (!raw || typeof raw !== "object") return null;
+
+  const keyMatchedSource = Object.values(raw).find((value) => value && typeof value === "object" && value.b35aa769);
+  const titleMatchedSource = findCdragonStatSourceByTitle(raw);
+  const statEntry = pickFirstStatEntry(keyMatchedSource?.b35aa769 ? keyMatchedSource : titleMatchedSource);
+  if (!statEntry || typeof statEntry !== "object") return null;
+
+  const mappedStats = Object.entries(CDRAGON_STAT_HASH_TO_NAME).reduce((acc, [hash, statName]) => {
+    const value = statEntry[hash];
+    if (typeof value === "number" && Number.isFinite(value)) acc[statName] = value;
+    return acc;
+  }, {});
+  if (!Object.keys(mappedStats).length) return null;
+
+  return Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY).reduce((acc, [cdragonKey, ddragonKey]) => {
+    const value = mappedStats[cdragonKey];
+    if (typeof value === "number" && Number.isFinite(value)) acc[ddragonKey] = value;
+    return acc;
+  }, {});
+}
+
 async function setChampion(name) {
   const details = await window.ApiClient.fetchChampionDetails(BUILDER.version, name);
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
-  console.log(BUILDER.championData.stats);
-  BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name, BUILDER.championData?.spells || []);
+  const pathName = normalizeCdragonChampionPath(name);
+  const cdragonUrl = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
+  const cdragonRaw = await fetch(cdragonUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  const cdragonStats = extractChampionStatsFromBinRoot(cdragonRaw);
+  if (cdragonStats) BUILDER.championData.stats = { ...BUILDER.championData.stats, ...cdragonStats };
+
+  BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name, BUILDER.championData?.spells || [], cdragonRaw);
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
 
   const splashUrl = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`;
