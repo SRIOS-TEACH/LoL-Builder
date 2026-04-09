@@ -868,58 +868,71 @@ async function loadCdragonAbilityData(championName, ddSpells = [], rawOverride =
     || null;
 }
 
-function findCdragonStatSourceByTitle(node) {
-  const queue = [node];
-  while (queue.length) {
-    const current = queue.shift();
-    if (!current || typeof current !== "object") continue;
-    if (!Array.isArray(current) && (current.title === "{b35aa769}" || current.mTitle === "{b35aa769}")) return current;
-    Object.values(current).forEach((value) => {
-      if (value && typeof value === "object") queue.push(value);
+function toCdragonCharacterName(championName, pathName) {
+  if (championName && /^[A-Z]/.test(championName)) return championName;
+  return String(pathName || "")
+    .split(/[^a-z0-9]+/i)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+}
+
+function extractChampionStatsFromBinRoot(raw, championName, pathName) {
+  if (!raw || typeof raw !== "object") return {};
+
+  const cdragonCharacterName = toCdragonCharacterName(championName, pathName);
+  const rootKeyCandidates = [
+    `Characters/${cdragonCharacterName}/CharacterRecords/Root`,
+    `Characters/${championName}/CharacterRecords/Root`,
+    `Characters/${pathName}/CharacterRecords/Root`,
+  ];
+  const discoveredRootKey = Object.keys(raw).find((key) => (
+    key.startsWith("Characters/")
+    && key.endsWith("/CharacterRecords/Root")
+    && key.toLowerCase().includes(`/${String(pathName || "").toLowerCase()}/`)
+  )) || Object.keys(raw).find((key) => (
+    key.startsWith("Characters/") && key.endsWith("/CharacterRecords/Root")
+  )) || null;
+  const rootKey = rootKeyCandidates.find((key) => raw[key]) || discoveredRootKey;
+  if (!rootKey) return {};
+
+  const root = raw[rootKey];
+  if (!root || typeof root !== "object") return {};
+
+  const statEntryCandidates = [
+    Array.isArray(root.b35aa769) ? root.b35aa769[0] : null,
+    root.mCharacterStats,
+    root.characterStats,
+    root.b35aa769,
+    root,
+  ].filter((candidate) => candidate && typeof candidate === "object");
+
+  const mappedStats = statEntryCandidates.reduce((acc, statEntry) => {
+    Object.entries(CDRAGON_STAT_HASH_TO_NAME).forEach(([binKey, statName]) => {
+      const value = statEntry[binKey];
+      if (typeof value === "number" && Number.isFinite(value)) acc[statName] = value;
     });
-  }
-  return null;
-}
-
-function pickFirstStatEntry(statSource) {
-  if (!statSource) return null;
-  if (Array.isArray(statSource)) return statSource[0] && typeof statSource[0] === "object" ? statSource[0] : null;
-  if (typeof statSource !== "object") return null;
-
-  if (Array.isArray(statSource.b35aa769)) {
-    return statSource.b35aa769[0] && typeof statSource.b35aa769[0] === "object" ? statSource.b35aa769[0] : null;
-  }
-  if (Array.isArray(statSource.mValues)) {
-    return statSource.mValues[0] && typeof statSource.mValues[0] === "object" ? statSource.mValues[0] : null;
-  }
-  if (Array.isArray(statSource.values)) {
-    return statSource.values[0] && typeof statSource.values[0] === "object" ? statSource.values[0] : null;
-  }
-
-  const firstObjectValue = Object.values(statSource).find((value) => value && typeof value === "object" && !Array.isArray(value));
-  return firstObjectValue && typeof firstObjectValue === "object" ? firstObjectValue : null;
-}
-
-function extractChampionStatsFromBinRoot(raw) {
-  if (!raw || typeof raw !== "object") return null;
-
-  const keyMatchedSource = Object.values(raw).find((value) => value && typeof value === "object" && value.b35aa769);
-  const titleMatchedSource = findCdragonStatSourceByTitle(raw);
-  const statEntry = pickFirstStatEntry(keyMatchedSource?.b35aa769 ? keyMatchedSource : titleMatchedSource);
-  if (!statEntry || typeof statEntry !== "object") return null;
-
-  const mappedStats = Object.entries(CDRAGON_STAT_HASH_TO_NAME).reduce((acc, [hash, statName]) => {
-    const value = statEntry[hash];
-    if (typeof value === "number" && Number.isFinite(value)) acc[statName] = value;
+    Object.keys(CDRAGON_TO_DDRAGON_STAT_KEY).forEach((cdragonKey) => {
+      const value = statEntry[cdragonKey];
+      if (typeof value === "number" && Number.isFinite(value)) acc[cdragonKey] = value;
+    });
     return acc;
   }, {});
-  if (!Object.keys(mappedStats).length) return null;
 
-  return Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY).reduce((acc, [cdragonKey, ddragonKey]) => {
+  const remappedStats = Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY).reduce((acc, [cdragonKey, ddragonKey]) => {
     const value = mappedStats[cdragonKey];
     if (typeof value === "number" && Number.isFinite(value)) acc[ddragonKey] = value;
     return acc;
   }, {});
+
+  statEntryCandidates.forEach((statEntry) => {
+    Object.values(CDRAGON_TO_DDRAGON_STAT_KEY).forEach((ddragonKey) => {
+      const value = statEntry[ddragonKey];
+      if (typeof value === "number" && Number.isFinite(value)) remappedStats[ddragonKey] = value;
+    });
+  });
+
+  return remappedStats;
 }
 
 async function setChampion(name) {
@@ -929,8 +942,7 @@ async function setChampion(name) {
   const pathName = normalizeCdragonChampionPath(name);
   const cdragonUrl = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
   const cdragonRaw = await fetch(cdragonUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  const cdragonStats = extractChampionStatsFromBinRoot(cdragonRaw);
-  if (cdragonStats) BUILDER.championData.stats = { ...BUILDER.championData.stats, ...cdragonStats };
+  BUILDER.championData.stats = extractChampionStatsFromBinRoot(cdragonRaw, name, pathName);
 
   BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name, BUILDER.championData?.spells || [], cdragonRaw);
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
