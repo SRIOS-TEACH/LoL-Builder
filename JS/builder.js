@@ -957,9 +957,7 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
   
   for (const [hashKey, statName] of Object.entries(CDRAGON_STAT_HASH_TO_NAME)) {
     const value = root[hashKey]["{b35aa769}"];
-    console.log(value);
     if (typeof value === "number" && Number.isFinite(value)) {
-      console.log("here");
       cdragonStats[statName] = value;
     }
   }
