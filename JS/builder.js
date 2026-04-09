@@ -68,12 +68,6 @@ const CDRAGON_STAT_HASH_TO_NAME = {
   "{e2b5d80d}": "damagePerLevel",
   "{e62d9d92}": "baseMoveSpeed",
   "{ea6100d5}": "baseArmor",
-  "{726ee5cd}": "arBase",
-  "{c4ab3550}": "arBaseStaticRegen",
-  "{6216bf7b}": "arPerLevel",
-  "{3a509002}": "arRegenPerLevel",
-  "{2290fc9a}": "baseFactorHPRegen",
-  "{452033bb}": "arBaseFactorRegen",
 };
 
 const CDRAGON_TO_DDRAGON_STAT_KEY = {
