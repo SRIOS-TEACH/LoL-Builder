@@ -336,6 +336,7 @@ async function loadBuilderData() {
 
   const champions = await window.ApiClient.fetchChampionIndex(BUILDER.version);
   BUILDER.champions = champions.data;
+  console.log(champions.data);
 
   const [items, cdtbData] = await Promise.all([
     window.ApiClient.fetchItemIndex(BUILDER.version),
@@ -1010,12 +1011,14 @@ async function setChampion(name) {
   const details = await window.ApiClient.fetchChampionDetails(BUILDER.version, name);
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
+  console.log(details.data[name];
   const pathName = normalizeCdragonChampionPath(name);
   const cdragonUrl = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
   const cdragonRaw = await fetch(cdragonUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   BUILDER.championData.stats = normalizeChampionBaseStats(
     extractChampionStatsFromBinRoot(cdragonRaw, name, pathName),
   );
+  console.log(BUILDER.championData.stats)
 
   BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name, BUILDER.championData?.spells || [], cdragonRaw);
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
