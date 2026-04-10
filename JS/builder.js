@@ -929,7 +929,7 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
   console.log(pathName);
   console.log(lowerPath);
   console.log(championKey);
-  const root = raw[`Characters/${championKey}/CharacterRecords/Root`];
+  const root = raw[`Characters/${championName}/CharacterRecords/Root`];
 
   console.log(root);
 
