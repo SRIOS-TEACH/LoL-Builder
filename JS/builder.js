@@ -967,10 +967,14 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
   const ddragonStats = {};
   for (const [cdragonKey, ddragonKey] of Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY)) {
     const value = cdragonStats[cdragonKey];
-    console.log(value);
+    
     if (typeof value === "number" && Number.isFinite(value)) {
       ddragonStats[ddragonKey] = value;
     }
+    else {
+      ddragonStats[ddragonKey]=Builder.championData.stats[ddragonKey];
+    }
+    console.log(ddragonStats(ddragonKey));
   }
 
   return ddragonStats;
