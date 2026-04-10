@@ -923,6 +923,7 @@ function toCdragonCharacterName(championName, pathName) {
     .join("");
 }
 
+//Extract the champion stat data from the .bin.root file using a Hash-lookup (CDRAGON_STAT_HASH_TO_NAME). If any stats are missing, populate from the original data dragon source.
 function extractChampionStatsFromBinRoot(raw, championName, pathName) {
   if (!raw || typeof raw !== "object") return {};
 
@@ -930,26 +931,6 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
   const championKey = lowerPath.charAt(0).toUpperCase() + lowerPath.slice(1);
   const root = raw[`Characters/${championKey}/CharacterRecords/Root`];
 
-
-  /*
-  const cdragonCharacterName = toCdragonCharacterName(championName, pathName);
-  const rootKeyCandidates = [
-    `Characters/${cdragonCharacterName}/CharacterRecords/Root`,
-    `Characters/${championName}/CharacterRecords/Root`,
-    `Characters/${pathName}/CharacterRecords/Root`,
-  ];
-  const discoveredRootKey = Object.keys(raw).find((key) => (
-    key.startsWith("Characters/")
-    && key.endsWith("/CharacterRecords/Root")
-    && key.toLowerCase().includes(`/${String(pathName || "").toLowerCase()}/`)
-  )) || Object.keys(raw).find((key) => (
-    key.startsWith("Characters/") && key.endsWith("/CharacterRecords/Root")
-  )) || null;
-  const rootKey = rootKeyCandidates.find((key) => raw[key]) || discoveredRootKey;
-  if (!rootKey) return {};
-
-  const root = raw[rootKey];
-  */
   if (!root || typeof root !== "object") return {};
 
        const cdragonStats = {};
@@ -975,61 +956,12 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
 
   return ddragonStats;
 }
-/*
-  const statEntryCandidates = [
-    Array.isArray(root.b35aa769) ? root.b35aa769[0] : null,
-    root.mCharacterStats,
-    root.characterStats,
-    root.b35aa769,
-    root,
-  ].filter((candidate) => candidate && typeof candidate === "object");
 
-  const remappedStats = statEntryCandidates.reduce((acc, statEntry) => {
-    Object.entries(CDRAGON_STAT_HASH_TO_NAME).forEach(([binKey, statName]) => {
-      const value = statEntry[binKey];
-      const ddragonKey = CDRAGON_TO_DDRAGON_STAT_KEY[statName];
-      if (typeof value === "number" && Number.isFinite(value) && ddragonKey) acc[ddragonKey] = value;
-    });
-
-    Object.entries(statEntry).forEach(([rawKey, value]) => {
-      if (typeof value !== "number" || !Number.isFinite(value)) return;
-      const canonicalKey = canonicalizeStatKey(rawKey);
-      const ddragonFromCdragon = CANONICAL_CDRAGON_TO_DDRAGON_STAT_KEY[canonicalKey];
-      if (ddragonFromCdragon) acc[ddragonFromCdragon] = value;
-
-      const directDdragon = CANONICAL_DDRAGON_STAT_KEYS[canonicalKey];
-      if (directDdragon) acc[directDdragon] = value;
-    });
-console.log(acc);
-    return acc;
-  }, {});
-  console.log(remappedStats);
-  return remappedStats;
-}
-*/
-
-function normalizeChampionBaseStats(stats) {
-  return Object.entries(DEFAULT_CHAMPION_BASE_STATS).reduce((acc, [key, fallback]) => {
-    const value = stats?.[key];
-    acc[key] = typeof value === "number" && Number.isFinite(value) ? value : fallback;
-    return acc;
-  }, {});
-
-  statEntryCandidates.forEach((statEntry) => {
-    Object.values(CDRAGON_TO_DDRAGON_STAT_KEY).forEach((ddragonKey) => {
-      const value = statEntry[ddragonKey];
-      if (typeof value === "number" && Number.isFinite(value)) remappedStats[ddragonKey] = value;
-    });
-  });
-
-  return remappedStats;
-}
-
+//Get a given Champions data
 async function setChampion(name) {
   const details = await window.ApiClient.fetchChampionDetails(BUILDER.version, name);
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
-  
   
   const pathName = normalizeCdragonChampionPath(name);
   const cdragonUrl = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
