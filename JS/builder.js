@@ -83,10 +83,6 @@ const CDRAGON_TO_DDRAGON_STAT_KEY = {
   baseMoveSpeed: "movespeed",
   baseStaticHPRegen: "hpregen",
   hpRegenPerLevel: "hpregenperlevel",
-  arBase: "arBase",
-  arPerLevel: "arPerLevel",
-  arBaseStaticRegen: "arBaseStaticRegen",
-  arRegenPerLevel: "arRegenPerLevel",
   baseMP: "mp",
   mpPerLevel: "mpperlevel",
   baseStaticMPRegen: "mpregen",
@@ -953,6 +949,7 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
       ddragonStats[ddragonKey]=BUILDER.championData.stats[ddragonKey];
     }
   }
+  ddragonStats["critdamage"]=0;
   console.log(ddragonStats);
   return ddragonStats;
 }
@@ -2524,6 +2521,7 @@ function renderStats() {
     passiveLedger,
   } = computed;
 
+  console.log(base);
   const rows = [
     { name: "HP", icon: "❤️", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
     { name: "MP", icon: "🔷", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
