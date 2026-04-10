@@ -960,8 +960,6 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
       cdragonStats[statName] = value;
     }
   }
-  
-  console.log(cdragonStats);
 
   const ddragonStats = {};
   for (const [cdragonKey, ddragonKey] of Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY)) {
@@ -973,7 +971,6 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
     else {
       ddragonStats[ddragonKey]=BUILDER.championData.stats[ddragonKey];
     }
-    console.log(ddragonStats[ddragonKey]);
   }
 
   return ddragonStats;
@@ -1033,14 +1030,12 @@ async function setChampion(name) {
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
   
-  console.log(details.data[name]);
   
   const pathName = normalizeCdragonChampionPath(name);
   const cdragonUrl = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
   const cdragonRaw = await fetch(cdragonUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null);
   
   BUILDER.championData.stats =extractChampionStatsFromBinRoot(cdragonRaw, name, pathName);
-  console.log(BUILDER.championData.stats);
 
   BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name, BUILDER.championData?.spells || [], cdragonRaw);
   BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
