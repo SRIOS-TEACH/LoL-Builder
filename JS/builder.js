@@ -925,7 +925,13 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
 
   const lowerPath = String(pathName || championName || "").toLowerCase();
   const championKey = lowerPath.charAt(0).toUpperCase() + lowerPath.slice(1);
+  console.log(championName);
+  console.log(pathName);
+  console.log(lowerPath);
+  console.log(championKey);
   const root = raw[`Characters/${championKey}/CharacterRecords/Root`];
+
+  console.log(root);
 
   if (!root || typeof root !== "object") return {};
 
@@ -950,7 +956,6 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
     }
   }
   ddragonStats["critdamage"]=0;
-  console.log(ddragonStats);
   return ddragonStats;
 }
 
