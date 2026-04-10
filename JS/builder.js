@@ -929,7 +929,6 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
   const lowerPath = String(pathName || championName || "").toLowerCase();
   const championKey = lowerPath.charAt(0).toUpperCase() + lowerPath.slice(1);
   const root = raw[`Characters/${championKey}/CharacterRecords/Root`];
-  console.log(root);
 
 
   /*
@@ -972,7 +971,7 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
       ddragonStats[ddragonKey] = value;
     }
     else {
-      ddragonStats[ddragonKey]=Builder.championData.stats[ddragonKey];
+      ddragonStats[ddragonKey]=BUILDER.championData.stats[ddragonKey];
     }
     console.log(ddragonStats[ddragonKey]);
   }
@@ -1033,7 +1032,9 @@ async function setChampion(name) {
   const details = await window.ApiClient.fetchChampionDetails(BUILDER.version, name);
   BUILDER.selectedChampion = name;
   BUILDER.championData = details.data[name];
+  
   console.log(details.data[name]);
+  
   const pathName = normalizeCdragonChampionPath(name);
   const cdragonUrl = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
   const cdragonRaw = await fetch(cdragonUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null);
