@@ -326,7 +326,6 @@ async function loadBuilderData() {
 
   const champions = await window.ApiClient.fetchChampionIndex(BUILDER.version);
   BUILDER.champions = champions.data;
-  console.log(champions.data);
 
   const [items, cdtbData] = await Promise.all([
     window.ApiClient.fetchItemIndex(BUILDER.version),
@@ -928,7 +927,6 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
   
   const root = raw[`Characters/${championName}/CharacterRecords/Root`];
 
-  console.log(root);
 
   if (!root || typeof root !== "object") return {};
 
@@ -2523,7 +2521,7 @@ function renderStats() {
     passiveLedger,
   } = computed;
 
-  console.log(base);
+
   const rows = [
     { name: "HP", icon: "❤️", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
     { name: "MP", icon: "🔷", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
