@@ -925,20 +925,17 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
 
   const lowerPath = String(pathName || championName || "").toLowerCase();
   const championKey = lowerPath.charAt(0).toUpperCase() + lowerPath.slice(1);
-  console.log(championName);
-  console.log(pathName);
-  console.log(lowerPath);
-  console.log(championKey);
+  
   const root = raw[`Characters/${championName}/CharacterRecords/Root`];
 
   console.log(root);
 
   if (!root || typeof root !== "object") return {};
 
-       const cdragonStats = {};
+  const cdragonStats = {};
   
   for (const [hashKey, statName] of Object.entries(CDRAGON_STAT_HASH_TO_NAME)) {
-    const value = root[hashKey]["{b35aa769}"];
+    const value = root[statName+"Modifiable"]["baseValue"];
     if (typeof value === "number" && Number.isFinite(value)) {
       cdragonStats[statName] = value;
     }
