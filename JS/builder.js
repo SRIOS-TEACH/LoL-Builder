@@ -936,11 +936,12 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
     
     const value = root[statName+"Modifiable"];
 
-    if(value !== undefined && value !== null && value.length > 0){
-      cdragonStats[statName] = value[0];
+    if(value !== undefined && value !== null){
+      cdragonStats[statName] = value["baseValue"];
     }
-    else
+    else{
       cdragonStats[statName] = 0;
+    }
   }
 
   const ddragonStats = {};
