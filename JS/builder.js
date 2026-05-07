@@ -936,6 +936,7 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
     
     const value = root[statName+"Modifiable"];
     if (typeof value === "number" && Number.isFinite(value)) {
+      console.log(value);
       cdragonStats[statName] = value[0];
     }
     else
