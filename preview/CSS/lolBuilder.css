@@ -1,0 +1,1034 @@
+/*
+ * Project-level UI styling for LoL-Builder.
+ *
+ * Sections:
+ * - Base page theme
+ * - Shared cards/grids
+ * - Item and ability visual components
+ * - Builder modal and status helpers
+ */
+
+body {
+  --builder-splash-url: none;
+  background-image: linear-gradient(rgba(7, 12, 24, 0.78), rgba(8, 12, 24, 0.92)), var(--builder-splash-url);
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  color: #e5ecff;
+}
+
+.page-wrapper,
+.content-wrapper,
+.builder-dashboard {
+  background: transparent !important;
+}
+
+.hero-card,
+.section-card {
+  margin-top: 1rem;
+  border: 1px solid #2c3f65;
+  background: rgba(16, 24, 45, 0.72);
+}
+
+.champion-splash {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #4866a2;
+}
+
+
+.splash-bg-card {
+  --champ-splash-url: none;
+  position: relative;
+  overflow: hidden;
+  min-height: 260px;
+  padding: 1rem;
+  background: rgba(16, 24, 45, 0.72);
+}
+
+.splash-bg-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(9, 16, 30, 0.45), rgba(9, 16, 30, 0.75)), var(--champ-splash-url);
+  background-size: cover;
+  background-position: center 22%;
+  background-repeat: no-repeat;
+  filter: saturate(0.95);
+  z-index: 0;
+}
+
+.splash-bg-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.splash-bg-card .text-muted {
+  color: #d4ddf5;
+}
+
+.stats-grid,
+.ability-grid,
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 0.55rem;
+}
+
+.stat-pill,
+.ability-card {
+  border: 1px solid #35538a;
+  border-radius: 8px;
+  padding: 0.55rem;
+  background: #182541;
+}
+
+.ability-icon,
+.item-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  margin: 0.4rem 0;
+}
+
+.item-button {
+  border: 1px solid #35538a;
+  border-radius: 8px;
+  background: #182541;
+  color: #e5ecff;
+  padding: 0.5rem;
+  text-align: left;
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag-pill {
+  background: #182541;
+  border: 1px solid #35538a;
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.item-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 0.6rem;
+}
+
+.item-slot-btn {
+  border: 1px solid #35538a;
+  border-radius: 8px;
+  background: #182541;
+  color: #e5ecff;
+  padding: 0.35rem;
+  min-height: 76px;
+  text-align: center;
+}
+
+.item-slot-label {
+  font-size: 0.72rem;
+  color: #b7c5eb;
+  margin-bottom: 0.2rem;
+}
+
+.item-slot-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  border: 1px solid #35538a;
+}
+
+.item-slot-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 42px;
+  height: 42px;
+  margin: 0 auto;
+  border-radius: 6px;
+  border: 1px dashed #4f6da8;
+  color: #9fb2dd;
+  font-size: 0.75rem;
+}
+
+.item-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.item-modal-body {
+  width: min(1000px, 95vw);
+  max-height: 90vh;
+  overflow: auto;
+  background: #0f1c35;
+  border: 1px solid #35538a;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.item-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hidden {
+  display: none;
+}
+
+
+.status-text {
+  margin-bottom: 0.8rem;
+}
+
+.status-error {
+  color: #ff7f7f;
+}
+
+
+.tag-filters-column {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  max-height: 70vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.item-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  gap: 0.5rem;
+}
+
+.item-button-icon {
+  border: 1px solid #35538a;
+  border-radius: 6px;
+  background: #182541;
+  padding: 0.2rem;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.passive-ledger {
+  border-top: 1px solid #35538a;
+  padding-top: 0.5rem;
+}
+
+.passive-ledger ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.passive-controls {
+  margin-top: 0.5rem;
+}
+
+.passive-modal-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.item-button-selected {
+  border-color: #f5d27a;
+  box-shadow: 0 0 0 1px #f5d27a;
+}
+
+.item-detail-panel {
+  border: 1px solid #35538a;
+  border-radius: 8px;
+  background: #182541;
+  padding: 0.8rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.item-detail-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  margin: 0.4rem 0;
+}
+
+.champ-modal-body {
+  width: min(1280px, 97vw);
+}
+
+.champ-modal-toolbar {
+  display: flex;
+  justify-content: flex-start;
+  margin: 0.45rem 0 0.75rem;
+}
+
+.champ-toolbar-left {
+  width: min(900px, 100%);
+}
+
+.champ-filter-row {
+  align-items: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.25rem;
+}
+
+.champ-filter-row .tag-pill {
+  width: auto;
+  flex: 0 0 auto;
+  padding: 0.25rem 0.55rem;
+}
+
+.champ-modal-layout {
+  align-items: start;
+}
+
+.champ-modal-grid-col .item-icon-grid.champ-icon-grid {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 0.65rem;
+}
+
+.champ-modal-grid-col .item-button-icon {
+  min-height: 84px;
+  border-radius: 10px;
+}
+
+.champ-modal-grid-col .item-icon {
+  width: 72px;
+  height: 72px;
+}
+
+.champ-modal-preview-col .item-detail-panel {
+  padding: 0.65rem;
+}
+
+.champ-modal-preview-col .item-detail-icon {
+  width: 80px;
+  height: 80px;
+}
+
+.champ-ability-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.champ-ability-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  border: 1px solid #3f5f9a;
+  background: #0f1b36;
+}
+
+.stat-colored {
+  font-weight: 600;
+}
+
+.formula-json {
+  background: #0f1c35;
+  border: 1px solid #35538a;
+  border-radius: 8px;
+  padding: 0.6rem;
+  font-size: 0.78rem;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+#itemTooltipMain ul,
+#itemRawStats ul,
+#itemActives ul {
+  margin: 0.4rem 0 0.4rem 1rem;
+}
+
+.floating-card {
+  backdrop-filter: blur(3px);
+}
+
+.builder-dashboard {
+  min-height: calc(100vh - 7rem);
+}
+
+.stat-eq {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: #c9d4f6;
+  line-height: 1.2;
+}
+
+.item-modal-wide {
+  width: min(1300px, 97vw);
+}
+
+.w-full { width: 100%; }
+
+
+.compact-hero-card {
+  min-height: 0;
+}
+
+.compact-card {
+  margin-top: 0;
+}
+
+.builder-top-row {
+  margin-top: 1rem;
+}
+
+.compact-stats-grid .stat-pill {
+  font-size: 0.88rem;
+}
+
+.stat-name-health { color: #7ee787; }
+.stat-name-mana { color: #7db5ff; }
+.stat-name-ad { color: #ffad66; }
+.stat-name-ap { color: #d8a8ff; }
+.stat-name-armor { color: #d2d6e0; }
+.stat-name-mr { color: #73e0b1; }
+.stat-name-attack-speed { color: #ffd966; }
+.stat-name-ability-haste { color: #83d3ff; }
+
+.stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.compact-ability-grid {
+  grid-template-columns: 1fr;
+}
+
+.compact-ability-grid .ability-card {
+  padding: 0.5rem;
+}
+
+.compact-ability-grid p {
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.rune-config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.rune-config-grid .label {
+  font-size: 0.78rem;
+  margin-bottom: 0;
+}
+
+.rune-config-grid .form-control {
+  margin-top: 0.2rem;
+}
+
+@media (max-width: 991px) {
+  .rune-config-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Builder layout refinements (compact + reference-driven) */
+.section-card,
+.hero-card,
+.item-modal-body,
+.item-detail-panel {
+  background: rgba(10, 22, 45, 0.7) !important;
+}
+
+.champion-stats-card {
+  padding: 0.8rem;
+}
+
+.champion-select-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.champion-header-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: end;
+}
+
+#builderStatus {
+  min-height: 0;
+  margin: 0 0 0.35rem;
+}
+
+.champion-stats-layout {
+  display: grid;
+  grid-template-columns: 90px 1fr minmax(220px, 280px);
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.selected-champion-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.champion-picker-icon-btn {
+  width: 74px;
+  height: 74px;
+  border-radius: 10px;
+  border: 1px solid #7896d8;
+  background: rgba(9, 20, 40, 0.72);
+  color: #8ea8dd;
+  font-size: 1.6rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.champion-picker-icon-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.champ-level-control {
+  width: 74px;
+}
+
+.stats-table {
+  width: auto;
+  border-collapse: collapse;
+  font-size: 1.5rem;
+}
+
+.stats-table td {
+  border: 1px solid rgba(116, 148, 214, 0.45);
+  padding: 0.35rem 0.45rem;
+  width: 7.2rem;
+}
+
+.stats-label { font-weight: 700; white-space: nowrap; }
+.stats-value { text-align: right; font-weight: 400; }
+.stat-icon {
+  margin-right: 0.35rem;
+  font-size: 0.9em;
+}
+.stats-table-wrap { overflow-x: auto; }
+
+.champion-items-inline {
+  margin-top: 0;
+}
+
+.inline-section-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #b9ccf3;
+}
+
+.champion-items-inline .item-slots {
+  grid-template-columns: repeat(2, minmax(92px, 1fr));
+  gap: 0.6rem;
+}
+
+.champion-items-inline .item-slot-btn {
+  min-height: 88px;
+}
+
+.champion-items-inline .item-slot-icon {
+  width: 56px;
+  height: 56px;
+}
+
+.champion-items-inline .item-slot-empty {
+  width: 56px;
+  height: 56px;
+  font-size: 1.05rem;
+}
+
+
+.rune-panel {
+  --rune-splash-url: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.rune-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(8, 16, 34, 0.58), rgba(8, 16, 34, 0.82)), var(--rune-splash-url);
+  background-size: cover;
+  background-position: center;
+  opacity: 0.95;
+  z-index: 0;
+}
+
+.rune-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+.rune-panel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+.rune-column-block {
+  background: rgba(7, 18, 44, 0.74);
+  border: 1px solid rgba(112, 146, 224, 0.55);
+  border-radius: 12px;
+  padding: 0.7rem;
+  box-shadow: inset 0 0 0 1px rgba(20, 41, 92, 0.35);
+}
+
+.rune-column-title {
+  color: #d7e3ff;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.03em;
+  font-size: 1.02rem;
+}
+
+.rune-path-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.rune-path-btn img {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+}
+
+
+.rune-subpanel-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem 0.85rem;
+  justify-items: center;
+}
+
+.rune-subpanel-grid-primary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.rune-shard-icon-row {
+  margin-top: 0.8rem;
+}
+
+.rune-grid-btn {
+  width: 62px;
+  height: 62px;
+  border-radius: 999px;
+  border: 2px solid rgba(99, 124, 181, 0.72);
+  background: rgba(10, 18, 36, 0.78);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.rune-grid-btn img {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  filter: grayscale(1);
+  opacity: 0.66;
+  transition: filter 120ms ease, opacity 120ms ease;
+}
+
+.rune-grid-btn.is-active {
+  border-color: #d7af5f;
+  box-shadow: 0 0 0 1px rgba(245, 198, 95, 0.42), 0 0 14px rgba(245, 198, 95, 0.36);
+}
+
+.rune-grid-btn.is-active img {
+  filter: none;
+  opacity: 1;
+}
+
+.rune-grid-btn:hover::after,
+.rune-grid-btn:focus-visible::after {
+  content: attr(data-desc);
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(240px, 65vw);
+  font-size: 1.08rem;
+  line-height: 1.3;
+  color: #e8f1ff;
+  background: rgba(8, 20, 48, 0.96);
+  border: 1px solid rgba(124, 154, 221, 0.65);
+  border-radius: 8px;
+  padding: 0.36rem 0.45rem;
+  text-align: left;
+  z-index: 3;
+  white-space: normal;
+  pointer-events: none;
+}
+.rune-subsection-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9fb7ea;
+  margin: 0.35rem 0 0.4rem;
+  font-weight: 800;
+}
+
+.rune-slot-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.45rem;
+  background: rgba(17, 35, 76, 0.48);
+  border: 1px solid rgba(92, 123, 189, 0.45);
+  border-radius: 10px;
+  padding: 0.35rem 0.45rem;
+}
+
+.rune-slot-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 2px solid #5f7fbe;
+  background: rgba(10, 18, 36, 0.75);
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.rune-slot-btn img {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+}
+
+.rune-slot-label {
+  font-size: 0.94rem;
+  color: #e9f0ff;
+  line-height: 1.18;
+}
+
+.rune-slot-kicker {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #a8bdeb;
+  margin-bottom: 0.1rem;
+}
+
+.rune-secondary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.rune-secondary-cell {
+  position: relative;
+  border: 1px solid rgba(95, 127, 190, 0.72);
+  border-radius: 999px;
+  background: rgba(10, 18, 36, 0.75);
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  padding: 0;
+}
+
+.rune-secondary-cell img {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  filter: grayscale(0.98) brightness(0.78);
+  opacity: 0.85;
+}
+
+.rune-secondary-cell.is-selected {
+  border-color: #efc96e;
+  box-shadow: 0 0 0 2px rgba(239, 201, 110, 0.28);
+}
+
+.rune-secondary-cell.is-selected img {
+  filter: none;
+  opacity: 1;
+}
+
+.rune-secondary-hover-desc {
+  position: absolute;
+  bottom: calc(100% + 0.3rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: 200px;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  color: #eaf2ff;
+  background: rgba(5, 12, 28, 0.95);
+  border: 1px solid rgba(130, 162, 229, 0.6);
+  border-radius: 6px;
+  padding: 0.3rem 0.4rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+  z-index: 3;
+  white-space: normal;
+}
+
+.rune-secondary-cell:hover .rune-secondary-hover-desc,
+.rune-secondary-cell:focus-visible .rune-secondary-hover-desc {
+  opacity: 1;
+}
+
+
+
+.rune-modal-body {
+  width: min(900px, 96vw);
+}
+
+.rune-option-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 0.6rem;
+}
+
+.rune-option-btn {
+  width: 100%;
+  border: 1px solid #6e91db;
+  border-radius: 10px;
+  background: rgba(15, 31, 62, 0.88);
+  color: #eef4ff;
+  text-align: left;
+  padding: 0.62rem 0.72rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.rune-option-btn > div {
+  min-width: 0;
+}
+
+.rune-option-btn:hover {
+  border-color: #90b3ff;
+  background: rgba(27, 51, 95, 0.93);
+}
+
+.rune-option-btn.is-disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.rune-option-group {
+  border: 1px solid rgba(98, 128, 196, 0.42);
+  border-radius: 10px;
+  padding: 0.5rem;
+  background: rgba(10, 23, 49, 0.58);
+}
+
+.rune-option-group-title {
+  margin: 0 0 0.45rem;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #adc4f6;
+}
+
+.rune-option-group-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.45rem;
+}
+
+.rune-option-btn img {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+}
+
+.rune-option-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.rune-option-desc {
+  font-size: 0.9rem;
+  line-height: 1.25;
+  color: #d0dcfb;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 780px) {
+  .champ-modal-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .rune-option-list {
+    grid-template-columns: 1fr;
+  }
+
+  .rune-option-group-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ability-layout {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.ability-passive-card {
+  grid-column: 1 / span 2;
+}
+
+.ability-attack-card {
+  grid-column: 3 / span 2;
+}
+
+.ability-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ability-head .ability-icon {
+  margin: 0;
+  width: 44px;
+  height: 44px;
+}
+
+.ability-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ability-head .ability-icon {
+  margin: 0;
+  width: 44px;
+  height: 44px;
+}
+
+.ability-rank-row {
+  margin: 0.35rem 0;
+}
+
+.ability-rank-row select {
+  width: 100%;
+}
+
+.ability-detail-text {
+  line-height: 1.35;
+}
+
+.ability-detail-number {
+  color: #ffcd85;
+  font-weight: 600;
+}
+
+.ability-detail-eq {
+  color: #9cc7ff;
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+.ability-detail-missing {
+  color: #b6c8eb;
+  border-bottom: 1px dotted #6f88be;
+}
+
+.ability-damage-physical { color: #ff9d4d; }
+.ability-damage-magic { color: #9ac0ff; }
+.ability-damage-true { color: #f1f1f1; }
+.ability-healing { color: #7ff3b3; }
+.ability-status { color: #ffe17d; }
+
+.item-slots {
+  grid-template-columns: repeat(6, minmax(48px, 1fr));
+}
+
+.item-slot-btn {
+  background: transparent !important;
+  border: 2px dashed #6f88be !important;
+  min-height: 52px;
+  padding: 0.2rem;
+}
+
+.item-slot-label { display: none; }
+
+.item-slot-empty {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  color: #90a6d5;
+}
+
+.item-slot-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 4px;
+}
+
+@media (max-width: 991px) {
+  .champion-stats-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .champion-items-inline .item-slots {
+    grid-template-columns: repeat(3, minmax(72px, 1fr));
+  }
+
+  .rune-panel-grid,
+  .ability-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .rune-shard-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.builder-dashboard .col-lg-6 > .card + .card {
+  margin-top: 0.6rem;
+}
