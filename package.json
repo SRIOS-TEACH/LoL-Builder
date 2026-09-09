@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "test": "node --test tests/regression.test.cjs",
-    "test:browser": "node tests/browser.cjs"
+    "test:browser": "node tests/browser.cjs",
+    "test:combat": "node tests/combat-audit.cjs"
   },
   "engines": {"node": ">=20"}
 }

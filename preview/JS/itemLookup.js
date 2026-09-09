@@ -1,5 +1,6 @@
 /** Item Lookup page state and DOM rendering. Shared parsing lives in shared/itemData.js. */
 const ITEM_STATE = {
+  combatValues:{},
   version: '', items: {}, filteredIds: [], tags: new Set(),
   selectedTags: new Set(), selectedMaps: new Set([11]), selectedId: null,
 };
@@ -129,6 +130,7 @@ function renderItemGrid() {
  * Clears item detail panel when no selected item exists.
  */
 function clearItemDetails() {
+  document.getElementById("combatInputs").replaceChildren();
   document.getElementById("itemName").textContent = "No item selected";
   document.getElementById("itemIcon").removeAttribute("src");
   document.getElementById("itemCost").textContent = "";
@@ -147,7 +149,10 @@ function showItem(id) {
   renderItemGrid();
 
   const resolvedDescription = resolveDescriptionFormulas(item, item.description || "");
-  const { lines } = buildExtractedFormulas(id);
+  const source=window.CombatInputs.itemSource(id,window.ItemLookupShared.getState().cdragonById[id],item.name);
+  const base={level:1,rank:1,allowLevelInput:true};
+  window.CombatInputs.render(document.getElementById('combatInputs'),{sources:[source],base,values:ITEM_STATE.combatValues,onChange:()=>showItem(id)});
+  const { lines } = buildExtractedFormulas(id,window.CombatInputs.apply(base,ITEM_STATE.combatValues));
   const inferredCooldown = /<active>|<passive>|\bACTIVE\b|\(0s\)/i.test(item.description || "") ? inferActiveCooldownSeconds(id) : null;
   const withCooldown = injectActiveCooldown(resolvedDescription, inferredCooldown);
   const withDamage = injectItemCalculationValues(withCooldown, lines);
@@ -161,6 +166,9 @@ function showItem(id) {
   document.getElementById("itemCost").innerHTML = `<strong>Cost:</strong> ${item.gold?.total ?? 0}g`;
   document.getElementById("itemMeta").innerHTML = `<strong>Tags:</strong> ${(item.tags || []).join(", ") || "-"}`;
   document.getElementById("itemTooltipMain").innerHTML = tooltipMain;
+  const effects=document.createElement('div');effects.className='mt-10';
+  for(const line of lines){const row=document.createElement('div');row.textContent=`${line.name}: ${line.formula}`;effects.append(row);}
+  document.getElementById('itemTooltipMain').append(effects);
 }
 
 document.addEventListener("DOMContentLoaded", initItemLookup);

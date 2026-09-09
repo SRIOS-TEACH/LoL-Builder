@@ -8,7 +8,7 @@ function app(fetchImpl = async () => ({ok:true,json:async()=>({})})) {
   const context = vm.createContext({console, fetch:fetchImpl, AbortController, setTimeout, clearTimeout,
     document:{addEventListener(){}}, module:{exports:{}}});
   context.window = context;
-  for (const file of ['shared/apiClient','shared/itemPolicy','shared/abilityRules','shared/buildStats','shared/calculations','shared/itemData','builder']) {
+  for (const file of ['shared/apiClient','shared/itemPolicy','shared/abilityRules','shared/buildStats','shared/calculations','shared/combatInputs','shared/itemData','builder']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'JS',file+'.js'),'utf8'),context);
   }
   context.run = code => vm.runInContext(code,context);
@@ -109,4 +109,47 @@ test('products, clamping, rank overrides and scalar item effects preserve arithm
  assert.equal(C.partValue({__type:'EffectValueCalculationPart',mEffectIndex:1},{effects:[60]}).value,60);
  const calculations={base:{__type:'GameCalculation',mFormulaParts:[{__type:'NamedDataValueCalculationPart',mDataValue:'damage'}]}};
  assert.equal(C.evaluate({__type:'GameCalculationModified',mModifiedGameCalculation:'base',mOverrideSpellLevel:2},{rank:1,calculations,dataValues:[{name:'damage',values:[0,10,20,30,40,50,60]}]}).value,20);
+});
+
+const Combat=require('../JS/shared/combatInputs');
+test('health inputs derive current, missing and percentage values without a full-health default',()=>{
+ const base={stats:{hp:3000},targetStats:{}};
+ assert.equal(Combat.apply(base,{}).stats.currentHp,undefined);
+ const ctx=Combat.apply(base,{'self:healthPercent:0':.25,'target:hp:0':2000,'target:healthPercent:0':.6});
+ assert.equal(ctx.stats.currentHp,750);assert.equal(ctx.stats.missingHp,2250);
+ assert.equal(ctx.targetStats.currentHp,1200);assert.equal(ctx.targetStats.missingHealthPercent,.4);
+});
+test('stack values, zero stacks and clearing a value remain distinct',()=>{
+ const calc={__type:'GameCalculation',mFormulaParts:[{__type:'BuffCounterByCoefficientCalculationPart',mBuffName:'Feast',mCoefficient:5}]};
+ assert.equal(C.evaluate(calc,Combat.apply({},{})).value,null);
+ assert.equal(C.evaluate(calc,Combat.apply({},{'buff:Feast':0})).value,0);
+ assert.equal(C.evaluate(calc,Combat.apply({},{'buff:Feast':6})).value,30);
+});
+test('conditional activation distinguishes inactive effects from missing references',()=>{
+ const calc={__type:'GameCalculationConditional',mConditionalGameCalculation:'hit',mConditionalCalculationRequirements:{__type:'HasBuffCastRequirement',mBuffName:'ready'}};
+ const base={calculations:{hit:{__type:'GameCalculation',mFormulaParts:[{__type:'NumberCalculationPart',mNumber:100}]}}};
+ assert.equal(C.evaluate(calc,Combat.apply(base,{'buff:ready':0})).inactive,true);
+ assert.equal(C.evaluate(calc,Combat.apply(base,{'buff:ready':1})).value,100);
+ assert.equal(C.evaluate(calc,base).value,null);
+ assert.ok(C.evaluate({...calc,mConditionalGameCalculation:'missing'},Combat.apply(base,{'buff:ready':1})).unsupported.length);
+});
+test('target health thresholds use the target, not the attacking champion',()=>{
+ const req={__type:'AboveHealthPercentCastRequirement',mCurrentPercentHealth:.5};
+ assert.equal(C.condition(req,{stats:{healthPercent:1},targetStats:{healthPercent:.2}}).value,false);
+ assert.equal(C.condition(req,{stats:{healthPercent:.1},targetStats:{healthPercent:.8}}).value,true);
+});
+test('execution threshold and nearby-ally predicates respond to explicit context',()=>{
+ const req={__type:'{43b8e695}','{6166b756}':'threshold',mInvertResult:true};
+ const context={targetStats:{hp:2000,healthPercent:.2},calculations:{threshold:{__type:'GameCalculation',mFormulaParts:[{__type:'NumberCalculationPart',mNumber:500}]}}};
+ assert.equal(C.condition(req,context).value,true);
+ assert.equal(C.condition(req,{...context,targetStats:{hp:2000,healthPercent:.8}}).value,false);
+ const nearby={__type:'HasNNearbyVisibleUnitsRequirement',mRange:1300};
+ assert.equal(C.condition(nearby,{}).value,null);
+ assert.equal(C.condition(nearby,Combat.apply({},{['condition:'+C.conditionKey(nearby)]:true})).value,true);
+});
+test('all discovered stack and elapsed controls feed the calculation interpreter',()=>{
+ const source={label:'Test',calculations:{damage:{__type:'GameCalculation',mFormulaParts:[{__type:'BuffCounterByCoefficientCalculationPart',mBuffName:'stacks',mCoefficient:10},{__type:'PercentageOfBuffNameElapsed',buffName:'duration',Coefficient:100}]}}};
+ const fields=Combat.descriptors([source],{});assert.deepEqual(fields.map(f=>f.key).sort(),['buff:stacks','elapsed:duration']);
+ const context=Combat.apply({},{'buff:stacks':3,'elapsed:duration':.5});
+ assert.equal(C.evaluate(source.calculations.damage,context).value,80);
 });

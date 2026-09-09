@@ -1,4 +1,4 @@
-# Calculation audit — 2026-09-09
+# Calculation audit — 2026-09-10
 
 ## Runtime data
 
@@ -15,22 +15,41 @@ This is not an entirely data-defined game simulator. Stat growth rules, rune sha
 - Seraph's tooltip binds its exact ShieldValue and BonusAPCalc keys. Its shield/AP coefficients and cooldown come from live data. Muramana and Rabadon also read their passive coefficients/formulas from that data.
 - Both root and `preview/` runtime files contain the same implementation.
 
+## Combat inputs
+
+Builder, item selection details and Item Lookup now expose required inputs from the live formula dependencies. Inputs begin unset. Enter stacks (zero if inactive), elapsed duration percentages, target maximum/current health and nearby-ally conditions. Item Lookup also supports attacker stats and champion level for standalone calculations.
+
+Build-derived base/bonus stats are supplied automatically. Current and missing health are derived consistently from maximum health and the entered percentage. Health cast requirements use target health. Named effect values are available even when Data Dragon's prose contains no numeric placeholder.
+
+Buff activation chooses the referenced conditional branch. If the condition is false and the source supplies no alternate branch, the result is explicitly **Inactive (no alternate effect)**, not invented zero damage. A named branch that is actually missing still reports a source error. This handles the six conditional records previously classified as unresolved: items 3865/3866, Elise R, Jax W/R and Zed passive.
+
+Stack inputs feed the formulas that reference those counters. They do not automatically simulate every scripted passive stat bonus, on-hit interaction or game event. For example, entering stacks is not a complete simulation of all health/stat changes caused by acquiring those stacks in-game.
+
 ## Validation
 
-22 unit regressions pass. Browser tests pass with advanced data available and unavailable: 173 champions at levels 1, 6, 11 and 18; 230 builder items; 600 item tooltips; champion lookup and startup failures. These are execution/rendering tests, not exhaustive comparisons against the game.
+28 unit regressions pass. Browser tests pass with advanced data available and unavailable: 173 champions at four levels, 230 builder items and 600 item tooltips. Interactive tests enter and clear Cho'Gath stacks, derive target health for Zed and update Seraph's standalone shield/AP values.
 
-The captured full-data inventory contains 2,808 calculation records, including secondary spells and nonstandard/legacy items. At rank 3, level 18 with a controlled test build:
+`tests/combat-audit.cjs` exercises the same input discovery and context application used by the UI. All 2,808 captured records are tested in two scenarios with different activation, health and stack values:
 
-| Result | Records |
+| Result | Scenarios |
 |---|---:|
-| Numeric result | 2,671 |
-| Needs combat inputs / conditions | 128 |
-| Missing source branch/effect or circular reference | 9 |
+| Numeric result | 5,603 |
+| Explicitly inactive | 7 |
+| Missing input control | 0 |
+| Known source defect | 6 (three records, tested twice) |
 
-The last nine are conditional calculations without a default branch on items 3865/3866, Elise R, Jax W/R and Zed passive; a self-reference on item 773085; and missing effect arrays on two K'Sante missile records. This does not imply all nine are visible primary abilities or active Summoner's Rift items. Their intended fallback semantics still need verification.
+Thus the previous 128 input gaps now have a control or a build-derived value. These counts validate execution and input plumbing, not every game mechanic or all possible combat states. Newly introduced source defects fail the audit; the three known exceptions remain listed explicitly.
 
-## Remaining acceptance work
+## Three remaining source defects
 
-All calculations are **not yet certified game-correct**. The interpreter inventory does not cover scripted effects absent from the published formula records. Buff stacks, target health/resists, empowered forms, nearby units, conditional activation and elapsed durations need explicit combat context. Full passive application, item interactions and damage mitigation also remain incomplete. The builder continues to label ability DPS as unmodeled.
+Rechecked against the live sources on 2026-09-10; they remain unchanged:
 
-Before moving to layout/features, validate each primary ability and item against its patch and combat conditions, add the missing context, resolve the source ambiguities above, and extend expected-value regressions. Symbolic expressions make missing inputs visible; they do not replace those final checks.
+- **Runaan's Hurricane variant 773085, ChampRange:** both conditional branches refer back to ChampRange. This variant is listed for maps 12/453, not Summoner's Rift. Its BoltDamage calculation remains independent and evaluable. [Live item source](https://raw.communitydragon.org/latest/game/items.cdtb.bin.json)
+- **K'Sante KSanteQ3Missile, TotalDamage:** references Effect 1 but supplies no effect array.
+- **K'Sante KSanteRMissile1, TotalDamage:** same missing Effect 1. These are missile records, distinct from primary ability calculation records. [Live champion source](https://raw.communitydragon.org/latest/game/data/characters/ksante/ksante.bin.json)
+
+These definitions remain explicitly unavailable. Resolving them numerically requires a verified replacement reference/effect definition or an authoritative indication that they are unused. Do not borrow a similarly named formula or interpret a missing effect array as zero without that evidence.
+
+## Remaining game-level acceptance work
+
+All calculations are **not yet certified game-correct**. Full passive application, item interactions, damage mitigation and effects implemented only in scripts remain outside the interpreter's coverage. Ability DPS is still labeled unmodeled. Validate those against the selected patch before moving to unrelated layout/features.

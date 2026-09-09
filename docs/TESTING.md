@@ -34,3 +34,8 @@ Optional `SCREENSHOT_DIR` saves a Builder screenshot. The screenshot contains pl
 ## Manual/live validation still required
 
 Run `python -m http.server 8000` from the repository root. Visit `http://127.0.0.1:8000/main.html`. Verify current Community Dragon access, compare supported calculations to the current game patch, and exercise the remaining items in `AUDIT.md` before declaring game-level correctness.
+
+
+## Combat input audit
+
+After downloading with `ADVANCED_DATA=1`, run `npm run test:combat` with the same `FIXTURES_DIR`. This uses the production input-discovery and context functions, supplies both active and inactive scenarios and asserts that no required input lacks a control. Three named source defects are allowed; any new one fails. Set `AUDIT_OUTPUT` to save the complete result. The browser suite also edits real input controls and verifies that displayed results update.

@@ -54,39 +54,63 @@
     30:['tenacity','Tenacity'], 31:['attackRange','Attack Range'], 34:['healShieldPower','Heal and Shield Power'],
   };
   const bonusKeys = {ap:'ap',armor:'bonusArmor',totalAd:'bonusAd',mr:'bonusMr',hp:'bonusHp',mp:'bonusMp',attackSpeed:'bonusAttackSpeed'};
+  function healthStats(stats = {}) {
+    const out={...stats};
+    if(Number.isFinite(out.hp) && Number.isFinite(out.healthPercent))out.currentHp=out.hp*out.healthPercent;
+    if(Number.isFinite(out.hp) && Number.isFinite(out.currentHp) && out.hp>0){
+      out.healthPercent=out.currentHp/out.hp;
+      out.missingHp=out.hp-out.currentHp;
+      out.missingHealthPercent=1-out.healthPercent;
+    }
+    return out;
+  }
   function stat(part, context, resource = false) {
     const code = Number(part.mStat ?? 0), mode = Number(part.mStatFormula ?? 0);
     const [key, label] = resource ? ['mp', 'Mana'] : statNames[code] || ['', `Stat ${code}`];
     if (!key || ![0,1,2].includes(mode)) return unknown(label, `stat:${code}:${mode}`, true);
     const target = !!part['{a8cb9c14}'];
-    const stats = target ? context.targetStats || {} : context.stats || {};
+    const stats = healthStats(target ? context.targetStats : context.stats);
     const bonusKey = bonusKeys[key] || `bonus${key[0].toUpperCase()}${key.slice(1)}`;
-    const total = stats[key], bonus = stats[bonusKey];
-    const base = stats[`base${key[0].toUpperCase()}${key.slice(1)}`] ?? (Number.isFinite(total) && Number.isFinite(bonus) ? total-bonus : undefined);
+    const total = stats[key], explicitBase = stats[`base${key[0].toUpperCase()}${key.slice(1)}`];
+    const bonus = stats[bonusKey] ?? (Number.isFinite(total) && Number.isFinite(explicitBase) ? total-explicitBase : undefined);
+    const base = explicitBase ?? (Number.isFinite(total) && Number.isFinite(bonus) ? total-bonus : undefined);
     const value = mode === 2 ? bonus : mode === 1 ? base : total;
     const text = `${target ? 'Target ' : ''}${mode === 2 ? 'Bonus ' : mode === 1 ? 'Base ' : ''}${label}`;
     return Number.isFinite(value) ? result(value,text) : unknown(text,`${target?'target':'self'}:${key}:${mode}`);
   }
+  const conditionKey = requirement => hash(JSON.stringify(requirement));
   function condition(requirement, context) {
-    if (!requirement) return {value:null,text:'condition'};
-    let value = null, text = 'condition';
+    if (!requirement) return {value:null,text:'condition',inputs:['condition:unknown']};
+    let value = null, text = 'condition', inputs=[];
     switch (requirement.__type) {
       case 'IsRangedCastRequirement': value = typeof context.ranged === 'boolean' ? context.ranged : null; text='ranged'; break;
       case 'HasBuffCastRequirement': {
         const count = lookup(context.buffs, requirement.mBuffName);
-        value = Number.isFinite(count) ? count > 0 : null; text='buff active'; break;
+        value = Number.isFinite(count) ? count > 0 : null; text='buff active'; inputs=[`buff:${requirement.mBuffName}`]; break;
       }
       case 'HasAllSubRequirementsCastRequirement': {
         const rows=(requirement.mSubRequirements || []).map(r=>condition(r,context));
-        value=rows.some(r=>r.value===false)?false:rows.every(r=>r.value===true)?true:null;text=rows.map(r=>r.text).join(' and ');break;
+        value=rows.some(r=>r.value===false)?false:rows.every(r=>r.value===true)?true:null;text=rows.map(r=>r.text).join(' and ');inputs=rows.flatMap(r=>r.inputs||[]);break;
       }
       case 'AboveHealthPercentCastRequirement': {
         const threshold=requirement.mCurrentPercentHealth ?? dataValue(context.dataValues,requirement['{137cf12a}'],context.rank,context.level).value;
-        value=Number.isFinite(context.stats?.healthPercent) && threshold!==null ? context.stats.healthPercent>threshold:null;text='health above threshold';break;
+        const hp=healthStats(context.targetStats).healthPercent;
+        value=Number.isFinite(hp) && Number.isFinite(threshold) ? hp>threshold:null;text='target health above threshold';inputs=['target:healthPercent:0'];break;
+      }
+      case '{43b8e695}': {
+        const threshold=evaluate(lookup(context.calculations,requirement['{6166b756}']),context);
+        const hp=healthStats(context.targetStats).currentHp;
+        value=Number.isFinite(hp)&&threshold.value!==null?hp>threshold.value:null;
+        text='target health above execution threshold';inputs=[...threshold.inputs,'target:currentHp:0'];break;
+      }
+      default: {
+        const key=conditionKey(requirement);
+        value=typeof context.conditions?.[key]==='boolean'?context.conditions[key]:null;
+        text='combat requirement';inputs=[`condition:${key}`];
       }
     }
     if(requirement.mInvertResult){if(value!==null)value=!value;text=`not (${text})`;}
-    return {value,text};
+    return {value,text,inputs:value===null?inputs:[]};
   }
   function evaluate(calc, context = {}, seen = new Set()) {
     if (!calc) return unknown('Calculation unavailable','missing calculation',true);
@@ -102,11 +126,15 @@
     } else if(calc.__type==='GameCalculationConditional') {
       const requirement=condition(calc.mConditionalCalculationRequirements ?? calc['{c0482365}'],context);
       const yes=()=>evaluate(lookup(context.calculations,calc.mConditionalGameCalculation),context,seen);
-      const no=()=>evaluate(lookup(context.calculations,calc.mDefaultGameCalculation),context,seen);
+      // A conditional with no alternate branch supplies no calculation when inactive.
+      // Keep that state distinct from numeric zero and a broken named reference.
+      const no=()=>calc.mDefaultGameCalculation
+        ? evaluate(lookup(context.calculations,calc.mDefaultGameCalculation),context,seen)
+        : {...result(null,'Inactive (no alternate effect)'),inactive:true,missing:false};
       if(requirement.value!==null)row=requirement.value?yes():no();
       else {
         const a=yes(),b=no();
-        row=result(null,`${requirement.text}: ${a.text}; otherwise: ${b.text}`,[...new Set([...a.inputs,...b.inputs,'condition'])],[...a.unsupported,...b.unsupported]);
+        row=result(null,`${requirement.text}: ${a.text}; otherwise: ${b.text}`,[...new Set([...a.inputs,...b.inputs,...requirement.inputs])],[...a.unsupported,...b.unsupported]);
       }
     } else if(Array.isArray(calc.mFormulaParts ?? calc.mFormula)) {
       row=combine((calc.mFormulaParts??calc.mFormula).map(p),'+',values=>values.reduce((a,b)=>a+b,0));
@@ -202,6 +230,6 @@
       default:return unknown('Unsupported formula',type||'unknown part',true);
     }
   }
-  scope.Calculations={evaluate,partValue,dataValue,stat,lookup,hash,format};
+  scope.Calculations={evaluate,partValue,dataValue,stat,lookup,hash,format,healthStats,conditionKey,condition};
   if(typeof module!=='undefined')module.exports=scope.Calculations;
 })(typeof window!=='undefined'?window:globalThis);

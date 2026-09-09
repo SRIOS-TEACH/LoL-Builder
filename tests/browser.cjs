@@ -82,6 +82,23 @@ const server=http.createServer((req,res)=>{
      return {feast:feast.total,html,stats,abilityText:document.querySelector('#abilities')?.innerText};
    });
    console.log('PASS live-data Feast and Seraph integration: Feast '+details.feast);
+   await page.locator('#combatInputs summary').click();
+   const stacks=page.locator('#combatInputs [data-combat-key="buff:{8682fc00}"]');
+   await stacks.fill('6');await stacks.press('Tab');
+   assert.equal(await page.evaluate(()=>calculationContext(getComputedChampionStatsForTooltips()).buffs['{8682fc00}']),6);
+   await page.locator('#combatInputs [data-combat-key="buff:{8682fc00}"]').fill('');
+   await page.locator('#combatInputs [data-combat-key="buff:{8682fc00}"]').press('Tab');
+   assert.equal(await page.evaluate(()=>calculationContext(getComputedChampionStatsForTooltips()).buffs['{8682fc00}']),undefined);
+   await page.evaluate(()=>setChampion('Zed'));
+   await page.locator('#combatInputs [data-combat-key="target:hp:0"]').fill('2000');
+   await page.locator('#combatInputs [data-combat-key="target:hp:0"]').press('Tab');
+   await page.locator('#combatInputs [data-combat-key="target:healthPercent:0"]').fill('25');
+   await page.locator('#combatInputs [data-combat-key="target:healthPercent:0"]').press('Tab');
+   assert.equal(await page.evaluate(()=>calculationContext(getComputedChampionStatsForTooltips()).targetStats.currentHp),500);
+   const buffKeys=await page.locator('#combatInputs [data-combat-key^="buff:"]').evaluateAll(nodes=>nodes.map(n=>n.dataset.combatKey));
+   for(const key of buffKeys){const control=page.locator(`#combatInputs [data-combat-key="${key}"]`);await control.fill('0');await control.press('Tab');}
+   assert.match(await page.locator('.ability-passive-card .ability-effect-values').textContent(),/Final Damage: [\d.]+/);
+   console.log('PASS editable stacks, clearing unknown inputs, and derived target health');
    if(process.env.SCREENSHOT_DIR){
      fs.writeFileSync(path.join(process.env.SCREENSHOT_DIR,'calculation-details.json'),JSON.stringify(details,null,2));
      await page.screenshot({path:path.join(process.env.SCREENSHOT_DIR,'calculations.png'),fullPage:true});
@@ -116,6 +133,17 @@ const server=http.createServer((req,res)=>{
  console.log(`PASS ${builderItems} builder items: equip, stats, details; item haste fallback`);
  await page.goto(base+'/itemLookup.html');
  await page.waitForFunction(()=>document.querySelectorAll('#itemGrid button').length>0);
+ if(process.env.ADVANCED_DATA){
+   await page.evaluate(()=>showItem('3040'));
+   await page.locator('#combatInputs summary').click();
+   for(const [key,value]of [['self:mp:0','2000'],['self:mp:2','1000']]){
+     await page.locator(`[data-combat-key="${key}"]`).fill(value);
+     await page.locator(`[data-combat-key="${key}"]`).press('Tab');
+   }
+   assert.match(await page.locator('#itemTooltipMain').innerText(),/360 Shield/);
+   assert.match(await page.locator('#itemTooltipMain').innerText(),/20 Ability Power/);
+   console.log('PASS standalone item inputs update shield and AP values');
+ }
  const itemCount=await page.evaluate(()=>{
    const ids=Object.keys(ITEM_STATE.items);
    for(const id of ids)showItem(id);

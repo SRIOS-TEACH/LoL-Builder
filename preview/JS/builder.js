@@ -14,6 +14,8 @@ const BUILDER = {
   modalChampFiltered: [],
   championDetailCache: {},
   cdragonAbilityData: null,
+  combatValues: {},
+  inspectedItemId: null,
   championModalRequestId: 0,
   championRequestId: 0,
   runeModalTarget: null,
@@ -874,6 +876,7 @@ async function setChampion(name) {
     BUILDER.championData = { ...champion, stats };
     BUILDER.cdragonAbilityData = abilityData;
     BUILDER.cdragonRaw = raw;
+    BUILDER.combatValues = {};
     BUILDER.abilityRanks = { q: 0, w: 0, e: 0, r: 0 };
     BUILDER.level = Number(document.getElementById('builderLevel').value) || 1;
     document.body.style.setProperty('--builder-splash-url', `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`);
@@ -959,6 +962,8 @@ function renderModalItemGrid() {
 }
 
 function renderModalItemDetail(id) {
+  BUILDER.inspectedItemId=id;
+  renderCombatInputs();
   const root = document.getElementById("modalItemDetail");
   if (!id) {
     root.innerHTML = "<p class='text-muted'>No items found.</p>";
@@ -1026,6 +1031,13 @@ function renderModalItemDetail(id) {
     : "";
 
   root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div>${passiveLines}${extractedFormulaRows}<div class='mt-10'>${enhancedDescription}</div><button class='btn btn-sm mt-10' data-set-item-id='${id}'>Select this item</button><button class='btn btn-sm mt-10 ml-5' data-set-item-id=''>Clear slot</button>`;
+  const controls=document.createElement('div');controls.className='combat-inputs';controls.dataset.open='true';root.append(controls);
+  window.CombatInputs.render(controls,{
+    sources:[window.CombatInputs.itemSource(id,window.ItemLookupShared.getState().cdragonById[id],item.name)],
+    base:baseCalculationContext(getComputedChampionStatsForTooltips()),values:BUILDER.combatValues,
+    onChange:()=>{renderStats();renderAbilityCards();renderModalItemDetail(id);},
+  });
+
 }
 
 function setSlotItem(itemId) {
@@ -1442,7 +1454,7 @@ function isMissingGameCalculation(result) {
   return result.terms.every((term) => term?.missing === true);
 }
 
-function calculationContext(stats, dataValues = [], rank = 1, calculations = {}, effects = []) {
+function baseCalculationContext(stats, dataValues = [], rank = 1, calculations = {}, effects = []) {
   return {
     stats, dataValues, rank, calculations, effects, level: BUILDER.level,
     resolveExternal: (path, key) => {
@@ -1457,6 +1469,34 @@ function calculationContext(stats, dataValues = [], rank = 1, calculations = {},
       return counts;
     }, {0:0,1:0,2:0,3:0,4:0,5:0,6:0}),
   };
+}
+
+function calculationContext(...args) {
+  return window.CombatInputs.apply(baseCalculationContext(...args),BUILDER.combatValues);
+}
+
+function combatSources() {
+  const buffNames={};
+  for(const [path,record] of Object.entries(BUILDER.cdragonRaw||{})) {
+    for(const name of [path.split('/').pop(),record?.ObjectName,record?.mScriptName].filter(Boolean))buffNames[window.Calculations.hash(name)]=name;
+  }
+  const sources=[];
+  for(const [path,record] of Object.entries(BUILDER.cdragonRaw||{})) {
+    if(!record?.mSpell)continue;
+    const parsed=extractCdragonSpell(record);
+    if(Object.keys(parsed?.calculations||{}).length)sources.push({...parsed,label:path.split('/').pop(),buffNames});
+  }
+  for(const id of new Set([...BUILDER.itemSlots,BUILDER.inspectedItemId].filter(Boolean))) {
+    sources.push(window.CombatInputs.itemSource(id,window.ItemLookupShared.getState().cdragonById[id],BUILDER.items[id]?.name));
+  }
+  return sources;
+}
+
+function renderCombatInputs() {
+  window.CombatInputs.render(document.getElementById('combatInputs'),{
+    sources:combatSources(),base:baseCalculationContext(getComputedChampionStatsForTooltips()),values:BUILDER.combatValues,
+    onChange:()=>{renderStats();renderAbilityCards();if(BUILDER.inspectedItemId)renderModalItemDetail(BUILDER.inspectedItemId);},
+  });
 }
 
 function adaptCalculation(row) {
@@ -1804,7 +1844,20 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
     .trim();
 }
 
+function abilityEffectValues(payload,rank) {
+  if(!payload || !rank)return '';
+  const context=calculationContext(getComputedChampionStatsForTooltips(),payload.dataValues,rank,payload.calculations,payload.effects);
+  const escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const rows=Object.entries(payload.calculations||{}).filter(([name])=>!name.startsWith('{')).map(([name,calc])=>{
+    const row=window.Calculations.evaluate(calc,context);
+    const value=row.value===null?row.text:window.Calculations.format(row.value*(row.displayAsPercent?100:1))+(row.displayAsPercent?'%':'');
+    return `<div>${escape(name.replace(/([a-z])([A-Z])/g,'$1 $2'))}: ${escape(value)}</div>`;
+  });
+  return rows.length?`<details class="ability-effect-values"><summary>Effect values</summary>${rows.join('')}</details>`:'';
+}
+
 function renderAbilityCards() {
+  renderCombatInputs();
   const root = document.getElementById("abilityCards");
   if (!BUILDER.championData) {
     root.innerHTML = "<div class='ability-card'><p class='text-muted'>Select a champion to view abilities.</p></div>";
@@ -1816,7 +1869,7 @@ function renderAbilityCards() {
   const computed = computeDerivedBuildStats();
   const attack = computed ? computeAutoAttackProfile(computed) : null;
   const passiveText = buildDetailedPassiveText();
-  const passive = `<div class="ability-card ability-passive-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p class="ability-detail-text">${passiveText}</p></div>`;
+  const passive = `<div class="ability-card ability-passive-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p class="ability-detail-text">${passiveText}</p>${abilityEffectValues(BUILDER.cdragonAbilityData?.p,1)}</div>`;
   const attackCard = `<div class="ability-card ability-attack-card"><div class="ability-head"><strong>Attack</strong></div>
   <div><strong>Basic Attack Damage:</strong> ${attack ? `${attack.autoAttackDamage.toFixed(1)} (${computed.ad.toFixed(1)}${attack.onHitRows.map((r) => ` + ${r}`).join("") || ""})` : "-"}</div>
   <div><strong>Basic Attack DPS:</strong> ${attack ? `${attack.attackDps.toFixed(1)} (${attack.autoAttackDamage.toFixed(1)} × ${computed.asTotal.toFixed(3)})` : "-"}</div>
@@ -1837,7 +1890,7 @@ function renderAbilityCards() {
     const cost = parseByRank(spell.costBurn, rank);
     const range = parseByRank(spell.rangeBurn, rank);
     const detail = buildDetailedAbilityText(spell, rank, key);
-    return `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div><div><strong>DPS:</strong> Not modeled</div></div>`;
+    return `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p>${abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank)}<div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div><div><strong>DPS:</strong> Not modeled</div></div>`;
   }).join("");
 
   root.innerHTML = passive + attackCard + spells;
