@@ -115,100 +115,8 @@ function colorizeStatsInHtml(html) {
   }).join("");
 }
 
-/**
- * Maps stat ids used in calc payloads to readable labels.
- */
-function statLabelFromId(statId) {
-  const labels = {
-    0: "AP", 1: "Armor", 2: "AD", 3: "Attack Speed", 4: "Attack Speed", 5: "MR", 6: "MR", 7: "Move Speed",
-    8: "Crit Chance", 11: "AP", 12: "Max Health", 18: "Lethality", 19: "Armor Pen", 20: "Magic Pen", 21: "Magic Pen",
-    29: "Target Max Health", 30: "Bonus Health", 31: "Total Health", 34: "Attack Speed",
-  };
-  return labels[Number(statId)] || `Stat ${statId}`;
-}
-
-/**
- * Converts a calculation part object into readable text.
- */
-function calculationPartToText(part, calcMap, dataValueMap) {
-  if (!part) return "";
-  const type = String(part.__type || "");
-
-  if (type === "NumberCalculationPart") return String(Number(part.mNumber || 0));
-  if (type === "NamedDataValueCalculationPart") return String(dataValueMap[part.mDataValue] ?? part.mDataValue ?? 0);
-
-  if (type === "StatByCoefficientCalculationPart") {
-    const coeff = Number(part.mCoefficient || 0) * 100;
-    return `${coeff.toFixed(Number.isInteger(coeff) ? 0 : 1)}% ${statLabelFromId(part.mStat)}`;
-  }
-
-  if (type === "StatByNamedDataValueCalculationPart") {
-    const coeff = Number(dataValueMap[part.mDataValue] || 0) * 100;
-    return `${coeff.toFixed(Number.isInteger(coeff) ? 0 : 1)}% ${statLabelFromId(part.mStat)}`;
-  }
-
-  if (type === "ProductOfSubPartsCalculationPart") {
-    const parts = (part.mPart1 ? [part.mPart1] : []).concat(part.mPart2 ? [part.mPart2] : []).concat(part.mSubparts || []);
-    const rows = parts.map((p) => calculationPartToText(p, calcMap, dataValueMap)).filter(Boolean);
-    return rows.join(" × ");
-  }
-
-  if (type === "SumOfSubPartsCalculationPart") {
-    const rows = (part.mSubparts || []).map((p) => calculationPartToText(p, calcMap, dataValueMap)).filter(Boolean);
-    return rows.join(" + ");
-  }
-
-  if (type === "ByCharLevelBreakpointsCalculationPart") {
-    const level1 = Number(part.mLevel1Value || 0);
-    const steps = (part.mBreakpoints || []).map((bp) => Number(bp?.mAdditionalBonusAtThisLevel || 0)).filter((v) => v !== 0);
-    if (!steps.length) return String(level1);
-    const avgStep = steps.reduce((a, b) => a + b, 0) / steps.length;
-    return `${level1} + ${avgStep.toFixed(2)}/lvl`;
-  }
-
-  if (type === "ClampSubPartsCalculationPart") {
-    const valueText = calculationPartToText(part.mSubPart, calcMap, dataValueMap);
-    const minText = calculationPartToText(part.mFloor, calcMap, dataValueMap);
-    const maxText = calculationPartToText(part.mCeiling, calcMap, dataValueMap);
-    return `clamp(${valueText}, ${minText || "-∞"}, ${maxText || "+∞"})`;
-  }
-
-  return `[${type || "CalculationPart"}]`;
-}
-
-/**
- * Converts a game-calculation object into readable formula text.
- */
-function gameCalculationToText(calcName, calc, calcMap, dataValueMap, seen = new Set()) {
-  if (seen.has(calc)) return "[unresolved circular calculation]";
-  seen = new Set(seen).add(calc);
-  if (!calc) return "";
-  const type = String(calc.__type || "");
-
-  if (type === "GameCalculation") {
-    const rows = (calc.mFormulaParts || []).map((p) => calculationPartToText(p, calcMap, dataValueMap)).filter(Boolean);
-    return rows.join(" + ");
-  }
-
-  if (type === "GameCalculationModified") {
-    const base = calcMap[calc.mModifiedGameCalculation]
-      ? gameCalculationToText(calc.mModifiedGameCalculation, calcMap[calc.mModifiedGameCalculation], calcMap, dataValueMap, seen)
-      : String(calc.mModifiedGameCalculation || "");
-    const mult = calculationPartToText(calc.mMultiplier, calcMap, dataValueMap);
-    return mult ? `${base} × (${mult})` : base;
-  }
-
-  if (type === "GameCalculationConditional") {
-    const conditional = calcMap[calc.mConditionalGameCalculation]
-      ? gameCalculationToText(calc.mConditionalGameCalculation, calcMap[calc.mConditionalGameCalculation], calcMap, dataValueMap, seen)
-      : String(calc.mConditionalGameCalculation || "");
-    const fallback = calcMap[calc.mDefaultGameCalculation]
-      ? gameCalculationToText(calc.mDefaultGameCalculation, calcMap[calc.mDefaultGameCalculation], calcMap, dataValueMap, seen)
-      : String(calc.mDefaultGameCalculation || "");
-    return `${fallback} (or ${conditional})`;
-  }
-
-  return `[${type || calcName}]`;
+function gameCalculationToText(calcName, calc, calcMap, dataValueMap) {
+  return window.Calculations.evaluate(calc, {calculations:calcMap,dataValues:dataValueMap}).text;
 }
 
 /**
@@ -238,30 +146,31 @@ function categorizeEffect(name, formula) {
 /**
  * Extracts readable formula lines from Community Dragon item calculations.
  */
-function buildExtractedFormulas(itemId) {
-  const cItem = ITEM_DATA.cdragonById[String(itemId)];
-  if (!cItem?.mItemCalculations) return { lines: [], extracted: [] };
-
-  const calcMap = cItem.mItemCalculations || {};
-  const dataValueMap = {};
-  (cItem.mDataValues || []).forEach((d) => {
-    dataValueMap[d.mName] = Number(d.mValue ?? 0);
+function buildExtractedFormulas(itemId, context = {}) {
+  const item = ITEM_DATA.cdragonById[String(itemId)];
+  const calculations = item?.mItemCalculations || {};
+  const lines = Object.entries(calculations).map(([key, calc]) => {
+    const row=window.Calculations.evaluate(calc,{...context,calculations,dataValues:item.mDataValues || [],effects:item.mEffectAmount || []});
+    const shown=row.value===null?null:row.value*(row.displayAsPercent?100:1);
+    const formula=shown===null ? row.text : `${window.Calculations.format(shown)}${row.displayAsPercent?'%':''} (${row.text})`;
+    return {key,name:prettyCalcName(key),formula,expression:row.text,value:shown,category:categorizeEffect(key,formula),inputs:row.inputs,unsupported:row.unsupported};
   });
+  return {lines,extracted:lines};
+}
 
-  const lines = [];
-  const extracted = [];
-
-  Object.entries(calcMap).forEach(([name, calc]) => {
-    const formula = gameCalculationToText(name, calc, calcMap, dataValueMap);
-    if (!formula || /^\s*[0-9.]+\s*$/.test(formula)) return;
-    const cleanName = prettyCalcName(name);
-    const category = categorizeEffect(cleanName, formula);
-    const row = { name: cleanName, formula, category };
-    lines.push(row);
-    extracted.push({ key: name, ...row });
-  });
-
-  return { lines, extracted };
+function injectItemCalculationValues(html, rows) {
+  // Match uniquely named effects; never insert the first arbitrary damage calculation.
+  const groups=[
+    {pattern:/Gain\s+<scaleAP>\s*Ability Power\s*<\/scaleAP>/i, keys:/^BonusAPCalc$/i, noun:'Ability Power'},
+    {pattern:/a\s+<shield>\s*Shield\s*<\/shield>/i, keys:/^ShieldValue$/i, noun:'Shield'},
+  ];
+  for(const group of groups){
+    const matches=rows.filter(row=>group.keys.test(row.key));
+    if(matches.length!==1)continue;
+    const row=matches[0], value=row.value===null?row.expression:window.Calculations.format(row.value);
+    html=html.replace(group.pattern, group.noun==='Ability Power'?`Gain <scaleAP>${value} Ability Power</scaleAP>`:`a <shield>${value} Shield</shield>`);
+  }
+  return html;
 }
 
 /**
@@ -294,68 +203,16 @@ function inferActiveCooldownSeconds(itemId) {
   return nonPassive ? Number(nonPassive[1]) : null;
 }
 
-/**
- * Colors numeric parts of formulas based on the damage type context.
- */
-function colorFormulaNumbers(formulaText, damageType) {
-  const colors = { magic: "#00B0F0", physical: "#FF8C34", true: "#F9966B" };
-  const color = colors[damageType];
-  if (!color) return formulaText;
-  return String(formulaText).replace(/\b\d+(?:\.\d+)?%?\b/g, (n) => `<span class=\"stat-colored\" style=\"color:${color}\">${n}</span>`);
-}
-
-/**
- * Injects extracted formula text into generic "deals/dealing X damage" tooltip phrases.
- */
-function injectDamageFormulaText(descriptionHtml, formulaLines, itemId = null) {
-  let html = String(descriptionHtml || "");
-  const damageLines = (formulaLines || []).filter((line) => /damage/i.test(`${line.name} ${line.formula}`));
-  if (!damageLines.length) return html;
-
-  const pickFormula = (type) => {
-    const matched = damageLines.find((row) => new RegExp(type, "i").test(`${row.name} ${row.formula}`));
-    if (matched) return matched.formula;
-    return damageLines[0].formula;
-  };
-
-  const patterns = [
-    { type: "magic", regex: /(deals?|dealing)\s+<magicDamage>\s*magic damage\s*<\/magicDamage>/i },
-    { type: "physical", regex: /(deals?|dealing)\s+<physicalDamage>\s*physical damage\s*<\/physicalDamage>/i },
-    { type: "true", regex: /(deals?|dealing)\s+<trueDamage>\s*true damage\s*<\/trueDamage>/i },
-    { type: "magic", regex: /(deals?|dealing)\s+magic damage/i },
-    { type: "physical", regex: /(deals?|dealing)\s+physical damage/i },
-    { type: "true", regex: /(deals?|dealing)\s+true damage/i },
-  ];
-
-  patterns.forEach(({ type, regex }) => {
-    if (!regex.test(html)) return;
-    const colored = colorFormulaNumbers(pickFormula(type), type);
-    html = html.replace(regex, (_m, verb) => `${verb} ${colored} ${type} damage`);
-  });
-
-  if (itemId === "3040") {
-    html = html.replace(/below\s+30%\s+health/gi, "that would reduce your Health below 30%");
-    html = html.replace(/for\s+3\s*seconds/gi, "for 3 seconds");
-  }
-
-  return html;
-}
-
-/**
- * Bolds named ability header tags emitted in item tooltip HTML.
- */
 function emphasizeAbilityHeaders(descriptionHtml) {
   return String(descriptionHtml || "")
     .replace(/<(active|passive|unique|onhit)>\s*([^<]+?)\s*<\/\1>/gi, (_m, tag, name) => `<${tag}><strong>${name}</strong></${tag}>`)
     .replace(/<active>\s*ACTIVE\s*<\/active>\s*\((\d+(?:\.\d+)?s)\)\s*<br\s*\/?>\s*<active>([^<]+)<\/active>/gi, (_m, cooldown, name) => `<active><strong>ACTIVE - ${name.trim()} (${cooldown})</strong></active>`);
 }
 
-/**
- * Replaces 0s placeholders in active descriptions with inferred cooldown seconds.
- */
 function injectActiveCooldown(descriptionHtml, cooldownSeconds) {
   if (cooldownSeconds === null || cooldownSeconds === undefined) return String(descriptionHtml || "");
   return String(descriptionHtml || "")
+    .replace(/(<(?:active|passive)>[^<]+<\/(?:active|passive)>\s*)\(0(?:\.0+)?s\)/gi, `$1(${cooldownSeconds}s)`)
     .replace(/(<active>\s*ACTIVE\s*<\/active>\s*)\((?:0|0\.0+)s\)/i, `$1(${cooldownSeconds}s)`)
     .replace(/(ACTIVE\s*\()(?:0|0\.0+)s(\))/i, `$1${cooldownSeconds}s$2`);
 }
@@ -374,13 +231,13 @@ window.ItemLookupShared = {
   resolveDescriptionFormulas,
   colorizeStatsInHtml,
   buildExtractedFormulas,
-  injectDamageFormulaText,
   emphasizeAbilityHeaders,
   enhanceActiveTooltip,
   inferActiveCooldownSeconds,
   injectActiveCooldown,
   loadCommunityDragonCalcs,
   gameCalculationToText,
+  injectItemCalculationValues,
   getState: () => ITEM_DATA,
 };
 

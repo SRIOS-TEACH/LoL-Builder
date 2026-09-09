@@ -1,0 +1,372 @@
+{
+  "source": "Community Dragon latest, captured 2026-09-09. Test-only excerpt; never loaded by the app.",
+  "feast": {
+    "DataValues": [
+      {
+        "name": "RBaseMonsterDamage",
+        "values": [
+          1200.0,
+          1200.0,
+          1200.0,
+          1200.0,
+          1200.0,
+          1200.0,
+          1200.0
+        ],
+        "__type": "SpellDataValue"
+      },
+      {
+        "name": "RBaseDamage",
+        "values": [
+          125.0,
+          300.0,
+          475.0,
+          650.0,
+          825.0,
+          1000.0,
+          1175.0
+        ],
+        "__type": "SpellDataValue"
+      },
+      {
+        "name": "RHealthPerStack",
+        "values": [
+          40.0,
+          80.0,
+          120.0,
+          160.0,
+          200.0,
+          240.0,
+          280.0
+        ],
+        "__type": "SpellDataValue"
+      },
+      {
+        "name": "RMinionMaxStacks",
+        "values": [
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0,
+          6.0
+        ],
+        "__type": "SpellDataValue"
+      },
+      {
+        "name": "RStoneplateRatio",
+        "values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "__type": "SpellDataValue"
+      },
+      {
+        "name": "CastRangePerStack",
+        "values": [
+          2.5,
+          2.5,
+          2.5,
+          2.5,
+          2.5,
+          2.5,
+          2.5
+        ],
+        "__type": "SpellDataValue"
+      },
+      {
+        "name": "MaxBonusCastRange",
+        "values": [
+          25.0,
+          25.0,
+          25.0,
+          25.0,
+          25.0,
+          25.0,
+          25.0
+        ],
+        "__type": "SpellDataValue"
+      },
+      {
+        "name": "AttackRangePerStack",
+        "values": [
+          3.200000047683716,
+          4.699999809265137,
+          6.199999809265137,
+          7.699999809265137,
+          9.199999809265137,
+          10.699999809265137,
+          12.199999809265137
+        ],
+        "__type": "SpellDataValue"
+      },
+      {
+        "name": "MaxBonusAttackRange",
+        "values": [
+          75.0,
+          75.0,
+          75.0,
+          75.0,
+          75.0,
+          75.0,
+          75.0
+        ],
+        "__type": "SpellDataValue"
+      }
+    ],
+    "mSpellCalculations": {
+      "RMonsterDamage": {
+        "mSimpleTooltipCalculationDisplay": 6,
+        "mFormulaParts": [
+          {
+            "mDataValue": "RBaseMonsterDamage",
+            "__type": "NamedDataValueCalculationPart"
+          },
+          {
+            "mCoefficient": 0.5,
+            "__type": "StatByCoefficientCalculationPart"
+          },
+          {
+            "mStat": 12,
+            "mStatFormula": 2,
+            "mCoefficient": 0.10000000149011612,
+            "__type": "StatByCoefficientCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      },
+      "RDamage": {
+        "mSimpleTooltipCalculationDisplay": 6,
+        "mFormulaParts": [
+          {
+            "mDataValue": "RBaseDamage",
+            "__type": "NamedDataValueCalculationPart"
+          },
+          {
+            "mCoefficient": 0.5,
+            "__type": "StatByCoefficientCalculationPart"
+          },
+          {
+            "mStat": 12,
+            "mStatFormula": 2,
+            "mCoefficient": 0.10000000149011612,
+            "__type": "StatByCoefficientCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      },
+      "BonusAttackRange": {
+        "mFormulaParts": [
+          {
+            "mBuffName": "{8682fc00}",
+            "mDataValue": "AttackRangePerStack",
+            "__type": "BuffCounterByNamedDataValueCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      },
+      "{9f798bd0}": {
+        "mFormulaParts": [
+          {
+            "mBuffName": "{8682fc00}",
+            "mDataValue": "CastRangePerStack",
+            "__type": "BuffCounterByNamedDataValueCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      }
+    }
+  },
+  "3040": {
+    "mDataValues": [
+      {
+        "mName": "APFromMana",
+        "mValue": 0.019999999552965164,
+        "__type": "ItemDataValue"
+      },
+      {
+        "mName": "HealthThreshold",
+        "mValue": 0.30000001192092896,
+        "__type": "ItemDataValue"
+      },
+      {
+        "mName": "ShieldDuration",
+        "mValue": 3.0,
+        "__type": "ItemDataValue"
+      },
+      {
+        "mName": "LifelineCooldown",
+        "mValue": 90.0,
+        "__type": "ItemDataValue"
+      },
+      {
+        "mName": "Cooldown",
+        "mValue": 90.0,
+        "__type": "ItemDataValue"
+      }
+    ],
+    "mItemCalculations": {
+      "ShieldValue": {
+        "mFormulaParts": [
+          {
+            "mCoefficient": 0.18000000715255737,
+            "__type": "AbilityResourceByCoefficientCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      },
+      "BonusAPCalc": {
+        "tooltipOnly": true,
+        "mFormulaParts": [
+          {
+            "mCoefficient": 0.019999999552965164,
+            "mStatFormula": 2,
+            "__type": "AbilityResourceByCoefficientCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      }
+    }
+  },
+  "3042": {
+    "mDataValues": [
+      {
+        "mName": "BonusADManaRatioTOOLTIPONLY",
+        "mValue": 0.019999999552965164,
+        "__type": "ItemDataValue"
+      },
+      {
+        "mName": "OnHitManaRatioTOOLTIPONLY",
+        "mValue": 0.012000000104308128,
+        "__type": "ItemDataValue"
+      },
+      {
+        "mName": "AbilityManaRatioRangedTOOLTIPONLY",
+        "mValue": 0.029999999329447746,
+        "__type": "ItemDataValue"
+      },
+      {
+        "mName": "AbilityTADRatio",
+        "__type": "ItemDataValue"
+      },
+      {
+        "mName": "PerCastIDLockout",
+        "mValue": 6.5,
+        "__type": "ItemDataValue"
+      },
+      {
+        "mName": "AbilityManaRatioMeleeTOOLTIPONLY",
+        "mValue": 0.03999999910593033,
+        "__type": "ItemDataValue"
+      }
+    ],
+    "mItemCalculations": {
+      "BonusADFromMana": {
+        "mFormulaParts": [
+          {
+            "mCoefficient": 0.019999999552965164,
+            "__type": "AbilityResourceByCoefficientCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      },
+      "OnHitDamage": {
+        "mFormulaParts": [
+          {
+            "mCoefficient": 0.012000000104308128,
+            "__type": "AbilityResourceByCoefficientCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      },
+      "MeleeItemCalcValue": {
+        "mFormulaParts": [
+          {
+            "mCoefficient": 0.03999999910593033,
+            "__type": "AbilityResourceByCoefficientCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      },
+      "RangedItemCalcValue": {
+        "mFormulaParts": [
+          {
+            "mCoefficient": 0.029999999329447746,
+            "__type": "AbilityResourceByCoefficientCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      },
+      "ChampRange": {
+        "mSimpleTooltipCalculationDisplay": 5,
+        "mExpandedTooltipCalculationDisplay": 5,
+        "mDefaultGameCalculation": "{792cf56b}",
+        "mConditionalGameCalculation": "{06387172}",
+        "mConditionalCalculationRequirements": {
+          "__type": "IsRangedCastRequirement"
+        },
+        "__type": "GameCalculationConditional"
+      },
+      "{792cf56b}": {
+        "mFormulaParts": [
+          {
+            "mNumber": 1.0,
+            "__type": "NumberCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      },
+      "{06387172}": {
+        "mFormulaParts": [
+          {
+            "mNumber": 2.0,
+            "__type": "NumberCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      }
+    }
+  },
+  "3057": {
+    "mDataValues": [
+      {
+        "mName": "SpellbladeCooldown",
+        "mValue": 1.5,
+        "__type": "ItemDataValue"
+      },
+      {
+        "mName": "Cooldown",
+        "mValue": 1.5,
+        "__type": "ItemDataValue"
+      }
+    ],
+    "mItemCalculations": {
+      "SpellbladeDamage": {
+        "mFormulaParts": [
+          {
+            "mStat": 2,
+            "mStatFormula": 1,
+            "mCoefficient": 1.0,
+            "__type": "StatByCoefficientCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      }
+    }
+  },
+  "3089": {
+    "mDataValues": [
+      {
+        "mName": "APAmp",
+        "mValue": 0.30000001192092896,
+        "__type": "ItemDataValue"
+      }
+    ]
+  }
+}

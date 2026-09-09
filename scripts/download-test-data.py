@@ -12,7 +12,7 @@ def get(url, filename):
     target = root / filename
     if target.exists():
         return json.loads(target.read_bytes())
-    with urllib.request.urlopen(url, timeout=45) as response:
+    with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent':'Mozilla/5.0'}), timeout=45) as response:
         data = response.read()
     result = json.loads(data)
     target.write_bytes(data)
@@ -27,3 +27,11 @@ jobs += [(base + f'/champion/{name}.json', name + '.json') for name in champions
 with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
     list(pool.map(lambda args: get(*args), jobs))
 print(f'Captured {len(champions)} champions and item/rune catalogs for {version} in {root}')
+
+if os.environ.get('ADVANCED_DATA'):
+    cd = 'https://raw.communitydragon.org/latest/game'
+    get(cd + '/items.cdtb.bin.json', 'cd-items.json')
+    jobs = [(cd + f'/data/characters/{name.lower()}/{name.lower()}.bin.json', name + '.bin.json') for name in champions]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+        list(pool.map(lambda args: get(*args), jobs))
+    print('Captured advanced calculation data (test fixtures only)')

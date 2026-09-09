@@ -503,6 +503,7 @@ function extractCdragonSpell(spellRecord) {
 
   const parsedCandidate = spellCandidates
     .map((candidate) => ({
+      effects: candidate?.mEffectAmount || [],
       dataValues: normalizeDataValues(
         candidate?.mDataValues
         || candidate?.DataValues
@@ -523,6 +524,7 @@ function extractCdragonSpell(spellRecord) {
 
   if (!parsedCandidate) return null;
   return {
+    effects: parsedCandidate.effects || [],
     dataValues: parsedCandidate.dataValues || [],
     calculations: parsedCandidate.calculations || {},
   };
@@ -871,6 +873,7 @@ async function setChampion(name) {
     BUILDER.selectedChampion = name;
     BUILDER.championData = { ...champion, stats };
     BUILDER.cdragonAbilityData = abilityData;
+    BUILDER.cdragonRaw = raw;
     BUILDER.abilityRanks = { q: 0, w: 0, e: 0, r: 0 };
     BUILDER.level = Number(document.getElementById('builderLevel').value) || 1;
     document.body.style.setProperty('--builder-splash-url', `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`);
@@ -1077,10 +1080,10 @@ function resolveItemDescriptionHtml(item, itemId = "", options = {}) {
   if (shared.resolveDescriptionFormulas) html = shared.resolveDescriptionFormulas(item, html);
 
   const formulaRows = shared.buildExtractedFormulas
-    ? (shared.buildExtractedFormulas(String(itemId || ""))?.lines || [])
+    ? (shared.buildExtractedFormulas(String(itemId || ""), calculationContext(getComputedChampionStatsForTooltips()))?.lines || [])
     : [];
 
-  if (shared.injectDamageFormulaText) html = shared.injectDamageFormulaText(html, formulaRows, String(itemId || ""));
+  html = shared.injectItemCalculationValues(html, formulaRows);
   if (shared.injectActiveCooldown) {
     const cd = shared.inferActiveCooldownSeconds ? shared.inferActiveCooldownSeconds(String(itemId || "")) : null;
     html = shared.injectActiveCooldown(html, cd);
@@ -1129,40 +1132,30 @@ function buildPassiveLedger(itemTotals, runeTotals) {
   let hasRabadon = false;
 
   selectedItems.forEach(({ id, item }) => {
-    const { html: resolvedDescriptionHtml } = resolveItemDescriptionHtml(item, id);
+    const resolvedDescriptionHtml = item.description || "";
     extractPassiveDescriptionsFromHtml(resolvedDescriptionHtml).forEach(({ label, impact }) => {
       passiveEffects.push({ source: "Item", owner: item.name, label, impact });
     });
 
+    const source = window.ItemLookupShared.getState().cdragonById[id];
+    if (!source) return;
+    const b = BUILDER.championData?.stats;
+    const bonusMana = itemTotals.mp + runeTotals.mp;
+    const baseMana = b ? b.mp + b.mpperlevel * window.BuildStats.growthFactor(BUILDER.level) : 0;
+    const context = {level:BUILDER.level, stats:{mp:baseMana+bonusMana,bonusMp:bonusMana},
+      dataValues:source.mDataValues || [], calculations:source.mItemCalculations || {}};
+    // Effect bindings identify the passive; coefficients and formulas come from live data.
     if (id === "3089") {
-      hasRabadon = true;
-      apMultiplier *= 1.30;
-      passiveEffects.push({ source: "Item", owner: item.name, label: "Magical Opus", impact: "AP multiplier queued (applied after additive passives)" });
+      const amp = window.Calculations.dataValue(context.dataValues, "APAmp").value;
+      if (amp !== null) { hasRabadon=true; apMultiplier *= 1+amp; }
     }
-
-    if (id === "3042" && BUILDER.championData) {
-      const b = BUILDER.championData.stats;
-      const L = BUILDER.level;
-      const totalMana = b.mp + b.mpperlevel * window.BuildStats.growthFactor(L) + itemTotals.mp + runeTotals.mp;
-      const bonusAd = totalMana * 0.02;
-      if (bonusAd > 0) {
-        additiveMods.ad += bonusAd;
-        passiveEffects.push({ source: "Item", owner: item.name, label: "Awe", impact: `+${bonusAd.toFixed(1)} AD (2% max mana)` });
-      }
-    }
-
-    if (id === "3040" && BUILDER.championData) {
-      const b = BUILDER.championData.stats;
-      const L = BUILDER.level;
-      const baseMana = b.mp + b.mpperlevel * window.BuildStats.growthFactor(L);
-      const bonusMana = Math.max(0, itemTotals.mp + runeTotals.mp);
-      const bonusAp = bonusMana * 0.02;
-      if (bonusAp > 0) {
-        additiveMods.ap += bonusAp;
-        passiveEffects.push({ source: "Item", owner: item.name, label: "Awe", impact: `+${bonusAp.toFixed(1)} AP (2% bonus mana)` });
-      }
-      if (baseMana > 0) {
-        passiveEffects.push({ source: "Item", owner: item.name, label: "Mana context", impact: `Base mana ${baseMana.toFixed(1)}` });
+    const binding = {"3042":["BonusADFromMana","ad"], "3040":["BonusAPCalc","ap"]}[id];
+    if (binding && b) {
+      const [key,stat] = binding;
+      const row = window.Calculations.evaluate(window.Calculations.lookup(context.calculations,key),context);
+      if (row.value !== null) {
+        additiveMods[stat] += row.value;
+        passiveEffects.push({source:"Item",owner:item.name,label:"Awe",impact:`+${row.value.toFixed(1)} ${stat.toUpperCase()} (${row.text})`});
       }
     }
   });
@@ -1316,7 +1309,7 @@ function buildDetailedPassiveText() {
     },
     vars: [],
     cdragonSpell: cdragonPassive,
-    calcLookup: cdragonPassive.calculations || {},
+    ...buildResolvedSpellPayload(cdragonPassive, 1, getComputedChampionStatsForTooltips()),
     knownTokens: {
       championlevel: Number(BUILDER.level) || 1,
     },
@@ -1351,7 +1344,18 @@ function getComputedChampionStatsForTooltips() {
   const totalMp = mp;
 
   return {
-    ap: totalAp,
+    ap: totalAp, baseAp: 0,
+    attackSpeed: computed.asTotal,
+    bonusAttackSpeed: (base.attackspeedperlevel * window.BuildStats.growthFactor(L) + item.asPct + rune.asPct) / 100,
+    moveSpeed: computed.moveSpeed, baseMoveSpeed: base.movespeed,
+    critChance: computed.critChance / 100, bonusCritChance: (item.critChance + rune.critChance) / 100,
+    critDamage: computed.critDamage / 100, bonusCritDamage: (item.critDamage + rune.critDamage) / 100,
+    haste: computed.abilityHaste,
+    cooldownReduction: computed.abilityHaste / (100 + computed.abilityHaste),
+    lifeSteal: item.physicalVamp / 100, physicalVamp: item.physicalVamp / 100, omniVamp: item.omniVamp / 100,
+    magicPenFlat: item.mrPenFlat, lethality: item.arPenFlat, tenacity: item.tenacity / 100,
+    attackRange: computed.attackRange, baseAttackRange: base.attackrange,
+    bonusAttackRange: computed.attackRange - base.attackrange,
     totalAd,
     bonusAd: totalAd - baseAd,
     armor: totalArmor,
@@ -1393,105 +1397,14 @@ function getRankedValueIndex(values, rank) {
 }
 
 function getSpellDataValue(dataValues, tokenName, rank) {
-  const normalizeDataValueToken = (value) => String(value || "").replace(/[^a-z0-9]/gi, "").toLowerCase();
-  const token = normalizeDataValueToken(tokenName);
-  const list = (dataValues || []).find((d) => normalizeDataValueToken(spellDataValueName(d)) === token);
-  if (!list) return null;
-
-  const rawValues = list.mValues || list.values || list.mValue || list.value || [];
-  const normalizedValues = Array.isArray(rawValues)
-    ? rawValues
-    : (rawValues && typeof rawValues === "object")
-      ? Object.keys(rawValues)
-        .sort((a, b) => Number(a) - Number(b))
-        .map((key) => rawValues[key])
-      : [rawValues];
-  if (!normalizedValues.length) return null;
-
-  const champLevel = Math.max(1, Number(BUILDER.level) || 1);
-  const isLikelyChampionLevelSeries = normalizedValues.length >= 18 && normalizedValues.length !== 6 && normalizedValues.length !== 7;
-
-  const getChampionLevelIndex = (values, level) => {
-    if (!Array.isArray(values) || !values.length) return 0;
-    if (values.length >= 19) {
-      return Math.max(0, Math.min(values.length - 1, level));
-    }
-    return Math.max(0, Math.min(values.length - 1, level - 1));
-  };
-
-  const idx = isLikelyChampionLevelSeries
-    ? getChampionLevelIndex(normalizedValues, champLevel)
-    : getRankedValueIndex(normalizedValues, rank);
-  const current = Number(normalizedValues[idx]) || 0;
-
-  const rankValues = [];
-  for (let i = 1; i <= 5; i += 1) {
-    const ridx = isLikelyChampionLevelSeries
-      ? getChampionLevelIndex(normalizedValues, i)
-      : getRankedValueIndex(normalizedValues, i);
-    rankValues.push(Number(normalizedValues[ridx] || 0));
-  }
-  return { current, rankValues };
+  const value = window.Calculations.dataValue(dataValues, tokenName, rank, BUILDER.level);
+  if (value.missing) return null;
+  return { current: value.value, rankValues: [1,2,3,4,5].map(r => window.Calculations.dataValue(dataValues, tokenName, r, BUILDER.level).value) };
 }
 
-
-function evaluateByCharLevelBreakpointsPart(part, levelRaw) {
-  const level = Math.max(1, Number(levelRaw) || 1);
-  const num = (value) => {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
-
-  const directValues = Array.isArray(part?.mValues)
-    ? part.mValues
-    : Array.isArray(part?.values)
-      ? part.values
-      : null;
-  if (directValues?.length) {
-    const idx = Math.max(0, Math.min(directValues.length - 1, level - 1));
-    return num(directValues[idx]);
-  }
-
-  let value = num(part?.mLevel1Value ?? part?.mBaseValue ?? part?.mStartValue);
-  value += num(part?.mInitialBonusPerLevel ?? part?.mBonusPerLevel ?? part?.mAdditionalBonusPerLevel) * Math.max(0, level - 1);
-
-  const breakpoints = Array.isArray(part?.mBreakpoints)
-    ? part.mBreakpoints
-    : Array.isArray(part?.breakpoints)
-      ? part.breakpoints
-      : [];
-
-  breakpoints.forEach((bp) => {
-    const startLevel = Math.max(1, Number(bp?.mLevel ?? bp?.mStartLevel ?? bp?.mBreakpointLevel ?? 1) || 1);
-    if (level < startLevel) return;
-
-    value += num(bp?.mAdditionalBonusAtThisLevel ?? bp?.mBonusAtThisLevel ?? bp?.mFlatBonus ?? bp?.mSingleLevelBonus);
-
-    const perLevelAfter = num(
-      bp?.mAdditionalBonusPerLevelAtAndAfter
-      ?? bp?.mBonusPerLevelAtAndAfter
-      ?? bp?.mAdditionalBonusPerLevel
-      ?? bp?.mBonusPerLevel
-    );
-    if (perLevelAfter !== 0) {
-      value += perLevelAfter * Math.max(0, level - startLevel);
-    }
-  });
-
-  return value;
-}
-
-function getCalcStatSource(part, stats = {}) {
-  // Resolve only known stat IDs; unknown IDs must not silently scale from AP.
-  const code = Number(part?.mStat ?? 0);
-  const formula = Number(part?.mStatFormula ?? 2);
-  if (![0, 1, 2].includes(formula)) return { missing: true };
-  if (code === 0) return { value: formula === 0 ? 0 : stats.ap, label: 'AP' };
-  if (code === 2) {
-    const value = formula === 1 ? stats.bonusAd : formula === 0 ? stats.totalAd - stats.bonusAd : stats.totalAd;
-    return { value, label: formula === 1 ? 'bonus AD' : formula === 0 ? 'base AD' : 'AD' };
-  }
-  return { missing: true };
+function getCalcStatSource(part, stats) {
+  const value = window.Calculations.stat(part, {stats});
+  return { ...value, label: value.text };
 }
 
 function formatAbilityStatLabel(label) {
@@ -1524,293 +1437,38 @@ function formatCalculationTerms(terms, fallbackValue = 0) {
   return joined || formatAbilityNumber(fallbackValue);
 }
 
-function makeMissingCalc(reason, fallbackValue = 0) {
-  return { value: fallbackValue, text: `[calc-missing: ${reason}]`, missing: true };
-}
-
-function makeMissingGameCalculation(reason, displayAsPercent = false) {
-  return {
-    total: 0,
-    terms: [{ text: `[calc-missing: ${reason}]`, value: 0, missing: true }],
-    displayAsPercent: !!displayAsPercent,
-  };
-}
-
 function isMissingGameCalculation(result) {
   if (!result || !Array.isArray(result.terms) || !result.terms.length) return true;
   return result.terms.every((term) => term?.missing === true);
 }
 
-function hasNonEmptyCalculationReference(ref) {
-  if (ref === null || typeof ref === "undefined") return false;
-  if (typeof ref === "string") return ref.trim() !== "";
-  return true;
-}
-
-function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap = null, seen = new Set(), tracePath = "part", displayAsPercent = false) {
-  if (!part) return makeMissingCalc(`${tracePath} has no part payload`);
-  const t = String(part?.__type || "");
-
-  if (t === "NumberCalculationPart") {
-    const val = Number(part?.mNumber || 0);
-    return { value: val, text: formatAbilityNumber(val) };
-  }
-  if (t === "NamedDataValueCalculationPart") {
-    
-    const data = getSpellDataValue(dataValues, part?.mDataValue, rank);
-    if (!data) return makeMissingCalc(`${tracePath} NamedDataValue ${part?.mDataValue || "<empty>"} not found`);
-    return { value: data.current, text: formatAbilityNumber(data.current) };
-  }
-  if (t === "StatByCoefficientCalculationPart") {
-    const src = getCalcStatSource(part, stats);
-    if (src.missing || !Number.isFinite(src.value)) return makeMissingCalc(`${tracePath} has an unsupported stat source`);
-    const coeff = Number(part?.mCoefficient || 0);
-    return { value: src.value * coeff, text: `${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}` };
-  }
-  if (t === "StatByNamedDataValueCalculationPart") {
-    const src = getCalcStatSource(part, stats);
-    if (src.missing || !Number.isFinite(src.value)) return makeMissingCalc(`${tracePath} has an unsupported stat source`);
-    const coeffData = getSpellDataValue(dataValues, part?.mDataValue, rank);
-    const coeff = coeffData ? coeffData.current : null;
-    if (coeff === null) return makeMissingCalc(`${tracePath} StatByNamedDataValue ${part?.mDataValue || "<empty>"} missing`);
-    return { value: src.value * coeff, text: `${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}` };
-  }
-  if (t === "ByCharLevelBreakpointsCalculationPart") {
-    const value = evaluateByCharLevelBreakpointsPart(part, BUILDER.level);
-    return { value, text: formatAbilityNumber(value) };
-  }
-
-  const resolveReferencedGameCalculation = (ref) => {
-    if (!hasNonEmptyCalculationReference(ref)) return makeMissingCalc(`${tracePath} has empty game calculation reference`);
-    if (typeof ref === "object") {
-      const evaluated = evaluateGameCalculation(ref, dataValues, rank, stats, calculationsMap, new Set(seen), `${tracePath}.inline`, displayAsPercent);
-      if (isMissingGameCalculation(evaluated)) return makeMissingCalc(`${tracePath} inline game calculation unresolved`);
-      return { value: evaluated.total, text: formatCalculationTerms(evaluated.terms, evaluated.total) };
-    }
-    const key = String(ref || "");
-    if (!calculationsMap || !key) return makeMissingCalc(`${tracePath} missing calculations map or key`);
-    if (seen.has(key)) return makeMissingCalc(`${tracePath} circular reference ${key}`);
-    const target = calculationsMap[key];
-    if (!target) return makeMissingCalc(`${tracePath} referenced game calculation not found: ${key}`);
-    const scopedSeen = new Set(seen);
-    scopedSeen.add(key);
-    const evaluated = evaluateGameCalculation(target, dataValues, rank, stats, calculationsMap, scopedSeen, `${tracePath}.ref(${key})`, displayAsPercent);
-    if (isMissingGameCalculation(evaluated)) return makeMissingCalc(`${tracePath} referenced game calculation unresolved: ${key}`);
-    return { value: evaluated.total, text: formatCalculationTerms(evaluated.terms, evaluated.total) };
-  };
-
-  const evaluateChildren = () => {
-    const out = [];
-    const directArrayKeys = ["mSubparts", "mSubParts", "mParts", "mFormulaParts"];
-    directArrayKeys.forEach((key) => {
-      (part?.[key] || []).forEach((sub) => {
-        const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.${key}`, displayAsPercent);
-        if (evaluated) out.push(evaluated);
-      });
-    });
-
-    const directPartKeys = ["mPart", "mPart1", "mPart2", "mPart3", "mPart4", "mPart5", "mMultiplier", "mAddend", "mRemainder", "mSubPart", "mSubPart1", "mSubPart2"];
-    directPartKeys.forEach((key) => {
-      const sub = part?.[key];
-      if (!sub || typeof sub !== "object") return;
-      const evaluated = evaluateCalculationPart(sub, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.${key}`, displayAsPercent);
-      if (evaluated) out.push(evaluated);
-    });
-
-    ["mGameCalculation", "mModifiedGameCalculation", "mDefaultGameCalculation", "mConditionalGameCalculation"].forEach((key) => {
-      const ref = part?.[key];
-      if (!hasNonEmptyCalculationReference(ref)) return;
-      const evaluated = resolveReferencedGameCalculation(ref);
-      if (evaluated) out.push(evaluated);
-    });
-
-    return out;
-  };
-
-  if (/SumOfSubParts/i.test(t)) {
-    const parts = evaluateChildren();
-    if (parts.some(p => p.missing)) return makeMissingCalc(`${tracePath} contains unresolved parts`);
-    if (!parts.length) return makeMissingCalc(`${tracePath} had no resolvable parts`);
-    return { value: parts.reduce((a, b) => a + b.value, 0), text: parts.map((p) => p.text).join(" + ") };
-  }
-
-  if (/ProductOfSubParts|Multiply|Multiplicative/i.test(t)) {
-    const parts = evaluateChildren();
-    if (parts.some(p => p.missing)) return makeMissingCalc(`${tracePath} contains unresolved parts`);
-    if (!parts.length) return makeMissingCalc(`${tracePath} had no resolvable parts`);
-    return { value: parts.reduce((acc, row) => acc * row.value, 1), text: parts.map((p) => p.text).join(" × ") };
-  }
-
-  if (/Difference|Subtract/i.test(t)) {
-    const parts = evaluateChildren();
-    if (parts.some(p => p.missing)) return makeMissingCalc(`${tracePath} contains unresolved parts`);
-    if (!parts.length) return makeMissingCalc(`${tracePath} had no resolvable parts`);
-    if (parts.length === 1) return parts[0];
-    return { value: parts.slice(1).reduce((acc, row) => acc - row.value, parts[0].value), text: `${parts[0].text} - ${parts.slice(1).map((p) => p.text).join(" - ")}` };
-  }
-
-  if (/Ratio|Divide/i.test(t)) {
-    const parts = evaluateChildren();
-    if (parts.some(p => p.missing)) return makeMissingCalc(`${tracePath} contains unresolved parts`);
-    if (parts.length < 2) return makeMissingCalc(`${tracePath} ${t} requires 2 parts`);
-    if (parts[1].value === 0) return makeMissingCalc(`${tracePath} ${t} divider is zero`);
-    return { value: parts[0].value / parts[1].value, text: `${parts[0].text} / ${parts[1].text}` };
-  }
-
-  if (/Clamp|Min|Max/i.test(t)) {
-    const parts = evaluateChildren();
-    if (parts.some(p => p.missing)) return makeMissingCalc(`${tracePath} contains unresolved parts`);
-    if (!parts.length) return makeMissingCalc(`${tracePath} had no resolvable parts`);
-    const head = parts[0].value;
-    const floor = Number(part?.mFloor ?? part?.mMinimum ?? Number.NEGATIVE_INFINITY);
-    const ceil = Number(part?.mCeiling ?? part?.mMaximum ?? Number.POSITIVE_INFINITY);
-    const value = Math.min(Math.max(head, floor), ceil);
-    return { value, text: formatAbilityNumber(value) };
-  }
-
-  if (typeof part?.mCoefficient === "number" || part?.mDataValue || typeof part?.mStat !== "undefined") {
-    const src = getCalcStatSource(part, stats);
-    if (src.missing || !Number.isFinite(src.value)) return makeMissingCalc(`${tracePath} has an unsupported stat source`);
-    const coeffData = part?.mDataValue ? getSpellDataValue(dataValues, part?.mDataValue, rank) : null;
-    const coeffRaw = coeffData ? coeffData.current : Number(part?.mCoefficient || 0);
-    if (coeffRaw !== 0) {
-      return { value: src.value * coeffRaw, text: `${(coeffRaw * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}` };
-    }
-    return makeMissingCalc(`${tracePath} has stat coefficient part with zero/empty coefficient`);
-  }
-
-  const fallbackReference = hasNonEmptyCalculationReference(part?.mGameCalculation)
-    ? part.mGameCalculation
-    : part?.mModifiedGameCalculation;
-  const referencedGameCalc = hasNonEmptyCalculationReference(fallbackReference)
-    ? resolveReferencedGameCalculation(fallbackReference)
-    : null;
-  if (referencedGameCalc) return referencedGameCalc;
-
-  return makeMissingCalc(`${tracePath} unsupported part type: ${t || "<unknown>"}`);
-}
-
-function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
-  if (!calc || !result || isMissingGameCalculation(result)) return result;
-
-  const multiplier = hasNonEmptyCalculationReference(calc?.mMultiplier)
-    ? evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent)
-    : null;
-  if (multiplier?.missing) return makeMissingGameCalculation("Invalid multiplier", !!result.displayAsPercent);
-  if (multiplier && !multiplier.missing) {
-    const multiplied = result.total * multiplier.value;
-    result = {
-      ...result,
-      total: multiplied,
-      terms: [{ text: `(${formatCalculationTerms(result.terms, result.total)}) × (${multiplier.text})`, value: multiplied }],
-    };
-  }
-
-  const addend = hasNonEmptyCalculationReference(calc?.mAddend)
-    ? evaluateCalculationPart(calc.mAddend, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent)
-    : null;
-  if (addend?.missing) return makeMissingGameCalculation("Invalid addend", !!result.displayAsPercent);
-  if (addend && !addend.missing) {
-    const added = result.total + addend.value;
-    result = {
-      ...result,
-      total: added,
-      terms: [{ text: `(${formatCalculationTerms(result.terms, result.total)}) + (${addend.text})`, value: added }],
-    };
-  }
-
-  const subtrahend = hasNonEmptyCalculationReference(calc?.mSubtrahend)
-    ? evaluateCalculationPart(calc.mSubtrahend, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent)
-    : null;
-  if (subtrahend?.missing) return makeMissingGameCalculation("Invalid subtrahend", !!result.displayAsPercent);
-  if (subtrahend && !subtrahend.missing) {
-    const subtracted = result.total - subtrahend.value;
-    result = {
-      ...result,
-      total: subtracted,
-      terms: [{ text: `(${formatCalculationTerms(result.terms, result.total)}) - (${subtrahend.text})`, value: subtracted }],
-    };
-  }
-
-  const divider = hasNonEmptyCalculationReference(calc?.mDivider)
-    ? evaluateCalculationPart(calc.mDivider, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent)
-    : null;
-  if (divider?.missing || (divider && divider.value === 0)) return makeMissingGameCalculation("Invalid divider", !!result.displayAsPercent);
-  if (divider && !divider.missing && divider.value !== 0) {
-    const divided = result.total / divider.value;
-    result = {
-      ...result,
-      total: divided,
-      terms: [{ text: `(${formatCalculationTerms(result.terms, result.total)}) / (${divider.text})`, value: divided }],
-    };
-  }
-
-  return result;
-}
-
-function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap = null, seen = new Set(), tracePath = "calc", displayAsPercent = null) {
-  if (!calc) return null;
-  const ctype = String(calc.__type || "");
-  const resolvedDisplayAsPercent = typeof displayAsPercent === "boolean" ? displayAsPercent : !!calc.mDisplayAsPercent;
-
-  if (ctype === "GameCalculationModified") {
-    if (!hasNonEmptyCalculationReference(calc?.mModifiedGameCalculation)) {
-      return makeMissingGameCalculation(`${tracePath} missing modified game calculation reference`, resolvedDisplayAsPercent);
-    }
-    const key = String(calc.mModifiedGameCalculation || "");
-    if (!calculationsMap || !key) return makeMissingGameCalculation(`${tracePath} missing calculations map or key`, resolvedDisplayAsPercent);
-    if (seen.has(key)) return makeMissingGameCalculation(`${tracePath} circular reference ${key}`, resolvedDisplayAsPercent);
-    seen.add(key);
-    const base = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, seen, `${tracePath}.modified(${key})`, resolvedDisplayAsPercent);
-    if (isMissingGameCalculation(base)) return base;
-    return applyGameCalculationModifiers(
-      calc,
-      {
-        total: base.total,
-        terms: base.terms,
-        displayAsPercent: resolvedDisplayAsPercent,
-      },
-      dataValues,
-      rank,
-      stats,
-      calculationsMap,
-      seen,
-    );
-  }
-
-  if (/Conditional/i.test(ctype)) {
-    return makeMissingGameCalculation('Conditional calculation requires game state', resolvedDisplayAsPercent);
-  }
-
-  const formulaParts = Array.isArray(calc.mFormulaParts)
-    ? calc.mFormulaParts
-    : Array.isArray(calc.mFormula)
-      ? calc.mFormula
-      : null;
-  if (!Array.isArray(formulaParts)) return makeMissingGameCalculation(`${tracePath} has no formula parts`, resolvedDisplayAsPercent);
-  const parts = formulaParts
-    .map((part, index) => evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.part${index}`, resolvedDisplayAsPercent))
-    .filter(Boolean);
-  if (parts.some(part => part.missing)) return makeMissingGameCalculation(`${tracePath} contains unresolved parts`, resolvedDisplayAsPercent);
-  if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, resolvedDisplayAsPercent);
-
-  return applyGameCalculationModifiers(
-    calc,
-    {
-      total: parts.reduce((a, b) => a + b.value, 0),
-      terms: parts.map((p) => ({ text: p.text, value: p.value })),
-      displayAsPercent: resolvedDisplayAsPercent,
+function calculationContext(stats, dataValues = [], rank = 1, calculations = {}, effects = []) {
+  return {
+    stats, dataValues, rank, calculations, effects, level: BUILDER.level,
+    resolveExternal: (path, key) => {
+      const record=window.Calculations.lookup(BUILDER.cdragonRaw,path);
+      const payload=extractCdragonSpell(record);
+      return window.Calculations.dataValue(payload?.dataValues,key,rank,BUILDER.level);
     },
-    dataValues,
-    rank,
-    stats,
-    calculationsMap,
-    seen,
-  );
+    ranged: BUILDER.championData ? BUILDER.championData.stats.attackrange > 300 : undefined,
+    itemCounts: BUILDER.itemSlots.filter(Boolean).reduce((counts,id) => {
+      const rarity=window.ItemLookupShared.getState().cdragonById[id]?.epicness;
+      if (rarity !== undefined) counts[rarity]=(counts[rarity]||0)+1;
+      return counts;
+    }, {0:0,1:0,2:0,3:0,4:0,5:0,6:0}),
+  };
 }
 
-function normalizeCalcToken(token) {
-  return canonicalizeToken(token);
+function adaptCalculation(row) {
+  return {...row, total:row.value, terms:[{text:row.text,value:row.value,missing:row.missing}]};
+}
+
+function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap = {}) {
+  return window.Calculations.partValue(part, calculationContext(stats,dataValues,rank,calculationsMap));
+}
+
+function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap = {}, effects = []) {
+  return adaptCalculation(window.Calculations.evaluate(calc, calculationContext(stats,dataValues,rank,calculationsMap,effects)));
 }
 
 function canonicalizeToken(name) {
@@ -1831,14 +1489,14 @@ function buildResolvedSpellPayload(rawPayload, safeRank, stats) {
   const calculations = payload?.calculations || {};
   const dataValues = payload?.dataValues || [];
   const calcLookup = Object.fromEntries(Object.entries(calculations).map(([k, calc]) => {
-    const evaluated = stats ? evaluateGameCalculation(calc, dataValues, safeRank, stats, calculations) : null;
+    const evaluated = stats ? evaluateGameCalculation(calc, dataValues, safeRank, stats, calculations, payload?.effects || []) : null;
     return [String(k).toLowerCase(), evaluated];
   }));
   return {
     cdragonSpell: payload,
     calcLookup,
     calcLookupCanonicalMap: buildCanonicalTokenMap(Object.keys(calcLookup)),
-    dataValueCanonicalMap: buildCanonicalTokenMap(dataValues.map((d) => String(d?.mName || "").toLowerCase())),
+    dataValueCanonicalMap: buildCanonicalTokenMap(dataValues.map((d) => String(d?.mName || d?.name || "").toLowerCase())),
   };
 }
 
@@ -1859,38 +1517,11 @@ function getDeterministicTokenCandidates(token) {
     if (value.endsWith("_tooltip")) add(value.slice(0, -8));
     if (value.endsWith("tooltip")) add(value.slice(0, -7));
 
-    ["base", "bonus", "total"].forEach((prefix) => {
-      if (value.startsWith(prefix) && value.length > prefix.length) add(value.slice(prefix.length));
-    });
-    ["base", "bonus", "total", "value", "amount", "damage"].forEach((suffix) => {
-      if (value.endsWith(suffix) && value.length > suffix.length) add(value.slice(0, -suffix.length));
-    });
+
   };
 
   tryTrimEdge(String(token || "").trim().toLowerCase());
   return candidates;
-}
-
-function findBestCalcTokenMatch(calcLookup, token) {
-  const keys = Object.keys(calcLookup || {});
-  if (!keys.length) return null;
-  const normalizedToken = normalizeCalcToken(token);
-  const scored = keys.map((key) => {
-    const normalizedKey = normalizeCalcToken(key);
-    let score = -1;
-    if (normalizedKey === normalizedToken) score = 1000;
-    else if (normalizedKey.includes(normalizedToken)) score = 700 - (normalizedKey.length - normalizedToken.length);
-    else if (normalizedToken.includes(normalizedKey)) score = 500 - (normalizedToken.length - normalizedKey.length);
-    else {
-      const strippedToken = normalizedToken.replace(/^(base|bonus|total)/, "").replace(/(damage|value|amount)$/g, "");
-      const strippedKey = normalizedKey.replace(/^(base|bonus|total)/, "").replace(/(damage|value|amount)$/g, "");
-      if (strippedKey && strippedToken && (strippedKey.includes(strippedToken) || strippedToken.includes(strippedKey))) {
-        score = 300 - Math.abs(strippedKey.length - strippedToken.length);
-      }
-    }
-    return { key, score };
-  }).filter((row) => row.score >= 0).sort((a, b) => b.score - a.score);
-  return scored.length ? scored[0].key : null;
 }
 
 function resolveAbilityToken(tokenRaw, ctx) {
@@ -1923,17 +1554,17 @@ function resolveAbilityToken(tokenRaw, ctx) {
     const resolveCalc = (lookupToken) => {
       if (denylist.has(canonicalizeToken(lookupToken))) return { html: "", numeric: null };
 
-      let calc = localCtx.calcLookup[lookupToken];
+      let calc = window.Calculations.lookup(localCtx.calcLookup, lookupToken);
       if (!calc) {
         const canonicalKey = localCtx.calcLookupCanonicalMap?.[canonicalizeToken(lookupToken)];
         if (canonicalKey) calc = localCtx.calcLookup[canonicalKey];
       }
-      if (!calc && /(damage|dmg|value|amount)$/i.test(String(lookupToken || ""))) {
-        const fuzzyKey = findBestCalcTokenMatch(localCtx.calcLookup || {}, lookupToken);
-        if (fuzzyKey) calc = localCtx.calcLookup[fuzzyKey];
-      }
       if (!calc) return null;
 
+      if (calc.missing || calc.total === null) return {
+        html: `<span class="ability-detail-eq">${calc.unsupported?.length ? 'Value unavailable' : calc.text}</span>`,
+        numeric: null,
+      };
       const shown = calc.displayAsPercent ? (calc.total * 100) : calc.total;
       const eq = formatCalculationTerms(calc.terms, shown);
       return {
@@ -1947,11 +1578,6 @@ function resolveAbilityToken(tokenRaw, ctx) {
       if (!dataValue) {
         const canonicalKey = localCtx.dataValueCanonicalMap?.[canonicalizeToken(lookupToken)];
         if (canonicalKey) dataValue = getSpellDataValue(localCtx.cdragonSpell?.dataValues || [], canonicalKey, localCtx.safeRank);
-      }
-      if (!dataValue) {
-        const dv = (localCtx.cdragonSpell?.dataValues || []).map((d) => String(d?.mName || "").toLowerCase());
-        const fuzzyDv = dv.find((k) => k.includes(lookupToken) || lookupToken.includes(k));
-        if (fuzzyDv) dataValue = getSpellDataValue(localCtx.cdragonSpell?.dataValues || [], fuzzyDv, localCtx.safeRank);
       }
       if (!dataValue) return null;
       return {

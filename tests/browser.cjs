@@ -28,6 +28,10 @@ const server=http.createServer((req,res)=>{
    if(url.origin===base)return route.continue();
    requests.push(url.href);
    if(!url.pathname.endsWith('.json'))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#334155"/></svg>'});
+   if(url.hostname==='raw.communitydragon.org' && process.env.ADVANCED_DATA && !failCore) {
+     const name=url.pathname.endsWith('/items.cdtb.bin.json')?'cd-items.json':fs.readdirSync(fixtures).find(f=>f.toLowerCase()===path.basename(url.pathname));
+     return route.fulfill({contentType:'application/json',body:read(name)});
+   }
    if(failCore || url.hostname==='raw.communitydragon.org') return route.fulfill({status:503,body:'Unavailable'});
    let file=url.pathname.endsWith('/versions.json')?'versions.json':url.pathname.endsWith('/champion.json')?'champions.json':url.pathname.endsWith('/item.json')?'items.json':url.pathname.endsWith('/runesReforged.json')?'runes.json':path.basename(url.pathname);
    if(file==='Ahri.json')await new Promise(r=>setTimeout(r,100));
@@ -64,6 +68,25 @@ const server=http.createServer((req,res)=>{
  await page.evaluate(async()=>{await Promise.all([setChampion('Ahri'),setChampion('Garen')]);});
  assert.equal(await page.evaluate(()=>BUILDER.selectedChampion),'Garen');
  console.log('PASS builder UI: champion, level, abilities, item add/remove, rune, request race');
+ if(process.env.ADVANCED_DATA){
+   const details=await page.evaluate(async()=>{
+     await setChampion('Chogath');BUILDER.level=18;BUILDER.abilityRanks={q:5,w:5,e:5,r:3};
+     BUILDER.activeSlot=0;setSlotItem('3040');renderStats();renderAbilityCards();renderModalItemDetail('3040');
+     const stats=getComputedChampionStatsForTooltips();
+     const payload=buildResolvedSpellPayload(BUILDER.cdragonAbilityData.r,3,stats);
+     const feast=Calculations.lookup(payload.calcLookup,'RDamage');
+     if(Math.abs(feast.total-(650+.5*stats.ap+.1*stats.bonusHp))>.001)throw Error('Feast formula mismatch');
+     const html=resolveItemDescriptionHtml(BUILDER.items['3040'],'3040').html;
+     if(!/20 Ability Power/.test(html)||!/[\d.]+ Shield/.test(html))throw Error('Seraph numeric values missing');
+     if(/AbilityResourceByCoefficientCalculationPart|\(0s\)|<scaleAP>\s*Ability Power/.test(html))throw Error('Seraph unresolved display');
+     return {feast:feast.total,html,stats,abilityText:document.querySelector('#abilities')?.innerText};
+   });
+   console.log('PASS live-data Feast and Seraph integration: Feast '+details.feast);
+   if(process.env.SCREENSHOT_DIR){
+     fs.writeFileSync(path.join(process.env.SCREENSHOT_DIR,'calculation-details.json'),JSON.stringify(details,null,2));
+     await page.screenshot({path:path.join(process.env.SCREENSHOT_DIR,'calculations.png'),fullPage:true});
+   }
+ }
  // Exercise the entire downloaded catalog through the real renderers and calculations.
  const champions=Object.keys(index);
  for(const name of champions){
@@ -76,7 +99,7 @@ const server=http.createServer((req,res)=>{
      }
    },name);
  }
- console.log(`PASS ${champions.length} champions at levels 1, 6, 11, 18 with advanced API unavailable`);
+ console.log(`PASS ${champions.length} champions at levels 1, 6, 11, 18 (advanced data: ${!!process.env.ADVANCED_DATA})`);
  const builderItems=await page.evaluate(()=>{
    const ids=Object.keys(BUILDER.items);
    for(const id of ids){

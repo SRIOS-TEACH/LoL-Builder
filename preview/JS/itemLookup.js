@@ -5,9 +5,9 @@ const ITEM_STATE = {
 };
 const {
   MAP_OPTIONS, isPurchasableItem, resolveDescriptionFormulas, colorizeStatsInHtml,
-  buildExtractedFormulas, injectDamageFormulaText, emphasizeAbilityHeaders,
+  buildExtractedFormulas, emphasizeAbilityHeaders,
   enhanceActiveTooltip, inferActiveCooldownSeconds, injectActiveCooldown,
-  loadCommunityDragonCalcs,
+  loadCommunityDragonCalcs, injectItemCalculationValues,
 } = window.ItemLookupShared;
 function itemMatchesSelectedMaps(item) {
   return Array.from(ITEM_STATE.selectedMaps).some(id => item.maps?.[id]);
@@ -148,9 +148,9 @@ function showItem(id) {
 
   const resolvedDescription = resolveDescriptionFormulas(item, item.description || "");
   const { lines } = buildExtractedFormulas(id);
-  const inferredCooldown = /<active>|\bACTIVE\b|\(0s\)/i.test(item.description || "") ? inferActiveCooldownSeconds(id) : null;
+  const inferredCooldown = /<active>|<passive>|\bACTIVE\b|\(0s\)/i.test(item.description || "") ? inferActiveCooldownSeconds(id) : null;
   const withCooldown = injectActiveCooldown(resolvedDescription, inferredCooldown);
-  const withDamage = injectDamageFormulaText(withCooldown, lines, id);
+  const withDamage = injectItemCalculationValues(withCooldown, lines);
   const withHeaders = emphasizeAbilityHeaders(withDamage);
   const tooltipMain = colorizeStatsInHtml(enhanceActiveTooltip(withHeaders));
 
