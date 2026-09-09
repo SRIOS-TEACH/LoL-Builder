@@ -28,6 +28,10 @@ const server=http.createServer((req,res)=>{
    if(url.origin===base)return route.continue();
    requests.push(url.href);
    if(!url.pathname.endsWith('.json'))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#334155"/></svg>'});
+   if(url.hostname==='raw.communitydragon.org' && process.env.ADVANCED_DATA && !failCore) {
+     const name=url.pathname.endsWith('/items.cdtb.bin.json')?'cd-items.json':fs.readdirSync(fixtures).find(f=>f.toLowerCase()===path.basename(url.pathname));
+     return route.fulfill({contentType:'application/json',body:read(name)});
+   }
    if(failCore || url.hostname==='raw.communitydragon.org') return route.fulfill({status:503,body:'Unavailable'});
    let file=url.pathname.endsWith('/versions.json')?'versions.json':url.pathname.endsWith('/champion.json')?'champions.json':url.pathname.endsWith('/item.json')?'items.json':url.pathname.endsWith('/runesReforged.json')?'runes.json':path.basename(url.pathname);
    if(file==='Ahri.json')await new Promise(r=>setTimeout(r,100));
@@ -64,6 +68,42 @@ const server=http.createServer((req,res)=>{
  await page.evaluate(async()=>{await Promise.all([setChampion('Ahri'),setChampion('Garen')]);});
  assert.equal(await page.evaluate(()=>BUILDER.selectedChampion),'Garen');
  console.log('PASS builder UI: champion, level, abilities, item add/remove, rune, request race');
+ if(process.env.ADVANCED_DATA){
+   const details=await page.evaluate(async()=>{
+     await setChampion('Chogath');BUILDER.level=18;BUILDER.abilityRanks={q:5,w:5,e:5,r:3};
+     BUILDER.activeSlot=0;setSlotItem('3040');renderStats();renderAbilityCards();renderModalItemDetail('3040');
+     const stats=getComputedChampionStatsForTooltips();
+     const payload=buildResolvedSpellPayload(BUILDER.cdragonAbilityData.r,3,stats);
+     const feast=Calculations.lookup(payload.calcLookup,'RDamage');
+     if(Math.abs(feast.total-(650+.5*stats.ap+.1*stats.bonusHp))>.001)throw Error('Feast formula mismatch');
+     const html=resolveItemDescriptionHtml(BUILDER.items['3040'],'3040').html;
+     if(!/20 Ability Power/.test(html)||!/[\d.]+ Shield/.test(html))throw Error('Seraph numeric values missing');
+     if(/AbilityResourceByCoefficientCalculationPart|\(0s\)|<scaleAP>\s*Ability Power/.test(html))throw Error('Seraph unresolved display');
+     return {feast:feast.total,html,stats,abilityText:document.querySelector('#abilities')?.innerText};
+   });
+   console.log('PASS live-data Feast and Seraph integration: Feast '+details.feast);
+   await page.locator('#combatInputs summary').click();
+   const stacks=page.locator('#combatInputs [data-combat-key="buff:{8682fc00}"]');
+   await stacks.fill('6');await stacks.press('Tab');
+   assert.equal(await page.evaluate(()=>calculationContext(getComputedChampionStatsForTooltips()).buffs['{8682fc00}']),6);
+   await page.locator('#combatInputs [data-combat-key="buff:{8682fc00}"]').fill('');
+   await page.locator('#combatInputs [data-combat-key="buff:{8682fc00}"]').press('Tab');
+   assert.equal(await page.evaluate(()=>calculationContext(getComputedChampionStatsForTooltips()).buffs['{8682fc00}']),undefined);
+   await page.evaluate(()=>setChampion('Zed'));
+   await page.locator('#combatInputs [data-combat-key="target:hp:0"]').fill('2000');
+   await page.locator('#combatInputs [data-combat-key="target:hp:0"]').press('Tab');
+   await page.locator('#combatInputs [data-combat-key="target:healthPercent:0"]').fill('25');
+   await page.locator('#combatInputs [data-combat-key="target:healthPercent:0"]').press('Tab');
+   assert.equal(await page.evaluate(()=>calculationContext(getComputedChampionStatsForTooltips()).targetStats.currentHp),500);
+   const buffKeys=await page.locator('#combatInputs [data-combat-key^="buff:"]').evaluateAll(nodes=>nodes.map(n=>n.dataset.combatKey));
+   for(const key of buffKeys){const control=page.locator(`#combatInputs [data-combat-key="${key}"]`);await control.fill('0');await control.press('Tab');}
+   assert.match(await page.locator('.ability-passive-card .ability-effect-values').textContent(),/Final Damage: [\d.]+/);
+   console.log('PASS editable stacks, clearing unknown inputs, and derived target health');
+   if(process.env.SCREENSHOT_DIR){
+     fs.writeFileSync(path.join(process.env.SCREENSHOT_DIR,'calculation-details.json'),JSON.stringify(details,null,2));
+     await page.screenshot({path:path.join(process.env.SCREENSHOT_DIR,'calculations.png'),fullPage:true});
+   }
+ }
  // Exercise the entire downloaded catalog through the real renderers and calculations.
  const champions=Object.keys(index);
  for(const name of champions){
@@ -76,7 +116,7 @@ const server=http.createServer((req,res)=>{
      }
    },name);
  }
- console.log(`PASS ${champions.length} champions at levels 1, 6, 11, 18 with advanced API unavailable`);
+ console.log(`PASS ${champions.length} champions at levels 1, 6, 11, 18 (advanced data: ${!!process.env.ADVANCED_DATA})`);
  const builderItems=await page.evaluate(()=>{
    const ids=Object.keys(BUILDER.items);
    for(const id of ids){
@@ -93,6 +133,17 @@ const server=http.createServer((req,res)=>{
  console.log(`PASS ${builderItems} builder items: equip, stats, details; item haste fallback`);
  await page.goto(base+'/itemLookup.html');
  await page.waitForFunction(()=>document.querySelectorAll('#itemGrid button').length>0);
+ if(process.env.ADVANCED_DATA){
+   await page.evaluate(()=>showItem('3040'));
+   await page.locator('#combatInputs summary').click();
+   for(const [key,value]of [['self:mp:0','2000'],['self:mp:2','1000']]){
+     await page.locator(`[data-combat-key="${key}"]`).fill(value);
+     await page.locator(`[data-combat-key="${key}"]`).press('Tab');
+   }
+   assert.match(await page.locator('#itemTooltipMain').innerText(),/360 Shield/);
+   assert.match(await page.locator('#itemTooltipMain').innerText(),/20 Ability Power/);
+   console.log('PASS standalone item inputs update shield and AP values');
+ }
  const itemCount=await page.evaluate(()=>{
    const ids=Object.keys(ITEM_STATE.items);
    for(const id of ids)showItem(id);

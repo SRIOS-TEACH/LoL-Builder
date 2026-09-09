@@ -1032,3 +1032,10 @@ body {
 .builder-dashboard .col-lg-6 > .card + .card {
   margin-top: 0.6rem;
 }
+
+/* Controls for explicit calculation state. */
+.combat-inputs { margin-bottom: 1rem; }
+.combat-inputs summary { cursor: pointer; font-weight: 600; }
+.combat-inputs p { font-size: .9em; }
+.combat-input-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: .75rem; }
+.combat-input-grid label { font-size: .9em; overflow-wrap: anywhere; }

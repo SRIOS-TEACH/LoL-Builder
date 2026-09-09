@@ -8,7 +8,7 @@ function app(fetchImpl = async () => ({ok:true,json:async()=>({})})) {
   const context = vm.createContext({console, fetch:fetchImpl, AbortController, setTimeout, clearTimeout,
     document:{addEventListener(){}}, module:{exports:{}}});
   context.window = context;
-  for (const file of ['shared/apiClient','shared/itemPolicy','shared/abilityRules','shared/buildStats','shared/itemData','builder']) {
+  for (const file of ['shared/apiClient','shared/itemPolicy','shared/abilityRules','shared/buildStats','shared/calculations','shared/combatInputs','shared/itemData','builder']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'JS',file+'.js'),'utf8'),context);
   }
   context.run = code => vm.runInContext(code,context);
@@ -69,8 +69,87 @@ test('unknown stat IDs cannot silently use AP',()=>{
  const c=app();const value=c.evaluateCalculationPart({__type:'StatByCoefficientCalculationPart',mStat:999,mCoefficient:1},[],1,{ap:100});assert.equal(value.missing,true);
 });
 test('AD scaling distinguishes bonus from total and ignores misleading token names',()=>{
- const c=app();assert.equal(c.getCalcStatSource({mStat:2,mStatFormula:1,mDataValue:'APRatio'},{ap:300,totalAd:150,bonusAd:50}).value,50);
+ const c=app();assert.equal(c.getCalcStatSource({mStat:2,mStatFormula:2,mDataValue:'APRatio'},{ap:300,totalAd:150,bonusAd:50}).value,50);
 });
 test('conditional formulas require a condition rather than choosing the first branch',()=>{
  const c=app();const result=c.evaluateGameCalculation({__type:'GameCalculationConditional',mConditionalGameCalculation:'yes'},[],1,{}, {yes:{__type:'GameCalculation',mFormulaParts:[{__type:'NumberCalculationPart',mNumber:100}]}});assert.ok(c.isMissingGameCalculation(result));
+});
+
+const captured=require('./calculation-excerpts.json');
+const C=require('../JS/shared/calculations.js');
+test('live Feast formulas include rank, AP and bonus health',()=>{
+ const spell=captured.feast, context={rank:3,level:18,stats:{ap:200,bonusHp:1000},dataValues:spell.DataValues,calculations:spell.mSpellCalculations};
+ assert.ok(Math.abs(C.evaluate(spell.mSpellCalculations.RDamage,context).value-850)<.001);
+ assert.ok(Math.abs(C.evaluate(spell.mSpellCalculations.RMonsterDamage,context).value-1400)<.001);
+});
+test('live Seraph calculations and description use total versus bonus mana',()=>{
+ const c=app();c.ItemLookupShared.getState().cdragonById['3040']=captured['3040'];
+ const rows=c.ItemLookupShared.buildExtractedFormulas('3040',{stats:{mp:2000,bonusMp:1000}}).lines;
+ assert.ok(Math.abs(rows.find(r=>r.key==='ShieldValue').value-360)<.001);
+ assert.ok(Math.abs(rows.find(r=>r.key==='BonusAPCalc').value-20)<.001);
+ const html=c.ItemLookupShared.injectItemCalculationValues('Gain <scaleAP> Ability Power</scaleAP> and a <shield> Shield</shield>',rows);
+ assert.match(html,/20 Ability Power/);assert.match(html,/360 Shield/);
+ assert.equal(c.ItemLookupShared.inferActiveCooldownSeconds('3040'),90);
+ assert.match(c.ItemLookupShared.injectActiveCooldown('<passive>Lifeline</passive> (0s)',90),/90s/);
+});
+test('Sheen uses base AD, not total or bonus AD',()=>{
+ const item=captured['3057'];const row=C.evaluate(item.mItemCalculations.SpellbladeDamage,{stats:{totalAd:180,bonusAd:80},dataValues:item.mDataValues});
+ assert.ok(Math.abs(row.value-100)<.001);
+});
+test('typed omitted defaults differ from missing data and missing combat inputs',()=>{
+ assert.equal(C.dataValue([{name:'zero',__type:'SpellDataValue'}],'zero').value,0);
+ assert.equal(C.dataValue([],'absent').value,null);
+ const row=C.partValue({__type:'BuffCounterByCoefficientCalculationPart',mBuffName:'stacks',mCoefficient:5},{});
+ assert.equal(row.value,null);assert.deepEqual(row.inputs,['buff:stacks']);
+});
+test('products, clamping, rank overrides and scalar item effects preserve arithmetic',()=>{
+ const n=v=>({__type:'NumberCalculationPart',mNumber:v});
+ assert.equal(C.partValue({__type:'ProductOfSubPartsCalculationPart',mPart1:n(3),mPart2:n(4)}).value,12);
+ assert.equal(C.partValue({__type:'ClampSubPartsCalculationPart',mSubparts:[n(40)],mCeiling:20}).value,20);
+ assert.equal(C.partValue({__type:'EffectValueCalculationPart',mEffectIndex:1},{effects:[60]}).value,60);
+ const calculations={base:{__type:'GameCalculation',mFormulaParts:[{__type:'NamedDataValueCalculationPart',mDataValue:'damage'}]}};
+ assert.equal(C.evaluate({__type:'GameCalculationModified',mModifiedGameCalculation:'base',mOverrideSpellLevel:2},{rank:1,calculations,dataValues:[{name:'damage',values:[0,10,20,30,40,50,60]}]}).value,20);
+});
+
+const Combat=require('../JS/shared/combatInputs');
+test('health inputs derive current, missing and percentage values without a full-health default',()=>{
+ const base={stats:{hp:3000},targetStats:{}};
+ assert.equal(Combat.apply(base,{}).stats.currentHp,undefined);
+ const ctx=Combat.apply(base,{'self:healthPercent:0':.25,'target:hp:0':2000,'target:healthPercent:0':.6});
+ assert.equal(ctx.stats.currentHp,750);assert.equal(ctx.stats.missingHp,2250);
+ assert.equal(ctx.targetStats.currentHp,1200);assert.equal(ctx.targetStats.missingHealthPercent,.4);
+});
+test('stack values, zero stacks and clearing a value remain distinct',()=>{
+ const calc={__type:'GameCalculation',mFormulaParts:[{__type:'BuffCounterByCoefficientCalculationPart',mBuffName:'Feast',mCoefficient:5}]};
+ assert.equal(C.evaluate(calc,Combat.apply({},{})).value,null);
+ assert.equal(C.evaluate(calc,Combat.apply({},{'buff:Feast':0})).value,0);
+ assert.equal(C.evaluate(calc,Combat.apply({},{'buff:Feast':6})).value,30);
+});
+test('conditional activation distinguishes inactive effects from missing references',()=>{
+ const calc={__type:'GameCalculationConditional',mConditionalGameCalculation:'hit',mConditionalCalculationRequirements:{__type:'HasBuffCastRequirement',mBuffName:'ready'}};
+ const base={calculations:{hit:{__type:'GameCalculation',mFormulaParts:[{__type:'NumberCalculationPart',mNumber:100}]}}};
+ assert.equal(C.evaluate(calc,Combat.apply(base,{'buff:ready':0})).inactive,true);
+ assert.equal(C.evaluate(calc,Combat.apply(base,{'buff:ready':1})).value,100);
+ assert.equal(C.evaluate(calc,base).value,null);
+ assert.ok(C.evaluate({...calc,mConditionalGameCalculation:'missing'},Combat.apply(base,{'buff:ready':1})).unsupported.length);
+});
+test('target health thresholds use the target, not the attacking champion',()=>{
+ const req={__type:'AboveHealthPercentCastRequirement',mCurrentPercentHealth:.5};
+ assert.equal(C.condition(req,{stats:{healthPercent:1},targetStats:{healthPercent:.2}}).value,false);
+ assert.equal(C.condition(req,{stats:{healthPercent:.1},targetStats:{healthPercent:.8}}).value,true);
+});
+test('execution threshold and nearby-ally predicates respond to explicit context',()=>{
+ const req={__type:'{43b8e695}','{6166b756}':'threshold',mInvertResult:true};
+ const context={targetStats:{hp:2000,healthPercent:.2},calculations:{threshold:{__type:'GameCalculation',mFormulaParts:[{__type:'NumberCalculationPart',mNumber:500}]}}};
+ assert.equal(C.condition(req,context).value,true);
+ assert.equal(C.condition(req,{...context,targetStats:{hp:2000,healthPercent:.8}}).value,false);
+ const nearby={__type:'HasNNearbyVisibleUnitsRequirement',mRange:1300};
+ assert.equal(C.condition(nearby,{}).value,null);
+ assert.equal(C.condition(nearby,Combat.apply({},{['condition:'+C.conditionKey(nearby)]:true})).value,true);
+});
+test('all discovered stack and elapsed controls feed the calculation interpreter',()=>{
+ const source={label:'Test',calculations:{damage:{__type:'GameCalculation',mFormulaParts:[{__type:'BuffCounterByCoefficientCalculationPart',mBuffName:'stacks',mCoefficient:10},{__type:'PercentageOfBuffNameElapsed',buffName:'duration',Coefficient:100}]}}};
+ const fields=Combat.descriptors([source],{});assert.deepEqual(fields.map(f=>f.key).sort(),['buff:stacks','elapsed:duration']);
+ const context=Combat.apply({},{'buff:stacks':3,'elapsed:duration':.5});
+ assert.equal(C.evaluate(source.calculations.damage,context).value,80);
 });
