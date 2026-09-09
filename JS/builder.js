@@ -15,6 +15,7 @@ const BUILDER = {
   championDetailCache: {},
   cdragonAbilityData: null,
   championModalRequestId: 0,
+  championRequestId: 0,
   runeModalTarget: null,
   runeSelections: {
     primaryPath: "",
@@ -118,27 +119,13 @@ const DEFAULT_CHAMPION_BASE_STATS = {
   critdamage: 0,
 };
 
-function canonicalizeStatKey(key) {
-  return String(key || "").toLowerCase().replace(/[^a-z0-9]/g, "").replace(/^m+/, "");
-}
-
-const CANONICAL_CDRAGON_TO_DDRAGON_STAT_KEY = Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY).reduce((acc, [fromKey, toKey]) => {
-  acc[canonicalizeStatKey(fromKey)] = toKey;
-  return acc;
-}, {});
-
-const CANONICAL_DDRAGON_STAT_KEYS = Object.keys(DEFAULT_CHAMPION_BASE_STATS).reduce((acc, key) => {
-  acc[canonicalizeStatKey(key)] = key;
-  return acc;
-}, {});
-
 function slugifyRuneName(name) {
   return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
 function toDdragonPerkIcon(version, iconPath) {
   if (!iconPath) return "";
-  return `http://ddragon.leagueoflegends.com/cdn/img/${String(iconPath).replace(/^\/+/, "")}`;
+  return `https://ddragon.leagueoflegends.com/cdn/img/${String(iconPath).replace(/^\/+/, "")}`;
 }
 
 // Shared format/strip helpers are centralized here to avoid redeclaration drift.
@@ -302,80 +289,29 @@ function wireLevelOptions() {
   });
 }
 
-const BUILDER_FORCE_INCLUDE_ITEM_IDS = window.ItemPolicy.FORCE_INCLUDE_ITEM_IDS;
-
 function getItemLookupShared() {
-  return (typeof window !== "undefined" && window.ItemLookupShared) ? window.ItemLookupShared : null;
-}
-
-function isPurchasableBuilderItem(id, item) {
-  const shared = getItemLookupShared();
-  if (shared?.isPurchasableItem) return shared.isPurchasableItem(id, item);
-  return window.ItemPolicy.isPurchasableItem(id, item);
-}
-
-function dedupeBuilderItems(itemEntries, preferredMaps = [11]) {
-  const shared = getItemLookupShared();
-  if (shared?.dedupeByNameWithMapPriority) return shared.dedupeByNameWithMapPriority(itemEntries, new Set(preferredMaps));
-  return window.ItemPolicy.dedupeByNameWithMapPriority(itemEntries, new Set(preferredMaps));
+  return window.ItemLookupShared;
 }
 
 async function loadBuilderData() {
   BUILDER.version = await window.ApiClient.fetchLatestVersion();
-  await hydrateRunesFromDdragon(BUILDER.version);
-
-  const champions = await window.ApiClient.fetchChampionIndex(BUILDER.version);
-  BUILDER.champions = champions.data;
-
-  const [items, cdtbData] = await Promise.all([
+  const [champions, items] = await Promise.all([
+    window.ApiClient.fetchChampionIndex(BUILDER.version),
     window.ApiClient.fetchItemIndex(BUILDER.version),
-    window.ApiClient.fetchCommunityDragonItems().catch(() => null),
+    hydrateRunesFromDdragon(BUILDER.version),
+    window.ItemLookupShared.loadCommunityDragonCalcs(),
   ]);
-  const cdtbByIdFallback = buildCdtbItemsById(cdtbData);
-
-  const shared = getItemLookupShared();
-  let sharedCdtbById = null;
-  if (shared?.getState) {
-    const state = shared.getState();
-    state.version = BUILDER.version;
-    state.items = items.data;
-    if (shared.loadCommunityDragonCalcs) await shared.loadCommunityDragonCalcs();
-    sharedCdtbById = state.cdragonById || null;
-  }
-
-  const dedupedItemEntries = dedupeBuilderItems(
-    Object.entries(items.data).filter(([id, item]) => isPurchasableBuilderItem(id, item)),
-    [11],
-  ).filter(([id, item]) => item.maps?.[11] || BUILDER_FORCE_INCLUDE_ITEM_IDS.has(String(id)));
-
-  dedupedItemEntries.forEach(([id, item]) => {
-    const cdtbEntry = sharedCdtbById?.[String(id)] || cdtbByIdFallback.get(String(id));
-    const stats = buildMergedItemStats(item.stats || {}, cdtbEntry);
-    const mergedItem = { ...item, stats };
-    BUILDER.items[id] = mergedItem;
-    (mergedItem.tags || []).forEach((tag) => BUILDER.itemTags.add(tag));
-  });
-
-  if (shared?.getState) {
-    const state = shared.getState();
-    state.version = BUILDER.version;
-    state.items = BUILDER.items;
-  }
-}
-
-function buildCdtbItemsById(cdtbData) {
-  const byId = new Map();
-  Object.entries(cdtbData || {}).forEach(([key, entry]) => {
-    const rawItemId = entry?.itemID
-      ?? entry?.mItemDataClient?.mId
-      ?? entry?.id
-      ?? entry?.mId
-      ?? key;
-    const itemId = Number(String(rawItemId).match(/(\d+)(?:\D*)$/)?.[1]);
-    if (!itemId) return;
-    byId.set(String(itemId), entry);
-  });
-  return byId;
+  BUILDER.champions = champions.data;
+  const state = window.ItemLookupShared.getState();
+  const entries = window.ItemPolicy.dedupeByNameWithMapPriority(
+    Object.entries(items.data).filter(([id, item]) =>
+      window.ItemPolicy.isPurchasableItem(id, item) && item.maps?.[11]),
+    new Set([11]),
+  );
+  BUILDER.items = Object.fromEntries(entries.map(([id, item]) => [id, {
+    ...item, stats: buildMergedItemStats(window.BuildStats.itemStatsFromDescription(item.description, item.stats), state.cdragonById[id]),
+  }]));
+  BUILDER.itemTags = new Set(Object.values(BUILDER.items).flatMap(item => item.tags || []));
 }
 
 function readNumericStat(entry, base, aliases) {
@@ -488,6 +424,7 @@ function renderChampionModalGrid() {
 async function renderChampionModalDetail(name) {
   const root = document.getElementById("modalChampDetail");
   if (!name) {
+    ++BUILDER.championModalRequestId;
     root.innerHTML = "<p class='text-muted'>No champion found.</p>";
     return;
   }
@@ -899,93 +836,55 @@ function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) 
   return bySlot;
 }
 
-async function loadCdragonAbilityData(championName, ddSpells = [], rawOverride = null) {
-  const pathName = normalizeCdragonChampionPath(championName);
-  const url = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
-  const raw = rawOverride || await fetch(url).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  if (!raw) return null;
-
-  return extractAbilityDataFromRoot(raw, championName, pathName, ddSpells)
-    || null;
-}
-
-function toCdragonCharacterName(championName, pathName) {
-  if (championName && /^[A-Z]/.test(championName)) return championName;
-  return String(pathName || "")
-    .split(/[^a-z0-9]+/i)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join("");
-}
-
-//Extract the champion stat data from the .bin.root file using a Hash-lookup (CDRAGON_STAT_HASH_TO_NAME). If any stats are missing, populate from the original data dragon source.
+// Read only present, finite values. Missing fields are not zero-valued stats.
 function extractChampionStatsFromBinRoot(raw, championName, pathName) {
-  if (!raw || typeof raw !== "object") return {};
-
-  const lowerPath = String(pathName || championName || "").toLowerCase();
-  const championKey = lowerPath.charAt(0).toUpperCase() + lowerPath.slice(1);
-  
-  const root = raw[`Characters/${championName}/CharacterRecords/Root`];
-
-
-  if (!root || typeof root !== "object") return {};
-
-  const cdragonStats = {};
-  
-  for (const [hashKey, statName] of Object.entries(CDRAGON_STAT_HASH_TO_NAME)) {
-    
-    const value = root[statName+"Modifiable"];
-
-    if(value !== undefined && value !== null){
-      cdragonStats[statName] = value["baseValue"];
-    }
-    else{
-      cdragonStats[statName] = 0;
-    }
+  const rootPath = `characters/${championName || pathName}/characterrecords/root`.toLowerCase();
+  const root = Object.entries(raw || {}).find(([key]) => key.toLowerCase() === rootPath)?.[1];
+  if (!root) return {};
+  const stats = {};
+  const mapping = { ...CDRAGON_TO_DDRAGON_STAT_KEY, attackSpeedRatio: 'attackspeedratio' };
+  for (const [source, target] of Object.entries(mapping)) {
+    const hash = Object.keys(CDRAGON_STAT_HASH_TO_NAME).find(key => CDRAGON_STAT_HASH_TO_NAME[key] === source);
+    const rawValue = root[source + 'Modifiable'] ?? root[source] ?? root[hash];
+    const value = typeof rawValue === 'object' && rawValue !== null ? rawValue.baseValue : rawValue;
+    if (typeof value === 'number' && Number.isFinite(value)) stats[target] = value;
   }
-
-  const ddragonStats = {};
-  for (const [cdragonKey, ddragonKey] of Object.entries(CDRAGON_TO_DDRAGON_STAT_KEY)) {
-    const value = cdragonStats[cdragonKey];
-    
-    if (typeof value === "number" && Number.isFinite(value)) {
-      ddragonStats[ddragonKey] = value;
-    }
-    else {
-      ddragonStats[ddragonKey]=BUILDER.championData.stats[ddragonKey];
-    }
-  }
-  ddragonStats["critdamage"]=0;
-  return ddragonStats;
+  return stats;
 }
 
-//Get a given Champions data
 async function setChampion(name) {
-  const details = await window.ApiClient.fetchChampionDetails(BUILDER.version, name);
-  BUILDER.selectedChampion = name;
-  BUILDER.championData = details.data[name];
-  
-  const pathName = normalizeCdragonChampionPath(name);
-  const cdragonUrl = `https://raw.communitydragon.org/latest/game/data/characters/${pathName}/${pathName}.bin.json`;
-  const cdragonRaw = await fetch(cdragonUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-  
-  BUILDER.championData.stats =extractChampionStatsFromBinRoot(cdragonRaw, name, pathName);
-
-  BUILDER.cdragonAbilityData = await loadCdragonAbilityData(name, BUILDER.championData?.spells || [], cdragonRaw);
-  BUILDER.level = Number(document.getElementById("builderLevel").value) || 1;
-
-  const splashUrl = `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`;
-  const primaryRunePath = RUNE_DATA.paths[BUILDER.runeSelections.primaryPath]
-    || RUNE_DATA.paths[Object.keys(RUNE_DATA.paths)[0]]
-    || null;
-  document.body.style.setProperty("--builder-splash-url", splashUrl);
-  document.getElementById("runesCard").style.setProperty("--rune-splash-url", primaryRunePath?.splash || "none");
-  document.getElementById("championPickerBtn").innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.championData.image.full}" alt="${name}">`;
-  document.getElementById("championPickerBtn").setAttribute("aria-label", `Selected champion: ${name}`);
-
-  enforceAbilityRules();
-  renderAbilityCards();
-  renderStats();
+  const requestId = ++BUILDER.championRequestId;
+  setStatus(`Loading ${name}...`);
+  try {
+    const [details, raw] = await Promise.all([
+      window.ApiClient.fetchChampionDetails(BUILDER.version, name),
+      window.ApiClient.fetchCommunityDragonChampion(name).catch(() => null),
+    ]);
+    if (requestId !== BUILDER.championRequestId) return;
+    const champion = details.data?.[name];
+    if (!champion?.stats || !champion.spells) throw new Error('Champion data is incomplete');
+    const extraStats = extractChampionStatsFromBinRoot(raw, name, name.toLowerCase());
+    // Data Dragon supplies patch-consistent base stats and regeneration units.
+    const stats = { ...DEFAULT_CHAMPION_BASE_STATS, ...champion.stats };
+    if (extraStats.attackspeedratio > 0) stats.attackspeedratio = extraStats.attackspeedratio;
+    const abilityData = raw ? extractAbilityDataFromRoot(raw, name, normalizeCdragonChampionPath(name), champion.spells) : null;
+    BUILDER.selectedChampion = name;
+    BUILDER.championData = { ...champion, stats };
+    BUILDER.cdragonAbilityData = abilityData;
+    BUILDER.abilityRanks = { q: 0, w: 0, e: 0, r: 0 };
+    BUILDER.level = Number(document.getElementById('builderLevel').value) || 1;
+    document.body.style.setProperty('--builder-splash-url', `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`);
+    document.getElementById('championPickerBtn').innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${champion.image.full}" alt="${name}">`;
+    document.getElementById('championPickerBtn').setAttribute('aria-label', `Selected champion: ${name}`);
+    enforceAbilityRules();
+    renderAbilityCards();
+    renderStats();
+    setStatus(raw ? '' : 'Basic stats loaded. Advanced ability data is unavailable.');
+  } catch (error) {
+    if (requestId !== BUILDER.championRequestId) return;
+    console.warn('Champion selection failed', error);
+    setStatus(`Could not load ${name}. Select the champion again to retry.`, true);
+  }
 }
 
 function renderItemSlots() {
@@ -1086,7 +985,7 @@ function renderModalItemDetail(id) {
     FlatAbilityHasteMod: "Ability Haste",
     AbilityHaste: "Ability Haste",
   };
-  const pctStats = new Set(["PercentBaseHPRegenMod", "PercentBaseMPRegenMod", "PercentAttackSpeedMod", "PercentMovementSpeedMod", "PercentCritChanceMod", "PercentCritDamageMod"]);
+  const pctStats = new Set(["FlatCritChanceMod", "FlatCritDamageMod", "PercentBaseHPRegenMod", "PercentBaseMPRegenMod", "PercentAttackSpeedMod", "PercentMovementSpeedMod", "PercentCritChanceMod", "PercentCritDamageMod"]);
   const statBuckets = new Map();
   const aliasCanonical = {
     FlatAbilityHasteMod: "FlatHasteMod",
@@ -1127,7 +1026,8 @@ function renderModalItemDetail(id) {
 }
 
 function setSlotItem(itemId) {
-  if (BUILDER.activeSlot === null) return;
+  if (!Number.isInteger(BUILDER.activeSlot) || BUILDER.activeSlot < 0 || BUILDER.activeSlot >= 6) return;
+  if (itemId && !BUILDER.items[itemId]) return;
   BUILDER.itemSlots[BUILDER.activeSlot] = itemId;
   refreshSlotLabels();
   renderStats();
@@ -1145,7 +1045,7 @@ function enforceAbilityRules() {
 
 function parseByRank(valueBurn, rank) {
   if (!rank) return "-";
-  if (!valueBurn || valueBurn === "0") return "-";
+  if (valueBurn === undefined || valueBurn === null || valueBurn === "") return "-";
   const parts = String(valueBurn).split("/");
   return parts[Math.max(0, Math.min(parts.length - 1, rank - 1))] || parts[0] || "-";
 }
@@ -1220,7 +1120,7 @@ function extractPassiveDescriptionsFromHtml(descriptionHtml) {
 }
 
 function buildPassiveLedger(itemTotals, runeTotals) {
-  const selectedItems = BUILDER.itemSlots
+  const selectedItems = [...new Set(BUILDER.itemSlots)]
     .filter((id) => id && BUILDER.items[id])
     .map((id) => ({ id: String(id), item: BUILDER.items[id] }));
   const passiveEffects = [];
@@ -1243,7 +1143,7 @@ function buildPassiveLedger(itemTotals, runeTotals) {
     if (id === "3042" && BUILDER.championData) {
       const b = BUILDER.championData.stats;
       const L = BUILDER.level;
-      const totalMana = b.mp + b.mpperlevel * (L - 1) + itemTotals.mp + runeTotals.mp;
+      const totalMana = b.mp + b.mpperlevel * window.BuildStats.growthFactor(L) + itemTotals.mp + runeTotals.mp;
       const bonusAd = totalMana * 0.02;
       if (bonusAd > 0) {
         additiveMods.ad += bonusAd;
@@ -1254,7 +1154,7 @@ function buildPassiveLedger(itemTotals, runeTotals) {
     if (id === "3040" && BUILDER.championData) {
       const b = BUILDER.championData.stats;
       const L = BUILDER.level;
-      const baseMana = b.mp + b.mpperlevel * (L - 1);
+      const baseMana = b.mp + b.mpperlevel * window.BuildStats.growthFactor(L);
       const bonusMana = Math.max(0, itemTotals.mp + runeTotals.mp);
       const bonusAp = bonusMana * 0.02;
       if (bonusAp > 0) {
@@ -1297,21 +1197,21 @@ function computeDerivedBuildStats() {
   const passiveAd = ledger.statMods.ad;
   const passiveAp = ledger.statMods.ap;
 
-  const hp = (base.hp + base.hpperlevel * (L - 1) + item.hp + rune.hp);
-  const baseHp5 = base.hpregen + base.hpregenperlevel * (L - 1);
+  const hp = (base.hp + base.hpperlevel * window.BuildStats.growthFactor(L) + item.hp + rune.hp);
+  const baseHp5 = base.hpregen + base.hpregenperlevel * window.BuildStats.growthFactor(L);
   const hp5 = (baseHp5 * (1 + item.hp5PctBase / 100) + item.hp5 + rune.hp5);
-  const mp = (base.mp + base.mpperlevel * (L - 1) + item.mp + rune.mp);
-  const baseMp5 = base.mpregen + base.mpregenperlevel * (L - 1);
+  const mp = (base.mp + base.mpperlevel * window.BuildStats.growthFactor(L) + item.mp + rune.mp);
+  const baseMp5 = base.mpregen + base.mpregenperlevel * window.BuildStats.growthFactor(L);
   const mp5 = (baseMp5 * (1 + item.mp5PctBase / 100) + item.mp5 + rune.mp5);
-  const ad = (base.attackdamage + base.attackdamageperlevel * (L - 1) + item.ad + rune.ad + passiveAd);
+  const ad = (base.attackdamage + base.attackdamageperlevel * window.BuildStats.growthFactor(L) + item.ad + rune.ad + passiveAd);
   const ap = item.ap + rune.ap + passiveAp;
-  const armor = (base.armor + base.armorperlevel * (L - 1) + item.armor + rune.armor);
-  const mr = (base.spellblock + base.spellblockperlevel * (L - 1) + item.mr + rune.mr);
-  const asTotal = base.attackspeed * (1 + (base.attackspeedperlevel * (L - 1)) / 100) * (1 + (item.asPct + rune.asPct) / 100);
+  const armor = (base.armor + base.armorperlevel * window.BuildStats.growthFactor(L) + item.armor + rune.armor);
+  const mr = (base.spellblock + base.spellblockperlevel * window.BuildStats.growthFactor(L) + item.mr + rune.mr);
+  const asTotal = window.BuildStats.attackSpeed(base.attackspeed, base.attackspeedperlevel, base.attackspeedratio, L, item.asPct + rune.asPct);
   const abilityHaste = item.haste + rune.haste;
-  const critChance = (base.crit + base.critperlevel * (L - 1) + item.critChance + rune.critChance);
+  const critChance = Math.min(100, (base.crit + base.critperlevel * window.BuildStats.growthFactor(L)) * 100 + item.critChance + rune.critChance);
   const critDamage = (base.critdamage ? base.critdamage * 100 : 175) + item.critDamage + rune.critDamage;
-  const attackRange = (base.attackrange || 0) + item.attackRange + rune.attackRange;
+  const attackRange = (base.attackrange || 0) + item.attackRange + rune.attackRange + getChampionPassiveRangeBonus();
   const moveSpeed = (base.movespeed + item.msFlat + rune.msFlat) * (1 + (item.msPct + rune.msPct) / 100);
 
   return {
@@ -1374,39 +1274,12 @@ function getChampionPassiveRangeBonus() {
  * @returns {{autoAttackDamage:number,attackDps:number,attackRange:number,onHitRows:string[]}}
  */
 function computeAutoAttackProfile(computed) {
-  const item = computed.item;
-  const ap = computed.ap;
-  const baseOnHitRows = [];
-  let onHitDamage = 0;
-
-  BUILDER.itemSlots.forEach((id) => {
-    if (!id) return;
-    if (id === "3115") {
-      const v = 15 + 0.2 * ap;
-      onHitDamage += v;
-      baseOnHitRows.push(`Nashor's Tooth ${v.toFixed(1)}`);
-    }
-    if (id === "3091") {
-      const v = 45;
-      onHitDamage += v;
-      baseOnHitRows.push(`Wit's End ${v.toFixed(1)}`);
-    }
-    if (id === "3153") {
-      const v = 30;
-      onHitDamage += v;
-      baseOnHitRows.push(`Blade of the Ruined King ${v.toFixed(1)}+HP%`);
-    }
-    if (id === "3100") {
-      const v = 1.5 * computed.base.attackdamage;
-      onHitDamage += v;
-      baseOnHitRows.push(`Lich Bane ${v.toFixed(1)}`);
-    }
-  });
-
-  const autoAttackDamage = computed.ad + onHitDamage;
-  const attackDps = autoAttackDamage * computed.asTotal;
-  const attackRange = computed.attackRange + getChampionPassiveRangeBonus();
-  return { autoAttackDamage, attackDps, attackRange, onHitRows: baseOnHitRows };
+  return {
+    autoAttackDamage: computed.ad,
+    attackDps: computed.ad * computed.asTotal,
+    attackRange: computed.attackRange,
+    onHitRows: [],
+  };
 }
 
 function summarizePassiveNumericData(cdragonPassive) {
@@ -1464,17 +1337,17 @@ function getComputedChampionStatsForTooltips() {
   if (!computed) return null;
   const { base, item, rune, level: L, ad, ap, armor, mr, hp, mp } = computed;
 
-  const baseAd = base.attackdamage + base.attackdamageperlevel * (L - 1);
+  const baseAd = base.attackdamage + base.attackdamageperlevel * window.BuildStats.growthFactor(L);
   const totalAd = ad;
   const baseAp = 0;
   const totalAp = ap;
-  const baseArmor = base.armor + base.armorperlevel * (L - 1);
+  const baseArmor = base.armor + base.armorperlevel * window.BuildStats.growthFactor(L);
   const totalArmor = armor;
-  const baseMr = base.spellblock + base.spellblockperlevel * (L - 1);
+  const baseMr = base.spellblock + base.spellblockperlevel * window.BuildStats.growthFactor(L);
   const totalMr = mr;
-  const baseHp = base.hp + base.hpperlevel * (L - 1);
+  const baseHp = base.hp + base.hpperlevel * window.BuildStats.growthFactor(L);
   const totalHp = hp;
-  const baseMp = base.mp + base.mpperlevel * (L - 1);
+  const baseMp = base.mp + base.mpperlevel * window.BuildStats.growthFactor(L);
   const totalMp = mp;
 
   return {
@@ -1608,17 +1481,17 @@ function evaluateByCharLevelBreakpointsPart(part, levelRaw) {
   return value;
 }
 
-function getCalcStatSource(part, stats) {
-  const dataValueName = String(part?.mDataValue || "").toLowerCase();
-  if (dataValueName.includes("ap")) return { value: stats.ap, label: "AP" };
-  if (dataValueName.includes("bonusad")) return { value: stats.bonusAd, label: "bonus AD" };
-  if (dataValueName.includes("ad")) return { value: stats.totalAd, label: "AD" };
-  if (dataValueName.includes("health")) return { value: stats.hp, label: "HP" };
-
-  const statCode = Number(part?.mStat);
-  if (statCode === 2) return { value: stats.totalAd, label: "AD" };
-  if (statCode === 1 || statCode === 0 || Number.isNaN(statCode)) return { value: stats.ap, label: "AP" };
-  return { value: stats.ap, label: `Stat ${statCode}` };
+function getCalcStatSource(part, stats = {}) {
+  // Resolve only known stat IDs; unknown IDs must not silently scale from AP.
+  const code = Number(part?.mStat ?? 0);
+  const formula = Number(part?.mStatFormula ?? 2);
+  if (![0, 1, 2].includes(formula)) return { missing: true };
+  if (code === 0) return { value: formula === 0 ? 0 : stats.ap, label: 'AP' };
+  if (code === 2) {
+    const value = formula === 1 ? stats.bonusAd : formula === 0 ? stats.totalAd - stats.bonusAd : stats.totalAd;
+    return { value, label: formula === 1 ? 'bonus AD' : formula === 0 ? 'base AD' : 'AD' };
+  }
+  return { missing: true };
 }
 
 function formatAbilityStatLabel(label) {
@@ -1690,11 +1563,13 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
   }
   if (t === "StatByCoefficientCalculationPart") {
     const src = getCalcStatSource(part, stats);
+    if (src.missing || !Number.isFinite(src.value)) return makeMissingCalc(`${tracePath} has an unsupported stat source`);
     const coeff = Number(part?.mCoefficient || 0);
     return { value: src.value * coeff, text: `${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(src.label)}` };
   }
   if (t === "StatByNamedDataValueCalculationPart") {
     const src = getCalcStatSource(part, stats);
+    if (src.missing || !Number.isFinite(src.value)) return makeMissingCalc(`${tracePath} has an unsupported stat source`);
     const coeffData = getSpellDataValue(dataValues, part?.mDataValue, rank);
     const coeff = coeffData ? coeffData.current : null;
     if (coeff === null) return makeMissingCalc(`${tracePath} StatByNamedDataValue ${part?.mDataValue || "<empty>"} missing`);
@@ -1709,7 +1584,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     if (!hasNonEmptyCalculationReference(ref)) return makeMissingCalc(`${tracePath} has empty game calculation reference`);
     if (typeof ref === "object") {
       const evaluated = evaluateGameCalculation(ref, dataValues, rank, stats, calculationsMap, new Set(seen), `${tracePath}.inline`, displayAsPercent);
-      if (!evaluated) return makeMissingCalc(`${tracePath} inline game calculation unresolved`);
+      if (isMissingGameCalculation(evaluated)) return makeMissingCalc(`${tracePath} inline game calculation unresolved`);
       return { value: evaluated.total, text: formatCalculationTerms(evaluated.terms, evaluated.total) };
     }
     const key = String(ref || "");
@@ -1720,7 +1595,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
     const scopedSeen = new Set(seen);
     scopedSeen.add(key);
     const evaluated = evaluateGameCalculation(target, dataValues, rank, stats, calculationsMap, scopedSeen, `${tracePath}.ref(${key})`, displayAsPercent);
-    if (!evaluated) return makeMissingCalc(`${tracePath} referenced game calculation unresolved: ${key}`);
+    if (isMissingGameCalculation(evaluated)) return makeMissingCalc(`${tracePath} referenced game calculation unresolved: ${key}`);
     return { value: evaluated.total, text: formatCalculationTerms(evaluated.terms, evaluated.total) };
   };
 
@@ -1754,18 +1629,21 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
 
   if (/SumOfSubParts/i.test(t)) {
     const parts = evaluateChildren();
+    if (parts.some(p => p.missing)) return makeMissingCalc(`${tracePath} contains unresolved parts`);
     if (!parts.length) return makeMissingCalc(`${tracePath} had no resolvable parts`);
     return { value: parts.reduce((a, b) => a + b.value, 0), text: parts.map((p) => p.text).join(" + ") };
   }
 
   if (/ProductOfSubParts|Multiply|Multiplicative/i.test(t)) {
     const parts = evaluateChildren();
+    if (parts.some(p => p.missing)) return makeMissingCalc(`${tracePath} contains unresolved parts`);
     if (!parts.length) return makeMissingCalc(`${tracePath} had no resolvable parts`);
     return { value: parts.reduce((acc, row) => acc * row.value, 1), text: parts.map((p) => p.text).join(" × ") };
   }
 
   if (/Difference|Subtract/i.test(t)) {
     const parts = evaluateChildren();
+    if (parts.some(p => p.missing)) return makeMissingCalc(`${tracePath} contains unresolved parts`);
     if (!parts.length) return makeMissingCalc(`${tracePath} had no resolvable parts`);
     if (parts.length === 1) return parts[0];
     return { value: parts.slice(1).reduce((acc, row) => acc - row.value, parts[0].value), text: `${parts[0].text} - ${parts.slice(1).map((p) => p.text).join(" - ")}` };
@@ -1773,6 +1651,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
 
   if (/Ratio|Divide/i.test(t)) {
     const parts = evaluateChildren();
+    if (parts.some(p => p.missing)) return makeMissingCalc(`${tracePath} contains unresolved parts`);
     if (parts.length < 2) return makeMissingCalc(`${tracePath} ${t} requires 2 parts`);
     if (parts[1].value === 0) return makeMissingCalc(`${tracePath} ${t} divider is zero`);
     return { value: parts[0].value / parts[1].value, text: `${parts[0].text} / ${parts[1].text}` };
@@ -1780,6 +1659,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
 
   if (/Clamp|Min|Max/i.test(t)) {
     const parts = evaluateChildren();
+    if (parts.some(p => p.missing)) return makeMissingCalc(`${tracePath} contains unresolved parts`);
     if (!parts.length) return makeMissingCalc(`${tracePath} had no resolvable parts`);
     const head = parts[0].value;
     const floor = Number(part?.mFloor ?? part?.mMinimum ?? Number.NEGATIVE_INFINITY);
@@ -1790,6 +1670,7 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
 
   if (typeof part?.mCoefficient === "number" || part?.mDataValue || typeof part?.mStat !== "undefined") {
     const src = getCalcStatSource(part, stats);
+    if (src.missing || !Number.isFinite(src.value)) return makeMissingCalc(`${tracePath} has an unsupported stat source`);
     const coeffData = part?.mDataValue ? getSpellDataValue(dataValues, part?.mDataValue, rank) : null;
     const coeffRaw = coeffData ? coeffData.current : Number(part?.mCoefficient || 0);
     if (coeffRaw !== 0) {
@@ -1810,11 +1691,12 @@ function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap 
 }
 
 function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, calculationsMap = null, seen = new Set()) {
-  if (!calc || !result) return result;
+  if (!calc || !result || isMissingGameCalculation(result)) return result;
 
   const multiplier = hasNonEmptyCalculationReference(calc?.mMultiplier)
     ? evaluateCalculationPart(calc.mMultiplier, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent)
     : null;
+  if (multiplier?.missing) return makeMissingGameCalculation("Invalid multiplier", !!result.displayAsPercent);
   if (multiplier && !multiplier.missing) {
     const multiplied = result.total * multiplier.value;
     result = {
@@ -1827,6 +1709,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
   const addend = hasNonEmptyCalculationReference(calc?.mAddend)
     ? evaluateCalculationPart(calc.mAddend, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent)
     : null;
+  if (addend?.missing) return makeMissingGameCalculation("Invalid addend", !!result.displayAsPercent);
   if (addend && !addend.missing) {
     const added = result.total + addend.value;
     result = {
@@ -1839,6 +1722,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
   const subtrahend = hasNonEmptyCalculationReference(calc?.mSubtrahend)
     ? evaluateCalculationPart(calc.mSubtrahend, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent)
     : null;
+  if (subtrahend?.missing) return makeMissingGameCalculation("Invalid subtrahend", !!result.displayAsPercent);
   if (subtrahend && !subtrahend.missing) {
     const subtracted = result.total - subtrahend.value;
     result = {
@@ -1851,6 +1735,7 @@ function applyGameCalculationModifiers(calc, result, dataValues, rank, stats, ca
   const divider = hasNonEmptyCalculationReference(calc?.mDivider)
     ? evaluateCalculationPart(calc.mDivider, dataValues, rank, stats, calculationsMap, seen, "part", !!result.displayAsPercent)
     : null;
+  if (divider?.missing || (divider && divider.value === 0)) return makeMissingGameCalculation("Invalid divider", !!result.displayAsPercent);
   if (divider && !divider.missing && divider.value !== 0) {
     const divided = result.total / divider.value;
     result = {
@@ -1877,7 +1762,7 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
     if (seen.has(key)) return makeMissingGameCalculation(`${tracePath} circular reference ${key}`, resolvedDisplayAsPercent);
     seen.add(key);
     const base = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, seen, `${tracePath}.modified(${key})`, resolvedDisplayAsPercent);
-    if (!base) return null;
+    if (isMissingGameCalculation(base)) return base;
     return applyGameCalculationModifiers(
       calc,
       {
@@ -1894,26 +1779,7 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
   }
 
   if (/Conditional/i.test(ctype)) {
-    const conditionalParts = [
-      calc.mConditionalGameCalculation,
-      calc.mGameCalculation,
-      calc.mDefaultGameCalculation,
-      calc.mFallbackGameCalculation,
-    ];
-    for (const candidate of conditionalParts) {
-      if (!hasNonEmptyCalculationReference(candidate)) continue;
-      if (typeof candidate === "object") {
-        const evaluated = evaluateGameCalculation(candidate, dataValues, rank, stats, calculationsMap, new Set(seen), `${tracePath}.conditional`, resolvedDisplayAsPercent);
-        if (!isMissingGameCalculation(evaluated)) return evaluated;
-        continue;
-      }
-      const key = String(candidate || "");
-      if (!calculationsMap || !key || seen.has(key) || !calculationsMap[key]) continue;
-      const scopedSeen = new Set(seen);
-      scopedSeen.add(key);
-      const evaluated = evaluateGameCalculation(calculationsMap[key], dataValues, rank, stats, calculationsMap, scopedSeen, `${tracePath}.conditional(${key})`, resolvedDisplayAsPercent);
-      if (!isMissingGameCalculation(evaluated)) return evaluated;
-    }
+    return makeMissingGameCalculation('Conditional calculation requires game state', resolvedDisplayAsPercent);
   }
 
   const formulaParts = Array.isArray(calc.mFormulaParts)
@@ -1925,6 +1791,7 @@ function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap 
   const parts = formulaParts
     .map((part, index) => evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap, seen, `${tracePath}.part${index}`, resolvedDisplayAsPercent))
     .filter(Boolean);
+  if (parts.some(part => part.missing)) return makeMissingGameCalculation(`${tracePath} contains unresolved parts`, resolvedDisplayAsPercent);
   if (!parts.length) return makeMissingGameCalculation(`${tracePath} had no resolvable parts`, resolvedDisplayAsPercent);
 
   return applyGameCalculationModifiers(
@@ -2225,46 +2092,6 @@ function getSpellTokenValueAtRank(spell, baseToken, safeRank) {
   return "-";
 }
 
-function computeAbilityDpsDisplay(spell, rank, spellKey, cooldownReductionPct) {
-  const safeRank = Number(rank) || 0;
-  if (safeRank <= 0) return "-";
-
-  const cdBase = Number(parseByRank(spell.cooldownBurn, safeRank));
-  if (!Number.isFinite(cdBase) || cdBase <= 0) return "N/A";
-  const cooldown = cdBase * (1 - cooldownReductionPct);
-  if (!Number.isFinite(cooldown) || cooldown <= 0) return "N/A";
-
-  const detail = buildDetailedAbilityText(spell, safeRank, spellKey);
-  const detailLower = String(detail || "").toLowerCase();
-  if (/(on-?hit|basic attacks?|next [0-9]+ attacks?|for the next|while active)/i.test(detailLower)) return "N/A";
-
-  const wrapper = document.createElement("div");
-  wrapper.innerHTML = detail || "";
-  const damageNodes = wrapper.querySelectorAll(".ability-damage-physical, .ability-damage-magic, .ability-damage-true");
-
-  let totalDamage = 0;
-  damageNodes.forEach((node) => {
-    const sentence = String(node.parentElement?.textContent || node.textContent || "").toLowerCase();
-    if (/(secondary target|secondary targets|sweet ?spot|outer edge|inner area|center area|bonus against minions)/i.test(sentence)) return;
-    const nums = String(node.textContent || "").match(/-?\d+(?:\.\d+)?/g) || [];
-    if (!nums.length) return;
-    const first = Number(nums[0]);
-    if (!Number.isFinite(first) || first <= 0) return;
-    totalDamage += first;
-  });
-
-  if (!(totalDamage > 0)) return "N/A";
-  const dps = totalDamage / cooldown;
-  let label = `${dps.toFixed(1)} (${totalDamage.toFixed(1)} / ${cooldown.toFixed(2)})`;
-
-  const ammoRecharge = Number(getSpellTokenValueAtRank(spell, "ammorechargetime", safeRank));
-  if (Number.isFinite(ammoRecharge) && ammoRecharge > 0) {
-    const trueDps = totalDamage / ammoRecharge;
-    label += ` {${trueDps.toFixed(1)}}`;
-  }
-
-  return label;
-}
 function buildDetailedAbilityText(spell, rank, spellKey) {
   const raw = spell.tooltip || spell.description || "";
   const rawRank = Number(rank) || 0;
@@ -2332,7 +2159,7 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
   const replaced = raw.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (full, tokenRaw) => {
     const resolved = resolveAbilityToken(tokenRaw, ctx);
     if (resolved) return resolved.html;
-    return `<span class="ability-detail-missing">[token-missing: ${String(tokenRaw || "").trim()}]</span>`;
+    return `<span class="ability-detail-missing">[value unavailable]</span>`;
   });
 
   return replaced
@@ -2365,9 +2192,9 @@ function renderAbilityCards() {
   const passiveText = buildDetailedPassiveText();
   const passive = `<div class="ability-card ability-passive-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p class="ability-detail-text">${passiveText}</p></div>`;
   const attackCard = `<div class="ability-card ability-attack-card"><div class="ability-head"><strong>Attack</strong></div>
-  <div><strong>Auto-Attack Damage:</strong> ${attack ? `${attack.autoAttackDamage.toFixed(1)} (${computed.ad.toFixed(1)}${attack.onHitRows.map((r) => ` + ${r}`).join("") || ""})` : "-"}</div>
-  <div><strong>Attack DPS:</strong> ${attack ? `${attack.attackDps.toFixed(1)} (${attack.autoAttackDamage.toFixed(1)} × ${computed.asTotal.toFixed(3)})` : "-"}</div>
-  <div><strong>Attack Range:</strong> ${attack ? attack.attackRange.toFixed(1) : "-"}</div></div>`;
+  <div><strong>Basic Attack Damage:</strong> ${attack ? `${attack.autoAttackDamage.toFixed(1)} (${computed.ad.toFixed(1)}${attack.onHitRows.map((r) => ` + ${r}`).join("") || ""})` : "-"}</div>
+  <div><strong>Basic Attack DPS:</strong> ${attack ? `${attack.attackDps.toFixed(1)} (${attack.autoAttackDamage.toFixed(1)} × ${computed.asTotal.toFixed(3)})` : "-"}</div>
+  <div><strong>Attack Range:</strong> ${attack ? attack.attackRange.toFixed(1) : "-"}</div><small>Before mitigation; excludes critical strikes, item procs, and champion attack modifiers.</small></div>`;
   const abilityHaste = getItemStats().haste + getRuneStats().haste;
   const cooldownReductionPct = abilityHaste > 0 ? (abilityHaste / (abilityHaste + 100)) : 0;
 
@@ -2384,7 +2211,7 @@ function renderAbilityCards() {
     const cost = parseByRank(spell.costBurn, rank);
     const range = parseByRank(spell.rangeBurn, rank);
     const detail = buildDetailedAbilityText(spell, rank, key);
-    return `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div><div><strong>DPS:</strong> ${computeAbilityDpsDisplay(spell, rank, key, cooldownReductionPct)}</div></div>`;
+    return `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p><div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div><div><strong>DPS:</strong> Not modeled</div></div>`;
   }).join("");
 
   root.innerHTML = passive + attackCard + spells;
@@ -2528,31 +2355,31 @@ function renderStats() {
 
 
   const rows = [
-    { name: "HP", icon: "❤️", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${L - 1} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
-    { name: "MP", icon: "🔷", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${L - 1} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
-    { name: "HP/5", icon: "💚", value: hp5, eq: `(${base.hpregen.toFixed(1)} + ${base.hpregenperlevel.toFixed(2)}*${L - 1}) * (1 + ${item.hp5PctBase.toFixed(1)}%) + ${item.hp5.toFixed(1)} + ${rune.hp5.toFixed(1)}` },
-    { name: "MP/5", icon: "💙", value: mp5, eq: `(${base.mpregen.toFixed(1)} + ${base.mpregenperlevel.toFixed(2)}*${L - 1}) * (1 + ${item.mp5PctBase.toFixed(1)}%) + ${item.mp5.toFixed(1)} + ${rune.mp5.toFixed(1)}` },
-    { name: "AD", icon: "🗡️", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${L - 1} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)} + passive(${passiveLedger.statMods.ad.toFixed(1)})` },
+    { name: "HP", icon: "❤️", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
+    { name: "MP", icon: "🔷", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
+    { name: "HP/5", icon: "💚", value: hp5, eq: `(${base.hpregen.toFixed(1)} + ${base.hpregenperlevel.toFixed(2)}*${window.BuildStats.growthFactor(L).toFixed(3)}) * (1 + ${item.hp5PctBase.toFixed(1)}%) + ${item.hp5.toFixed(1)} + ${rune.hp5.toFixed(1)}` },
+    { name: "MP/5", icon: "💙", value: mp5, eq: `(${base.mpregen.toFixed(1)} + ${base.mpregenperlevel.toFixed(2)}*${window.BuildStats.growthFactor(L).toFixed(3)}) * (1 + ${item.mp5PctBase.toFixed(1)}%) + ${item.mp5.toFixed(1)} + ${rune.mp5.toFixed(1)}` },
+    { name: "AD", icon: "🗡️", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)} + passive(${passiveLedger.statMods.ad.toFixed(1)})` },
     { name: "AP", icon: "✨", value: ap, eq: `0 + ${item.ap.toFixed(1)} + ${rune.ap.toFixed(1)} + passive(${passiveLedger.statMods.ap.toFixed(1)})` },
-    { name: "Range", icon: "🏹", value: attackRange, eq: `${(base.attackrange || 0).toFixed(1)} + ${item.attackRange.toFixed(1)} + ${rune.attackRange.toFixed(1)}` },
+    { name: "Range", icon: "🏹", value: attackRange, eq: `${(base.attackrange || 0).toFixed(1)} + ${item.attackRange.toFixed(1)} + ${rune.attackRange.toFixed(1)} + passive(${getChampionPassiveRangeBonus().toFixed(1)})` },
     { name: "AH", icon: "⏱️", value: abilityHaste, eq: `0 + ${item.haste.toFixed(1)} + ${rune.haste.toFixed(1)}` },
-    { name: "Arm", icon: "🛡️", value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${L - 1} + ${item.armor.toFixed(1)} + ${rune.armor.toFixed(1)}` },
-    { name: "MR", icon: "🔮", value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${L - 1} + ${item.mr.toFixed(1)} + ${rune.mr.toFixed(1)}` },
-    { name: "AS", icon: "⚡", value: asTotal, eq: `${base.attackspeed.toFixed(3)} * level mult * (1 + ${(item.asPct + rune.asPct).toFixed(1)}%)` },
+    { name: "Arm", icon: "🛡️", value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.armor.toFixed(1)} + ${rune.armor.toFixed(1)}` },
+    { name: "MR", icon: "🔮", value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.mr.toFixed(1)} + ${rune.mr.toFixed(1)}` },
+    { name: "AS", icon: "⚡", value: asTotal, eq: `${base.attackspeed.toFixed(3)} + ${(base.attackspeedratio || base.attackspeed).toFixed(3)} * (growth ${window.BuildStats.growthFactor(L).toFixed(3)} * ${base.attackspeedperlevel}% + ${(item.asPct + rune.asPct).toFixed(1)}%)` },
     { name: "MS", icon: "👟", value: moveSpeed, eq: `(${base.movespeed.toFixed(1)} + ${item.msFlat.toFixed(1)} + ${rune.msFlat.toFixed(1)}) * (1 + ${(item.msPct + rune.msPct).toFixed(1)}%)` },
-    { name: "Crit %", icon: "🎯", value: critChance, eq: `${base.crit.toFixed(1)} + ${base.critperlevel.toFixed(1)}*${L - 1} + ${item.critChance.toFixed(1)} + ${rune.critChance.toFixed(1)}` },
+    { name: "Crit %", icon: "🎯", value: critChance, eq: `${base.crit.toFixed(1)} + ${base.critperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.critChance.toFixed(1)} + ${rune.critChance.toFixed(1)}` },
     { name: "Crit Dmg", icon: "💥", value: critDamage, eq: `${(base.critdamage ? base.critdamage * 100 : 175).toFixed(1)} + ${item.critDamage.toFixed(1)} + ${rune.critDamage.toFixed(1)}` },
     { name: "ARPen", icon: "🪓", value: 0, eq: `${item.arPenFlat.toFixed(1)} / ${item.arPenPct.toFixed(1)}%` },
     { name: "MRPen", icon: "🔹", value: 0, eq: `${item.mrPenFlat.toFixed(1)} / ${item.mrPenPct.toFixed(1)}%` },
     { name: "Lifesteal", icon: "🩸", value: 0, eq: `${item.physicalVamp.toFixed(1)}% / ${item.omniVamp.toFixed(1)}%` },
-    { name: "Tenacity", icon: "🦶", value: 0, eq: `${item.tenacity.toFixed(1)}%` },
+    { name: "Tenacity", icon: "🦶", value: 0, eq: `${(100 * (1 - (1 - item.tenacity / 100) * (1 - rune.tenacity / 100))).toFixed(1)}%` },
   ];
 
   const tableHtml = renderPairedRows(rows.map((row) => {
     if (row.name === "ARPen") return { ...row, displayValue: `${item.arPenFlat.toFixed(1)}/${item.arPenPct.toFixed(1)}%` };
     if (row.name === "MRPen") return { ...row, displayValue: `${item.mrPenFlat.toFixed(1)}/${item.mrPenPct.toFixed(1)}%` };
     if (row.name === "Lifesteal") return { ...row, displayValue: `${item.physicalVamp.toFixed(1)}%/${item.omniVamp.toFixed(1)}%` };
-    if (row.name === "Tenacity") return { ...row, displayValue: `${item.tenacity.toFixed(1)}%` };
+    if (row.name === "Tenacity") return { ...row, displayValue: `${(100 * (1 - (1 - item.tenacity / 100) * (1 - rune.tenacity / 100))).toFixed(1)}%` };
     return {
       ...row,
       displayValue: row.value.toFixed(row.name === "AS" ? 3 : 1),
@@ -2583,27 +2410,10 @@ function renderRunePanel() {
   }
   document.getElementById("runesCard").style.setProperty("--rune-splash-url", primaryPath.splash || "none");
 
-  const renderSlot = (id, label, target) => {
-    const rune = getRuneMeta(id);
-    return `<div class="rune-slot-row"><button class="rune-slot-btn" data-rune-target="${target}">${runeImgTag(rune)}</button><div class="rune-slot-label"><span class='rune-slot-kicker'>${label}</span><strong>${rune.name}</strong></div></div>`;
-  };
   const renderShardIcon = (slotIndex) => {
     const rune = getRuneMeta(BUILDER.runeSelections.shards[slotIndex]);
     return `<button class="rune-grid-btn rune-shard-icon-btn is-active" data-rune-target="shard_${slotIndex}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc || rune.name}`)}" aria-label="${rune.name}" type="button">${runeImgTag(rune)}</button>`;
   };
-  const renderSecondaryGrid = () => {
-    const rows = getSecondaryRows(BUILDER.runeSelections.secondaryPath);
-    const selected = new Set(BUILDER.runeSelections.secondary);
-    return rows
-      .flat()
-      .map((runeId) => {
-        const rune = getRuneMeta(runeId);
-        const isSelected = selected.has(runeId);
-        return `<button class="rune-secondary-cell ${isSelected ? "is-selected" : ""}" data-secondary-rune-id="${runeId}" type="button">${runeImgTag(rune)}<span class="rune-secondary-hover-desc">${rune.desc || rune.name}</span></button>`;
-      })
-      .join("");
-  };
-
   const escapeAttr = (value) => String(value || "")
     .replace(/&/g, "&amp;")
     .replace(/"/g, "&quot;")
@@ -2779,6 +2589,8 @@ function closeRuneModal() {
 }
 
 function selectRuneOption(id) {
+  if (!BUILDER.runeModalTarget) return;
+  if (!getRuneOptions(BUILDER.runeModalTarget).some(option => option.id === id && !option.disabled)) return;
   const [group, index] = BUILDER.runeModalTarget.split("_");
   if (group === "primary") BUILDER.runeSelections.primary[Number(index)] = id;
   if (group === "secondary") {
