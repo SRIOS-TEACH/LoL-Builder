@@ -11,12 +11,13 @@
  * 2) The champion dropdown is rendered and wired to change events.
  * 3) `renderChampion` fetches full champion details and paints the UI.
  */
-const CHAMP_STATE = { version: "", champions: {}, selected: "" };
+const CHAMP_STATE = { version: "", champions: {}, selected: "", requestId: 0 };
 
 /**
  * Bootstraps the Champion Lookup page by loading versions/champions and wiring UI events.
  */
 async function initChampionLookup() {
+  try {
   CHAMP_STATE.version = await window.ApiClient.fetchLatestVersion();
   const championJson = await window.ApiClient.fetchChampionIndex(CHAMP_STATE.version);
   CHAMP_STATE.champions = championJson.data;
@@ -24,11 +25,15 @@ async function initChampionLookup() {
   const select = document.getElementById("champSelect");
   select.innerHTML = Object.keys(CHAMP_STATE.champions)
     .sort((a, b) => a.localeCompare(b))
-    .map((name) => `<option value="${name}">${name}</option>`)
+    .map((name) => `<option value="${name}">${CHAMP_STATE.champions[name].name}</option>`)
     .join("");
 
   select.addEventListener("change", () => renderChampion(select.value));
-  renderChampion(Object.keys(CHAMP_STATE.champions).sort((a, b) => a.localeCompare(b))[0]);
+  await renderChampion(select.value);
+  } catch (error) {
+    document.getElementById("champName").textContent = "Could not load champions. Check your connection and refresh to retry.";
+    console.warn('Champion lookup failed', error);
+  }
 }
 
 /**
@@ -36,8 +41,11 @@ async function initChampionLookup() {
  * @param {string} name Data Dragon champion key (e.g. "Ahri").
  */
 async function renderChampion(name) {
+  const requestId = ++CHAMP_STATE.requestId;
+  try {
   CHAMP_STATE.selected = name;
   const details = await window.ApiClient.fetchChampionDetails(CHAMP_STATE.version, name);
+  if (requestId !== CHAMP_STATE.requestId) return;
   const champ = details.data[name];
 
   document.getElementById("champSelect").value = name;
@@ -61,6 +69,13 @@ async function renderChampion(name) {
     .join("");
 
   document.getElementById("abilities").innerHTML = passiveCard + spellCards;
+  } catch (error) {
+    if (requestId !== CHAMP_STATE.requestId) return;
+    document.getElementById("champName").textContent = `Could not load ${name}. Choose a champion to retry.`;
+    document.getElementById("champLore").textContent = '';
+    document.getElementById("abilities").textContent = '';
+    console.warn('Champion details failed', error);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", initChampionLookup);

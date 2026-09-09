@@ -1,0 +1,9 @@
+{
+  "name": "lol-builder",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/regression.test.cjs",
+    "test:browser": "node tests/browser.cjs"
+  },
+  "engines": {"node": ">=20"}
+}

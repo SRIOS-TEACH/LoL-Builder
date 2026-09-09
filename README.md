@@ -25,33 +25,11 @@ Open pages directly:
 - `http://127.0.0.1:8000/Builder.html`
 
 
-### Unresolved ability-token triage report
-Generate a table of tooltip tokens that did not resolve cleanly against associated CDragon spell payloads:
+### Tests and current limits
 
-```bash
-node scripts/unresolved-ability-tokens.mjs
-```
+Run `npm test` with Node 20+ for dependency-free regression tests. See [Testing](docs/TESTING.md) for the browser suite and fixture downloads.
 
-Optional filters:
-
-```bash
-node scripts/unresolved-ability-tokens.mjs --champions Aatrox,Akali,Akshan --limit 200
-```
-
-Outputs:
-- `artifacts/unresolved-tokens/unresolved-tokens.json`
-- `artifacts/unresolved-tokens/unresolved-tokens.md`
-
-The markdown report includes: unresolved token, reason, selected CDragon record, local key matches, and global association hints from other spell records in the same champion payload.
-
-### Quick sanity checks
-Before committing JavaScript changes, you can run fast syntax checks from the repository root:
-
-```bash
-node --check JS/champLookup.js
-node --check JS/itemLookup.js
-node --check JS/builder.js
-```
+Read the [reliability audit](docs/AUDIT.md) for fixed defects, test coverage and the remaining accuracy work. This is a stat sandbox, not a complete combat simulator. Advanced data is optional, unsupported formulas stay unavailable, and champion-specific rules are not fully modeled.
 
 ---
 
@@ -67,9 +45,11 @@ node --check JS/builder.js
 ### JavaScript
 - `JS/shared/apiClient.js` — shared Data Dragon / Community Dragon fetch helpers.
 - `JS/shared/itemPolicy.js` — shared item eligibility and map-priority dedupe helpers.
+- `JS/shared/itemData.js` — shared optional item calculations and tooltip formatting.
+- `JS/shared/buildStats.js` — pure stat growth, attack-speed and item stat-block parsing.
 - `JS/shared/abilityRules.js` — shared ability rank constraints and normalization helpers.
 - `JS/champLookup.js` — loads champion data from Data Dragon and renders splash/lore/abilities.
-- `JS/itemLookup.js` — loads Data Dragon item list + CommunityDragon calculation payloads, applies filters, dedupes items, and renders readable formula details.
+- `JS/itemLookup.js` — controls item search, filters and selection, using shared data/formatting helpers.
 - `JS/builder.js` — champion/item/level setup logic, item modal UX, ability rank validation, and stat rendering.
 
 ### Additional docs
