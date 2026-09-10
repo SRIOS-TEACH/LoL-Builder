@@ -873,9 +873,12 @@ async function setChampion(name) {
   const requestId = ++BUILDER.championRequestId;
   setStatus(`Loading ${name}...`);
   try {
-    const [details, raw] = await Promise.all([
+    const [details, raw, strings] = await Promise.all([
       window.ApiClient.fetchChampionDetails(BUILDER.version, name),
       window.ApiClient.fetchCommunityDragonChampion(name).catch(() => null),
+      ['Akshan','Gangplank','Aphelios'].includes(name)
+        ? window.ApiClient.fetchJson('https://raw.communitydragon.org/latest/game/en_us/data/menu/en_us/lol.stringtable.json').catch(()=>null)
+        : null,
     ]);
     if (requestId !== BUILDER.championRequestId) return;
     const champion = details.data?.[name];
@@ -889,6 +892,7 @@ async function setChampion(name) {
     BUILDER.championData = { ...champion, stats };
     BUILDER.cdragonAbilityData = abilityData;
     BUILDER.cdragonRaw = raw;
+    BUILDER.strings = strings?.entries || {};
     BUILDER.combatValues = {};
     BUILDER.abilityRanks = { q: 0, w: 0, e: 0, r: 0 };
     BUILDER.level = Number(document.getElementById('builderLevel').value) || 1;
@@ -1201,7 +1205,7 @@ function buildPassiveLedger(itemTotals, runeTotals) {
     passiveEffects.push({ source: "Item", owner: "Rabadon's Deathcap", label: "Magical Opus", impact: `+${apAmp.toFixed(1)} AP (multipliers applied last)` });
   }
 
-  return { passiveEffects, statMods };
+  return { passiveEffects, statMods, apMultiplier };
 }
 
 function computeDerivedBuildStats() {
@@ -1232,7 +1236,7 @@ function computeDerivedBuildStats() {
   const attackRange = (base.attackrange || 0) + item.attackRange + rune.attackRange + getChampionPassiveRangeBonus();
   const moveSpeed = (base.movespeed + item.msFlat + rune.msFlat) * (1 + (item.msPct + rune.msPct) / 100);
 
-  return {
+  const computed = {
     base,
     item,
     rune,
@@ -1253,6 +1257,12 @@ function computeDerivedBuildStats() {
     moveSpeed,
     passiveLedger: ledger,
   };
+  const applied = window.ChampionEffects.model(BUILDER).apply(computed);
+  // Deathcap also amplifies AP gained from champion stacks.
+  if (['Veigar','Thresh'].includes(BUILDER.selectedChampion))applied.ap += (applied.ap - computed.ap) * (ledger.apMultiplier - 1);
+  if(applied.championBonuses.ap)applied.championBonuses.ap=applied.ap-computed.ap;
+  for(const [stat,value] of Object.entries(applied.championBonuses))if(value)ledger.passiveEffects.push({source:"Champion",owner:BUILDER.selectedChampion,label:"Ability / stack bonus",impact:`${value>=0?"+":""}${value.toFixed(2)} ${stat}`});
+  return applied;
 }
 
 function renderPassivePanel(passiveLedger) {
@@ -1372,13 +1382,13 @@ function getComputedChampionStatsForTooltips() {
     ap: totalAp, baseAp: 0,
     healShieldPower: BUILDER.itemSlots.filter(Boolean).reduce((sum,id)=>sum+(window.ItemLookupShared.getState().cdragonById[id]?.mPercentHealingAmountMod||0),0),
     attackSpeed: computed.asTotal,
-    bonusAttackSpeed: (base.attackspeedperlevel * window.BuildStats.growthFactor(L) + item.asPct + rune.asPct) / 100,
+    bonusAttackSpeed: (base.attackspeedperlevel * window.BuildStats.growthFactor(L) + item.asPct + rune.asPct) / 100 + (computed.bonusAttackSpeedFromChampion || 0),
     moveSpeed: computed.moveSpeed, baseMoveSpeed: base.movespeed,
     critChance: computed.critChance / 100, bonusCritChance: (item.critChance + rune.critChance) / 100,
     critDamage: computed.critDamage / 100, bonusCritDamage: (item.critDamage + rune.critDamage) / 100,
     haste: computed.abilityHaste,
     cooldownReduction: computed.abilityHaste / (100 + computed.abilityHaste),
-    lifeSteal: item.physicalVamp / 100, physicalVamp: item.physicalVamp / 100, omniVamp: item.omniVamp / 100,
+    lifeSteal: (item.physicalVamp + (computed.championLifeSteal||0)) / 100, physicalVamp: (item.physicalVamp + (computed.championLifeSteal||0)) / 100, omniVamp: item.omniVamp / 100,
     magicPenFlat: item.mrPenFlat, lethality: item.arPenFlat, tenacity: item.tenacity / 100,
     attackRange: computed.attackRange, baseAttackRange: base.attackrange,
     bonusAttackRange: computed.attackRange - base.attackrange,
@@ -1486,7 +1496,8 @@ function baseCalculationContext(stats, dataValues = [], rank = 1, calculations =
 }
 
 function calculationContext(...args) {
-  const state=Object.fromEntries(Object.entries(BUILDER.combatValues).filter(([key])=>!key.startsWith('target:')&&(!key.startsWith('self:')||key==='self:healthPercent:0')));
+  const defaults=Object.fromEntries(window.ChampionEffects.model(BUILDER).fields.filter(f=>f.defaultValue!==undefined).map(f=>[f.key,f.defaultValue]));
+  const state=Object.fromEntries(Object.entries({...defaults,...BUILDER.combatValues}).filter(([key])=>!key.startsWith('target:')&&(!key.startsWith('self:')||key==='self:healthPercent:0')));
   return window.CombatInputs.apply(baseCalculationContext(...args),state);
 }
 
@@ -1523,7 +1534,8 @@ function combatSources() {
 function renderCombatInputs() {
   document.getElementById('combatInputs')?.replaceChildren();
   const sources=combatSources(),base=baseCalculationContext(getComputedChampionStatsForTooltips());
-  const all=window.CombatInputs.descriptors(sources,base);
+  const extra=window.ChampionEffects.model(BUILDER).fields;
+  const all=window.CombatInputs.descriptors(sources,base).filter(f=>!extra.some(e=>e.key===f.key)).concat(extra);
   const usage=new Map();
   for(const source of sources){
     for(const field of window.CombatInputs.descriptors([source],base)){
@@ -1531,6 +1543,7 @@ function renderCombatInputs() {
     }
   }
   const fieldOwner=field=>{
+    if(field.slot)return field.slot;
     const slots=[...usage.get(field.key)||[]];
     if(slots.includes('p'))return 'p';
     if(field.kind==='buff'){
@@ -1542,7 +1555,7 @@ function renderCombatInputs() {
   for(const slot of ['p','q','w','e','r']){
     const fields=all.filter(field=>fieldOwner(field)===slot).map(field=>{
       const slots=[...usage.get(field.key)||[]];
-      if(field.kind==='buff' && fieldOwner(field)==='p'){
+      if(!field.slot && field.kind==='buff' && fieldOwner(field)==='p'){
         const passive=BUILDER.championData?.passive?.name||'Passive';
         const sharedCounters=all.filter(f=>f.kind==='buff'&&fieldOwner(f)==='p');
         return {...field,label:sharedCounters.length===1?`${passive} stacks`:`${passive} — ${field.label}`};
@@ -1779,6 +1792,10 @@ function resolveAbilityToken(tokenRaw, ctx) {
     return resolveWithMath(candidateToken, localCtx, fallbackCtx);
   };
 
+  if ((/^f\d+$/.test(baseToken)||['bonusarmor','bonusmr','resistsfortooltip','bonusattackrange'].includes(baseToken)) && ctx.stats) {
+    const value=window.ChampionEffects.model(BUILDER).token(ctx.spell.id,baseToken,ctx.stats,computeDerivedBuildStats());
+    if(Number.isFinite(value))return {html:`<span class="ability-detail-number">${formatAbilityNumber(value)}</span>`,numeric:value};
+  }
   const direct = resolveToken(baseToken, simpleCtx, simpleCtx);
   if (direct) return direct;
 
@@ -1816,8 +1833,21 @@ function getSpellTokenValueAtRank(spell, baseToken, safeRank) {
   return "-";
 }
 
+function expandAbilityLocalization(text) {
+  // This Builder selects Summoner's Rift items; game-mode variant 1 is the standard ruleset.
+  let result=String(text).replace(/\{\{\s*(Spell_\w+_Tooltip_)\{\{\s*gamemodeinteger\s*\}\}\s*\}\}/gi,(_,prefix)=>`{{ ${prefix}1 }}`);
+  // Show every weapon outcome rather than silently assume Aphelios's main hand.
+  result=result.replace(/\{\{\s*Spell_ApheliosR_WeaponMod_\{\{\s*f1\s*\}\}\s*\}\}/gi,
+    ()=>[1,2,3,4,5].map(i=>`{{ Spell_ApheliosR_WeaponMod_${i} }}`).join(''));
+  for(let depth=0;depth<8;depth++){
+    const expanded=result.replace(/\{\{\s*([^{}]+?)\s*\}\}/g,(full,key)=>BUILDER.strings?.[key.trim().toLowerCase()]??full);
+    if(expanded===result)break;result=expanded;
+  }
+  return result.replace(/@([^@]+)@/g,(_,key)=>`{{ ${key} }}`);
+}
+
 function buildDetailedAbilityText(spell, rank, spellKey) {
-  const raw = spell.tooltip || spell.description || "";
+  const raw = expandAbilityLocalization(spell.tooltip || spell.description || "");
   const rawRank = Number(rank) || 0;
   
   if (rawRank <= 0) return spell.description || "";
@@ -1908,7 +1938,12 @@ function abilityEffectValues(payload,rank) {
   const escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const rows=Object.entries(payload.calculations||{}).filter(([name,calc])=>!name.startsWith('{')&&!calc.tooltipOnly&&!/^tooltiponly_/i.test(name)).map(([name,calc])=>{
     const row=window.Calculations.evaluate(calc,context);
-    const value=row.value===null?row.text:window.Calculations.format(row.value*(row.displayAsPercent?100:1))+(row.displayAsPercent?'%':'');
+    const slot=['q','w','e','r'].find(slot=>BUILDER.cdragonAbilityData?.[slot]===payload);
+    const id=BUILDER.championData?.spells?.[['q','w','e','r'].indexOf(slot)]?.id;
+    const bindings={GarenE:{NumberOfStrikes:'f1'},BelvethE:{TotalStrikes:'f2'},SettW:{MaxDamage:'f1'},PoppyW:{BonusArmor:'bonusarmor',BonusMR:'bonusmr'},GarenW:{ResistsForTooltip:'resistsfortooltip'},Feast:{BonusAttackRange:'bonusattackrange'}};
+    const key=bindings[id]?.[name];
+    const corrected=key?window.ChampionEffects.model(BUILDER).token(id,key,context.stats,computeDerivedBuildStats()):null;
+    const value=Number.isFinite(corrected)?window.Calculations.format(corrected):row.value===null?row.text:window.Calculations.format(row.value*(row.displayAsPercent?100:1))+(row.displayAsPercent?'%':'');
     return `<div>${escape(name.replace(/([a-z])([A-Z])/g,'$1 $2'))}: ${escape(value)}</div>`;
   });
   return rows.length?`<details class="ability-effect-values"><summary>Effect values</summary>${rows.join('')}</details>`:'';
@@ -2112,10 +2147,12 @@ function renderStats() {
     { name: "Tenacity", icon: "🦶", value: 0, eq: `${(100 * (1 - (1 - item.tenacity / 100) * (1 - rune.tenacity / 100))).toFixed(1)}%` },
   ];
 
+  const bonusKeys={HP:"hp",AD:"ad",AP:"ap",Arm:"armor",MR:"mr",AS:"asTotal",Range:"attackRange","Crit %":"critChance"};
+  for(const row of rows){const bonus=computed.championBonuses?.[bonusKeys[row.name]];if(bonus)row.eq+=` + champion abilities (${bonus.toFixed(2)})`;}
   const tableHtml = renderPairedRows(rows.map((row) => {
     if (row.name === "ARPen") return { ...row, displayValue: `${item.arPenFlat.toFixed(1)}/${item.arPenPct.toFixed(1)}%` };
     if (row.name === "MRPen") return { ...row, displayValue: `${item.mrPenFlat.toFixed(1)}/${item.mrPenPct.toFixed(1)}%` };
-    if (row.name === "Lifesteal") return { ...row, displayValue: `${item.physicalVamp.toFixed(1)}%/${item.omniVamp.toFixed(1)}%` };
+    if (row.name === "Lifesteal") return { ...row, displayValue: `${(item.physicalVamp+(computed.championLifeSteal||0)).toFixed(1)}%/${item.omniVamp.toFixed(1)}%` };
     if (row.name === "Tenacity") return { ...row, displayValue: `${(100 * (1 - (1 - item.tenacity / 100) * (1 - rune.tenacity / 100))).toFixed(1)}%` };
     return {
       ...row,

@@ -1,45 +1,49 @@
-# Unavailable ability values — 2026-09-10
+# Ability tooltip audit — 2026-09-11
 
-The actual Builder tooltip resolver was tested for all **173 champions**, at levels **1, 6, 11 and 18**, through every rank permitted by the current rank rules. Passive tooltips were also inspected. No proxy enemy stats were supplied.
+The real Builder tooltip resolver was tested for all **173 champions**, at levels **1, 6, 11 and 18**, through every permitted rank, including passive descriptions. The latest audit reports **0 abilities containing `[value unavailable]`**, down from 14 in PR #111 and 46 before the root-spell repairs. See `ability-unavailable.json` and `tests/ability-audit.cjs`.
 
-The audit initially found **46 affected abilities across 30 champions**. Correcting primary spell selection, hashed passive references, exact auxiliary spell aliases and precision-suffixed tokens repaired 32 affected abilities. **14 abilities across 11 champions still contain an unavailable field** in this version.
+## What caused the remaining failures
 
-This is a list of unresolved fields, not a claim that every calculation in each listed ability is broken. Existing numeric damage/healing values can still work. Symbolic target scaling and unset stack counts are not classified as unavailable values.
+| Ability | Cause and repair |
+|---|---|
+| Akshan W; Gangplank Q | Nested game-mode localization, not a numeric formula. Load the live English string table and expand the standard Summoner's Rift variant. |
+| Aphelios R | Nested weapon-specific localization. Expand and display all five weapon outcomes without assuming a main-hand weapon. |
+| Bard W | Script variables for active shrines and shrine limit. Provide one W input, capped by live MaxPacks. |
+| Bel'Veth Q | Script-computed per-direction cooldown. Apply the live attack-speed-to-haste conversion to live PerSideCooldown. |
+| Bel'Veth E | Script-computed strike count. The exported TotalStrikes display formula is stale; use the documented threshold rule with the live coefficient. |
+| Garen E | Script-computed spin count. Use live NumTicks/ASPerTick and permanent item/level attack speed. |
+| Kai'Sa Q/W/E | Script evolution progress. Calculate item/level AD and attack speed, and AP excluding rune contributions. |
+| Malphite W | Script armor gains before/after Granite Shield. Compute from pre-W armor to avoid counting the bonus twice. |
+| Sett W | Script maximum damage. Combine DamageCalc + DamageConversion × MaxGrit. The separate exported MaxDamage helper disagrees with DamageConversion and must not be used as an alias. |
+| Syndra W | Missing script alias to live SlowDuration. |
+| Xin Zhao E | Script attack-speed bonus. Combine live ASMod, APToASRatio and PermanentASToASRatio. |
 
-## Remaining unavailable fields
+Mappings are specific to champion/spell/token; an `f1` value on one champion is never reused globally. Balance values remain in live Data Dragon/CommunityDragon payloads. Localization is fetched only for the three champions that require it and cached for the session; the full upstream table is approximately 32 MB uncompressed. If that endpoint fails, unresolved localization remains visibly unavailable rather than replaced with invented text.
 
-| Champion | Ability | Unresolved part | Source placeholder(s) |
-|---|---|---|---|
-| Akshan | W — Going Rogue | Game-mode-specific tooltip text | `Spell_AkshanW_Tooltip_{{ gamemodeinteger` |
-| Aphelios | R — Moonlight Vigil | Main-hand weapon-specific follow-up text | `Spell_ApheliosR_WeaponMod_{{ f1` |
-| Bard | W — Caretaker's Shrine | Active shrine counter fields | `f1`, `f2` |
-| Bel'Veth | Q — Void Surge | Per-direction cooldown after attack-speed scaling | `f1` |
-| Bel'Veth | E — Royal Maelstrom | Number of attacks during the channel | `f2.0` |
-| Gangplank | Q — Parrrley | Game-mode-specific tooltip text | `Spell_GangplankQWrapper_Tooltip_{{ gamemodeinteger` |
-| Garen | E — Judgment | Number of spins | `f1` |
-| Kai'Sa | Q — Icathian Rain | Current AD evolution-progress counter | `f11.1` |
-| Kai'Sa | W — Void Seeker | Current AP evolution-progress counter | `f2.1` |
-| Kai'Sa | E — Supercharge | Current attack-speed evolution-progress counter | `f10.1` |
-| Malphite | W — Thunderclap | Flat armor gained, including Granite Shield amplification | `f1`, `f2` |
-| Sett | W — Haymaker | Maximum damage with consumed Grit | `f1` |
-| Syndra | W — Force of Will | Slow duration | `f2` |
-| Xin Zhao | E — Audacious Charge | Attack-speed bonus percentage | `f1` |
+## Champion stats now connected to abilities
 
-The remaining `f…` fields are script-populated placeholders without an exact value/formula binding in the supplied tooltip context. Akshan, Aphelios and Gangplank also require nested localized-text expansion. Similar-looking formulas have not been substituted. The JSON companion records every unresolved token and its tested ranks/levels.
+- Cho'Gath: Feast health and capped attack range; health is bonus health for every subsequent scaling formula. Current R rank applies to all Feast stacks.
+- Poppy: W armor and magic resistance, doubled below the live health threshold; an explicit current-health field controls the conditional state.
+- Malphite: W armor; Granite Shield toggle in the passive box.
+- Swain: Soul Fragment health.
+- Thresh: soul armor and AP.
+- Veigar: Phenomenal Evil AP, including Deathcap amplification.
+- Senna: Mist AD, milestone attack range/critical chance, and excess-critical-chance lifesteal.
+- Bel'Veth: Lavender attack speed, feeding Q/E calculations.
+- Sion: accumulated Soul Furnace health (enter the health earned, since different kills grant different amounts).
+- Garen: Courage resistances, capped by the live maximum.
+- Syndra: AP amplification at the live maximum Splinter threshold, added to the item AP amplification rather than multiplying it.
 
-## Source-level exceptions, separate from primary tooltips
+Inputs are owned by the relevant ability, shared counters use the same key as formula consumers, and supported permanent counters default to zero. Poppy defaults to full health and Granite Shield defaults to inactive. Changing rank, items, level or state recomputes totals from scratch. Stat explanations and the passive ledger include these bonuses.
 
-The previously recorded K'Sante Q3/R missile definitions still reference missing Effect 1 arrays; Runaan variant 773085 still has a circular ChampRange reference. The primary K'Sante Q tooltip now resolves through its actual root spell, rather than a missile record. These secondary definitions remain unsupported, not replaced with invented values.
+## Limits of this result
 
-## Self stats, targets and stacks
+Zero unavailable fields measures tooltip resolution, not completeness of a combat simulator. Enemy stats intentionally remain symbolic. Other combat-state inputs can remain unknown. This change does not automatically activate temporary abilities or implement every champion's scripted stat conversion, transformation or evolution. In particular, arbitrary temporary buffs and dependencies such as Vladimir/Ryze/Ornn/Jhin need separate mechanic bindings and validation; they are not covered by the eleven champion stat integrations above. Kai'Sa progress is displayed but does not automatically select an evolved ability branch.
 
-- Formula parts using the selected champion's stats read the current computed build. Old manual self-stat proxies cannot override those values. Health regeneration and scripted passive simulation remain limited by the existing stat model.
-- Enemy stats remain symbolic, e.g. `12% Target Max HP`. Old target inputs are ignored and enemy-stat controls are not offered. Mixed formulas evaluate the known self component while retaining the target term.
-- Stack fields appear once in the owning ability card. Counters used by several abilities share one value; a passive counter belongs in the passive card. Exact spell-owned counters such as Feast remain in that ability's card.
-- Smolder has one Dragon Practice stack field. His Q/W/E passive scaling uses that same count. An unreferenced tooltip-only crit helper is no longer presented as a second stack counter. Coefficients still come from live Community Dragon data.
+The earlier non-primary source defects are separate: Runaan variant 773085 has a self-referential ChampRange record, and K'Sante's Q3/R missile damage helpers reference missing Effect1 arrays. These do not appear in the primary tooltip audit and remain source limitations.
 
-Stack entry affects formula references. It does not yet simulate every stat change produced by acquiring those stacks during a real game. A missing current-health state also cannot be inferred from a build; it remains an explicit input where needed.
+## Mechanical references
 
-## Reproduce
-
-Use `tests/ability-audit.cjs` with the advanced fixtures described in TESTING.md. Set `ADVANCED_DATA=1`, `FIXTURES_DIR`, and optionally `AUDIT_OUTPUT`. This audit checks resolution and execution, not every in-game mechanic or later patches. Refresh the fixtures and rerun after a patch.
+- [Riot: Poppy W conditional resistances](https://www.leagueoflegends.com/en-us/news/game-updates/patch-13-8-notes/). Historical balance numbers are not copied; current coefficients come from the loaded spell data.
+- [Riot patch 26.15: Bel'Veth Q conversion and E strike threshold](https://www.leagueoflegends.com/en-us/news/game-updates/league-of-legends-patch-26-15-notes/).
+- [Riot patch 26.9: Xin Zhao E permanent-AS/AP scaling](https://www.leagueoflegends.com/en-gb/news/game-updates/league-of-legends-patch-26-9-notes/).
