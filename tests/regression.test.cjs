@@ -4,11 +4,46 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 const path = require('node:path');
 const root = process.env.APP_ROOT || path.join(__dirname, '..');
+function effectState(champion, slot, entries, values={}, rank=1) {
+ return {selectedChampion:champion,level:18,championData:{stats:{}},abilityRanks:{[slot]:rank},combatValues:values,
+  cdragonAbilityData:{[slot]:{dataValues:Object.entries(entries).map(([name,value])=>({name,values:Array(7).fill(value)})),calculations:{}}}};
+}
+test('Feast adds bonus health and capped range once, and respects unlearned R',()=>{
+ const c=app(),state=effectState('Chogath','r',{RHealthPerStack:123,AttackRangePerStack:7,MaxBonusAttackRange:75},{'buff:{8682fc00}':20});
+ const base={hp:1000,attackRange:125};
+ const result=c.ChampionEffects.model(state).apply(base);
+ assert.equal(result.hp,3460);assert.equal(result.attackRange,200);assert.equal(base.hp,1000);
+ assert.equal(c.ChampionEffects.model(state).apply(base).hp,result.hp);
+ state.abilityRanks.r=0;assert.equal(c.ChampionEffects.model(state).apply(base).hp,1000);
+});
+test('Poppy amplifies pre-W resistances and doubles only below the live health threshold',()=>{
+ const c=app(),state=effectState('Poppy','w',{PassiveResistPercent:0.16,PassiveEmpoweredHealthPercent:0.4});
+ const base={armor:100,mr:50};
+ assert.equal(c.ChampionEffects.model(state).apply(base).armor,116);
+ state.combatValues['self:healthPercent:0']=0.4;assert.equal(c.ChampionEffects.model(state).apply(base).armor,116);
+ state.combatValues['self:healthPercent:0']=0.39;assert.equal(c.ChampionEffects.model(state).apply(base).armor,132);
+});
+test('Malphite shield state changes the armor multiplier without multiplying its own bonus',()=>{
+ const c=app(),state=effectState('Malphite','w',{BonusArmorPassive:0.2,BonusArmorPassiveMultiplier:3});
+ assert.equal(c.ChampionEffects.model(state).apply({armor:100}).armor,120);
+ state.combatValues['state:graniteShield']=true;assert.equal(c.ChampionEffects.model(state).apply({armor:100}).armor,160);
+});
+test('Senna grants range and crit only at completed stack milestones',()=>{
+ const c=app(),state=effectState('Senna','p',{ADPerStack:0.75,StacksForBonus:20,BonusRange:20,BonusCritChance:10},{'buff:{e88568f8}':39});
+ const result=c.ChampionEffects.model(state).apply({ad:50,attackRange:600,critChance:95});
+ assert.equal(result.ad,79.25);assert.equal(result.attackRange,620);assert.equal(result.critChance,100);
+});
+test('localization expands nested names and all Aphelios weapon outcomes',()=>{
+ const c=app();c.run("BUILDER.strings={spell_gangplankqwrapper_tooltip_1:'Damage @ShotDamage@ {{spell_gangplankr_name}}',spell_gangplankr_name:'Cannon Barrage'}");
+ assert.equal(c.expandAbilityLocalization('{{Spell_GangplankQWrapper_Tooltip_{{ gamemodeinteger }}}}'),'Damage {{ ShotDamage }} Cannon Barrage');
+ const text=c.expandAbilityLocalization('{{ Spell_ApheliosR_WeaponMod_{{ f1 }} }}');
+ assert.equal((text.match(/Spell_ApheliosR_WeaponMod_/g)||[]).length,5);
+});
 function app(fetchImpl = async () => ({ok:true,json:async()=>({})})) {
   const context = vm.createContext({console, fetch:fetchImpl, AbortController, setTimeout, clearTimeout,
     document:{addEventListener(){}}, module:{exports:{}}});
   context.window = context;
-  for (const file of ['shared/apiClient','shared/itemPolicy','shared/abilityRules','shared/buildStats','shared/calculations','shared/combatInputs','shared/itemData','builder']) {
+  for (const file of ['shared/apiClient','shared/itemPolicy','shared/abilityRules','shared/buildStats','shared/calculations','shared/combatInputs','shared/championEffects','shared/itemData','builder']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'JS',file+'.js'),'utf8'),context);
   }
   context.run = code => vm.runInContext(code,context);

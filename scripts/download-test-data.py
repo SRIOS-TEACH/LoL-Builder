@@ -31,6 +31,7 @@ print(f'Captured {len(champions)} champions and item/rune catalogs for {version}
 if os.environ.get('ADVANCED_DATA'):
     cd = 'https://raw.communitydragon.org/latest/game'
     get(cd + '/items.cdtb.bin.json', 'cd-items.json')
+    get(cd + '/en_us/data/menu/en_us/lol.stringtable.json', 'lol.stringtable.json')
     jobs = [(cd + f'/data/characters/{name.lower()}/{name.lower()}.bin.json', name + '.bin.json') for name in champions]
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         list(pool.map(lambda args: get(*args), jobs))

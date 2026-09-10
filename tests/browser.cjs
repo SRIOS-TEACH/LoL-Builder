@@ -89,7 +89,7 @@ const server=http.createServer((req,res)=>{
    assert.equal(await page.evaluate(()=>calculationContext(getComputedChampionStatsForTooltips()).buffs['{8682fc00}']),6);
    await page.locator('#abilityCards [data-combat-key="buff:{8682fc00}"]').fill('');
    await page.locator('#abilityCards [data-combat-key="buff:{8682fc00}"]').press('Tab');
-   assert.equal(await page.evaluate(()=>calculationContext(getComputedChampionStatsForTooltips()).buffs['{8682fc00}']),undefined);
+   assert.equal(await page.evaluate(()=>calculationContext(getComputedChampionStatsForTooltips()).buffs['{8682fc00}']),0);
    await page.evaluate(async()=>{await setChampion('Smolder');BUILDER.level=18;BUILDER.abilityRanks={q:5,w:5,e:5,r:3};renderAbilityCards();});
    assert.equal(await page.locator('#abilityCards [data-combat-key^="buff:"]').count(),1);
    const smolder=page.locator('[data-ability-slot="p"] [data-combat-key="buff:{32bcea5d}"]');

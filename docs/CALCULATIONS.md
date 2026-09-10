@@ -23,7 +23,7 @@ Self scaling reads the current build automatically. Enemy scaling is symbolic, w
 
 Primary records are resolved using their declared mRootSpell, including abilities with no mChildSpells list. Passive records use mCharacterPassiveSpell, including hashed records. Exact named auxiliary spell references are registered for qualified tooltip tokens. Precision suffixes are formatting metadata rather than separate variable names.
 
-31 unit tests pass. Browser checks cover all 173 champions, 230 builder items and 600 lookup items with advanced data available and unavailable. Specific checks cover Smolder's shared stack value, Feast's R input placement, automatic self stats and symbolic enemy health even when stale numeric target inputs exist.
+36 unit tests pass. Browser checks cover all 173 champions, 230 builder items and 600 lookup items with advanced data available and unavailable. Specific checks cover Smolder's shared stack value, Feast's R input placement, automatic self stats and symbolic enemy health even when stale numeric target inputs exist.
 
 The earlier 128-input/9-source inventory was a formula-engine audit, not a complete tooltip audit. Its synthetic context tests remain useful for engine coverage. Current user-facing unresolved fields are documented in ABILITY-UNAVAILABLE.md.
 

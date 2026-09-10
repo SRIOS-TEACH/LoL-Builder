@@ -44,3 +44,7 @@ After downloading with `ADVANCED_DATA=1`, run `npm run test:combat` with the sam
 ## Actual ability tooltip audit
 
 Run `node tests/ability-audit.cjs` with `ADVANCED_DATA=1`, `FIXTURES_DIR` and the browser runtime variables above. The audit calls the real tooltip resolver for all champions and records unavailable tokens at every permitted rank across four levels. `AUDIT_OUTPUT` selects a JSON destination. See `ABILITY-UNAVAILABLE.md` for the current human-readable findings. Synthetic target values used by the separate engine audit are never applied in the Builder's formula-only target mode.
+
+## Champion stat effects
+
+Run `ADVANCED_DATA=1 node tests/champion-effects.cjs` with the same fixture/browser environment as the browser suite. Checks cover stack-to-stat changes, bonus health, range caps, rank changes, repeated computation, clearing values, resistance states, unique input ownership, and repaired numeric tooltips. The advanced downloader now includes the live localization table. `node tests/ability-audit.cjs` verifies actual tooltip resolution, including all five Aphelios R weapon variants.
