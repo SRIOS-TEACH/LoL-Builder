@@ -39,3 +39,8 @@ Run `python -m http.server 8000` from the repository root. Visit `http://127.0.0
 ## Combat input audit
 
 After downloading with `ADVANCED_DATA=1`, run `npm run test:combat` with the same `FIXTURES_DIR`. This uses the production input-discovery and context functions, supplies both active and inactive scenarios and asserts that no required input lacks a control. Three named source defects are allowed; any new one fails. Set `AUDIT_OUTPUT` to save the complete result. The browser suite also edits real input controls and verifies that displayed results update.
+
+
+## Actual ability tooltip audit
+
+Run `node tests/ability-audit.cjs` with `ADVANCED_DATA=1`, `FIXTURES_DIR` and the browser runtime variables above. The audit calls the real tooltip resolver for all champions and records unavailable tokens at every permitted rank across four levels. `AUDIT_OUTPUT` selects a JSON destination. See `ABILITY-UNAVAILABLE.md` for the current human-readable findings. Synthetic target values used by the separate engine audit are never applied in the Builder's formula-only target mode.

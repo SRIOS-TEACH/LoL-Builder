@@ -1039,3 +1039,5 @@ body {
 .combat-inputs p { font-size: .9em; }
 .combat-input-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: .75rem; }
 .combat-input-grid label { font-size: .9em; overflow-wrap: anywhere; }
+.ability-inputs .combat-input-grid { grid-template-columns: minmax(0, 1fr); }
+.ability-inputs .form-control { max-width: 100%; }
