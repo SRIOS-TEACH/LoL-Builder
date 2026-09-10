@@ -742,10 +742,11 @@ function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) 
         || null;
     }
 
-    const childSpells = Array.isArray(abilityRecord?.mChildSpells) ? abilityRecord.mChildSpells : [];
+    const childSpells = [...new Set([abilityRecord?.mRootSpell,...(abilityRecord?.mChildSpells||[])].filter(Boolean))];
     if (!childSpells.length) return;
-
-    let selectedChild = chooseBestSpellChild(raw, pathIndex, childSpells, spell, slot);
+    const rootRecord=resolveCdragonRecord(raw,pathIndex,abilityRecord?.mRootSpell);
+    const rootParsed=extractCdragonSpell(rootRecord);
+    let selectedChild = rootParsed ? {path:abilityRecord.mRootSpell,record:rootRecord,parsed:rootParsed} : chooseBestSpellChild(raw, pathIndex, childSpells, spell, slot);
     if (!selectedChild?.parsed) {
       const fallbackChild = childSpells
         .map((path) => ({ path, record: resolveCdragonRecord(raw, pathIndex, path) }))
@@ -787,6 +788,7 @@ function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) 
   });
 
   const passivePathCandidates = [
+    root?.mCharacterPassiveSpell,
     `Characters/${championName}/Spells/${championName}PassiveAbility`,
     `Characters/${pathName}/Spells/${pathName}PassiveAbility`,
   ];
@@ -796,7 +798,9 @@ function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) 
     || null;
   if (passiveRecord) {
     const childSpells = Array.isArray(passiveRecord?.mChildSpells) ? passiveRecord.mChildSpells : [];
-    let selectedChild = chooseBestSpellChild(raw, pathIndex, childSpells, null, "p");
+    const directRecord=passiveRecord.mSpell?passiveRecord:resolveCdragonRecord(raw,pathIndex,passiveRecord.mRootSpell);
+    const directParsed=extractCdragonSpell(directRecord);
+    let selectedChild = directParsed?{record:directRecord,parsed:directParsed,path:root?.mCharacterPassiveSpell||passiveRecord.mRootSpell}:chooseBestSpellChild(raw, pathIndex, childSpells, null, "p");
     if (!selectedChild?.parsed) {
       const primaryChild = resolveCdragonRecord(raw, pathIndex, childSpells[0]);
       selectedChild = { parsed: extractCdragonSpell(primaryChild), path: childSpells[0], record: primaryChild };
@@ -834,6 +838,15 @@ function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) 
     }
   }
 
+  // Qualified tooltip references can point to auxiliary or hashed passive records.
+  // Register exact source names; do not choose a similarly named damage formula.
+  for(const [path,record] of Object.entries(raw||{})){
+    if(!record?.mSpell)continue;
+    const payload=extractCdragonSpell(record);
+    const aliases=[record.ObjectName,record.mScriptName,record.objectPath,path,getObjectPathTail(path)].filter(Boolean);
+    buildSpellPayloadLookupEntry(byRef,payload,aliases);
+    registerSpellPayloadAliases(byAlias,payload,{slot:null},aliases);
+  }
   if (!Object.keys(bySlot).length) return null;
   bySlot.byRef = byRef;
   bySlot.byAlias = byAlias;
@@ -1357,6 +1370,7 @@ function getComputedChampionStatsForTooltips() {
 
   return {
     ap: totalAp, baseAp: 0,
+    healShieldPower: BUILDER.itemSlots.filter(Boolean).reduce((sum,id)=>sum+(window.ItemLookupShared.getState().cdragonById[id]?.mPercentHealingAmountMod||0),0),
     attackSpeed: computed.asTotal,
     bonusAttackSpeed: (base.attackspeedperlevel * window.BuildStats.growthFactor(L) + item.asPct + rune.asPct) / 100,
     moveSpeed: computed.moveSpeed, baseMoveSpeed: base.movespeed,
@@ -1456,7 +1470,7 @@ function isMissingGameCalculation(result) {
 
 function baseCalculationContext(stats, dataValues = [], rank = 1, calculations = {}, effects = []) {
   return {
-    stats, dataValues, rank, calculations, effects, level: BUILDER.level,
+    stats, dataValues, rank, calculations, effects, level: BUILDER.level, targetFormulaOnly:true, automaticSelfStats:true,
     resolveExternal: (path, key) => {
       const record=window.Calculations.lookup(BUILDER.cdragonRaw,path);
       const payload=extractCdragonSpell(record);
@@ -1472,7 +1486,8 @@ function baseCalculationContext(stats, dataValues = [], rank = 1, calculations =
 }
 
 function calculationContext(...args) {
-  return window.CombatInputs.apply(baseCalculationContext(...args),BUILDER.combatValues);
+  const state=Object.fromEntries(Object.entries(BUILDER.combatValues).filter(([key])=>!key.startsWith('target:')&&(!key.startsWith('self:')||key==='self:healthPercent:0')));
+  return window.CombatInputs.apply(baseCalculationContext(...args),state);
 }
 
 function combatSources() {
@@ -1481,22 +1496,64 @@ function combatSources() {
     for(const name of [path.split('/').pop(),record?.ObjectName,record?.mScriptName].filter(Boolean))buffNames[window.Calculations.hash(name)]=name;
   }
   const sources=[];
-  for(const [path,record] of Object.entries(BUILDER.cdragonRaw||{})) {
-    if(!record?.mSpell)continue;
-    const parsed=extractCdragonSpell(record);
-    if(Object.keys(parsed?.calculations||{}).length)sources.push({...parsed,label:path.split('/').pop(),buffNames});
+  const seen=new Set();
+  const allTooltipText=[BUILDER.championData?.passive?.description,...(BUILDER.championData?.spells||[]).map(s=>s.tooltip)].join(' ');
+  const add=(payload,slot,label)=>{
+    if(!payload||seen.has(payload.calculations))return;
+    seen.add(payload.calculations);
+    const calculations=Object.fromEntries(Object.entries(payload.calculations||{}).filter(([key,calc])=>
+      (!calc.tooltipOnly&&!/^tooltiponly_/i.test(key)) || allTooltipText.toLowerCase().includes(key.toLowerCase())
+    ));
+    sources.push({...payload,calculations,slot,label,buffNames});
+  };
+  for(const slot of ['p','q','w','e','r']){
+    const spell=slot==='p'?BUILDER.championData?.passive:BUILDER.championData?.spells?.[['q','w','e','r'].indexOf(slot)];
+    add(BUILDER.cdragonAbilityData?.[slot],slot,`${slot.toUpperCase()} ${spell?.name||''}`);
   }
-  for(const id of new Set([...BUILDER.itemSlots,BUILDER.inspectedItemId].filter(Boolean))) {
-    sources.push(window.CombatInputs.itemSource(id,window.ItemLookupShared.getState().cdragonById[id],BUILDER.items[id]?.name));
+  for(const [i,spell]of (BUILDER.championData?.spells||[]).entries()){
+    for(const match of (spell.tooltip||'').matchAll(/spell\.([^:}]+):/gi)){
+      const ref=BUILDER.cdragonAbilityData?.byAlias?.[canonicalizeToken(match[1])];
+      add(ref?.payload,['q','w','e','r'][i],`${['Q','W','E','R'][i]} ${spell.name}`);
+    }
   }
+
   return sources;
 }
 
 function renderCombatInputs() {
-  window.CombatInputs.render(document.getElementById('combatInputs'),{
-    sources:combatSources(),base:baseCalculationContext(getComputedChampionStatsForTooltips()),values:BUILDER.combatValues,
-    onChange:()=>{renderStats();renderAbilityCards();if(BUILDER.inspectedItemId)renderModalItemDetail(BUILDER.inspectedItemId);},
-  });
+  document.getElementById('combatInputs')?.replaceChildren();
+  const sources=combatSources(),base=baseCalculationContext(getComputedChampionStatsForTooltips());
+  const all=window.CombatInputs.descriptors(sources,base);
+  const usage=new Map();
+  for(const source of sources){
+    for(const field of window.CombatInputs.descriptors([source],base)){
+      if(!usage.has(field.key))usage.set(field.key,new Set());usage.get(field.key).add(source.slot);
+    }
+  }
+  const fieldOwner=field=>{
+    const slots=[...usage.get(field.key)||[]];
+    if(slots.includes('p'))return 'p';
+    if(field.kind==='buff'){
+      const index=(BUILDER.championData?.spells||[]).findIndex(spell=>window.Calculations.hash(spell.id)===field.key.slice(5));
+      const slot=['q','w','e','r'][index];if(slots.includes(slot))return slot;
+    }
+    return slots.length>1?'p':slots[0];
+  };
+  for(const slot of ['p','q','w','e','r']){
+    const fields=all.filter(field=>fieldOwner(field)===slot).map(field=>{
+      const slots=[...usage.get(field.key)||[]];
+      if(field.kind==='buff' && fieldOwner(field)==='p'){
+        const passive=BUILDER.championData?.passive?.name||'Passive';
+        const sharedCounters=all.filter(f=>f.kind==='buff'&&fieldOwner(f)==='p');
+        return {...field,label:sharedCounters.length===1?`${passive} stacks`:`${passive} — ${field.label}`};
+      }
+      return field;
+    });
+    window.CombatInputs.render(document.querySelector(`[data-ability-slot="${slot}"] .ability-inputs`),{
+      fields,inline:true,sources:[],base,values:BUILDER.combatValues,
+      onChange:()=>{renderStats();renderAbilityCards();},
+    });
+  }
 }
 
 function adaptCalculation(row) {
@@ -1565,7 +1622,7 @@ function getDeterministicTokenCandidates(token) {
 }
 
 function resolveAbilityToken(tokenRaw, ctx) {
-  const token = String(tokenRaw || "").trim().toLowerCase();
+  const token = String(tokenRaw || "").trim().toLowerCase().replace(/\.\d+(?=\*|$)/, "");
   const denylist = new Set(["gamemodeinteger", "gamemodeinteger1", "gamemodeinteger2", "gamemodeinteger3"]);
   const multiplierMatchRegex = /^(?<left>[a-z0-9_:.]+)\*(?<mult>-?\d+(?:\.\d+)?)$/;
 
@@ -1691,8 +1748,9 @@ function resolveAbilityToken(tokenRaw, ctx) {
     const multMatch = candidateToken.match(multiplierMatchRegex);
     if (multMatch?.groups?.left && multMatch?.groups?.mult) {
       const left = resolveToken(multMatch.groups.left, localCtx, fallbackCtx);
-      if (!left || left.numeric === null) return null;
+      if (!left) return null;
       const mult = Number(multMatch.groups.mult);
+      if(left.numeric===null)return {html:`${mult} × (${left.html})`,numeric:null};
       const value = left.numeric * mult;
       return {
         html: `<span class="ability-detail-number">${formatAbilityNumber(value)}</span>`,
@@ -1848,7 +1906,7 @@ function abilityEffectValues(payload,rank) {
   if(!payload || !rank)return '';
   const context=calculationContext(getComputedChampionStatsForTooltips(),payload.dataValues,rank,payload.calculations,payload.effects);
   const escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const rows=Object.entries(payload.calculations||{}).filter(([name])=>!name.startsWith('{')).map(([name,calc])=>{
+  const rows=Object.entries(payload.calculations||{}).filter(([name,calc])=>!name.startsWith('{')&&!calc.tooltipOnly&&!/^tooltiponly_/i.test(name)).map(([name,calc])=>{
     const row=window.Calculations.evaluate(calc,context);
     const value=row.value===null?row.text:window.Calculations.format(row.value*(row.displayAsPercent?100:1))+(row.displayAsPercent?'%':'');
     return `<div>${escape(name.replace(/([a-z])([A-Z])/g,'$1 $2'))}: ${escape(value)}</div>`;
@@ -1857,7 +1915,6 @@ function abilityEffectValues(payload,rank) {
 }
 
 function renderAbilityCards() {
-  renderCombatInputs();
   const root = document.getElementById("abilityCards");
   if (!BUILDER.championData) {
     root.innerHTML = "<div class='ability-card'><p class='text-muted'>Select a champion to view abilities.</p></div>";
@@ -1869,7 +1926,7 @@ function renderAbilityCards() {
   const computed = computeDerivedBuildStats();
   const attack = computed ? computeAutoAttackProfile(computed) : null;
   const passiveText = buildDetailedPassiveText();
-  const passive = `<div class="ability-card ability-passive-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p class="ability-detail-text">${passiveText}</p>${abilityEffectValues(BUILDER.cdragonAbilityData?.p,1)}</div>`;
+  const passive = `<div class="ability-card ability-passive-card" data-ability-slot="p"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p class="ability-detail-text">${passiveText}</p><div class="ability-inputs"></div>${abilityEffectValues(BUILDER.cdragonAbilityData?.p,1)}</div>`;
   const attackCard = `<div class="ability-card ability-attack-card"><div class="ability-head"><strong>Attack</strong></div>
   <div><strong>Basic Attack Damage:</strong> ${attack ? `${attack.autoAttackDamage.toFixed(1)} (${computed.ad.toFixed(1)}${attack.onHitRows.map((r) => ` + ${r}`).join("") || ""})` : "-"}</div>
   <div><strong>Basic Attack DPS:</strong> ${attack ? `${attack.attackDps.toFixed(1)} (${attack.autoAttackDamage.toFixed(1)} × ${computed.asTotal.toFixed(3)})` : "-"}</div>
@@ -1890,10 +1947,11 @@ function renderAbilityCards() {
     const cost = parseByRank(spell.costBurn, rank);
     const range = parseByRank(spell.rangeBurn, rank);
     const detail = buildDetailedAbilityText(spell, rank, key);
-    return `<div class="ability-card"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p>${abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank)}<div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div><div><strong>DPS:</strong> Not modeled</div></div>`;
+    return `<div class="ability-card" data-ability-slot="${key}"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p><div class="ability-inputs"></div>${abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank)}<div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div><div><strong>DPS:</strong> Not modeled</div></div>`;
   }).join("");
 
   root.innerHTML = passive + attackCard + spells;
+  renderCombatInputs();
   ["q", "w", "e", "r"].forEach((k) => {
     const el = document.getElementById(`rank_${k}`);
     if (!el) return;

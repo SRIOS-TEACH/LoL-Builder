@@ -82,23 +82,33 @@ const server=http.createServer((req,res)=>{
      return {feast:feast.total,html,stats,abilityText:document.querySelector('#abilities')?.innerText};
    });
    console.log('PASS live-data Feast and Seraph integration: Feast '+details.feast);
-   await page.locator('#combatInputs summary').click();
-   const stacks=page.locator('#combatInputs [data-combat-key="buff:{8682fc00}"]');
+   const stacks=page.locator('#abilityCards [data-combat-key="buff:{8682fc00}"]');
+   assert.equal(await stacks.count(),1);
+   assert.equal(await page.locator('[data-ability-slot="r"] [data-combat-key="buff:{8682fc00}"]').count(),1);
    await stacks.fill('6');await stacks.press('Tab');
    assert.equal(await page.evaluate(()=>calculationContext(getComputedChampionStatsForTooltips()).buffs['{8682fc00}']),6);
-   await page.locator('#combatInputs [data-combat-key="buff:{8682fc00}"]').fill('');
-   await page.locator('#combatInputs [data-combat-key="buff:{8682fc00}"]').press('Tab');
+   await page.locator('#abilityCards [data-combat-key="buff:{8682fc00}"]').fill('');
+   await page.locator('#abilityCards [data-combat-key="buff:{8682fc00}"]').press('Tab');
    assert.equal(await page.evaluate(()=>calculationContext(getComputedChampionStatsForTooltips()).buffs['{8682fc00}']),undefined);
-   await page.evaluate(()=>setChampion('Zed'));
-   await page.locator('#combatInputs [data-combat-key="target:hp:0"]').fill('2000');
-   await page.locator('#combatInputs [data-combat-key="target:hp:0"]').press('Tab');
-   await page.locator('#combatInputs [data-combat-key="target:healthPercent:0"]').fill('25');
-   await page.locator('#combatInputs [data-combat-key="target:healthPercent:0"]').press('Tab');
-   assert.equal(await page.evaluate(()=>calculationContext(getComputedChampionStatsForTooltips()).targetStats.currentHp),500);
-   const buffKeys=await page.locator('#combatInputs [data-combat-key^="buff:"]').evaluateAll(nodes=>nodes.map(n=>n.dataset.combatKey));
-   for(const key of buffKeys){const control=page.locator(`#combatInputs [data-combat-key="${key}"]`);await control.fill('0');await control.press('Tab');}
-   assert.match(await page.locator('.ability-passive-card .ability-effect-values').textContent(),/Final Damage: [\d.]+/);
-   console.log('PASS editable stacks, clearing unknown inputs, and derived target health');
+   await page.evaluate(async()=>{await setChampion('Smolder');BUILDER.level=18;BUILDER.abilityRanks={q:5,w:5,e:5,r:3};renderAbilityCards();});
+   assert.equal(await page.locator('#abilityCards [data-combat-key^="buff:"]').count(),1);
+   const smolder=page.locator('[data-ability-slot="p"] [data-combat-key="buff:{32bcea5d}"]');
+   await smolder.fill('100');await smolder.press('Tab');
+   const scaled=await page.evaluate(()=>{
+     const p=BUILDER.cdragonAbilityData.p;const context=calculationContext(getComputedChampionStatsForTooltips(),p.dataValues,1,p.calculations);
+     return ['Passive_QDamageIncrease','Passive_WDamageIncrease','EBonusDamage'].map(key=>Calculations.evaluate(p.calculations[key],context).value);
+   });
+   for(const [i,want]of [25,55,8].entries())assert.ok(Math.abs(scaled[i]-want)<.001);
+   assert.doesNotMatch(await page.locator('#abilityCards').innerText(),/value unavailable/i);
+   if(process.env.SCREENSHOT_DIR)await page.screenshot({path:path.join(process.env.SCREENSHOT_DIR,'smolder-shared-stacks.png'),fullPage:true});
+   await page.evaluate(async()=>{await setChampion('Zed');BUILDER.combatValues={'target:hp:0':2000,'target:healthPercent:0':.25};renderAbilityCards();});
+   assert.equal(await page.locator('[data-combat-key^="target:"]').count(),0);
+   const target=await page.evaluate(()=>{
+     const calc={__type:'GameCalculation',mFormulaParts:[{__type:'StatByCoefficientCalculationPart',mStat:12,'{a8cb9c14}':true,mCoefficient:.12}]};
+     return Calculations.evaluate(calc,calculationContext(getComputedChampionStatsForTooltips()));
+   });
+   assert.equal(target.value,null);assert.match(target.text,/12% Target Max HP/);
+   console.log('PASS shared Smolder stacks, per-ability controls and formula-only target scaling');
    if(process.env.SCREENSHOT_DIR){
      fs.writeFileSync(path.join(process.env.SCREENSHOT_DIR,'calculation-details.json'),JSON.stringify(details,null,2));
      await page.screenshot({path:path.join(process.env.SCREENSHOT_DIR,'calculations.png'),fullPage:true});

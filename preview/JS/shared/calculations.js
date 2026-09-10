@@ -23,7 +23,8 @@
     const inputs = [...new Set(rows.flatMap(row => row.inputs))];
     const unsupported = [...new Set(rows.flatMap(row => row.unsupported))];
     const value = rows.every(row => row.value !== null) ? calculate(rows.map(row => row.value)) : null;
-    return result(Number.isFinite(value) ? value : null, rows.map(row => `(${row.text})`).join(` ${operator} `), inputs, unsupported);
+    const symbolic=value===null;
+    return result(Number.isFinite(value) ? value : null, rows.map(row => `(${symbolic && row.value!==null ? format(row.value) : row.text})`).join(` ${operator} `), inputs, unsupported);
   }
   function dataValue(values, name, rank = 1, level = 1) {
     const entries = Array.isArray(values) ? Object.fromEntries(values.map(v => [v.mName ?? v.name, v])) : values || {};
@@ -69,17 +70,18 @@
     const [key, label] = resource ? ['mp', 'Mana'] : statNames[code] || ['', `Stat ${code}`];
     if (!key || ![0,1,2].includes(mode)) return unknown(label, `stat:${code}:${mode}`, true);
     const target = !!part['{a8cb9c14}'];
-    const stats = healthStats(target ? context.targetStats : context.stats);
+    const stats = healthStats(target ? (context.targetFormulaOnly?{}:context.targetStats) : context.stats);
     const bonusKey = bonusKeys[key] || `bonus${key[0].toUpperCase()}${key.slice(1)}`;
     const total = stats[key], explicitBase = stats[`base${key[0].toUpperCase()}${key.slice(1)}`];
     const bonus = stats[bonusKey] ?? (Number.isFinite(total) && Number.isFinite(explicitBase) ? total-explicitBase : undefined);
     const base = explicitBase ?? (Number.isFinite(total) && Number.isFinite(bonus) ? total-bonus : undefined);
     const value = mode === 2 ? bonus : mode === 1 ? base : total;
-    const text = `${target ? 'Target ' : ''}${mode === 2 ? 'Bonus ' : mode === 1 ? 'Base ' : ''}${label}`;
+    const text = `${target ? 'Target ' : ''}${mode === 2 ? 'Bonus ' : mode === 1 ? 'Base ' : ''}${target && key==='hp' && mode===0?'Max HP':label}`;
     return Number.isFinite(value) ? result(value,text) : unknown(text,`${target?'target':'self'}:${key}:${mode}`);
   }
   const conditionKey = requirement => hash(JSON.stringify(requirement));
   function condition(requirement, context) {
+    if(context.targetFormulaOnly)context={...context,targetStats:{}};
     if (!requirement) return {value:null,text:'condition',inputs:['condition:unknown']};
     let value = null, text = 'condition', inputs=[];
     switch (requirement.__type) {
@@ -208,7 +210,7 @@
         return combine([Number.isFinite(count)?result(count,'Item count'):unknown('Item count',`items:${part.epicness}`),result(number(part.Coefficient??1))],'×',v=>v[0]*v[1]);
       }
       case 'PercentageOfBuffNameElapsed': {
-        const elapsed=context.buffElapsed?.[part.buffName];
+        const elapsed=lookup(context.buffElapsed,part.buffName);
         return combine([Number.isFinite(elapsed)?result(elapsed,'Buff duration elapsed'):unknown('Buff duration elapsed',`elapsed:${part.buffName}`),result(number(part.Coefficient??0))],'×',v=>v[0]*v[1]);
       }
       case '{f3cbe7b2}':return evaluate(lookup(context.calculations,part.mSpellCalculationKey),context,seen);

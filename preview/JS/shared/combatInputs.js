@@ -7,6 +7,11 @@
   function descriptors(sources,base={}){
     const found=new Map();
     function add(key,source,label){
+      if(key.startsWith('buff:')||key.startsWith('elapsed:')){
+        const [kind,name]=key.split(':');key=`${kind}:${/^\{[0-9a-f]+\}$/i.test(name)?name.toLowerCase():C.hash(name)}`;
+      }
+      if(base.targetFormulaOnly && key.startsWith('target:'))return;
+      if(base.automaticSelfStats && key.startsWith('self:') && !key.includes('healthPercent') && !key.includes('currentHp') && !key.includes('missingH'))return;
       if(found.has(key)){found.get(key).owners.add(source);return;}
       const [kind,name,mode]=key.split(':');
       if(kind==='self'||kind==='target'){
@@ -72,9 +77,9 @@
     context.stats=C.healthStats(context.stats);context.targetStats=C.healthStats(context.targetStats);
     return context;
   }
-  function render(root,{sources,base={},values,onChange}){
+  function render(root,{sources,base={},values,onChange,fields:providedFields,inline=false}){
     if(!root)return;
-    const fields=descriptors(sources,base);
+    const fields=providedFields||descriptors(sources,base);
     root.replaceChildren();
     if(!fields.length)return;
     const details=document.createElement('details');details.open=root.dataset.open==='true';
@@ -94,7 +99,7 @@
         onChange();
       });label.append(input);grid.append(label);
     }
-    details.append(grid);root.append(details);
+    details.append(grid);root.append(inline?grid:details);
   }
   function itemSource(id,item,label){return {label:label||`Item ${id}`,dataValues:item?.mDataValues,calculations:item?.mItemCalculations,effects:item?.mEffectAmount};}
   scope.CombatInputs={descriptors,apply,render,itemSource};

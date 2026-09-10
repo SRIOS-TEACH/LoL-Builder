@@ -150,7 +150,7 @@ function showItem(id) {
 
   const resolvedDescription = resolveDescriptionFormulas(item, item.description || "");
   const source=window.CombatInputs.itemSource(id,window.ItemLookupShared.getState().cdragonById[id],item.name);
-  const base={level:1,rank:1,allowLevelInput:true};
+  const base={level:1,rank:1,allowLevelInput:true,targetFormulaOnly:true};
   window.CombatInputs.render(document.getElementById('combatInputs'),{sources:[source],base,values:ITEM_STATE.combatValues,onChange:()=>showItem(id)});
   const { lines } = buildExtractedFormulas(id,window.CombatInputs.apply(base,ITEM_STATE.combatValues));
   const inferredCooldown = /<active>|<passive>|\bACTIVE\b|\(0s\)/i.test(item.description || "") ? inferActiveCooldownSeconds(id) : null;

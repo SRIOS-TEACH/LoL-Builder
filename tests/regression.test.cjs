@@ -149,7 +149,24 @@ test('execution threshold and nearby-ally predicates respond to explicit context
 });
 test('all discovered stack and elapsed controls feed the calculation interpreter',()=>{
  const source={label:'Test',calculations:{damage:{__type:'GameCalculation',mFormulaParts:[{__type:'BuffCounterByCoefficientCalculationPart',mBuffName:'stacks',mCoefficient:10},{__type:'PercentageOfBuffNameElapsed',buffName:'duration',Coefficient:100}]}}};
- const fields=Combat.descriptors([source],{});assert.deepEqual(fields.map(f=>f.key).sort(),['buff:stacks','elapsed:duration']);
+ const fields=Combat.descriptors([source],{});assert.deepEqual(fields.map(f=>f.key).sort(),[`buff:${C.hash('stacks')}`,`elapsed:${C.hash('duration')}`]);
  const context=Combat.apply({},{'buff:stacks':3,'elapsed:duration':.5});
  assert.equal(C.evaluate(source.calculations.damage,context).value,80);
+});
+
+test('target scaling remains symbolic and self scaling is evaluated in a mixed formula',()=>{
+ const calc={__type:'GameCalculation',mFormulaParts:[{__type:'StatByCoefficientCalculationPart',mCoefficient:.5},{__type:'StatByCoefficientCalculationPart',mStat:12,'{a8cb9c14}':true,mCoefficient:.12}]};
+ const row=C.evaluate(calc,{stats:{ap:300},targetStats:{hp:2000},targetFormulaOnly:true});
+ assert.equal(row.value,null);assert.match(row.text,/150/);assert.match(row.text,/12% Target Max HP/);assert.doesNotMatch(row.text,/240/);
+});
+test('named and hashed references to the same buff share one input',()=>{
+ const calc=buff=>({__type:'GameCalculation',mFormulaParts:[{__type:'BuffCounterByCoefficientCalculationPart',mBuffName:buff,mCoefficient:1}]});
+ const fields=Combat.descriptors([{label:'Passive',calculations:{p:calc('SharedStacks')}},{label:'Q',calculations:{q:calc(C.hash('SharedStacks'))}}],{});
+ assert.equal(fields.length,1);assert.equal(fields[0].key,`buff:${C.hash('SharedStacks')}`);
+ const context=Combat.apply({},{[fields[0].key]:100});
+ assert.equal(C.evaluate(calc('SharedStacks'),context).value,100);assert.equal(C.evaluate(calc(C.hash('SharedStacks')),context).value,100);
+});
+test('builder self stats cannot be replaced by old manually entered proxies',()=>{
+ const c=app();c.run('BUILDER.combatValues={"self:ap:0":999,"target:hp:0":2000}');
+ const ctx=c.calculationContext({ap:70,hp:1000});assert.equal(ctx.stats.ap,70);assert.equal(ctx.targetStats.hp,undefined);assert.equal(ctx.targetFormulaOnly,true);
 });

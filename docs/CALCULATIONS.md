@@ -15,30 +15,17 @@ This is not an entirely data-defined game simulator. Stat growth rules, rune sha
 - Seraph's tooltip binds its exact ShieldValue and BonusAPCalc keys. Its shield/AP coefficients and cooldown come from live data. Muramana and Rabadon also read their passive coefficients/formulas from that data.
 - Both root and `preview/` runtime files contain the same implementation.
 
-## Combat inputs
+## Current tooltip and input behavior
 
-Builder, item selection details and Item Lookup now expose required inputs from the live formula dependencies. Inputs begin unset. Enter stacks (zero if inactive), elapsed duration percentages, target maximum/current health and nearby-ally conditions. Item Lookup also supports attacker stats and champion level for standalone calculations.
+See [the ability report](ABILITY-UNAVAILABLE.md) for the complete current unavailable-field list and testing scope. The renderer audit is broader than the original calculation-record inventory: it also detects unresolved Data Dragon placeholders and incorrect spell selection.
 
-Build-derived base/bonus stats are supplied automatically. Current and missing health are derived consistently from maximum health and the entered percentage. Health cast requirements use target health. Named effect values are available even when Data Dragon's prose contains no numeric placeholder.
+Self scaling reads the current build automatically. Enemy scaling is symbolic, with no proxy target values or enemy-stat fields. Shared counters are entered once in the relevant ability/passive card; Smolder's Dragon Practice is one counter for Q/W/E. Counter names and their hashed references normalize to one identity.
 
-Buff activation chooses the referenced conditional branch. If the condition is false and the source supplies no alternate branch, the result is explicitly **Inactive (no alternate effect)**, not invented zero damage. A named branch that is actually missing still reports a source error. This handles the six conditional records previously classified as unresolved: items 3865/3866, Elise R, Jax W/R and Zed passive.
+Primary records are resolved using their declared mRootSpell, including abilities with no mChildSpells list. Passive records use mCharacterPassiveSpell, including hashed records. Exact named auxiliary spell references are registered for qualified tooltip tokens. Precision suffixes are formatting metadata rather than separate variable names.
 
-Stack inputs feed the formulas that reference those counters. They do not automatically simulate every scripted passive stat bonus, on-hit interaction or game event. For example, entering stacks is not a complete simulation of all health/stat changes caused by acquiring those stacks in-game.
+31 unit tests pass. Browser checks cover all 173 champions, 230 builder items and 600 lookup items with advanced data available and unavailable. Specific checks cover Smolder's shared stack value, Feast's R input placement, automatic self stats and symbolic enemy health even when stale numeric target inputs exist.
 
-## Validation
-
-28 unit regressions pass. Browser tests pass with advanced data available and unavailable: 173 champions at four levels, 230 builder items and 600 item tooltips. Interactive tests enter and clear Cho'Gath stacks, derive target health for Zed and update Seraph's standalone shield/AP values.
-
-`tests/combat-audit.cjs` exercises the same input discovery and context application used by the UI. All 2,808 captured records are tested in two scenarios with different activation, health and stack values:
-
-| Result | Scenarios |
-|---|---:|
-| Numeric result | 5,603 |
-| Explicitly inactive | 7 |
-| Missing input control | 0 |
-| Known source defect | 6 (three records, tested twice) |
-
-Thus the previous 128 input gaps now have a control or a build-derived value. These counts validate execution and input plumbing, not every game mechanic or all possible combat states. Newly introduced source defects fail the audit; the three known exceptions remain listed explicitly.
+The earlier 128-input/9-source inventory was a formula-engine audit, not a complete tooltip audit. Its synthetic context tests remain useful for engine coverage. Current user-facing unresolved fields are documented in ABILITY-UNAVAILABLE.md.
 
 ## Three remaining source defects
 
