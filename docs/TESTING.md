@@ -50,3 +50,7 @@ Run `node tests/ability-audit.cjs` with `ADVANCED_DATA=1`, `FIXTURES_DIR` and th
 ## Champion stat effects
 
 Run `ADVANCED_DATA=1 node tests/champion-effects.cjs` with the same fixture/browser environment as the browser suite. Checks cover stack-to-stat changes, bonus health, range caps, rank changes, repeated computation, clearing values, resistance states, unique input ownership, and repaired numeric tooltips. The advanced downloader now includes the live localization table. `node tests/ability-audit.cjs` verifies actual tooltip resolution, including all five Aphelios R weapon variants.
+
+## On-attack calculations
+
+`npm run test:attacks` uses the same Playwright/browser and fixture variables as the other browser suites. Run with `ADVANCED_DATA=1` for live formula excerpts and with it unset for API-failure fallback. It checks numerical examples, labels/hover text, Kog'Maw's actual button, target health controls, all champion control configurations, and registered effects available in the item catalog. `SCREENSHOT_DIR` writes an attack-panel screenshot. `AUDIT_OUTPUT` writes per-champion results. `npm test` also runs the standalone numerical tests in `tests/attack-effects.test.cjs` without downloads.

@@ -5,7 +5,8 @@
     "test": "node --test tests/*.test.cjs",
     "test:browser": "node tests/browser.cjs",
     "test:dps": "node tests/dps-browser.cjs",
-    "test:combat": "node tests/combat-audit.cjs"
+    "test:combat": "node tests/combat-audit.cjs",
+    "test:attacks": "node tests/attack-browser.cjs"
   },
   "engines": {"node": ">=20"}
 }
