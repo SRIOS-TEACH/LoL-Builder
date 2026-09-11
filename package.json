@@ -2,8 +2,9 @@
   "name": "lol-builder",
   "private": true,
   "scripts": {
-    "test": "node --test tests/regression.test.cjs",
+    "test": "node --test tests/*.test.cjs",
     "test:browser": "node tests/browser.cjs",
+    "test:dps": "node tests/dps-browser.cjs",
     "test:combat": "node tests/combat-audit.cjs"
   },
   "engines": {"node": ">=20"}

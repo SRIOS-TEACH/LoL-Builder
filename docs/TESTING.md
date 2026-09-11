@@ -12,6 +12,8 @@ The tests cover patch selection, request retry/deduplication, missing champion s
 
 ## Browser regressions
 
+Ability DPS has an additional fixture-backed browser suite: `npm run test:dps`. Run with and without `ADVANCED_DATA=1` using the same environment below. See [DPS.md](DPS.md) for its coverage and timing conventions.
+
 Install Playwright separately (`npm install --no-save playwright`, then `npx playwright install chromium`) or point `PLAYWRIGHT_PATH` at an existing package and `BROWSER_PATH` at an existing Chromium/Edge executable.
 
 Download fixtures first:
