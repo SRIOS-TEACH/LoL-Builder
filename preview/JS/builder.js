@@ -889,6 +889,8 @@ async function setChampion(name) {
     // Data Dragon supplies patch-consistent base stats and regeneration units.
     const stats = { ...DEFAULT_CHAMPION_BASE_STATS, ...champion.stats };
     if (extraStats.attackspeedratio > 0) stats.attackspeedratio = extraStats.attackspeedratio;
+    const characterRoot = raw?.[`Characters/${name}/CharacterRecords/Root`];
+    if (Number.isFinite(characterRoot?.critDamageMultiplier)) stats.critdamage = characterRoot.critDamageMultiplier;
     const abilityData = raw ? extractAbilityDataFromRoot(raw, name, normalizeCdragonChampionPath(name), champion.spells) : null;
     BUILDER.selectedChampion = name;
     BUILDER.championData = { ...champion, stats };
@@ -1234,7 +1236,7 @@ function computeDerivedBuildStats() {
   const asTotal = window.BuildStats.attackSpeed(base.attackspeed, base.attackspeedperlevel, base.attackspeedratio, L, item.asPct + rune.asPct);
   const abilityHaste = item.haste + rune.haste;
   const critChance = Math.min(100, (base.crit + base.critperlevel * window.BuildStats.growthFactor(L)) * 100 + item.critChance + rune.critChance);
-  const critDamage = (base.critdamage ? base.critdamage * 100 : 175) + item.critDamage + rune.critDamage;
+  const critDamage = (base.critdamage ? base.critdamage * 100 : 200) + item.critDamage + rune.critDamage;
   const attackRange = (base.attackrange || 0) + item.attackRange + rune.attackRange + getChampionPassiveRangeBonus();
   const moveSpeed = (base.movespeed + item.msFlat + rune.msFlat) * (1 + (item.msPct + rune.msPct) / 100);
 
@@ -1259,7 +1261,7 @@ function computeDerivedBuildStats() {
     moveSpeed,
     passiveLedger: ledger,
   };
-  const applied = window.ChampionEffects.model(BUILDER).apply(computed);
+  const applied = window.AttackEffects.model(BUILDER, window.ItemLookupShared.getState().cdragonById).apply(window.ChampionEffects.model(BUILDER).apply(computed));
   // Deathcap also amplifies AP gained from champion stacks.
   if (['Veigar','Thresh'].includes(BUILDER.selectedChampion))applied.ap += (applied.ap - computed.ap) * (ledger.apMultiplier - 1);
   if(applied.championBonuses.ap)applied.championBonuses.ap=applied.ap-computed.ap;
@@ -1304,12 +1306,7 @@ function getChampionPassiveRangeBonus() {
  * @returns {{autoAttackDamage:number,attackDps:number,attackRange:number,onHitRows:string[]}}
  */
 function computeAutoAttackProfile(computed) {
-  return {
-    autoAttackDamage: computed.ad,
-    attackDps: computed.ad * computed.asTotal,
-    attackRange: computed.attackRange,
-    onHitRows: [],
-  };
+  return window.AttackEffects.model(BUILDER, window.ItemLookupShared.getState().cdragonById).profile(computed);
 }
 
 function summarizePassiveNumericData(cdragonPassive) {
@@ -1989,10 +1986,15 @@ function renderAbilityCards() {
   const attack = computed ? computeAutoAttackProfile(computed) : null;
   const passiveText = buildDetailedPassiveText();
   const passive = `<div class="ability-card ability-passive-card" data-ability-slot="p"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p class="ability-detail-text">${passiveText}</p><div class="ability-inputs"></div>${abilityEffectValues(BUILDER.cdragonAbilityData?.p,1)}</div>`;
-  const attackCard = `<div class="ability-card ability-attack-card"><div class="ability-head"><strong>Attack</strong></div>
-  <div><strong>Basic Attack Damage:</strong> ${attack ? `${attack.autoAttackDamage.toFixed(1)} (${computed.ad.toFixed(1)}${attack.onHitRows.map((r) => ` + ${r}`).join("") || ""})` : "-"}</div>
-  <div><strong>Basic Attack DPS:</strong> ${attack ? `${attack.attackDps.toFixed(1)} (${attack.autoAttackDamage.toFixed(1)} × ${computed.asTotal.toFixed(3)})` : "-"}</div>
-  <div><strong>Attack Range:</strong> ${attack ? attack.attackRange.toFixed(1) : "-"}</div><small>Before mitigation; excludes critical strikes, item procs, and champion attack modifiers.</small></div>`;
+  const escapeAttack = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const attackNumber = (value, key) => `<span class="attack-result" data-attack-result="${key}" tabindex="0" title="${escapeAttack(attack.breakdown)}">${Number.isFinite(value) ? value.toFixed(1) + (attack.partial ? ' (partial)' : '') : 'Unavailable — see calculation'}</span>`;
+  const attackCard = `<div class="ability-card ability-attack-card" data-ability-slot="attack"><div class="ability-head"><strong>Attack</strong></div>
+  <div><strong>On-attack damage:</strong> ${attack ? attackNumber(attack.autoAttackDamage,'damage') : '-'}</div>
+  <div><strong>On-Attack DPS:</strong> ${attack ? attackNumber(attack.attackDps,'dps') : '-'}</div>
+  <div><strong>Attack Range:</strong> ${attack ? attack.attackRange.toFixed(1) : '-'}</div>
+  <small>Average damage before mitigation, including critical strikes and the effects listed in the breakdown. Continuous attacks on one champion; enabled effects remain active.</small>
+  ${attack?.warnings.map(w=>`<p class="text-muted">${escapeAttack(w)}</p>`).join('')||''}
+  <details><summary>Calculation breakdown</summary><pre style="white-space:pre-wrap">${escapeAttack(attack?.breakdown||'Select a champion')}</pre></details></div>`;
 
   const spells = champ.spells.map((spell, i) => {
     const key = ["q", "w", "e", "r"][i];
@@ -2018,6 +2020,34 @@ function renderAbilityCards() {
 
   root.innerHTML = passive + attackCard + spells;
   renderCombatInputs();
+  for (const control of attack?.controls || []) {
+    const card = root.querySelector(`[data-ability-slot="${control.slot}"]`);
+    if (!card) continue;
+    const wrapper = document.createElement('div'); wrapper.className = 'attack-control';
+    const element = document.createElement(control.type === 'toggle' ? 'button' : 'input');
+    element.dataset.attackControl = control.key;
+    if (control.type === 'toggle') {
+      element.type = 'button'; element.className = 'btn btn-outline';
+      element.disabled = !!control.disabled;
+      const active = BUILDER.combatValues[control.key] === true && !control.disabled;
+      element.setAttribute('aria-pressed', String(active));
+      element.textContent = `${control.label}: ${active ? 'On' : 'Off'}`;
+      element.addEventListener('click', () => { BUILDER.combatValues[control.key] = !active; renderStats(); renderAbilityCards(); });
+      wrapper.append(element);
+    } else {
+      const label = document.createElement('label'); label.textContent = control.label + ' ';
+      element.type = 'number'; element.min = String(control.min ?? 0); element.step = 'any';
+      if (control.max !== undefined) element.max = String(control.max);
+      element.value = BUILDER.combatValues[control.key] ?? ''; element.placeholder = 'Enter value';
+      element.addEventListener('change', () => {
+        if (element.value.trim() && element.checkValidity() && Number.isFinite(Number(element.value))) BUILDER.combatValues[control.key] = Number(element.value);
+        else delete BUILDER.combatValues[control.key];
+        renderStats(); renderAbilityCards();
+      });
+      label.append(element); wrapper.append(label);
+    }
+    card.append(wrapper);
+  }
   ["q", "w", "e", "r"].forEach((k) => {
     const el = document.getElementById(`rank_${k}`);
     if (!el) return;
@@ -2025,6 +2055,7 @@ function renderAbilityCards() {
     el.addEventListener("change", () => {
       BUILDER.abilityRanks[k] = Number(el.value);
       enforceAbilityRules();
+      renderStats();
       renderAbilityCards();
     });
   });
@@ -2171,7 +2202,7 @@ function renderStats() {
     { name: "AS", icon: "⚡", value: asTotal, eq: `${base.attackspeed.toFixed(3)} + ${(base.attackspeedratio || base.attackspeed).toFixed(3)} * (growth ${window.BuildStats.growthFactor(L).toFixed(3)} * ${base.attackspeedperlevel}% + ${(item.asPct + rune.asPct).toFixed(1)}%)` },
     { name: "MS", icon: "👟", value: moveSpeed, eq: `(${base.movespeed.toFixed(1)} + ${item.msFlat.toFixed(1)} + ${rune.msFlat.toFixed(1)}) * (1 + ${(item.msPct + rune.msPct).toFixed(1)}%)` },
     { name: "Crit %", icon: "🎯", value: critChance, eq: `${base.crit.toFixed(1)} + ${base.critperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.critChance.toFixed(1)} + ${rune.critChance.toFixed(1)}` },
-    { name: "Crit Dmg", icon: "💥", value: critDamage, eq: `${(base.critdamage ? base.critdamage * 100 : 175).toFixed(1)} + ${item.critDamage.toFixed(1)} + ${rune.critDamage.toFixed(1)}` },
+    { name: "Crit Dmg", icon: "💥", value: critDamage, eq: `${(base.critdamage ? base.critdamage * 100 : 200).toFixed(1)} + ${item.critDamage.toFixed(1)} + ${rune.critDamage.toFixed(1)}; champion modifier included in displayed value` },
     { name: "ARPen", icon: "🪓", value: 0, eq: `${item.arPenFlat.toFixed(1)} / ${item.arPenPct.toFixed(1)}%` },
     { name: "MRPen", icon: "🔹", value: 0, eq: `${item.mrPenFlat.toFixed(1)} / ${item.mrPenPct.toFixed(1)}%` },
     { name: "Lifesteal", icon: "🩸", value: 0, eq: `${item.physicalVamp.toFixed(1)}% / ${item.omniVamp.toFixed(1)}%` },

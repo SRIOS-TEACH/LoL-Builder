@@ -1049,3 +1049,13 @@ body {
 .ability-dps-table th, .ability-dps-table td { text-align: left; vertical-align: top; padding: 0.3rem; overflow-wrap: anywhere; }
 .ability-dps-table th:first-child { width: 36%; }
 .ability-dps small { display: block; opacity: 0.8; }
+/* Attack calculations are keyboard focusable; details also work on touch screens. */
+.attack-result { cursor: help; border-bottom: 1px dotted currentColor; }
+.attack-result:focus-visible { outline: 2px solid #c89b3c; outline-offset: 3px; }
+.attack-control { margin-top: .65rem; }
+.attack-control label { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.attack-control input { width: 9rem; max-width: 100%; }
+.attack-control button { white-space: normal; text-align: left; }
+.attack-control button[aria-pressed="true"] { outline: 2px solid #c89b3c; }
+.ability-attack-card details { margin-top: .7rem; }
+.ability-attack-card summary { cursor: pointer; }

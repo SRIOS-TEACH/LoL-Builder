@@ -61,3 +61,9 @@ Audited baseline: `main` commit `5f403aa4c7ffe3da8881babb9d4d15abe9b91ded`. Test
 6. **Further structural cleanup.** Extract the ability resolver and rune state transitions after their behavior is covered with representative advanced payloads. Keep UI redesign/features for after this accuracy work.
 
 Do not merge on the strength of rendering tests alone if full numerical correctness is the release requirement. This pass is intended to provide a stable, reviewable foundation and a concrete next backlog.
+
+## On-attack calculation update — 11 September 2026
+
+The attack stub is replaced with average critical damage and an explicit champion/item effect registry. Ability controls, item proc intervals, target HP inputs and a hover/touch-accessible breakdown are implemented. See [On-attack calculations](ON-ATTACK.md) for the model, implemented bindings and remaining gaps. **Universal all-item/all-passive coverage is still incomplete**; known special champion gaps are marked partial in the UI. Do not treat broad browser rendering checks as numerical certification of those mechanics.
+
+Validation: 58 unit tests; advanced and fallback attack browser passes for 173 champions; registered available item procs; existing advanced Builder/Lookup suite (173 champions at four levels, 230 Builder items, 600 lookup item tooltips, interactions and startup failures); existing ability DPS suite (692 abilities). No uncaught browser errors. Root and preview runtime files are synchronized.
