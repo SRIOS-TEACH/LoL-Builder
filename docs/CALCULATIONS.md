@@ -39,4 +39,4 @@ These definitions remain explicitly unavailable. Resolving them numerically requ
 
 ## Remaining game-level acceptance work
 
-All calculations are **not yet certified game-correct**. Full passive application, item interactions, damage mitigation and effects implemented only in scripts remain outside the interpreter's coverage. Ability DPS is still labeled unmodeled. Validate those against the selected patch before moving to unrelated layout/features.
+All calculations are **not yet certified game-correct**. Full passive application, item interactions, damage mitigation and effects implemented only in scripts remain outside the interpreter's coverage. Ability damage-per-cooldown comparisons, recast models and alternate outcomes are documented in [DPS.md](DPS.md), including remaining unsupported sequence totals. Validate those against the selected patch before moving to unrelated layout/features.

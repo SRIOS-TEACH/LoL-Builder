@@ -911,16 +911,16 @@ body {
 
 .ability-layout {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.55rem;
 }
 
 .ability-passive-card {
-  grid-column: 1 / span 2;
+  grid-column: 1;
 }
 
 .ability-attack-card {
-  grid-column: 3 / span 2;
+  grid-column: 2;
 }
 
 .ability-head {
@@ -1023,6 +1023,8 @@ body {
     grid-template-columns: 1fr;
   }
 
+  .ability-passive-card, .ability-attack-card { grid-column: 1; }
+
   .rune-shard-row {
     grid-template-columns: 1fr;
   }
@@ -1041,3 +1043,9 @@ body {
 .combat-input-grid label { font-size: .9em; overflow-wrap: anywhere; }
 .ability-inputs .combat-input-grid { grid-template-columns: minmax(0, 1fr); }
 .ability-inputs .form-control { max-width: 100%; }
+/* Keep damage and DPS variants readable within narrow ability cards. */
+.ability-dps { margin-top: 0.75rem; }
+.ability-dps-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.ability-dps-table th, .ability-dps-table td { text-align: left; vertical-align: top; padding: 0.3rem; overflow-wrap: anywhere; }
+.ability-dps-table th:first-child { width: 36%; }
+.ability-dps small { display: block; opacity: 0.8; }

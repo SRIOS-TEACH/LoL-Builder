@@ -505,6 +505,7 @@ function extractCdragonSpell(spellRecord) {
 
   const parsedCandidate = spellCandidates
     .map((candidate) => ({
+      spellData: candidate,
       effects: candidate?.mEffectAmount || [],
       dataValues: normalizeDataValues(
         candidate?.mDataValues
@@ -526,6 +527,7 @@ function extractCdragonSpell(spellRecord) {
 
   if (!parsedCandidate) return null;
   return {
+    spellData: parsedCandidate.spellData,
     effects: parsedCandidate.effects || [],
     dataValues: parsedCandidate.dataValues || [],
     calculations: parsedCandidate.calculations || {},
@@ -876,7 +878,7 @@ async function setChampion(name) {
     const [details, raw, strings] = await Promise.all([
       window.ApiClient.fetchChampionDetails(BUILDER.version, name),
       window.ApiClient.fetchCommunityDragonChampion(name).catch(() => null),
-      ['Akshan','Gangplank','Aphelios'].includes(name)
+      ['Akshan','Gangplank','Aphelios','Jayce','Nidalee','Elise','Gnar'].includes(name)
         ? window.ApiClient.fetchJson('https://raw.communitydragon.org/latest/game/en_us/data/menu/en_us/lol.stringtable.json').catch(()=>null)
         : null,
     ]);
@@ -1534,7 +1536,8 @@ function combatSources() {
 function renderCombatInputs() {
   document.getElementById('combatInputs')?.replaceChildren();
   const sources=combatSources(),base=baseCalculationContext(getComputedChampionStatsForTooltips());
-  const extra=window.ChampionEffects.model(BUILDER).fields;
+  const extra=window.ChampionEffects.model(BUILDER).fields.concat((BUILDER.championData?.spells||[])
+    .flatMap((spell,i)=>window.AbilityDps.timingFields(spell.id,['q','w','e','r'][i])));
   const all=window.CombatInputs.descriptors(sources,base).filter(f=>!extra.some(e=>e.key===f.key)).concat(extra);
   const usage=new Map();
   for(const source of sources){
@@ -1680,6 +1683,7 @@ function resolveAbilityToken(tokenRaw, ctx) {
       return {
         html: `<span class="ability-detail-number">${formatAbilityNumber(shown, calc.displayAsPercent)} <span class="ability-detail-eq">(${eq})</span></span>`,
         numeric: shown,
+        isPercent: calc.displayAsPercent === true,
       };
     };
 
@@ -1846,13 +1850,8 @@ function expandAbilityLocalization(text) {
   return result.replace(/@([^@]+)@/g,(_,key)=>`{{ ${key} }}`);
 }
 
-function buildDetailedAbilityText(spell, rank, spellKey) {
-  const raw = expandAbilityLocalization(spell.tooltip || spell.description || "");
-  const rawRank = Number(rank) || 0;
-  
-  if (rawRank <= 0) return spell.description || "";
-  
-  const safeRank = Math.max(1, rawRank);
+function buildAbilityContext(spell, rank, spellKey) {
+  const safeRank = Math.max(1, Number(rank) || 1);
   const stats = getComputedChampionStatsForTooltips();
   const vars = Object.fromEntries((spell.vars || []).map((v) => [String(v.key || "").toLowerCase(), v]));
   
@@ -1896,7 +1895,7 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
     return acc;
   }, {});
 
-  const ctx = {
+  return {
     spell,
     safeRank,
     stats,
@@ -1910,6 +1909,12 @@ function buildDetailedAbilityText(spell, rank, spellKey) {
     allSpellPayloadByRef,
     allSpellPayloadByAlias,
   };
+}
+
+function buildDetailedAbilityText(spell, rank, spellKey, context) {
+  const raw = expandAbilityLocalization(spell.tooltip || spell.description || "");
+  if (!(Number(rank) > 0)) return spell.description || "";
+  const ctx = context || buildAbilityContext(spell, rank, spellKey);
   const replaced = raw.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (full, tokenRaw) => {
     const resolved = resolveAbilityToken(tokenRaw, ctx);
     if (resolved) return resolved.html;
@@ -1949,6 +1954,28 @@ function abilityEffectValues(payload,rank) {
   return rows.length?`<details class="ability-effect-values"><summary>Effect values</summary>${rows.join('')}</details>`:'';
 }
 
+function renderAlternateAbilityDps(spell, rank, slot) {
+  const forms={JavelinToss:['Takedown','Cougar Q'],Bushwhack:['Pounce','Cougar W'],PrimalSurge:['Swipe','Cougar E'],
+    JayceToTheSkies:['JayceShockBlast','Cannon Q'],JayceStaticField:['JayceHyperCharge','Cannon W'],JayceThunderingBlow:['JayceAccelerationGate','Cannon E'],
+    EliseHumanQ:['EliseSpiderQCast','Spider Q'],EliseHumanW:['EliseSpiderW','Spider W'],EliseHumanE:['EliseSpiderE','Spider E'],
+    GnarQ:['GnarBigQ','Mega Q'],GnarW:['GnarBigW','Mega W'],GnarE:['GnarBigE','Mega E']};
+  const form=forms[spell.id];
+  if(!form || !(rank>0))return '';
+  const payload=BUILDER.cdragonAbilityData?.byAlias?.[canonicalizeToken(form[0])]?.payload;
+  const loc=payload?.spellData?.mClientData?.mTooltipData?.mLocKeys;
+  const raw=BUILDER.strings?.[loc?.keyTooltip?.toLowerCase()];
+  if(!payload || !raw)return `<div class="ability-dps"><strong>${form[1]} DPS:</strong> Alternate form data unavailable</div>`;
+  // Cougar skills scale with Aspect of the Cougar rather than their human skill ranks.
+  const formRank=['Takedown','Pounce','Swipe'].includes(form[0])?Math.max(1,BUILDER.abilityRanks.r):rank;
+  const alternate={...spell,id:form[0],tooltip:raw,cooldown:payload.spellData.cooldownTime?.slice(1)};
+  const context=buildAbilityContext(alternate,formRank,slot);
+  Object.assign(context,buildResolvedSpellPayload(payload,formRank,context.stats));
+  const result=window.AbilityDps.profile({spell:alternate,rank:formRank,payload,
+    tooltip:expandAbilityLocalization(raw),resolve:token=>resolveAbilityToken(token,context),
+    cooldown:window.AbilityDps.cooldown(alternate,formRank,context.stats,payload)});
+  return `<div class="ability-dps-form"><strong>${form[1]}</strong>${window.AbilityDps.render(result)}</div>`;
+}
+
 function renderAbilityCards() {
   const root = document.getElementById("abilityCards");
   if (!BUILDER.championData) {
@@ -1966,8 +1993,6 @@ function renderAbilityCards() {
   <div><strong>Basic Attack Damage:</strong> ${attack ? `${attack.autoAttackDamage.toFixed(1)} (${computed.ad.toFixed(1)}${attack.onHitRows.map((r) => ` + ${r}`).join("") || ""})` : "-"}</div>
   <div><strong>Basic Attack DPS:</strong> ${attack ? `${attack.attackDps.toFixed(1)} (${attack.autoAttackDamage.toFixed(1)} × ${computed.asTotal.toFixed(3)})` : "-"}</div>
   <div><strong>Attack Range:</strong> ${attack ? attack.attackRange.toFixed(1) : "-"}</div><small>Before mitigation; excludes critical strikes, item procs, and champion attack modifiers.</small></div>`;
-  const abilityHaste = getItemStats().haste + getRuneStats().haste;
-  const cooldownReductionPct = abilityHaste > 0 ? (abilityHaste / (abilityHaste + 100)) : 0;
 
   const spells = champ.spells.map((spell, i) => {
     const key = ["q", "w", "e", "r"][i];
@@ -1975,14 +2000,20 @@ function renderAbilityCards() {
     const opts = Array.from({ length: max + 1 }, (_, idx) => `<option value="${idx}">${idx}</option>`).join("");
     const rank = BUILDER.abilityRanks[key];
     const cdBase = parseByRank(spell.cooldownBurn, rank);
-    const cdNumeric = Number(cdBase);
-    const cd = Number.isFinite(cdNumeric) && cdNumeric > 0
-      ? `${(cdNumeric * (1 - cooldownReductionPct)).toFixed(2)} (base ${cdNumeric.toFixed(2)})`
+    const context = rank > 0 ? buildAbilityContext(spell, rank, key) : null;
+    const cdNumeric = window.AbilityDps.cooldown(spell, rank, context?.stats, context?.cdragonSpell);
+    const cd = cdNumeric !== null
+      ? `${cdNumeric.toFixed(2)} (base ${Number(cdBase).toFixed(2)})`
       : cdBase;
     const cost = parseByRank(spell.costBurn, rank);
     const range = parseByRank(spell.rangeBurn, rank);
-    const detail = buildDetailedAbilityText(spell, rank, key);
-    return `<div class="ability-card" data-ability-slot="${key}"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p><div class="ability-inputs"></div>${abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank)}<div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div><div><strong>DPS:</strong> Not modeled</div></div>`;
+    const detail = buildDetailedAbilityText(spell, rank, key, context);
+    let dps = window.AbilityDps.render(window.AbilityDps.profile({spell, rank, cooldown:cdNumeric,
+      tooltip:expandAbilityLocalization(spell.tooltip || spell.description || ''),
+      resolve:token=>resolveAbilityToken(token, context), payload:context?.cdragonSpell,
+      timing:{delay:BUILDER.combatValues[`dps:${key}:delay`],overlap:BUILDER.combatValues[`dps:${key}:overlap`]}}));
+    dps += renderAlternateAbilityDps(spell,rank,key);
+    return `<div class="ability-card" data-ability-slot="${key}"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p><div class="ability-inputs"></div>${abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank)}<div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div>${dps}</div>`;
   }).join("");
 
   root.innerHTML = passive + attackCard + spells;
