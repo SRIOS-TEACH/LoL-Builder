@@ -24,9 +24,11 @@
         <header id="builderHeroCard" class="dashboard-toolbar section-card">
           <div id="selectedChampionBadge" class="selected-champion-badge">
             <button id="championPickerBtn" class="champion-picker-icon-btn" type="button" aria-label="Select champion">+</button>
-            <div><strong id="dashboardChampionName">Select champion</strong><label class="champ-level-control">Level <select id="builderLevel" class="form-control"></select></label></div>
+            <div><strong id="dashboardChampionName">Select champion</strong><small id="dashboardChampionTitle"></small></div>
           </div>
+          <label class="champ-level-control toolbar-level">Level <select id="builderLevel" class="form-control"></select></label>
           <div class="toolbar-build"><span class="dashboard-label">Items</span><div id="itemSlots" class="item-slots item-slots-icons"></div></div>
+          <label class="toolbar-skin">Skin<select id="skinSelector" class="form-control" disabled><option>Original</option></select></label>
           <button id="passiveToggleBtn" class="btn btn-sm" type="button">Item passives</button>
           <p id="builderStatus" class="status-text" role="status"></p>
         </header>

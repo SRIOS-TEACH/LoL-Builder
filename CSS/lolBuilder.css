@@ -1134,3 +1134,55 @@ body.compact-dashboard { background-image:linear-gradient(90deg,rgba(5,11,22,.65
 .compact-dashboard .ability-layout { grid-template-rows:auto minmax(0,1.4fr) minmax(0,1fr); }
 .compact-dashboard .stats-table td:nth-child(3) { padding-left:12px; }
 @media(max-width:980px),(max-height:720px) { .compact-dashboard .ability-layout { grid-template-rows:auto auto auto; } }
+/* Readable descriptions and the full client-style rune configuration. */
+.compact-dashboard .builder-dashboard { grid-template-columns:minmax(350px,1.12fr) minmax(500px,2.4fr) minmax(195px,.63fr); }
+.dashboard-toolbar { gap:16px; }
+#dashboardChampionTitle { display:block;color:#afbdd1;font-size:13px;margin-top:4px;text-transform:capitalize; }
+.dashboard-toolbar .selected-champion-badge { min-width:250px; }
+.dashboard-toolbar .toolbar-level { flex-direction:column;gap:3px;margin:0; }
+.toolbar-build { flex:0 1 auto;gap:8px; }
+.toolbar-build .item-slots { grid-template-columns:repeat(7,48px);gap:6px; }
+.toolbar-build .role-quest-slot { border-color:#e46570 !important;color:#e46570; }
+.toolbar-skin { margin-left:auto;font-size:12px;min-width:120px;max-width:200px; }
+.toolbar-skin select { height:30px;font-size:12px; }
+.compact-dashboard .stats-table { font-size:14px; }
+.compact-dashboard .stats-table td { padding:5px 3px; }
+.compact-dashboard .stats-label { font-size:13px; }
+.compact-dashboard .stats-table .stat-icon { display:inline;font-size:12px;margin-right:4px; }
+.compact-dashboard .ability-card { font-size:14px; }
+.compact-dashboard .ability-head strong { font-size:15px; }
+.compact-dashboard .ability-rank-row label,.compact-dashboard .ability-meta { font-size:13px; }
+.ability-description { margin:8px 0; }
+.simple-description,.detailed-description { font-size:14px;line-height:1.45;color:#dbe5f3; }
+.ability-description [hidden] { display:none !important; }
+.detail-toggle { margin-top:6px;color:#e5c889;border-color:#6f654c;font-size:12px; }
+.compact-dashboard .ability-dps { font-size:13px; }
+.compact-dashboard .ability-dps small { font-size:10px; }
+.compact-dashboard .ability-layout { grid-template-rows:auto minmax(0,1.3fr) minmax(0,1fr); }
+.compact-dashboard .rune-column-block { display:block;position:relative;padding-left:9px;border-left:2px solid #9c8558;border-radius:0; }
+.compact-dashboard .rune-column-block + .rune-column-block { border-left-color:#ad525d; }
+.compact-dashboard .rune-subpanel-grid { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px 4px; }
+.compact-dashboard .rune-subpanel-grid-primary { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.compact-dashboard .rune-grid-btn { width:31px;height:31px;margin:1px 0; }
+.compact-dashboard .rune-grid-btn img { width:25px;height:25px; }
+.compact-dashboard .rune-column-title { margin-bottom:8px; }
+.compact-dashboard .rune-shard-icon-row { border-top:1px solid #ffffff20;padding-top:7px;margin-top:8px; }
+#attackSummary [data-attack-result] { font-size:26px; }
+#attackSummary .ability-head strong { font-size:16px; }
+@media(max-width:1250px) { .compact-dashboard .builder-dashboard { grid-template-columns:330px minmax(380px,1fr) 185px; } .dashboard-toolbar { gap:9px; } .dashboard-toolbar .selected-champion-badge { min-width:205px; } .toolbar-build .item-slots { grid-template-columns:repeat(7,40px);gap:4px; } .toolbar-skin { max-width:140px; } }
+@media(max-width:1050px),(max-height:720px) { .compact-dashboard .builder-dashboard { height:auto;grid-template-columns:330px minmax(0,1fr);grid-template-rows:auto auto; } .dashboard-right { grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr; } .compact-dashboard .ability-layout { grid-template-rows:auto auto auto; } .dashboard-toolbar { flex-wrap:wrap; } }
+@media(max-width:640px) { .compact-dashboard .builder-dashboard { display:flex; } .dashboard-toolbar .selected-champion-badge { min-width:0;flex:1; } .toolbar-build { width:100%; } .toolbar-build .item-slots { grid-template-columns:repeat(7,minmax(30px,1fr));width:100%; } .toolbar-skin { margin:0;max-width:65%; } .dashboard-right { display:flex; } }
+.compact-dashboard .ability-card { position:relative; }
+.compact-dashboard .ability-card:not(.ability-passive-card):not(.ability-attack-card) .ability-head { padding-right:62px; }
+.compact-dashboard .ability-rank-row { position:absolute;top:12px;right:10px;margin:0; }
+.compact-dashboard .ability-rank-row label { flex-direction:column;gap:0;font-size:10px; }
+.compact-dashboard .ability-rank-row select { width:44px;height:23px; }
+.compact-dashboard .ability-head .ability-icon { width:28px;height:28px; }
+.ability-description { margin:5px 0; }
+.detail-toggle { margin-top:3px;padding:2px 7px; }
+.compact-dashboard .ability-dps { margin-top:4px; }
+.compact-dashboard .ability-dps-table td,.compact-dashboard .ability-dps-table th { padding:2px 3px; }
+.compact-dashboard .ability-layout { grid-template-rows:auto minmax(0,1.6fr) minmax(0,1fr); }
+@media(max-width:1050px),(max-height:720px) { .compact-dashboard .ability-layout { grid-template-rows:auto auto auto; } }
+.compact-dashboard .rune-subpanel-grid:has(.rune-choice-row) { display:flex;flex-direction:column;gap:7px; }
+.rune-choice-row { display:flex;justify-content:space-around;gap:3px; }

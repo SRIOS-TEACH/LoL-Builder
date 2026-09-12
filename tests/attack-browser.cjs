@@ -38,14 +38,14 @@ const server=http.createServer((req,res)=>{
    return route.fulfill({contentType:'application/json',body:read(file)});
  });
  await page.goto(base+'/Builder.html');
- await page.waitForFunction(()=>document.querySelectorAll('#itemSlots button').length===6);
+ await page.waitForFunction(()=>document.querySelectorAll('#itemSlots button').length===7);
  const select=async name=>page.evaluate(async name=>{
    await setChampion(name);BUILDER.level=18;BUILDER.abilityRanks={q:5,w:5,e:5,r:3};renderStats();renderAbilityCards();
  },name);
  const get=slot=>page.locator(`[data-ability-slot="${slot}"] .ability-dps`).innerText();
 
  const result=()=>page.evaluate(()=>({s:computeDerivedBuildStats(),p:computeAutoAttackProfile(computeDerivedBuildStats())}));
- const equip=async ids=>page.evaluate(ids=>{BUILDER.itemSlots=Array.from({length:6},(_,i)=>ids[i]||null);renderStats();renderAbilityCards();},ids);
+ const equip=async ids=>page.evaluate(ids=>{BUILDER.itemSlots=Array.from({length:7},(_,i)=>ids[i]||null);renderStats();renderAbilityCards();},ids);
  const near=(a,b,message)=>assert.ok(Math.abs(a-b)<0.02,message+': '+a+' != '+b);
  await select('Ahri');await equip(['3031']);
  let x=await result();near(x.p.autoAttackDamage,x.s.ad*(1+x.s.critChance/100*(x.s.critDamage/100-1)),'average crit including IE');
