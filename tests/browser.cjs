@@ -38,7 +38,7 @@ const server=http.createServer((req,res)=>{
    return route.fulfill({contentType:'application/json',body:read(file)});
  });
  await page.goto(base+'/Builder.html');
- await page.waitForFunction(()=>document.querySelectorAll('#itemSlots button').length===6);
+ await page.waitForFunction(()=>document.querySelectorAll('#itemSlots button').length===7);
  assert.equal(await page.locator('#builderStatus').textContent(),'');
  await page.locator('#championPickerBtn').click();
  await page.locator('#modalChampSearch').fill('Ashe');
@@ -58,8 +58,7 @@ const server=http.createServer((req,res)=>{
  await page.locator('[data-slot="0"]').click();
  await page.locator('[data-set-item-id=""]').click();
  assert.equal((await page.locator('#slotText0').innerText()).trim(),'+');
- await page.locator('[data-rune-target="shard_0"]').click();
- await page.locator('[data-rune-option-id="ability-haste"]').click();
+ await page.locator('[data-rune-choice-target="shard_0"][data-rune-choice-id="ability-haste"]').click();
  assert.equal(await page.evaluate(()=>getRuneStats().haste),8);
  if(process.env.SCREENSHOT_DIR){
    fs.mkdirSync(process.env.SCREENSHOT_DIR,{recursive:true});

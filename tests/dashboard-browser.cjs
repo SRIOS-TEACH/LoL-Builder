@@ -38,7 +38,7 @@ const server=http.createServer((req,res)=>{
    return route.fulfill({contentType:'application/json',body:read(file)});
  });
  await page.goto(base+'/Builder.html');
- await page.waitForFunction(()=>document.querySelectorAll('#itemSlots button').length===6);
+ await page.waitForFunction(()=>document.querySelectorAll('#itemSlots button').length===7);
  const select=async name=>page.evaluate(async name=>{
    await setChampion(name);BUILDER.level=18;document.getElementById('builderLevel').value='18';BUILDER.abilityRanks={q:5,w:5,e:5,r:3};renderStats();renderAbilityCards();
  },name);
@@ -47,17 +47,25 @@ const server=http.createServer((req,res)=>{
  await page.setViewportSize({width:1440,height:900});
  await select('Aatrox');
  assert.equal(await page.locator('#attackSummary [data-attack-result="damage"]').count(),1);
- assert.equal(await page.locator('#runePanel [data-rune-target]').count(),11);
+ assert.ok(await page.locator('#runePanel [data-rune-choice-id]').count()>25);
  const fit=()=>page.evaluate(()=>({width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight}));
  let size=await fit();assert.ok(size.scrollWidth<=size.width&&size.scrollHeight<=size.height,JSON.stringify(size));
  assert.match(await page.locator('body').getAttribute('style'),/Aatrox_0.jpg/);
- const clipped=await page.locator('[data-ability-slot="q"]').evaluate(e=>e.scrollHeight>e.clientHeight+1);assert.equal(clipped,false,'Aatrox Q results fit inside card');
+
  await page.screenshot({path:path.join(out,'dashboard-desktop.png')});
- await page.locator('[data-ability-slot="q"] > details > summary').click();
- assert.equal(await page.locator('[data-ability-slot="q"] > details').getAttribute('open'),'');
- await page.keyboard.press('Escape');assert.equal(await page.locator('[data-ability-slot="q"] > details').getAttribute('open'),null);
- await page.locator('#runePanel [data-rune-target="primary_0"]').click();assert.ok(await page.locator('#runeModal').isVisible());
- await page.locator('#closeRuneModalBtn').click();
+
+ const q=page.locator('[data-ability-slot="q"]');
+ assert.ok(await q.locator('.simple-description').isVisible());await q.locator('.detail-toggle').click();
+ assert.ok(await q.locator('.detailed-description').isVisible());assert.equal(await q.locator('.simple-description').isVisible(),false);
+ await q.locator('.detail-toggle').click();assert.ok(await q.locator('.simple-description').isVisible());
+ await page.locator('#skinSelector').selectOption({index:1});assert.match(await page.locator('body').getAttribute('style'),/Aatrox_[1-9]/);
+ assert.ok((await page.locator('#dashboardChampionTitle').innerText()).length>0);
+ await page.locator('[data-slot="6"]').click();
+ assert.ok((await page.locator('#modalItemGrid').innerText())!==undefined);
+ const ids=await page.locator('#modalItemGrid [data-item-id]').evaluateAll(es=>es.map(e=>e.dataset.itemId));assert.ok(ids.length>0);assert.ok(ids.every(id=>/^109[0-4]$|^12[0-2][0-9]$/.test(id)));
+ await page.locator('[data-item-id="1200"]').click();await page.locator('[data-set-item-id="1200"]').click();assert.equal(await page.evaluate(()=>BUILDER.itemSlots[6]),'1200');
+ await page.evaluate(()=>{BUILDER.activeSlot=6;setSlotItem('3031');});assert.equal(await page.evaluate(()=>BUILDER.itemSlots[6]),'1200','regular items cannot occupy the quest slot');
+ await page.locator('[data-slot="6"]').click();await page.locator('[data-set-item-id=""]').click();assert.equal(await page.evaluate(()=>BUILDER.itemSlots[6]),'');
  await select('Aphelios');assert.match(await page.locator('body').getAttribute('style'),/Aphelios_0.jpg/);
  await page.locator('[data-attack-control="attack:weapon"]').selectOption('4');
  await page.setViewportSize({width:390,height:844});

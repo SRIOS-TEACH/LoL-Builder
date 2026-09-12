@@ -38,7 +38,7 @@ const server=http.createServer((req,res)=>{
    return route.fulfill({contentType:'application/json',body:read(file)});
  });
  await page.goto(base+'/Builder.html');
- await page.waitForFunction(()=>document.querySelectorAll('#itemSlots button').length===6);
+ await page.waitForFunction(()=>document.querySelectorAll('#itemSlots button').length===7);
  const select=async name=>page.evaluate(async name=>{
    await setChampion(name);BUILDER.level=18;BUILDER.abilityRanks={q:5,w:5,e:5,r:3};renderStats();renderAbilityCards();
  },name);

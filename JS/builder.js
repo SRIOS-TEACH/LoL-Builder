@@ -6,7 +6,7 @@ const BUILDER = {
   championData: null,
   level: 1,
   abilityRanks: { q: 0, w: 0, e: 0, r: 0 },
-  itemSlots: Array(6).fill(""),
+  itemSlots: Array(7).fill(""),
   activeSlot: null,
   itemTags: new Set(),
   champTags: new Set(),
@@ -310,6 +310,9 @@ async function loadBuilderData() {
       window.ItemPolicy.isPurchasableItem(id, item) && item.maps?.[11]),
     new Set([11]),
   );
+  const questEntries = Object.entries(items.data).filter(([id,item]) => /quest/i.test(item.name) && /^(109[0-4]|12[0-2][0-9])$/.test(id));
+  BUILDER.questItemIds = new Set(questEntries.map(([id])=>id));
+  for(const entry of questEntries) if(!entries.some(([id])=>id===entry[0])) entries.push(entry);
   BUILDER.items = Object.fromEntries(entries.map(([id, item]) => [id, {
     ...item, stats: buildMergedItemStats(window.BuildStats.itemStatsFromDescription(item.description, item.stats), state.cdragonById[id]),
   }]));
@@ -901,6 +904,11 @@ async function setChampion(name) {
     BUILDER.abilityRanks = { q: 0, w: 0, e: 0, r: 0 };
     BUILDER.level = Number(document.getElementById('builderLevel').value) || 1;
     document.getElementById('dashboardChampionName').textContent = champion.name;
+    document.getElementById('dashboardChampionTitle').textContent = champion.title;
+    const skins=document.getElementById('skinSelector'); skins.replaceChildren();
+    (champion.skins || [{num:0,name:'Original'}]).forEach(skin=>{const option=document.createElement('option');option.value=skin.num;option.textContent=skin.num===0?'Original':skin.name;skins.append(option);});
+    skins.disabled=false;
+    skins.onchange=()=>document.body.style.setProperty('--builder-splash-url', `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_${skins.value}.jpg)`);
     document.body.style.setProperty('--builder-splash-url', `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`);
     document.getElementById('championPickerBtn').innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${champion.image.full}" alt="${name}">`;
     document.getElementById('championPickerBtn').setAttribute('aria-label', `Selected champion: ${name}`);
@@ -917,7 +925,7 @@ async function setChampion(name) {
 
 function renderItemSlots() {
   const root = document.getElementById("itemSlots");
-  root.innerHTML = BUILDER.itemSlots.map((_, i) => `<button class="item-slot-btn" data-slot="${i}"><div id="slotText${i}" class="item-slot-empty">+</div></button>`).join("");
+  root.innerHTML = BUILDER.itemSlots.map((_, i) => `<button class="item-slot-btn ${i===6?'role-quest-slot':''}" aria-label="${i===6?'Role quest item':'Item slot '+(i+1)}" title="${i===6?'Role quest item':'Item slot '+(i+1)}" data-slot="${i}"><div id="slotText${i}" class="item-slot-empty">+</div></button>`).join("");
   refreshSlotLabels();
 }
 
@@ -958,7 +966,7 @@ function renderBuilderTagFilters() {
 
 function openItemModal(slot) {
   BUILDER.activeSlot = slot;
-  document.getElementById("itemModalTitle").textContent = "Select Item";
+  document.getElementById("itemModalTitle").textContent = BUILDER.activeSlot === 6 ? "Select Role Quest Item" : "Select Item";
   document.getElementById("itemModal").classList.remove("hidden");
   renderModalItemGrid();
 }
@@ -972,6 +980,7 @@ function renderModalItemGrid() {
   const text = document.getElementById("modalItemSearch").value.trim().toLowerCase();
   const tags = new Set(Array.from(document.querySelectorAll(".modal-tag:checked")).map((cb) => cb.value));
   BUILDER.modalItemFiltered = Object.entries(BUILDER.items)
+    .filter(([id]) => BUILDER.activeSlot === 6 ? BUILDER.questItemIds.has(id) : !BUILDER.questItemIds.has(id))
     .filter(([, item]) => (!text || item.name.toLowerCase().includes(text)) && (!tags.size || Array.from(tags).every((t) => item.tags?.includes(t))))
     .sort((a, b) => a[1].name.localeCompare(b[1].name))
     .map(([id]) => id);
@@ -1063,8 +1072,9 @@ function renderModalItemDetail(id) {
 }
 
 function setSlotItem(itemId) {
-  if (!Number.isInteger(BUILDER.activeSlot) || BUILDER.activeSlot < 0 || BUILDER.activeSlot >= 6) return;
+  if (!Number.isInteger(BUILDER.activeSlot) || BUILDER.activeSlot < 0 || BUILDER.activeSlot >= 7) return;
   if (itemId && !BUILDER.items[itemId]) return;
+  if (itemId && (BUILDER.activeSlot===6) !== BUILDER.questItemIds.has(itemId)) return;
   BUILDER.itemSlots[BUILDER.activeSlot] = itemId;
   refreshSlotLabels();
   renderStats();
@@ -1990,7 +2000,8 @@ function renderAbilityCards() {
   const computed = computeDerivedBuildStats();
   const attack = computed ? computeAutoAttackProfile(computed) : null;
   const passiveText = buildDetailedPassiveText();
-  const passive = `<div class="ability-card ability-passive-card" data-ability-slot="p"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><details class="dashboard-detail"><summary>Ability description</summary><div class="detail-content"><p class="ability-detail-text">${passiveText}</p>${abilityEffectValues(BUILDER.cdragonAbilityData?.p,1)}</div></details><div class="ability-inputs"></div></div>`;
+  const description = (slot,simple,detailed,values='') => `<div class="ability-description" data-description-slot="${slot}"><div class="simple-description">${simple||''}</div><div class="detailed-description" hidden>${detailed}${values}</div><button type="button" class="btn btn-sm detail-toggle" aria-expanded="false">Detailed view</button></div>`;
+  const passive = `<div class="ability-card ability-passive-card" data-ability-slot="p"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div>${description("p",champ.passive.description,passiveText,abilityEffectValues(BUILDER.cdragonAbilityData?.p,1))}<div class="ability-inputs"></div></div>`;
   const escapeAttack = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const attackNumber = (value, key) => `<span class="attack-result" data-attack-result="${key}" tabindex="0" title="${escapeAttack(attack.breakdown)}">${Number.isFinite(value) ? value.toFixed(1) + (attack.partial ? ' (partial)' : '') : 'Unavailable — see calculation'}</span>`;
   const attackCard = `<div class="ability-card ability-attack-card" data-ability-slot="attack"><div class="ability-head"><strong>Attack</strong></div>
@@ -2020,10 +2031,18 @@ function renderAbilityCards() {
       resolve:token=>resolveAbilityToken(token, context), payload:context?.cdragonSpell,
       timing:{delay:BUILDER.combatValues[`dps:${key}:delay`],overlap:BUILDER.combatValues[`dps:${key}:overlap`]}}));
     dps += renderAlternateAbilityDps(spell,rank,key);
-    return `<div class="ability-card" data-ability-slot="${key}"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><details class="dashboard-detail"><summary>Description &amp; formulas</summary><div class="detail-content"><p class="ability-detail-text">${detail}</p>${abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank)}</div></details><div class="ability-inputs"></div><div class="ability-meta"><span><strong>Cooldown:</strong> ${cd}</span><span><strong>Cost:</strong> ${cost}</span><span><strong>Range:</strong> ${range}</span></div>${dps}</div>`;
+    return `<div class="ability-card" data-ability-slot="${key}"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div>${description(key,spell.description,detail,abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank))}<div class="ability-inputs"></div><div class="ability-meta"><span><strong>Cooldown:</strong> ${cd}</span><span><strong>Cost:</strong> ${cost}</span><span><strong>Range:</strong> ${range}</span></div>${dps}</div>`;
   }).join("");
 
+  const expanded = new Set(root.dataset.descriptionChampion === BUILDER.selectedChampion ? [...root.querySelectorAll('.detail-toggle[aria-expanded="true"]')].map(el=>el.parentElement.dataset.descriptionSlot) : []);
+  root.dataset.descriptionChampion = BUILDER.selectedChampion;
   root.innerHTML = passive + attackCard + spells;
+  root.querySelectorAll('.detail-toggle').forEach(button=>{
+    const container=button.parentElement;
+    const update=active=>{button.setAttribute('aria-expanded',String(active));button.textContent=active?'Simple view':'Detailed view';container.querySelector('.simple-description').hidden=active;container.querySelector('.detailed-description').hidden=!active;};
+    update(expanded.has(container.dataset.descriptionSlot));
+    button.addEventListener('click',()=>update(button.getAttribute('aria-expanded')!=='true'));
+  });
   renderCombatInputs();
   for (const control of attack?.controls || []) {
     const card = root.querySelector(`[data-ability-slot="${control.slot}"]`);
@@ -2282,11 +2301,11 @@ function renderRunePanel() {
 
   const renderPrimaryRuneGrid = () => {
     const rows = primaryPath.primaryRows || [];
-    return `<div class="rune-subpanel-grid rune-subpanel-grid-primary">${rows.map((row, rowIndex) => row.map((runeId) => {
+    return `<div class="rune-subpanel-grid rune-subpanel-grid-primary">${rows.map((row, rowIndex) => `<div class="rune-choice-row">${row.map((runeId) => {
       const rune = getRuneMeta(runeId);
       const active = BUILDER.runeSelections.primary[rowIndex] === runeId ? "is-active" : "";
       return `<button class="rune-grid-btn ${active}" data-rune-choice-target="primary_${rowIndex}" data-rune-choice-id="${runeId}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc}`)}" aria-label="${rune.name}">${runeImgTag(rune)}</button>`;
-    }).join("")).join("")}</div>`;
+    }).join("")}</div>`).join("")}</div>`;
   };
 
   const getSecondaryChoiceTarget = (runeId) => {
@@ -2304,11 +2323,11 @@ function renderRunePanel() {
   const renderSecondaryRuneGrid = () => {
     const rows = getSecondaryRows(BUILDER.runeSelections.secondaryPath);
     const selected = new Set(BUILDER.runeSelections.secondary);
-    return `<div class="rune-subpanel-grid">${rows.map((row) => row.map((runeId) => {
+    return `<div class="rune-subpanel-grid">${rows.map((row) => `<div class="rune-choice-row">${row.map((runeId) => {
       const rune = getRuneMeta(runeId);
       const active = selected.has(runeId) ? "is-active" : "";
       return `<button class="rune-grid-btn ${active}" data-rune-choice-target="${getSecondaryChoiceTarget(runeId)}" data-rune-choice-id="${runeId}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc}`)}" aria-label="${rune.name}">${runeImgTag(rune)}</button>`;
-    }).join("")).join("")}</div>`;
+    }).join("")}</div>`).join("")}</div>`;
   };
 
   const renderSelectedRune = (id,target) => { const rune=getRuneMeta(id); return `<button type="button" class="rune-grid-btn is-active" data-rune-target="${target}" title="${escapeAttr(rune.name)}" aria-label="Change ${escapeAttr(rune.name)}">${runeImgTag(rune)}</button>`; };
@@ -2317,12 +2336,12 @@ function renderRunePanel() {
   root.innerHTML = `
     <div class="rune-column-block">
       <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="primaryPath_0"><img src="${primaryPath.icon}" alt="${primaryPath.name}"><span>${primaryPath.name}</span></button></div>
-      ${BUILDER.runeSelections.primary.map((id,i)=>renderSelectedRune(id,`primary_${i}`)).join('')}
+      ${renderPrimaryRuneGrid()}
     </div>
     <div class="rune-column-block">
       <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="secondaryPath_0"><img src="${secondaryPath.icon}" alt="${secondaryPath.name}"><span>${secondaryPath.name}</span></button></div>
-      ${BUILDER.runeSelections.secondary.map((id,i)=>renderSelectedRune(id,`secondary_${i}`)).join('')}
-      <div class="rune-subpanel-grid rune-shard-icon-row">${renderShardIcon(0)}${renderShardIcon(1)}${renderShardIcon(2)}</div>
+      ${renderSecondaryRuneGrid()}
+      <div class="rune-subpanel-grid rune-shard-icon-row">${[0,1,2].map(i=>getRuneOptions(`shard_${i}`).map(rune=>`<button type="button" class="rune-grid-btn ${BUILDER.runeSelections.shards[i]===rune.id?'is-active':''}" data-rune-choice-target="shard_${i}" data-rune-choice-id="${rune.id}" aria-label="${escapeAttr(rune.name)}" title="${escapeAttr(rune.name)}">${runeImgTag(rune)}</button>`).join('')).join('')}</div>
     </div>
   `;
 }
