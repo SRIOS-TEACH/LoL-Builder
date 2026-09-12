@@ -7,7 +7,7 @@
   <link href="CSS/halfmoon-variables.css" rel="stylesheet">
   <link href="CSS/lolBuilder.css" rel="stylesheet">
 </head>
-<body class="dark-mode">
+<body class="dark-mode compact-dashboard">
   <div class="page-wrapper with-navbar with-transitions">
     <nav class="navbar">
       <a href="main.html" class="navbar-brand">LoL Build Builder</a>
@@ -20,44 +20,26 @@
     </nav>
 
     <div class="content-wrapper">
-      <div class="container-fluid builder-dashboard">
-        <div class="row row-eq-spacing">
-          <div class="col-lg-6 col-12">
-            <div id="builderHeroCard" class="card section-card floating-card compact-card champion-stats-card">
-              <p id="builderStatus" class="status-text"></p>
-              <div class="champion-stats-layout">
-                <div id="selectedChampionBadge" class="selected-champion-badge">
-                  <button id="championPickerBtn" class="champion-picker-icon-btn" type="button" aria-label="Select champion">+</button>
-                  <label class="label mb-0 champ-level-control">Level
-                    <select id="builderLevel" class="form-control"></select>
-                  </label>
-                </div>
-                <div id="statsTable" class="stats-table-wrap">
-                  <p class="text-muted">Select a champion to view stats.</p>
-                </div>
-                <div class="champion-items-inline">
-                  <div id="itemSlots" class="item-slots item-slots-icons"></div>
-                </div>
-                <div class="passive-controls">
-                  <button id="passiveToggleBtn" class="btn btn-sm" type="button">Passives</button>
-                </div>
-              </div>
-            </div>
-
-            <div id="runesCard" class="card section-card floating-card compact-card rune-panel">
-              <div id="runePanel" class="rune-panel-grid"></div>
-            </div>
+      <main class="container-fluid builder-dashboard">
+        <header id="builderHeroCard" class="dashboard-toolbar section-card">
+          <div id="selectedChampionBadge" class="selected-champion-badge">
+            <button id="championPickerBtn" class="champion-picker-icon-btn" type="button" aria-label="Select champion">+</button>
+            <div><strong id="dashboardChampionName">Select champion</strong><label class="champ-level-control">Level <select id="builderLevel" class="form-control"></select></label></div>
           </div>
-
-          <div class="col-lg-6 col-12">
-            <div class="card section-card floating-card compact-card">
-              <div id="combatInputs" class="combat-inputs"></div>
-              <small id="abilityRuleHint" class="text-muted"></small>
-              <div id="abilityCards" class="ability-grid ability-layout"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+          <div class="toolbar-build"><span class="dashboard-label">Items</span><div id="itemSlots" class="item-slots item-slots-icons"></div></div>
+          <button id="passiveToggleBtn" class="btn btn-sm" type="button">Item passives</button>
+          <p id="builderStatus" class="status-text" role="status"></p>
+        </header>
+        <aside class="dashboard-left">
+          <section class="section-card dashboard-panel"><h2>Champion stats</h2><div id="statsTable" class="stats-table-wrap"></div></section>
+          <section id="runesCard" class="section-card dashboard-panel rune-panel"><h2>Selected runes</h2><div id="runePanel" class="rune-panel-grid"></div></section>
+        </aside>
+        <section class="dashboard-center"><div class="dashboard-heading"><h2>Abilities</h2><small id="abilityRuleHint" class="text-muted"></small></div><div id="abilityCards" class="ability-grid ability-layout"></div></section>
+        <aside class="dashboard-right">
+          <section id="attackSummary" aria-label="Attack results"></section>
+          <section class="section-card dashboard-panel target-panel"><h2>Target &amp; attack settings</h2><p class="target-hint text-muted">Select a champion to configure combat conditions.</p><div id="combatInputs" class="combat-inputs"></div><div id="attackSettings"></div></section>
+        </aside>
+      </main>
     </div>
   </div>
 

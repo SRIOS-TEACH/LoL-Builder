@@ -84,6 +84,7 @@ const server=http.createServer((req,res)=>{
    await page.locator('[data-attack-control="attack:weapon"]').selectOption('2');const normal=(await result()).p.autoAttackDamage;
    await page.locator('[data-attack-control="attack:weapon"]').selectOption('3');assert.ok((await result()).p.autoAttackDamage>normal,'Infernum multiplier');
    await page.locator('[data-attack-control="attack:weapon"]').selectOption('4');
+   await page.locator('[data-ability-slot="p"] > details').filter({hasText:'Attack controls ('}).locator('summary').click();
    await page.locator('[data-attack-control="attack:chakramCycle"]').fill('0.5');await page.locator('[data-attack-control="attack:chakramCycle"]').dispatchEvent('change');
    assert.ok(Number.isFinite((await result()).p.attackDps));
    await select('Elise');await equip(['3153']);
