@@ -27,6 +27,7 @@ const server=http.createServer((req,res)=>{
    const url=new URL(route.request().url());
    if(url.origin===base)return route.continue();
    requests.push(url.href);
+   if(url.pathname.endsWith('/splash/Aatrox_3.jpg')) return route.fulfill({status:404,body:'Missing splash'});
    if(!url.pathname.endsWith('.json'))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#334155"/></svg>'});
    if(url.hostname==='raw.communitydragon.org' && process.env.ADVANCED_DATA && !failCore) {
      const name=url.pathname.endsWith('/items.cdtb.bin.json')?'cd-items.json':fs.readdirSync(fixtures).find(f=>f.toLowerCase()===path.basename(url.pathname));
@@ -46,6 +47,12 @@ const server=http.createServer((req,res)=>{
  const out=path.join(fixtures,'screenshots');fs.mkdirSync(out,{recursive:true});
  await page.setViewportSize({width:1440,height:900});
  await select('Aatrox');
+ await page.waitForFunction(()=>!document.getElementById('skinSelector').disabled);
+ const skinValues=await page.locator('#skinSelector option').evaluateAll(es=>es.map(e=>e.value));
+ assert.ok(skinValues.includes('2'),'base skin with chromas remains');
+ assert.ok(skinValues.includes('20'),'prestige year edition remains');
+ assert.ok(!skinValues.includes('4'),'chroma omitted');
+ assert.ok(!skinValues.includes('3'),'missing splash omitted');
  assert.equal(await page.locator('#attackSummary [data-attack-result="damage"]').count(),1);
  assert.ok(await page.locator('#runePanel [data-rune-choice-id]').count()>25);
  const fit=()=>page.evaluate(()=>({width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight}));
