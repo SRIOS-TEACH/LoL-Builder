@@ -6,7 +6,10 @@
     "test:browser": "node tests/browser.cjs",
     "test:dps": "node tests/dps-browser.cjs",
     "test:combat": "node tests/combat-audit.cjs",
-    "test:attacks": "node tests/attack-browser.cjs"
+    "test:attacks": "node tests/attack-browser.cjs",
+    "test:dashboard": "node tests/dashboard-browser.cjs"
   },
-  "engines": {"node": ">=20"}
+  "engines": {
+    "node": ">=20"
+  }
 }

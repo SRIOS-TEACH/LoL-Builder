@@ -900,6 +900,7 @@ async function setChampion(name) {
     BUILDER.combatValues = {};
     BUILDER.abilityRanks = { q: 0, w: 0, e: 0, r: 0 };
     BUILDER.level = Number(document.getElementById('builderLevel').value) || 1;
+    document.getElementById('dashboardChampionName').textContent = champion.name;
     document.body.style.setProperty('--builder-splash-url', `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`);
     document.getElementById('championPickerBtn').innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${champion.image.full}" alt="${name}">`;
     document.getElementById('championPickerBtn').setAttribute('aria-label', `Selected champion: ${name}`);
@@ -1975,26 +1976,30 @@ function renderAlternateAbilityDps(spell, rank, slot) {
 
 function renderAbilityCards() {
   const root = document.getElementById("abilityCards");
+  const openControls = new Set(root.dataset.champion === BUILDER.selectedChampion ? [...root.querySelectorAll("[data-controls-slot][open]")].map(el=>el.dataset.controlsSlot) : []);
+  root.dataset.champion = BUILDER.selectedChampion || "";
   if (!BUILDER.championData) {
     root.innerHTML = "<div class='ability-card'><p class='text-muted'>Select a champion to view abilities.</p></div>";
     document.getElementById("abilityRuleHint").textContent = "";
     return;
   }
 
+  document.getElementById('attackSummary').replaceChildren();
+  document.getElementById('attackSettings').replaceChildren();
   const champ = BUILDER.championData;
   const computed = computeDerivedBuildStats();
   const attack = computed ? computeAutoAttackProfile(computed) : null;
   const passiveText = buildDetailedPassiveText();
-  const passive = `<div class="ability-card ability-passive-card" data-ability-slot="p"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><p class="ability-detail-text">${passiveText}</p><div class="ability-inputs"></div>${abilityEffectValues(BUILDER.cdragonAbilityData?.p,1)}</div>`;
+  const passive = `<div class="ability-card ability-passive-card" data-ability-slot="p"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div><details class="dashboard-detail"><summary>Ability description</summary><div class="detail-content"><p class="ability-detail-text">${passiveText}</p>${abilityEffectValues(BUILDER.cdragonAbilityData?.p,1)}</div></details><div class="ability-inputs"></div></div>`;
   const escapeAttack = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const attackNumber = (value, key) => `<span class="attack-result" data-attack-result="${key}" tabindex="0" title="${escapeAttack(attack.breakdown)}">${Number.isFinite(value) ? value.toFixed(1) + (attack.partial ? ' (partial)' : '') : 'Unavailable — see calculation'}</span>`;
   const attackCard = `<div class="ability-card ability-attack-card" data-ability-slot="attack"><div class="ability-head"><strong>Attack</strong></div>
   <div><strong>On-attack damage:</strong> ${attack ? attackNumber(attack.autoAttackDamage,'damage') : '-'}</div>
   <div><strong>On-Attack DPS:</strong> ${attack ? attackNumber(attack.attackDps,'dps') : '-'}</div>
   <div><strong>Attack Range:</strong> ${attack ? attack.attackRange.toFixed(1) : '-'}</div>
-  <small>Average damage before mitigation, including critical strikes and the effects listed in the breakdown. Continuous attacks on one champion; enabled effects remain active.</small>
-  ${attack?.warnings.map(w=>`<p class="text-muted">${escapeAttack(w)}</p>`).join('')||''}
-  <details><summary>Calculation breakdown</summary><pre style="white-space:pre-wrap">${escapeAttack(attack?.breakdown||'Select a champion')}</pre></details></div>`;
+  <small>Average damage · before mitigation</small>
+  <details class="dashboard-detail"><summary>Calculation breakdown</summary><div class="detail-content">${attack?.warnings.map(w=>`<p class="text-muted">${escapeAttack(w)}</p>`).join('')||''}
+  <pre style="white-space:pre-wrap">${escapeAttack(attack?.breakdown||'Select a champion')}</pre></div></details></div>`;
 
   const spells = champ.spells.map((spell, i) => {
     const key = ["q", "w", "e", "r"][i];
@@ -2015,7 +2020,7 @@ function renderAbilityCards() {
       resolve:token=>resolveAbilityToken(token, context), payload:context?.cdragonSpell,
       timing:{delay:BUILDER.combatValues[`dps:${key}:delay`],overlap:BUILDER.combatValues[`dps:${key}:overlap`]}}));
     dps += renderAlternateAbilityDps(spell,rank,key);
-    return `<div class="ability-card" data-ability-slot="${key}"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><p class="ability-detail-text">${detail}</p><div class="ability-inputs"></div>${abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank)}<div><strong>Cooldown:</strong> ${cd}</div><div><strong>Cost:</strong> ${cost}</div><div><strong>Range:</strong> ${range}</div>${dps}</div>`;
+    return `<div class="ability-card" data-ability-slot="${key}"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div><details class="dashboard-detail"><summary>Description &amp; formulas</summary><div class="detail-content"><p class="ability-detail-text">${detail}</p>${abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank)}</div></details><div class="ability-inputs"></div><div class="ability-meta"><span><strong>Cooldown:</strong> ${cd}</span><span><strong>Cost:</strong> ${cost}</span><span><strong>Range:</strong> ${range}</span></div>${dps}</div>`;
   }).join("");
 
   root.innerHTML = passive + attackCard + spells;
@@ -2052,8 +2057,20 @@ function renderAbilityCards() {
       });
       label.append(element); wrapper.append(label);
     }
-    card.append(wrapper);
+    (control.slot === 'attack' || control.key.includes('target:') ? document.getElementById('attackSettings') : card).append(wrapper);
   }
+  document.getElementById('attackSummary').append(root.querySelector('.ability-attack-card'));
+  document.querySelector('.target-hint').textContent = document.getElementById('attackSettings').children.length ? 'Blank values remain unknown. Enable effects to show their inputs.' : 'No additional target inputs for this build.';
+  root.querySelectorAll('.ability-card').forEach(card => {
+    const controls = [...card.querySelectorAll(':scope > .attack-control')].filter(control => control.querySelector('input'));
+    if (controls.length > 2) {
+      const details = document.createElement('details'); details.className = 'dashboard-detail';
+      details.dataset.controlsSlot = card.dataset.abilitySlot; details.open = openControls.has(card.dataset.abilitySlot);
+      const summary = document.createElement('summary'); summary.textContent = 'Attack controls (' + controls.length + ')';
+      const content = document.createElement('div'); content.className = 'detail-content';
+      controls.forEach(control => content.append(control)); details.append(summary, content); card.append(details);
+    }
+  });
   ["q", "w", "e", "r"].forEach((k) => {
     const el = document.getElementById(`rank_${k}`);
     if (!el) return;
@@ -2294,16 +2311,17 @@ function renderRunePanel() {
     }).join("")).join("")}</div>`;
   };
 
+  const renderSelectedRune = (id,target) => { const rune=getRuneMeta(id); return `<button type="button" class="rune-grid-btn is-active" data-rune-target="${target}" title="${escapeAttr(rune.name)}" aria-label="Change ${escapeAttr(rune.name)}">${runeImgTag(rune)}</button>`; };
   ensureSecondarySelectionsValid();
 
   root.innerHTML = `
     <div class="rune-column-block">
       <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="primaryPath_0"><img src="${primaryPath.icon}" alt="${primaryPath.name}"><span>${primaryPath.name}</span></button></div>
-      ${renderPrimaryRuneGrid()}
+      ${BUILDER.runeSelections.primary.map((id,i)=>renderSelectedRune(id,`primary_${i}`)).join('')}
     </div>
     <div class="rune-column-block">
       <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="secondaryPath_0"><img src="${secondaryPath.icon}" alt="${secondaryPath.name}"><span>${secondaryPath.name}</span></button></div>
-      ${renderSecondaryRuneGrid()}
+      ${BUILDER.runeSelections.secondary.map((id,i)=>renderSelectedRune(id,`secondary_${i}`)).join('')}
       <div class="rune-subpanel-grid rune-shard-icon-row">${renderShardIcon(0)}${renderShardIcon(1)}${renderShardIcon(2)}</div>
     </div>
   `;
@@ -2463,3 +2481,6 @@ function selectRuneOption(id) {
 }
 
 document.addEventListener("DOMContentLoaded", initBuilder);
+
+// Overlays keep the dashboard in place and support keyboard dismissal.
+document.addEventListener('keydown', event => { if(event.key === 'Escape') document.querySelectorAll('.dashboard-detail[open]').forEach(detail => {detail.open=false;detail.querySelector('summary').focus();}); });
