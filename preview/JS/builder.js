@@ -874,6 +874,34 @@ function extractChampionStatsFromBinRoot(raw, championName, pathName) {
   return stats;
 }
 
+
+const verifiedSplashes = new Set();
+function splashAvailable(url) {
+  if (verifiedSplashes.has(url)) return Promise.resolve(true);
+  return new Promise(resolve => {
+    const image = new Image();
+    const timer = setTimeout(() => finish(false), 10000);
+    const finish = ok => { clearTimeout(timer); image.onload = image.onerror = null; if(ok) verifiedSplashes.add(url); resolve(ok); };
+    image.onload = () => finish(image.naturalWidth > 0);
+    image.onerror = () => finish(false);
+    image.src = url;
+  });
+}
+async function populateSkinSelector(name, records, requestId) {
+  const selector = document.getElementById('skinSelector');
+  selector.replaceChildren(new Option('Checking splash art…', '')); selector.disabled = true;
+  // Data Dragon's chromas flag means the base skin HAS chromas, not that it IS one.
+  // Named colour variants use a parenthetical suffix; yearly prestige editions are separate skins.
+  const candidates = records.filter(skin => !/\([^)]*\)$/.test(skin.name) || /\(\d{4}\)$/.test(skin.name));
+  const available = await Promise.all(candidates.map(async skin => ({skin, ok:await splashAvailable(`https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_${skin.num}.jpg`)})));
+  if(requestId !== BUILDER.championRequestId) return;
+  selector.replaceChildren();
+  available.filter(entry=>entry.ok).forEach(({skin})=>selector.add(new Option(skin.num===0?'Original':skin.name,String(skin.num))));
+  selector.disabled = !selector.options.length;
+  if(selector.disabled) selector.add(new Option('No splash art available',''));
+  selector.onchange = () => { if(selector.value !== '') document.body.style.setProperty('--builder-splash-url',`url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_${selector.value}.jpg)`); };
+}
+
 async function setChampion(name) {
   const requestId = ++BUILDER.championRequestId;
   setStatus(`Loading ${name}...`);
@@ -905,10 +933,7 @@ async function setChampion(name) {
     BUILDER.level = Number(document.getElementById('builderLevel').value) || 1;
     document.getElementById('dashboardChampionName').textContent = champion.name;
     document.getElementById('dashboardChampionTitle').textContent = champion.title;
-    const skins=document.getElementById('skinSelector'); skins.replaceChildren();
-    (champion.skins || [{num:0,name:'Original'}]).forEach(skin=>{const option=document.createElement('option');option.value=skin.num;option.textContent=skin.num===0?'Original':skin.name;skins.append(option);});
-    skins.disabled=false;
-    skins.onchange=()=>document.body.style.setProperty('--builder-splash-url', `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_${skins.value}.jpg)`);
+    populateSkinSelector(name, champion.skins || [{num:0,name:'Original'}], requestId);
     document.body.style.setProperty('--builder-splash-url', `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`);
     document.getElementById('championPickerBtn').innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${champion.image.full}" alt="${name}">`;
     document.getElementById('championPickerBtn').setAttribute('aria-label', `Selected champion: ${name}`);
