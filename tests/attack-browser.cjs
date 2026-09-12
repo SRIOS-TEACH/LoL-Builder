@@ -68,14 +68,28 @@ const server=http.createServer((req,res)=>{
    await select(name);await equip([]);x=await result();await page.evaluate(()=>{for(let pass=0;pass<3;pass++){const p=computeAutoAttackProfile(computeDerivedBuildStats());for(const c of p.controls)BUILDER.combatValues[c.key]=c.type==='toggle'?true:c.key.endsWith(':hp')?2000:c.key.endsWith(':currentHp')?1000:Math.min(c.max??2,2);}renderStats();renderAbilityCards();});x=await result();audit.push({name,damage:x.p.autoAttackDamage,rows:x.p.rows,warnings:x.p.warnings});
    assert.ok(x.p.autoAttackDamage===null||Number.isFinite(x.p.autoAttackDamage),name+' finite damage');
    assert.ok(x.p.attackDps===null||Number.isFinite(x.p.attackDps),name+' finite DPS');
+   if(process.env.ADVANCED_DATA){assert.equal(x.p.partial,false,name+' incomplete binding');assert.ok(Number.isFinite(x.p.autoAttackDamage),name+': '+x.p.breakdown);}
  }
  if(process.env.ADVANCED_DATA){
    await select('Ahri');
-   for(const id of ['1043','3115','3091','3124','3153','3042','3302','3748','3057','3078','3100','6662','3508','3877','2510','6672','3094','3095','2015','3087','3504','6699','3179','6610','2512','4645']){
+   for(const id of ['1043','3115','3091','3124','3153','3042','3302','3748','3057','3078','3100','6662','3508','3877','2510','6672','3094','3095','2015','3087','3504','6699','3179','6610','2512','4645','3032','3181','3742','2523','3036','3161']){
      if(!await page.evaluate(id=>!!BUILDER.items[id],id))continue;
      await equip([id]);await page.evaluate(()=>{BUILDER.combatValues={};for(let pass=0;pass<3;pass++)for(const c of computeAutoAttackProfile(computeDerivedBuildStats()).controls)BUILDER.combatValues[c.key]=c.type==='toggle'?true:c.key.endsWith(':currentHp')?1000:c.key.endsWith(':hp')?2000:Math.min(c.max??10,10);});
      x=await result();assert.ok(Number.isFinite(x.p.autoAttackDamage),'item '+id+': '+x.p.breakdown);
    }
+ }
+
+ if(process.env.ADVANCED_DATA){
+   await select('Aphelios');await equip([]);
+   await page.locator('[data-attack-control="attack:weapon"]').selectOption('2');const normal=(await result()).p.autoAttackDamage;
+   await page.locator('[data-attack-control="attack:weapon"]').selectOption('3');assert.ok((await result()).p.autoAttackDamage>normal,'Infernum multiplier');
+   await page.locator('[data-attack-control="attack:weapon"]').selectOption('4');
+   await page.locator('[data-attack-control="attack:chakramCycle"]').fill('0.5');await page.locator('[data-attack-control="attack:chakramCycle"]').dispatchEvent('change');
+   assert.ok(Number.isFinite((await result()).p.attackDps));
+   await select('Elise');await equip(['3153']);
+   await page.locator('[data-attack-control="attack:target:currentHp"]').fill('1000');await page.locator('[data-attack-control="attack:target:currentHp"]').dispatchEvent('change');
+   near((await result()).p.rows.find(r=>r.label==='Blade of the Ruined King').value,60,'human BORK');
+   await page.locator('[data-attack-control="attack:spider"]').click();near((await result()).p.rows.find(r=>r.label==='Blade of the Ruined King').value,90,'spider BORK');
  }
  await select('KogMaw');await equip(['3115','3091']);
  if(process.env.SCREENSHOT_DIR){fs.mkdirSync(process.env.SCREENSHOT_DIR,{recursive:true});await page.locator('.ability-attack-card details').evaluate(e=>e.open=true);await page.locator('.ability-attack-card').screenshot({path:path.join(process.env.SCREENSHOT_DIR,'on-attack.png')});}

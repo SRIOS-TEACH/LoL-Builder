@@ -10,7 +10,7 @@
     const name=state.selectedChampion, values=state.combatValues||{}, ranks=state.abilityRanks||{};
     const level=Number(state.level)||1, equipped=[...new Set(state.itemSlots.filter(Boolean).map(String))];
     const has=id=>equipped.includes(String(id));
-    const payload=slot=>state.cdragonAbilityData?.[slot]||state.cdragonAbilityData?.byAlias?.[slot.toLowerCase()]?.payload;
+    const payload=slot=>state.cdragonAbilityData?.[slot]||state.cdragonAbilityData?.byAlias?.[slot.toLowerCase().replace(/[^a-z0-9]/g,'')]?.payload;
     const rank=slot=>slot==='p'||slot.length>1?1:ranks[slot]||0;
     const read=(p,key,r=1)=>C.dataValue(normalise(p?.dataValues??p?.mDataValues),key,r,level).value;
     const data=(slot,key)=>read(payload(slot),key,Math.max(1,rank(slot)));
@@ -21,24 +21,47 @@
       for(const key of ['hp','currentHp','bonusHp'])if(finite(values['attack:target:'+key]))targetStats[key]=values['attack:target:'+key];
       const stats={totalAd:s.ad,baseAd,bonusAd:s.ad-baseAd,ap:s.ap,hp:s.hp,mp:s.mp,
         bonusHp:s.hp-s.base.hp-s.base.hpperlevel*growth,bonusMp:s.mp-s.base.mp-s.base.mpperlevel*growth,
-        armor:s.armor,bonusArmor:s.armor-s.base.armor-s.base.armorperlevel*growth,mr:s.mr,
+        armor:s.armor,bonusArmor:s.armor-s.base.armor-s.base.armorperlevel*growth,mr:s.mr,bonusMr:s.mr-s.base.spellblock-s.base.spellblockperlevel*growth,
         critChance:s.critChance/100,critDamage:s.critDamage/100,bonusCritDamage:((s.item.critDamage||0)+(s.rune.critDamage||0))/100,
         attackSpeed:s.asTotal,bonusAttackSpeed:(s.base.attackspeedperlevel*growth+s.item.asPct+s.rune.asPct)/100+(s.bonusAttackSpeedFromChampion||0),
         lethality:(s.item.lethality||0)+(s.rune.lethality||0)};
       const defaults=Object.fromEntries((scope.ChampionEffects?.model(state).fields||[]).filter(f=>f.key.startsWith('buff:')).map(f=>[f.key,f.defaultValue]));
       const buffs=Object.fromEntries(Object.entries({...defaults,...values}).filter(([k])=>k.startsWith('buff:')).map(([k,v])=>[k.slice(5),v]));
       if(name==='Nasus')buffs['{1b1d7345}']=values['attack:nasusStacks']??0;
-      return {stats,targetStats,buffs,level,ranged:s.base.attackrange>300};
+      return {stats,targetStats,buffs,level,ranged:s.ranged??s.base.attackrange>300};
     };
-    const evaluate=(p,key,s,r=1)=>C.evaluate(C.lookup(p?.calculations??p?.mItemCalculations,key),{...context(s),dataValues:normalise(p?.dataValues??p?.mDataValues),calculations:p?.calculations??p?.mItemCalculations,rank:r,effects:p?.effects});
-    const calc=(slot,key,s)=>evaluate(payload(slot),key,s,Math.max(1,rank(slot)));
+    const evaluate=(p,key,s,r=1)=>{
+      const ctx={...context(s),dataValues:normalise(p?.dataValues??p?.mDataValues),calculations:p?.calculations??p?.mItemCalculations,rank:r,effects:p?.effects},formula=C.lookup(ctx.calculations,key);
+      let result=C.evaluate(formula,ctx);
+      // Unspecified buff stacks mean inactive, as in the ability-box controls.
+      // Missing stats, data values and formulas must still remain unavailable.
+      for(let pass=0;pass<3;pass++){
+        const keys=(result.inputs||[]).filter(k=>k.startsWith('buff:')&&ctx.buffs[k.slice(5)]===undefined);
+        if(!keys.length)break;
+        for(const k of keys)ctx.buffs[k.slice(5)]=0;
+        result=C.evaluate(formula,ctx);
+      }
+      return result;
+    };
+    const calc=(slot,key,s,overrideRank)=>evaluate(payload(slot),key,s,overrideRank??Math.max(1,rank(slot)));
     const controls=[];
-    const toggle=(slot,key,label)=>{controls.push({slot,key:'attack:'+key,label,type:'toggle',disabled:slot!=='attack'&&slot!=='p'&&!rank(slot)});return values['attack:'+key]===true&&!(slot!=='attack'&&slot!=='p'&&!rank(slot));};
+    const toggle=(slot,key,label)=>{
+      const innateForm=slot==='r'&&['Elise','Nidalee','Jayce'].includes(name)&&['spider','cougar','cannon'].includes(key);
+      const disabled=slot!=='attack'&&slot!=='p'&&!rank(slot)&&!innateForm;
+      controls.push({slot,key:'attack:'+key,label,type:'toggle',disabled});return values['attack:'+key]===true&&!disabled;
+    };
     const input=(slot,key,label,extra={})=>{controls.push({slot,key:'attack:'+key,label,type:'number',min:0,...extra});return values['attack:'+key];};
+    const choice=(slot,key,label,options)=>{controls.push({slot,key:'attack:'+key,label,type:'select',options});return clamp(Number(values['attack:'+key])||0,0,options.length-1);};
     const speedBuff={Ashe:['q','BonusAS','Ranger’s Focus',100,'asheQ'],MasterYi:['r','RASBonus','Highlander',100],Tristana:['q','AttackSpeedMod','Rapid Fire',1],Twitch:['q','AttackSpeedMod','Ambush',1],Draven:['w','AttackSpeed','Blood Rush',1],Teemo:['p','BonusAttackSpeed','Guerrilla Warfare',1,null,true],Gwen:['e','BonusAttackSpeed','Skip ’n Slash',100,null,true]};
     function apply(s){
       const out={...s,championBonuses:{...s.championBonuses}};
-      const rawCrit=(s.base.crit+s.base.critperlevel*scope.BuildStats.growthFactor(level))*100+s.item.critChance+s.rune.critChance;
+      const earnedCrit=has(3032)?clamp(Number(values['attack:yunTalCrit'])||0,0,itemData(3032,'CritMax')):0;
+      const rawCrit=(s.base.crit+s.base.critperlevel*scope.BuildStats.growthFactor(level))*100+s.item.critChance+s.rune.critChance+earnedCrit;
+      out.critChance=clamp(out.critChance+earnedCrit,0,100);
+      if(name==='Senna'){
+        const stacks=Number(values['buff:{e88568f8}'])||0,bonus=Math.floor(stacks/data('p','StacksForBonus'))*data('p','BonusCritChance');
+        out.championLifeSteal=Math.max(0,rawCrit+bonus-100)*data('p','CritToLifestealConversionPercent');
+      }
       if(name==='Yasuo'||name==='Yone'){
         const multiplier=data('p','CritChanceMultiplier'),conversion=data('p',name+'CritToAD');
         if(finite(multiplier)&&finite(conversion)){
@@ -64,9 +87,10 @@
           if(finite(bonus)){out.asTotal+=(s.base.attackspeedratio??s.base.attackspeed)*bonus/divisor;out.bonusAttackSpeedFromChampion=(out.bonusAttackSpeedFromChampion||0)+bonus/divisor;}
         }
       }
-      for(const [id,key,dataKey]of [[3504,'ardent','AttackSpeedMin'],[2512,'fiendhunter','BonusAS']])if(has(id)&&values['attack:'+key]===true){
+      for(const [id,key,dataKey]of [[3504,'ardent','AttackSpeedMin'],[2512,'fiendhunter','BonusAS'],[3032,'flurry','ASMod']])if(has(id)&&values['attack:'+key]===true){
         const bonus=itemData(id,dataKey);if(finite(bonus)){out.asTotal+=(s.base.attackspeedratio??s.base.attackspeed)*bonus;out.bonusAttackSpeedFromChampion=(out.bonusAttackSpeedFromChampion||0)+bonus;}
       }
+      if(scope.AttackChampions)Object.assign(out,scope.AttackChampions.apply({name,s:out,data,calc,values,rank}));
       if(name==='Jhin'){
         const reduction=data('p','CritReductionPercent');if(finite(reduction))out.critDamage*=1-reduction;
         const adBonus=calc('p','TotalADPercent',out).value;if(finite(adBonus))out.ad*=1+adBonus;
@@ -171,6 +195,7 @@
         if(toggle(slot,'championOnHit',label+' active')){
           const single=['Jax','Vayne','Sona'].includes(name),interval=single?input(slot,'onHitInterval','Seconds between '+label+' attacks',{min:0.01}):undefined;
           ability(slot,key,label,type,1,single?{interval:finite(interval)&&interval>0?interval:null,onHit:false}:{});
+          if(name==='Shaco'&&finite(rows.at(-1).value))rows.at(-1).value=averageCrit(rows.at(-1).value,chance,crit);
         }
       }
       if(name==='KogMaw'&&toggle('w','championOnHit','Bio-Arcane Barrage active')){
@@ -187,10 +212,14 @@
           row(label+' bonus over a normal attack',finite(total)?total-(name==='Nasus'?base:s.ad):null,'physical',1,r.text,{onHit:false,interval:finite(interval)&&interval>0?interval:null});
         }
       }
-      if(name==='MasterYi'&&toggle('p','doubleStrike','Repeated attacks: Double Strike'))ability('p','TotalDamage','Double Strike','physical',4,{onHit:false});
+      if(name==='MasterYi'&&toggle('p','doubleStrike','Repeated attacks: Double Strike'))ability('p','TotalDamage','Double Strike','physical',data('p','AttackCount'),{onHit:false,extraHit:1});
       if(name==='Kayle'&&level>=11&&toggle('p','kayleWaves','Exalted: waves active'))ability('p','PassiveWaveDamage','Divine Ascent waves','magic',1,{onHit:false});
       if(['Vayne','KogMaw'].includes(name))input('attack','target:hp','Target maximum health');
+      const extended=scope.AttackChampions?.profile({name,s,data,calc,rank,toggle,input,choice,row,values,rows,base,rate})||{base,rate,onHitScale:1,baseType:'physical',notes:[]};
+      base=extended.base;rate=extended.rate;warnings.push(...extended.notes);
+      const championRows=rows.length;
       let phantom=1;
+      if(has(3032)){input('attack','yunTalCrit','Yun Tal earned critical chance (%)',{max:itemData(3032,'CritMax')});toggle('attack','flurry','Yun Tal Flurry active');}
       if(has(3124)){
         const stacks=input('attack','rageStacks','Guinsoo’s Rageblade stacks',{max:itemData(3124,'MaxStacks')??4});
         if(stacks>=itemData(3124,'MaxStacks'))phantom=4/3;
@@ -216,7 +245,7 @@
           const candidates=spellblade.map(id=>({id,r:evaluate(items[id],'SpellbladeDamage',s)}));
           const best=candidates.every(x=>finite(x.r.value))?candidates.reduce((a,b)=>a.r.value>b.r.value?a:b):candidates.find(x=>!finite(x.r.value));
           const cooldown=itemData(best.id,'Cooldown');
-          row(state.items?.[best.id]?.name||'Spellblade',best.r.value,[3100,2510].includes(best.id)?'magic':'physical',1,best.r.text,{interval:finite(interval)&&finite(cooldown)?Math.max(interval,cooldown):null,onHit:false});
+          row(state.items?.[best.id]?.name||'Spellblade',best.r.value,[3100,2510].includes(best.id)?'magic':'physical',1,best.r.text,{interval:finite(interval)&&finite(cooldown)?Math.max(interval,cooldown):null,onHit:false,spellbladeId:best.id,extraHit:best.id===2510});
         }
       }
       const energized={3094:['BonusDamage','Rapid Firecannon','data'],3095:['TotalProcDamage','Stormrazor'],2015:['EnergizedDamage','Scout’s Slingshot','data'],3087:['ChainDamage','Statikk Shiv','data']};
@@ -238,21 +267,59 @@
         const interval=input('attack','titanicInterval','Seconds between Titanic Crescent attacks',{min:itemData(3748,'Cooldown')??0.01}),r=evaluate(items[3748],'CalcValueC',s);
         row('Titanic Crescent',r.value,'physical',1,r.text,{interval:finite(interval)&&interval>0?interval:null,onHit:false});
       }
+      if(has(3181)){const r=evaluate(items[3181],'MaxStackDamage',s);row('Hullbreaker: Skipper',r.value,'physical',5,r.text,{onHit:false});}
+      if(has(3742)&&toggle('attack','shipwrecker','Dead Man’s Plate procs enabled')){
+        const stacks=input('attack','momentum','Momentum discharged per attack',{max:itemData(3742,'MaxStacks')}),interval=input('attack','momentumInterval','Seconds between Shipwrecker attacks',{min:0.01}),r=evaluate(items[3742],'MaxDamageCalc',s);
+        row('Shipwrecker',finite(stacks)&&finite(r.value)?r.value*stacks/itemData(3742,'MaxStacks'):null,'physical',1,`${r.text} × momentum / maximum momentum`,{onHit:false,interval:finite(interval)&&interval>0?interval:null});
+      }
+      const fiendActive=has(2512)&&values['attack:fiendhunter']===true;
+      const itemCritChance=name==='Jhin'?(3*chance+1)/4:chance;
       if(has(6610)&&toggle('attack','sundered','Sundered Sky procs enabled')){
         const interval=input('attack','sunderedInterval','Seconds between Lightshield Strike attacks',{min:itemData(6610,'Cooldown')??0.01}),mod=itemData(6610,'CritModifier');
-        row('Lightshield Strike bonus over average attack',finite(mod)?s.ad*(1-chance)*(crit*mod-1):null,'physical',1,'Non-critical chance × AD × (Lightshield crit multiplier − 1)',{interval:finite(interval)&&interval>0?interval:null,onHit:false});
+        const previous=fiendActive?crit*itemData(2512,'CritModifier'):1;
+        row('Lightshield Strike bonus over average attack',finite(mod)?(name==='Ashe'?0:s.ad*(1-itemCritChance)*Math.max(0,crit*mod-previous)):null,'physical',1,'Non-critical chance × AD × additional forced-crit multiplier (shared forced crit does not stack)',{interval:finite(interval)&&interval>0?interval:null,onHit:false,attackDamage:true});
+        if(fiendActive)row('Opening Barrage on Lightshield Strike',s.ad*crit*mod*(1-itemCritChance)*itemData(2512,'BonusTrueDamage'),'true',1,'Previously non-critical chance × Lightshield critical damage × Opening Barrage ratio',{interval:finite(interval)&&interval>0?interval:null,onHit:false});
       }
       if(has(2512)&&toggle('attack','fiendhunter','Fiendhunter Bolts post-ultimate attacks active')){
         const mod=itemData(2512,'CritModifier'),bonus=itemData(2512,'BonusTrueDamage');
-        row('Opening Barrage physical bonus',finite(mod)?s.ad*(1-chance)*(crit*mod-1):null,'physical',1,'Non-critical chance × AD × (Opening Barrage crit multiplier − 1)',{onHit:false});
-        row('Opening Barrage true bonus',finite(bonus)?s.ad*crit*chance*bonus:null,'true',1,'Critical chance × critical damage × Opening Barrage true-damage ratio',{onHit:false});
+        row('Opening Barrage physical bonus',finite(mod)?(name==='Ashe'?0:s.ad*(1-itemCritChance)*(crit*mod-1)):null,'physical',1,'Non-critical chance × AD × (Opening Barrage crit multiplier − 1)',{onHit:false,attackDamage:true});
+        row('Opening Barrage true bonus',finite(bonus)?s.ad*crit*itemCritChance*bonus:null,'true',1,'Critical chance × critical damage × Opening Barrage true-damage ratio',{onHit:false});
+      }
+      const amplify=(factor,predicate,label)=>{for(const r of rows)if(predicate(r)){r.value=finite(r.value)&&finite(factor)?r.value*factor:null;r.formula=`(${r.formula||r.label}) × ${finite(factor)?factor.toFixed(4):'required input'} [${label}]`;}};
+      rows.forEach((r,i)=>r.source=i<championRows?'champion':'item');
+      if(name==='Zeri'&&values['attack:zeriRightClick'])rows.splice(championRows);
+      if(name==='Camille'&&values['attack:precisionSpellblade']){
+        const conversion=rows.find(r=>r.camilleConversion!==undefined)?.camilleConversion;
+        for(const r of rows.filter(r=>r.spellbladeId&&r.type==='physical')){
+          const amount=finite(r.value)&&finite(conversion)?r.value*conversion:null;
+          rows.push({...r,label:r.label+' (Precision Protocol true portion)',value:amount,type:'true'});
+          r.value=finite(r.value)&&finite(amount)?r.value-amount:null;
+        }
+      }
+      if(has(3161)){
+        const stacks=input('attack','shojinStacks','Focused Will stacks',{max:itemData(3161,'StackCount')}),factor=1+(Number(stacks)||0)*itemData(3161,'SpellDamageIncrease')*(ctx.ranged?itemData(3161,'RangedMod'):1);
+        amplify(factor,r=>r.source==='champion'&&!r.replacementDebit,'Focused Will');
+      }
+      if(has(2523)){
+        const distance=input('attack','distance','Distance to target'),factor=finite(distance)?1+clamp(distance/itemData(2523,'MaxRange'),0,1)*itemData(2523,'MaxDamageAmp'):null;
+        base=finite(base)&&finite(factor)?base*factor:null;
+        // Magnification modifies the attack damage packet, not independent on-hits.
+        amplify(factor,r=>r.attackDamage===true,'Magnification');
+        warnings.push(`Magnification: attack damage × ${finite(factor)?factor.toFixed(4):'unavailable (enter distance)'}. Independent on-hit packets are not attack damage.`);
+      }
+      if(has(3036)){
+        const hp=input('attack','target:bonusHp','Target bonus health'),factor=finite(hp)?1+clamp(hp/itemData(3036,'MaxBonusHealth'),0,1)*itemData(3036,'MaxBonusDamagePercent'):null;
+        base=finite(base)&&finite(factor)?base*factor:null;
+        amplify(factor,r=>r.type!=='true','Giant Slayer');
+        warnings.push(`Giant Slayer: non-true damage × ${finite(factor)?factor.toFixed(4):'unavailable (enter target bonus HP)'}.`);
       }
       if(has(4645)&&toggle('attack','shadowflame','Shadowflame: target below health threshold')){
         const amp=itemData(4645,'SpellItemDamageAmp');for(const r of rows)if(['magic','true'].includes(r.type))r.value=finite(r.value)&&finite(amp)?r.value*(1+amp):null;
+        if(['magic','true'].includes(extended.baseType))base=finite(base)&&finite(amp)?base*(1+amp):null;
       }
       const unsupported={Aphelios:'weapon-specific attacks',Graves:'pellets and reload',Zeri:'charged right-click and Q attacks',Kalista:'attack timing',Akshan:'double-shot timing',Sett:'alternating-punch timing',
         Belveth:'R true damage and special attack-speed rules',Bard:'meep availability and chime scaling',Braum:'Concussive Blows',Camille:'Precision Protocol conversion',Darius:'Hemorrhage and Noxian Might',DrMundo:'Blunt Force Trauma',Elise:'spider-form attacks',Fiora:'vitals and Bladework',Fizz:'Seastone Trident',Galio:'Colossal Smash',Gangplank:'Trial by Fire',Gnar:'Hyper and transformation stats',Illaoi:'Harsh Lesson',JarvanIV:'Martial Cadence',Jayce:'stance-specific attacks',Jinx:'Switcheroo and Get Excited',Kindred:'Mounting Dread',Nautilus:'Staggering Blow and Titan’s Wrath',Nidalee:'Takedown',Nilah:'Formless Blade',Nocturne:'Umbra Blades',Pantheon:'empowered Shield Vault',RekSai:'Queen’s Wrath',Renekton:'Ruthless Predator',Rengar:'Savagery and Bonetooth Necklace',Rumble:'Overheat',Sejuani:'Icebreaker',Shyvana:'form-specific attacks',Skarner:'Shattered Earth',Sylas:'Petricite Burst',Talon:'Blade’s End',Thresh:'Flay charge',Twitch:'Deadly Venom and Spray and Pray',Udyr:'stance-specific attacks',Urgot:'Purge and shotgun legs',Viktor:'Siphon Power',Zed:'Contempt for the Weak'};
-      if(unsupported[name])warnings.push(`${name}: ${unsupported[name]} are not yet modeled; this is a partial estimate.`);
+      if(unsupported[name]&&!extended.covered)warnings.push(`${name}: ${unsupported[name]} are not yet modeled; this is a partial estimate.`);
       let damage=base,dps=finite(base)&&finite(rate)?base*rate:null;
       const formula=[`Average attack = ${s.ad.toFixed(2)} AD × (1 + ${(chance*100).toFixed(2)}% × (${crit.toFixed(3)} − 1))`,`${name==='Jhin'?'Magazine-adjusted':'Attack'} rate = ${finite(rate)?rate.toFixed(3):'unavailable'} attacks/s`];
       formula.push(`Stats: ${ctx.stats.baseAd.toFixed(2)} base AD + ${ctx.stats.bonusAd.toFixed(2)} bonus AD; ${s.ap.toFixed(2)} AP; ${s.hp.toFixed(2)} own HP; ${s.mp.toFixed(2)} own mana.`);
@@ -260,10 +327,10 @@
       if(name==='Jhin')formula.push('Whisper: average the first three probabilistic critical strikes and a guaranteed fourth critical strike; add missing-health damage on the fourth shot. Rate = 4 / (3 / attack speed + reload seconds), excluding animation windup.');
       if(name==='Ashe')formula.push('Frost Shot replaces the ordinary critical-strike formula. Only frosted targets receive its damage bonus; Ranger’s Focus multiplies that attack when enabled.');
       formula.push(`Attack contribution after champion rules = ${finite(base)?base.toFixed(2):'unavailable'}`);
-      const extraHitRates=rows.filter(r=>r.extraHit).map(r=>finite(r.interval)&&r.interval>0&&finite(rate)?Math.min(rate,1/r.interval):null);
+      const extraHitRates=rows.filter(r=>r.extraHit).map(r=>Object.hasOwn(r,'interval')?(finite(r.interval)&&r.interval>0&&finite(rate)?Math.min(rate,1/r.interval)*Number(r.extraHit):null):(finite(rate)&&r.cadence>0?rate/r.cadence*Number(r.extraHit):null));
       const extraHits=extraHitRates.some(r=>r===null)?null:extraHitRates.reduce((a,b)=>a+b,0);
       for(const r of rows){
-        const multiplier=r.onHit===false||r.dot?1:extraHits===null?null:phantom+(rate>0?extraHits/rate:0);
+        const multiplier=r.onHit===false||r.dot?1:extraHits===null?null:(phantom+(rate>0?extraHits/rate:0))*extended.onHitScale;
         let perHit=r.value===null||multiplier===null?null:r.value*multiplier/r.cadence;
         let perSecond=perHit===null||!finite(rate)?null:perHit*rate;
         if(Object.hasOwn(r,'interval')){
@@ -279,7 +346,7 @@
       formula.push('DPS = average on-attack damage × effective attacks per second. Before mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included.');
       if(phantom!==1)warnings.push('Rageblade assumes fully stacked, uninterrupted attacks.');
       formula.push(...warnings);
-      return {autoAttackDamage:damage,attackDps:dps,attackRange:s.attackRange,rate,rows,controls:[...new Map(controls.map(c=>[c.key,c])).values()],warnings,partial:!!unsupported[name],breakdown:formula.join('\n')};
+      return {autoAttackDamage:damage,attackDps:dps,attackRange:s.attackRange,rate,rows,controls:[...new Map(controls.map(c=>[c.key,c])).values()],warnings,partial:!!unsupported[name]&&!extended.covered,breakdown:formula.join('\n')};
     }
     return {apply,profile};
   }

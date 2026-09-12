@@ -2024,7 +2024,7 @@ function renderAbilityCards() {
     const card = root.querySelector(`[data-ability-slot="${control.slot}"]`);
     if (!card) continue;
     const wrapper = document.createElement('div'); wrapper.className = 'attack-control';
-    const element = document.createElement(control.type === 'toggle' ? 'button' : 'input');
+    const element = document.createElement(control.type === 'toggle' ? 'button' : control.type === 'select' ? 'select' : 'input');
     element.dataset.attackControl = control.key;
     if (control.type === 'toggle') {
       element.type = 'button'; element.className = 'btn btn-outline';
@@ -2034,6 +2034,12 @@ function renderAbilityCards() {
       element.textContent = `${control.label}: ${active ? 'On' : 'Off'}`;
       element.addEventListener('click', () => { BUILDER.combatValues[control.key] = !active; renderStats(); renderAbilityCards(); });
       wrapper.append(element);
+    } else if (control.type === 'select') {
+      const label = document.createElement('label'); label.textContent = control.label + ' ';
+      control.options.forEach((text, i) => { const option = document.createElement('option'); option.value = String(i); option.textContent = text; element.append(option); });
+      element.value = String(BUILDER.combatValues[control.key] ?? 0);
+      element.addEventListener('change', () => { BUILDER.combatValues[control.key] = Number(element.value); renderStats(); renderAbilityCards(); });
+      label.append(element); wrapper.append(label);
     } else {
       const label = document.createElement('label'); label.textContent = control.label + ' ';
       element.type = 'number'; element.min = String(control.min ?? 0); element.step = 'any';
