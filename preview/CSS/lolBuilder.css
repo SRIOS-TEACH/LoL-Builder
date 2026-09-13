@@ -1186,3 +1186,19 @@ body.compact-dashboard { background-image:linear-gradient(90deg,rgba(5,11,22,.65
 @media(max-width:1050px),(max-height:720px) { .compact-dashboard .ability-layout { grid-template-rows:auto auto auto; } }
 .compact-dashboard .rune-subpanel-grid:has(.rune-choice-row) { display:flex;flex-direction:column;gap:7px; }
 .rune-choice-row { display:flex;justify-content:space-around;gap:3px; }
+/* Equal ability cards and a slimmer stat/rune column. */
+.compact-dashboard .builder-dashboard { grid-template-columns:minmax(315px,1fr) minmax(500px,2.4fr) minmax(195px,.63fr); }
+.compact-dashboard .ability-layout { grid-template-rows:auto minmax(0,1fr) minmax(0,1fr); }
+.compact-dashboard .ability-head .detail-toggle { margin:0 0 0 auto;flex-shrink:0;font-size:11px; }
+.compact-dashboard .ability-card:not(.ability-passive-card):not(.ability-attack-card) .ability-head { padding-right:50px; }
+.compact-dashboard .ability-head strong { min-width:0; }
+.compact-dashboard .rune-grid-btn { width:35px;height:35px; }
+.compact-dashboard .rune-grid-btn img { width:29px;height:29px; }
+.compact-dashboard .rune-choice-row { display:flex;justify-content:space-evenly;gap:0; }
+.compact-dashboard .rune-subpanel-grid { justify-items:center; }
+.compact-dashboard .rune-panel-grid { gap:12px; }
+.toolbar-build .item-slots:has([data-slot="7"]) { grid-template-columns:repeat(8,44px); }
+.toolbar-build .bot-boots-slot { border-color:#d7b965 !important; }
+@media(max-width:1250px) { .compact-dashboard .builder-dashboard { grid-template-columns:297px minmax(380px,1fr) 185px; } .toolbar-build .item-slots:has([data-slot="7"]) { grid-template-columns:repeat(8,36px); } }
+@media(max-width:1050px),(max-height:720px) { .compact-dashboard .builder-dashboard { height:auto;grid-template-columns:297px minmax(0,1fr); } .compact-dashboard .ability-layout { grid-template-rows:auto 1fr 1fr; } }
+@media(max-width:640px) { .compact-dashboard .builder-dashboard { display:flex; } .compact-dashboard .ability-layout { grid-template-rows:auto;grid-auto-rows:auto; } .toolbar-build .item-slots:has([data-slot="7"]) { grid-template-columns:repeat(8,minmax(28px,1fr)); } }

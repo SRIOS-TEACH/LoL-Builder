@@ -69,10 +69,22 @@ const server=http.createServer((req,res)=>{
  assert.ok((await page.locator('#dashboardChampionTitle').innerText()).length>0);
  await page.locator('[data-slot="6"]').click();
  assert.ok((await page.locator('#modalItemGrid').innerText())!==undefined);
- const ids=await page.locator('#modalItemGrid [data-item-id]').evaluateAll(es=>es.map(e=>e.dataset.itemId));assert.ok(ids.length>0);assert.ok(ids.every(id=>/^109[0-4]$|^12[0-2][0-9]$/.test(id)));
+ const ids=await page.locator('#modalItemGrid [data-item-id]').evaluateAll(es=>es.map(e=>e.dataset.itemId));assert.deepEqual([...ids].sort(),['1200','1201','1202','1203','1204']);
  await page.locator('[data-item-id="1200"]').click();await page.locator('[data-set-item-id="1200"]').click();assert.equal(await page.evaluate(()=>BUILDER.itemSlots[6]),'1200');
  await page.evaluate(()=>{BUILDER.activeSlot=6;setSlotItem('3031');});assert.equal(await page.evaluate(()=>BUILDER.itemSlots[6]),'1200','regular items cannot occupy the quest slot');
  await page.locator('[data-slot="6"]').click();await page.locator('[data-set-item-id=""]').click();assert.equal(await page.evaluate(()=>BUILDER.itemSlots[6]),'');
+
+ const role=async id=>{await page.locator('[data-slot="6"]').click();await page.locator('[data-item-id="'+id+'"]').click();await page.locator('[data-set-item-id="'+id+'"]').click();};
+ await role('1200');await page.locator('#builderLevel').selectOption('20');assert.equal(await page.evaluate(()=>BUILDER.level),20);
+ const hp20=await page.evaluate(()=>computeDerivedBuildStats().hp);await page.locator('#builderLevel').selectOption('18');assert.ok(hp20>await page.evaluate(()=>computeDerivedBuildStats().hp));
+ await role('1201');assert.equal(await page.locator('#builderLevel option').count(),18);
+ await page.locator('[data-slot="0"]').click();assert.ok(await page.locator('[data-item-id="3175"]').isVisible());await page.locator('[data-item-id="3175"]').click();await page.locator('[data-set-item-id="3175"]').click();
+ await role('1202');assert.equal(await page.locator('#itemSlots button').count(),8);assert.equal(await page.evaluate(()=>BUILDER.itemSlots[0]),'');assert.equal(await page.evaluate(()=>BUILDER.itemSlots[7]),'3020');
+ await page.locator('[data-slot="7"]').click();assert.equal(await page.locator('[data-item-id="3031"]').count(),0);await page.locator('#closeItemModalBtn').click();
+ await page.evaluate(()=>{for(let i=0;i<6;i++)BUILDER.itemSlots[i]='3031';renderItemSlots();});await role('1200');assert.equal(await page.evaluate(()=>BUILDER.itemSlots[6]),'1202');await page.locator('#closeItemModalBtn').click();
+ await page.evaluate(()=>{BUILDER.itemSlots[0]='';});await role('1200');assert.equal(await page.evaluate(()=>BUILDER.itemSlots[0]),'3020');assert.equal(await page.locator('#itemSlots button').count(),7);
+ assert.equal(await q.locator('.ability-dps').isVisible(),false);assert.ok(await q.locator('.ability-damage-summary').isVisible());await q.locator('.detail-toggle').click();assert.ok(await q.locator('.ability-dps').isVisible());assert.equal(await q.locator('.ability-dps th').first().innerText(),'Part');await q.locator('.detail-toggle').click();
+ const sizes=await page.locator('[data-ability-slot="q"],[data-ability-slot="w"],[data-ability-slot="e"],[data-ability-slot="r"]').evaluateAll(es=>es.map(e=>({w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height})));assert.ok(sizes.every(s=>Math.abs(s.w-sizes[0].w)<1&&Math.abs(s.h-sizes[0].h)<1));
  await select('Aphelios');assert.match(await page.locator('body').getAttribute('style'),/Aphelios_0.jpg/);
  await page.locator('[data-attack-control="attack:weapon"]').selectOption('4');
  await page.setViewportSize({width:390,height:844});

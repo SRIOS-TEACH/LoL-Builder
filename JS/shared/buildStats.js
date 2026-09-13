@@ -1,7 +1,7 @@
 /** Pure stat helpers. Tooltip fallback reads the stats block, never passive prose. */
 (function (scope) {
   function growthFactor(level) {
-    const n = Math.max(1, Math.min(18, Number(level) || 1)) - 1;
+    const n = Math.max(1, Math.min(20, Number(level) || 1)) - 1;
     return n * (0.7025 + 0.0175 * n);
   }
   function attackSpeed(base, growth, ratio, level, bonusPercent) {
