@@ -3,65 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Item Lookup</title>
+  <meta name="robots" content="noindex">
+  <title>Item Lookup temporarily unavailable | LoL Buildsmith</title>
   <link href="CSS/halfmoon-variables.css" rel="stylesheet">
   <link href="CSS/lolBuilder.css" rel="stylesheet">
 </head>
 <body class="dark-mode">
-  <!-- Page purpose: search/filter SR items and inspect detailed formula output -->
   <div class="page-wrapper with-navbar with-transitions">
-    <nav class="navbar">
-      <a href="main.html" class="navbar-brand">LoL Build Builder</a>
-      <ul class="navbar-nav d-none d-md-flex">
-        <li class="nav-item"><a href="main.html" class="nav-link">Home</a></li>
-        <li class="nav-item"><a href="Builder.html" class="nav-link">Builder</a></li>
-        <li class="nav-item active"><a href="itemLookup.html" class="nav-link">Item Lookup</a></li>
-        <li class="nav-item"><a href="champ.html" class="nav-link">Champion Lookup</a></li>
-      </ul>
-    </nav>
-
-    <div class="content-wrapper">
-      <div class="container-fluid">
-        <div class="card section-card">
-          <h1 class="content-title">Item Lookup</h1>
-          <div class="row row-eq-spacing">
-            <div class="col-lg-3 col-12">
-              <label class="label">Search
-                <input id="itemSearch" class="form-control" placeholder="Search items" />
-              </label>
-              <div id="itemFilters" class="tag-filters tag-filters-column mt-10"></div>
-            </div>
-
-            <div class="col-lg-4 col-12">
-              <div class="mb-10">
-                <strong>Maps:</strong>
-                <div id="mapFilters" class="tag-filters mt-5"></div>
-              </div>
-              <p id="itemCount" class="text-muted"></p>
-              <div id="itemGrid" class="item-icon-grid mt-10"></div>
-            </div>
-
-            <div class="col-lg-5 col-12">
-              <div class="item-detail-panel">
-                <h2 id="itemName">Select an item</h2>
-                <img id="itemIcon" class="item-detail-icon" alt="Item icon" />
-                <div id="itemCost" class="mt-10"></div>
-                <div id="itemTooltipMain"></div>
-                <div id="combatInputs" class="combat-inputs"></div>
-              <div id="itemMeta" class="mt-10"></div>
-
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <nav class="navbar"><a href="main.html" class="navbar-brand">LoL Buildsmith</a></nav>
+    <main class="content-wrapper"><div class="container-fluid"><div class="card hero-card">
+      <h1 class="content-title">Item Lookup is temporarily unavailable</h1>
+      <p>You can still select champions and items in the build calculator.</p>
+      <a class="btn btn-primary" href="Builder.html">Open Builder</a>
+    </div></div></main>
   </div>
-  <script src="JS/shared/apiClient.js"></script>
-  <script src="JS/shared/itemPolicy.js"></script>
-  <script src="JS/shared/calculations.js"></script>
-  <script src="JS/shared/combatInputs.js"></script>
-  <script src="JS/shared/itemData.js"></script>
-  <script src="JS/itemLookup.js"></script>
 </body>
 </html>

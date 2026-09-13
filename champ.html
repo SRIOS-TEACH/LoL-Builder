@@ -3,48 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Champion Lookup</title>
+  <meta name="robots" content="noindex">
+  <title>Champion Lookup temporarily unavailable | LoL Buildsmith</title>
   <link href="CSS/halfmoon-variables.css" rel="stylesheet">
   <link href="CSS/lolBuilder.css" rel="stylesheet">
 </head>
 <body class="dark-mode">
-  <!-- Page purpose: validate champion data rendering (splash, lore, abilities) -->
   <div class="page-wrapper with-navbar with-transitions">
-    <!-- Shared navigation -->
-    <nav class="navbar">
-      <a href="main.html" class="navbar-brand">LoL Build Builder</a>
-      <ul class="navbar-nav d-none d-md-flex">
-        <li class="nav-item"><a href="main.html" class="nav-link">Home</a></li>
-        <li class="nav-item"><a href="Builder.html" class="nav-link">Builder</a></li>
-        <li class="nav-item"><a href="itemLookup.html" class="nav-link">Item Lookup</a></li>
-        <li class="nav-item active"><a href="champ.html" class="nav-link">Champion Lookup</a></li>
-      </ul>
-    </nav>
-
-    <!-- Main page content -->
-    <div class="content-wrapper">
-      <div class="container-fluid">
-        <div id="champHeroCard" class="card section-card splash-bg-card">
-          <h1 class="content-title">Champion Lookup</h1>
-          <div class="row row-eq-spacing">
-            <div class="col-lg-4 col-12">
-              <label class="label">Champion
-                <select id="champSelect" class="form-control"></select>
-              </label>
-            </div>
-          </div>
-          <h2 id="champName" class="mt-20"></h2>
-          <p id="champLore"></p>
-        </div>
-
-        <div class="card section-card">
-          <h2 class="content-title">Abilities</h2>
-          <div id="abilities" class="ability-grid"></div>
-        </div>
-      </div>
-    </div>
+    <nav class="navbar"><a href="main.html" class="navbar-brand">LoL Buildsmith</a></nav>
+    <main class="content-wrapper"><div class="container-fluid"><div class="card hero-card">
+      <h1 class="content-title">Champion Lookup is temporarily unavailable</h1>
+      <p>You can still select champions and items in the build calculator.</p>
+      <a class="btn btn-primary" href="Builder.html">Open Builder</a>
+    </div></div></main>
   </div>
-  <script src="JS/shared/apiClient.js"></script>
-  <script src="JS/champLookup.js"></script>
 </body>
 </html>
