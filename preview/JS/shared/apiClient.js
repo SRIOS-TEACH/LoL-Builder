@@ -9,7 +9,10 @@
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 15000);
       try {
-        const response = await fetch(url, { signal: controller.signal });
+        // Versioned Data Dragon files are immutable. Reuse the browser's disk
+        // cache on repeat visits, while version discovery and /latest stay fresh.
+        const immutable = /^https:\/\/ddragon\.leagueoflegends\.com\/cdn\/\d+\.\d+\.\d+\//.test(url);
+        const response = await fetch(url, { signal: controller.signal, cache: immutable ? 'force-cache' : 'default' });
         if (!response.ok) throw new Error(`Request failed (${response.status}): ${url}`);
         return await response.json();
       } finally {

@@ -9,7 +9,8 @@
 /**
  * Shared optional calculation cache.
  */
-const ITEM_DATA = { cdragonById: {} };
+const ITEM_DATA = { cdragonById: {}, status: 'idle' };
+let itemDataRequest = null;
 
 /**
  * Supported map filters for the item browser.
@@ -59,18 +60,52 @@ function dedupeByNameWithMapPriority(itemEntries, selectedMaps = new Set([11])) 
 /**
  * Loads Community Dragon item payload and indexes by numeric item id.
  */
-async function loadCommunityDragonCalcs() {
-  try {
-    const payload = await window.ApiClient.fetchCommunityDragonItems();
-    ITEM_DATA.cdragonById = {};
+function loadCommunityDragonCalcs() {
+  if (ITEM_DATA.status === 'ready') return Promise.resolve(true);
+  if (itemDataRequest) return itemDataRequest;
+  ITEM_DATA.status = 'loading';
+  itemDataRequest = Promise.resolve().then(() => window.ApiClient.fetchCommunityDragonItems()).then(payload => {
+    const cdragonById = {};
     Object.entries(payload || {}).forEach(([key, value]) => {
       const id = String(key).match(/Items\/(\d+)$/)?.[1]
         || String(value?.itemID || value?.id || "").match(/(\d+)$/)?.[1];
-      if (id) ITEM_DATA.cdragonById[id] = value;
+      if (id) cdragonById[id] = value;
     });
-  } catch (error) {
+    if (!Object.keys(cdragonById).length) throw new Error('The item calculation index is empty or invalid.');
+    ITEM_DATA.cdragonById = cdragonById;
+    ITEM_DATA.status = 'ready';
+    return true;
+  }).catch(error => {
+    ITEM_DATA.status = 'unavailable';
     console.warn("Community Dragon item calculations unavailable", error);
+    return false;
+  }).finally(() => { itemDataRequest = null; });
+  return itemDataRequest;
+}
+
+/**
+ * Riot's champion BIN files contain mode-specific recommendation overrides.
+ * Keep their order, exclude other modes and retired/unavailable shop items,
+ * and never substitute recommendations inferred from champion tags.
+ */
+function getRecommendedItems(raw, { mapId = 11, mode = 'CLASSIC', items = {} } = {}) {
+  const starting = new Set(), core = new Set();
+  const add = (target, refs) => {
+    for (const ref of refs || []) {
+      const id = typeof ref === 'string' ? ref.match(/^Items\/(\d+)$/i)?.[1] : null;
+      if (id && Object.prototype.hasOwnProperty.call(items, id)) target.add(id);
+    }
+  };
+  for (const record of Object.values(raw || {})) {
+    if (record?.__type !== 'ItemRecommendationOverrideSet') continue;
+    for (const override of record.mOverrides || []) {
+      if (!(override.mOverrideContexts || []).some(context =>
+        Number(context.mMapID) === Number(mapId) && context.mModeNameStringId === mode)) continue;
+      for (const bundle of override.StartingItemBundles || []) add(starting, bundle.items);
+      for (const range of override.mRecItemRanges || []) add(core, range.items);
+    }
   }
+  return { starting: [...starting], core: [...core] };
 }
 
 /**
@@ -236,6 +271,7 @@ window.ItemLookupShared = {
   inferActiveCooldownSeconds,
   injectActiveCooldown,
   loadCommunityDragonCalcs,
+  getRecommendedItems,
   gameCalculationToText,
   injectItemCalculationValues,
   getState: () => ITEM_DATA,
