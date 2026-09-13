@@ -45,51 +45,25 @@
     </div>
   </div>
 
-  <div id="itemModal" class="item-modal hidden" role="dialog" aria-modal="true">
-    <div class="item-modal-body item-modal-wide">
-      <div class="item-modal-header">
-        <h3 id="itemModalTitle">Select Item</h3>
-        <div>
-          <button id="clearModalFiltersBtn" class="btn btn-sm" type="button">Clear filters</button>
-          <button id="closeItemModalBtn" class="btn btn-sm" type="button">Close</button>
-        </div>
-      </div>
-      <div class="row row-eq-spacing">
-        <div class="col-lg-3 col-12">
-          <input id="modalItemSearch" class="form-control" placeholder="Search items" />
-          <div id="modalItemFilters" class="tag-filters tag-filters-column mt-10"></div>
-        </div>
-        <div class="col-lg-4 col-12">
-          <p id="modalResultsCount" class="text-muted"></p>
-          <div id="modalItemGrid" class="item-icon-grid mt-10"></div>
-        </div>
-        <div class="col-lg-5 col-12">
-          <div id="modalItemDetail" class="item-detail-panel"></div>
-        </div>
+  <div id="itemModal" class="item-modal hidden shop-modal" role="dialog" aria-modal="true" aria-labelledby="itemModalTitle">
+    <div class="item-modal-body item-modal-wide picker-shell">
+      <div class="item-modal-header"><h3 id="itemModalTitle">Select Item</h3><button id="closeItemModalBtn" class="btn btn-sm" type="button" aria-label="Close item picker">Close ×</button></div>
+      <div class="shop-toolbar"><div class="shop-tabs"><button id="allItemsTab" class="btn btn-sm" type="button" aria-pressed="true">All items</button><button id="recommendedItemsTab" class="btn btn-sm" type="button" aria-pressed="false" hidden>Recommended</button></div><input id="modalItemSearch" class="form-control" placeholder="Search items" aria-label="Search items" autocomplete="off" /><button id="clearModalFiltersBtn" class="btn btn-sm" type="button">Clear filters</button></div>
+      <div class="shop-layout">
+        <div id="modalItemFilters" class="shop-filter-rail" aria-label="Item filters"></div>
+        <section class="picker-results"><p id="modalResultsCount" class="text-muted"></p><div id="modalItemGrid" class="item-icon-grid shop-item-grid" tabindex="0" aria-label="Items"></div></section>
+        <aside id="modalItemDetail" class="item-detail-panel picker-detail" aria-label="Item details"></aside>
       </div>
     </div>
   </div>
 
-  <div id="champModal" class="item-modal hidden" role="dialog" aria-modal="true">
-    <div class="item-modal-body item-modal-wide champ-modal-body">
-      <div class="item-modal-header">
-        <h3>Select Champion</h3>
-        <button id="closeChampModalBtn" class="btn btn-sm" type="button">Close</button>
-      </div>
-      <div class="champ-modal-toolbar">
-        <div class="champ-toolbar-left">
-          <input id="modalChampSearch" class="form-control" placeholder="Search champions" />
-          <div id="modalChampFilters" class="tag-filters champ-filter-row mt-10"></div>
-        </div>
-      </div>
-      <div class="row row-eq-spacing champ-modal-layout">
-        <div class="col-lg-9 col-12 champ-modal-grid-col">
-          <p id="modalChampResults" class="text-muted"></p>
-          <div id="modalChampGrid" class="item-icon-grid champ-icon-grid mt-10"></div>
-        </div>
-        <div class="col-lg-3 col-12 champ-modal-preview-col">
-          <div id="modalChampDetail" class="item-detail-panel"></div>
-        </div>
+  <div id="champModal" class="item-modal hidden" role="dialog" aria-modal="true" aria-labelledby="champPickerTitle">
+    <div class="item-modal-body item-modal-wide champ-modal-body picker-shell">
+      <div class="item-modal-header"><h3 id="champPickerTitle">Select Champion</h3><button id="closeChampModalBtn" class="btn btn-sm" type="button" aria-label="Close champion picker">Close ×</button></div>
+      <div class="champ-modal-toolbar"><input id="modalChampSearch" class="form-control" placeholder="Search champions" aria-label="Search champions" autocomplete="off"/><div id="modalChampFilters" class="tag-filters champ-filter-row"></div></div>
+      <div class="champ-picker-layout">
+        <section class="picker-results"><p id="modalChampResults" class="text-muted"></p><div id="modalChampGrid" class="item-icon-grid champ-icon-grid" tabindex="0" aria-label="Champions"></div></section>
+        <aside id="modalChampDetail" class="item-detail-panel picker-detail" aria-label="Champion details"></aside>
       </div>
     </div>
   </div>

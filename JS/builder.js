@@ -218,6 +218,7 @@ async function initBuilder() {
     renderAbilityCards();
     renderStats();
     wireBuilderUiEvents();
+    BUILDER.uiReady=true;
     document.getElementById("passiveModal").addEventListener("click", (event) => {
       if (event.target.id === "passiveModal") closePassiveModal();
     });
@@ -240,7 +241,7 @@ function wireBuilderUiEvents() {
   document.getElementById("modalChampGrid").addEventListener("mouseover", (event) => {
     const btn = event.target.closest("[data-champ]");
     if (!btn) return;
-    renderChampionModalDetail(btn.dataset.champ);
+    if(BUILDER.hoveredChampion!==btn.dataset.champ){BUILDER.hoveredChampion=btn.dataset.champ;renderChampionModalDetail(btn.dataset.champ);}
   });
   document.getElementById("modalChampGrid").addEventListener("click", (event) => {
     const btn = event.target.closest("[data-champ]");
@@ -298,14 +299,14 @@ function getItemLookupShared() {
 
 async function loadBuilderData() {
   BUILDER.version = await window.ApiClient.fetchLatestVersion();
+  BUILDER.runesLoading=true;
+  const runeData = hydrateRunesFromDdragon(BUILDER.version).catch(()=>null).finally(()=>{BUILDER.runesLoading=false;});
   const [champions, items] = await Promise.all([
     window.ApiClient.fetchChampionIndex(BUILDER.version),
     window.ApiClient.fetchItemIndex(BUILDER.version),
-    hydrateRunesFromDdragon(BUILDER.version),
-    window.ItemLookupShared.loadCommunityDragonCalcs(),
   ]);
+  const advancedItems = window.ItemLookupShared.loadCommunityDragonCalcs().catch(()=>null);
   BUILDER.champions = champions.data;
-  const state = window.ItemLookupShared.getState();
   const entries = window.ItemPolicy.dedupeByNameWithMapPriority(
     Object.entries(items.data).filter(([id, item]) =>
       window.ItemPolicy.isPurchasableItem(id, item) && item.maps?.[11]),
@@ -317,9 +318,16 @@ async function loadBuilderData() {
   for(const entry of midBoots) if(!entries.some(([id])=>id===entry[0])) entries.push(entry);
   BUILDER.questItemIds = new Set(questEntries.map(([id])=>id));
   for(const entry of questEntries) if(!entries.some(([id])=>id===entry[0])) entries.push(entry);
-  BUILDER.items = Object.fromEntries(entries.map(([id, item]) => [id, {
-    ...item, stats: buildMergedItemStats(window.BuildStats.itemStatsFromDescription(item.description, item.stats), state.cdragonById[id]),
-  }]));
+  const updateItemStats = () => { const state=window.ItemLookupShared.getState();
+    BUILDER.items = Object.fromEntries(entries.map(([id,item])=>[id,{...item,stats:buildMergedItemStats(window.BuildStats.itemStatsFromDescription(item.description,item.stats),state.cdragonById[id])}]));
+  };
+  updateItemStats();
+  BUILDER.enrichmentReady = Promise.all([advancedItems,runeData]).then(()=>{
+    updateItemStats();
+    if(!BUILDER.uiReady) return;
+    renderRunePanel();renderStats();renderAbilityCards();
+    if(BUILDER.activeSlot!==null)renderModalItemDetail(BUILDER.inspectedItemId);
+  }).catch(error=>console.warn('Optional builder data unavailable',error));
   BUILDER.itemTags = new Set(Object.values(BUILDER.items).flatMap(item => item.tags || []));
 }
 
@@ -392,12 +400,22 @@ function renderChampionSelect() {
   document.getElementById("championPickerBtn").setAttribute("aria-label", "Select champion");
 }
 
+function wirePickerDismissal(id, close) {
+  const modal=document.getElementById(id); let backdropPress=false;
+  modal.addEventListener('pointerdown',event=>{backdropPress=event.target===modal;});
+  modal.addEventListener('click',event=>{if(backdropPress && event.target===modal) close();backdropPress=false;});
+  modal.addEventListener('keydown',event=>{if(event.key==='Escape'){close();}});
+}
+function selectSearchOnClick(id) {
+  const input=document.getElementById(id);
+  input.addEventListener('click',()=>input.select());
+}
+
 function initChampionModal() {
   const modal = document.getElementById("champModal");
   document.getElementById("modalChampSearch").addEventListener("input", renderChampionModalGrid);
-  modal.addEventListener("click", (event) => {
-    if (event.target.id === "champModal") closeChampionModal();
-  });
+  wirePickerDismissal('champModal',closeChampionModal);
+  selectSearchOnClick('modalChampSearch');
   const root = document.getElementById("modalChampFilters");
   root.innerHTML = Array.from(BUILDER.champTags).sort((a, b) => a.localeCompare(b))
     .map((tag) => `<label class="tag-pill"><input type="checkbox" class="champ-tag" value="${tag}"> ${tag}</label>`).join("");
@@ -407,6 +425,7 @@ function initChampionModal() {
 function openChampionModal() {
   document.getElementById("champModal").classList.remove("hidden");
   renderChampionModalGrid();
+  document.getElementById('modalChampSearch').focus();document.getElementById('modalChampSearch').select();
 }
 
 function closeChampionModal() {
@@ -425,12 +444,13 @@ function renderChampionModalGrid() {
 
   document.getElementById("modalChampResults").textContent = `${BUILDER.modalChampFiltered.length} champions`;
   document.getElementById("modalChampGrid").innerHTML = BUILDER.modalChampFiltered
-    .map((name) => `<button class="item-button-icon" data-champ="${name}" title="${name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.champions[name].image.full}" alt="${name}"></button>`)
+    .map((name) => `<button class="item-button-icon" data-champ="${name}" title="${name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${BUILDER.champions[name].image.full}" alt="${name}" loading="lazy" decoding="async"><span class="picker-champ-name">${BUILDER.champions[name].name}</span></button>`)
     .join("");
   renderChampionModalDetail(BUILDER.modalChampFiltered[0] || null);
 }
 
 async function renderChampionModalDetail(name) {
+  BUILDER.hoveredChampion=name;
   const root = document.getElementById("modalChampDetail");
   if (!name) {
     ++BUILDER.championModalRequestId;
@@ -975,29 +995,48 @@ function refreshSlotLabels() {
 function initItemModal() {
   renderBuilderTagFilters();
   document.getElementById("modalItemSearch").addEventListener("input", renderModalItemGrid);
-  document.getElementById("itemModal").addEventListener("click", (event) => {
-    if (event.target.id === "itemModal") closeItemModal();
-  });
+  wirePickerDismissal('itemModal',closeItemModal);
+  selectSearchOnClick('modalItemSearch');
+  document.getElementById('allItemsTab').onclick=()=>{BUILDER.recommendedOnly=false;renderModalItemGrid();};
+  document.getElementById('recommendedItemsTab').onclick=()=>{BUILDER.recommendedOnly=true;renderModalItemGrid();};
 }
 
 function clearModalFilters() {
   document.getElementById("modalItemSearch").value = "";
-  document.querySelectorAll(".modal-tag").forEach((cb) => { cb.checked = false; });
+  document.querySelectorAll('[data-item-filter]').forEach(button=>button.setAttribute('aria-pressed','false'));
+  BUILDER.recommendedOnly=false;
   renderModalItemGrid();
 }
 
+const SHOP_FILTERS = [
+  ['Damage','Attack Damage','⚔'],['CriticalStrike','Critical Strike','✦'],['AttackSpeed','Attack Speed','➶'],
+  ['SpellDamage','Ability Power','✧'],['AbilityHaste','Ability Haste','◷'],['ArmorPenetration','Armor Penetration','⛏'],
+  ['MagicPenetration','Magic Penetration','✺'],['Health','Health','♥'],['Armor','Armor','⛨'],['SpellBlock','Magic Resist','◈'],
+  ['LifeSteal','Lifesteal','◒'],['Mana','Mana','◆'],['HealthRegen','Health Regen','✚'],['ManaRegen','Mana Regen','↟'],
+  ['Boots','Boots','♟'],['NonbootsMovement','Move Speed','»']
+];
 function renderBuilderTagFilters() {
-  const root = document.getElementById("modalItemFilters");
-  root.innerHTML = Array.from(BUILDER.itemTags).sort((a, b) => a.localeCompare(b))
-    .map((tag) => `<label class="tag-pill"><input type="checkbox" class="modal-tag" value="${tag}"> ${tag}</label>`).join("");
-  root.querySelectorAll(".modal-tag").forEach((cb) => cb.addEventListener("change", renderModalItemGrid));
+  const root=document.getElementById('modalItemFilters');
+  root.innerHTML=SHOP_FILTERS.map(([tag,label,icon])=>`<button type="button" class="shop-filter" data-item-filter="${tag}" aria-label="${label}" title="${label}" aria-pressed="false"><span aria-hidden="true">${icon}</span></button>`).join('');
+  root.querySelectorAll('button').forEach(button=>button.onclick=()=>{button.setAttribute('aria-pressed',String(button.getAttribute('aria-pressed')!=='true'));renderModalItemGrid();});
+}
+function recommendedItemIds() {
+  const source=window.ItemLookupShared.getRecommendedItems?.(BUILDER.cdragonRaw,{mapId:11,mode:'CLASSIC',items:BUILDER.items});
+  const ids=new Set([...(source?.starting||[]),...(source?.core||[])]);
+  for(const set of BUILDER.championData?.recommended||[]) {
+    if(set.map && !['SR','11'].includes(String(set.map))) continue;
+    for(const block of set.blocks||[])for(const item of block.items||[])if(BUILDER.items[String(item.id)]) ids.add(String(item.id));
+  }
+  return ids;
 }
 
 function openItemModal(slot) {
   BUILDER.activeSlot = slot;
+  if(slot>=6){BUILDER.recommendedOnly=false;document.getElementById('modalItemSearch').value='';document.querySelectorAll('[data-item-filter]').forEach(button=>button.setAttribute('aria-pressed','false'));}
   document.getElementById("itemModalTitle").textContent = BUILDER.activeSlot === 6 ? "Select Role Quest" : BUILDER.activeSlot === 7 ? "Select Boots" : "Select Item";
   document.getElementById("itemModal").classList.remove("hidden");
   renderModalItemGrid();
+  document.getElementById('modalItemSearch').focus();document.getElementById('modalItemSearch').select();
 }
 
 function closeItemModal() {
@@ -1007,22 +1046,28 @@ function closeItemModal() {
 
 function renderModalItemGrid() {
   const text = document.getElementById("modalItemSearch").value.trim().toLowerCase();
-  const tags = new Set(Array.from(document.querySelectorAll(".modal-tag:checked")).map((cb) => cb.value));
+  const tags = new Set([...document.querySelectorAll('[data-item-filter][aria-pressed="true"]')].map(button=>button.dataset.itemFilter));
+  const recommendations=recommendedItemIds();
+  document.getElementById('recommendedItemsTab').hidden=!recommendations.size;
+  if(!recommendations.size)BUILDER.recommendedOnly=false;
+  document.getElementById('allItemsTab').setAttribute('aria-pressed',String(!BUILDER.recommendedOnly));
+  document.getElementById('recommendedItemsTab').setAttribute('aria-pressed',String(!!BUILDER.recommendedOnly));
   BUILDER.modalItemFiltered = Object.entries(BUILDER.items)
-    .filter(([id]) => roleItemAllowed(id, BUILDER.activeSlot))
-    .filter(([, item]) => (!text || item.name.toLowerCase().includes(text)) && (!tags.size || Array.from(tags).every((t) => item.tags?.includes(t))))
-    .sort((a, b) => a[1].name.localeCompare(b[1].name))
+    .filter(([id]) => roleItemAllowed(id, BUILDER.activeSlot) && (!BUILDER.recommendedOnly || recommendations.has(id)))
+    .filter(([id, item]) => (!text || item.name.toLowerCase().includes(text)) && (!tags.size || Array.from(tags).every(t=>t==='AbilityHaste' ? item.tags?.some(tag=>['AbilityHaste','CooldownReduction'].includes(tag)) : t==='Boots' ? isBoot(id) : item.tags?.includes(t))))
+    .sort((a,b)=>(a[1].gold?.total||0)-(b[1].gold?.total||0)||a[1].name.localeCompare(b[1].name))
     .map(([id]) => id);
   const ids = BUILDER.modalItemFiltered;
-  document.getElementById("modalResultsCount").textContent = `${ids.length} items shown`;
+  document.getElementById("modalResultsCount").textContent = `${ids.length} ${BUILDER.recommendedOnly?'recommended items':'items shown'}`;
   document.getElementById("modalItemGrid").innerHTML = ids
-    .map((id) => `<button class="item-button-icon" data-item-id="${id}" title="${BUILDER.items[id].name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${BUILDER.items[id].name}"></button>`)
+    .map((id) => `<button class="item-button-icon" data-item-id="${id}" title="${BUILDER.items[id].name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${BUILDER.items[id].name}" loading="lazy" decoding="async"><span class="shop-item-cost">${BUILDER.items[id].gold?.total||0}</span></button>`)
     .join("");
-  renderModalItemDetail(ids[0] || null);
+  renderModalItemDetail(ids.includes(BUILDER.itemSlots[BUILDER.activeSlot]) ? BUILDER.itemSlots[BUILDER.activeSlot] : ids[0] || null);
 }
 
 function renderModalItemDetail(id) {
   BUILDER.inspectedItemId=id;
+  document.querySelectorAll('#modalItemGrid [data-item-id]').forEach(button=>button.classList.toggle('item-button-selected',button.dataset.itemId===id));
   renderCombatInputs();
   const root = document.getElementById("modalItemDetail");
   if (!id) {
@@ -2336,7 +2381,7 @@ function renderRunePanel() {
   const primaryPath = RUNE_DATA.paths[primaryPathId] || null;
   const secondaryPath = RUNE_DATA.paths[secondaryPathId] || null;
   if (!primaryPath || !secondaryPath) {
-    root.innerHTML = "<p class='muted'>Rune data is unavailable.</p>";
+    root.innerHTML = `<p class="muted">${BUILDER.runesLoading ? "Loading rune choices…" : "Rune data is unavailable."}</p>`;
     document.getElementById("runesCard").style.setProperty("--rune-splash-url", "none");
     return;
   }
