@@ -1223,7 +1223,6 @@ body.compact-dashboard { background-image:linear-gradient(90deg,rgba(5,11,22,.65
 #modalItemGrid .item-button-icon { display:flex;flex-direction:column;padding:2px;background:transparent;border:1px solid transparent;gap:2px;min-width:0; }
 #modalItemGrid .item-button-icon:hover,#modalItemGrid .item-button-icon:focus-visible { border-color:#cbb478;background:#28373c; }
 #modalItemGrid .item-icon { width:48px;height:48px;margin:0;border:1px solid #748070;border-radius:0; }
-.shop-item-cost { font-size:11px;color:#dbcda9;line-height:1.4;font-variant-numeric:tabular-nums; }
 .picker-shell .picker-detail { position:static;top:auto;min-height:0;overflow:auto;overscroll-behavior:contain;margin:0;border-color:#495b5d;background:#0b1722;padding:14px;scrollbar-width:thin;font-size:13px; }
 .picker-detail h3 { font-size:18px;margin:0 0 10px; }
 .picker-detail .item-detail-icon { width:64px;height:64px; }
@@ -1242,3 +1241,27 @@ body.compact-dashboard { background-image:linear-gradient(90deg,rgba(5,11,22,.65
 .picker-shell .picker-detail { background:#0b1722 !important; }
 .picker-champ-name { color:#d9e5ed; }
 #recommendedItemsTab[hidden] { display:none !important; }
+
+/* Client-style shop groups and a compact build-cost readout. */
+.toolbar-items-label { display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:58px; }
+.build-gold { display:flex;align-items:center;gap:4px;color:#dac58b;font-size:13px;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap; }
+.build-gold img { width:19px;height:19px;object-fit:contain; }
+.shop-toolbar { padding-bottom:9px; }
+.shop-category-row { display:grid;grid-template-columns:46px minmax(0,1fr);align-items:center;gap:16px;margin-bottom:10px;flex-shrink:0; }
+.shop-category-row .shop-tabs { display:flex;gap:6px;align-items:center;min-width:0;overflow-x:auto; }
+.shop-role-filters { display:flex;gap:6px; }
+.shop-category { display:flex;align-items:center;justify-content:center;width:42px;height:40px;flex:0 0 auto;border:1px solid transparent;background:transparent;border-radius:4px;cursor:pointer; }
+.shop-category img { width:28px;height:28px;object-fit:contain; }
+.shop-category:hover,.shop-category:focus-visible { background:#253743;border-color:#759393; }
+.shop-category[aria-pressed="true"] { border-bottom:2px solid #c8ad70;background:#203140; }
+.shop-category:disabled { opacity:.35;cursor:default; }
+.shop-reset { border:1px solid #9f8957;border-radius:50%;font-size:16px;color:#dfc38a; }
+.shop-reset img { width:26px;height:26px;object-fit:contain; }
+.shop-filter-rail { display:flex;flex-direction:column;gap:0;overflow:auto;overscroll-behavior:contain; }
+.shop-filter-group { display:flex;flex-direction:column;gap:1px;padding:5px 0; }
+.shop-filter-group:first-child { padding-top:0; }
+.shop-filter-group + .shop-filter-group { border-top:1px solid #665c3c; }
+.shop-filter .stat-icon { font-size:20px;margin:0; }
+#modalItemGrid .item-button-icon { align-items:center; }
+@media(max-width:850px) { .shop-category-row { grid-template-columns:40px minmax(0,1fr);gap:10px; } }
+@media(max-width:600px) { .shop-category-row { grid-template-columns:32px minmax(0,1fr);gap:7px; } .shop-category-row .shop-tabs,.shop-role-filters { gap:1px; } .shop-category { width:32px;height:34px; } .shop-category img { width:24px;height:24px; } .shop-filter .stat-icon { font-size:18px; } .shop-filter-group { padding:4px 0; } }
