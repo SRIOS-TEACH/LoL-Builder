@@ -1,3 +1,25 @@
+const STAT_ICONS = {
+  "On-hit": "💥",
+  "HP": "❤️",
+  "MP": "🔷",
+  "HP/5": "💚",
+  "MP/5": "💙",
+  "AD": "🗡️",
+  "AP": "✨",
+  "Range": "🏹",
+  "AH": "⏱️",
+  "Arm": "🛡️",
+  "MR": "🔮",
+  "AS": "⚡",
+  "MS": "👟",
+  "Crit %": "🎯",
+  "Crit Dmg": "💥",
+  "ARPen": "🪓",
+  "MRPen": "🔹",
+  "Lifesteal": "🩸",
+  "Tenacity": "🦶"
+};
+
 const BUILDER = {
   version: "",
   champions: {},
@@ -232,7 +254,7 @@ async function initBuilder() {
 function wireBuilderUiEvents() {
   document.getElementById("championPickerBtn").addEventListener("click", openChampionModal);
   document.getElementById("passiveToggleBtn").addEventListener("click", togglePassivePanel);
-  document.getElementById("clearModalFiltersBtn").addEventListener("click", clearModalFilters);
+  document.getElementById("resetItemFilters").addEventListener("click", clearModalFilters);
   document.getElementById("closeItemModalBtn").addEventListener("click", closeItemModal);
   document.getElementById("closeChampModalBtn").addEventListener("click", closeChampionModal);
   document.getElementById("closeRuneModalBtn").addEventListener("click", closeRuneModal);
@@ -322,11 +344,15 @@ async function loadBuilderData() {
     BUILDER.items = Object.fromEntries(entries.map(([id,item])=>[id,{...item,stats:buildMergedItemStats(window.BuildStats.itemStatsFromDescription(item.description,item.stats),state.cdragonById[id])}]));
   };
   updateItemStats();
+  advancedItems.then(()=>{
+    updateItemStats();
+    if(BUILDER.uiReady && BUILDER.activeSlot!==null) renderModalItemGrid();
+  }).catch(error=>console.warn('Item filter data unavailable',error));
   BUILDER.enrichmentReady = Promise.all([advancedItems,runeData]).then(()=>{
     updateItemStats();
     if(!BUILDER.uiReady) return;
     renderRunePanel();renderStats();renderAbilityCards();
-    if(BUILDER.activeSlot!==null)renderModalItemDetail(BUILDER.inspectedItemId);
+    if(BUILDER.activeSlot!==null)renderModalItemGrid();
   }).catch(error=>console.warn('Optional builder data unavailable',error));
   BUILDER.itemTags = new Set(Object.values(BUILDER.items).flatMap(item => item.tags || []));
 }
@@ -990,6 +1016,14 @@ function refreshSlotLabels() {
     root.className = "";
     root.innerHTML = `<img class="item-slot-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${item.name}" title="${item.name}">`;
   });
+  const cost = BUILDER.itemSlots.reduce((total, id, slot) => {
+    if (slot === 6 || !id) return total;
+    const gold = Number(BUILDER.items[id]?.gold?.total);
+    return total + (Number.isFinite(gold) ? gold : 0);
+  }, 0);
+  const label = document.getElementById('buildGoldCost');
+  label.textContent = cost.toLocaleString('en-US');
+  label.parentElement.setAttribute('aria-label', `Total build cost: ${cost.toLocaleString('en-US')} gold`);
 }
 
 function initItemModal() {
@@ -997,28 +1031,41 @@ function initItemModal() {
   document.getElementById("modalItemSearch").addEventListener("input", renderModalItemGrid);
   wirePickerDismissal('itemModal',closeItemModal);
   selectSearchOnClick('modalItemSearch');
-  document.getElementById('allItemsTab').onclick=()=>{BUILDER.recommendedOnly=false;renderModalItemGrid();};
-  document.getElementById('recommendedItemsTab').onclick=()=>{BUILDER.recommendedOnly=true;renderModalItemGrid();};
+  document.getElementById('allItemsTab').onclick=()=>{BUILDER.recommendedOnly=false;BUILDER.itemRole='';renderModalItemGrid();};
+  document.getElementById('recommendedItemsTab').onclick=()=>{BUILDER.itemRole='';BUILDER.recommendedOnly=true;renderModalItemGrid();};
 }
 
 function clearModalFilters() {
   document.getElementById("modalItemSearch").value = "";
   document.querySelectorAll('[data-item-filter]').forEach(button=>button.setAttribute('aria-pressed','false'));
   BUILDER.recommendedOnly=false;
+  BUILDER.itemRole='';
   renderModalItemGrid();
 }
 
-const SHOP_FILTERS = [
-  ['Damage','Attack Damage','⚔'],['CriticalStrike','Critical Strike','✦'],['AttackSpeed','Attack Speed','➶'],
-  ['SpellDamage','Ability Power','✧'],['AbilityHaste','Ability Haste','◷'],['ArmorPenetration','Armor Penetration','⛏'],
-  ['MagicPenetration','Magic Penetration','✺'],['Health','Health','♥'],['Armor','Armor','⛨'],['SpellBlock','Magic Resist','◈'],
-  ['LifeSteal','Lifesteal','◒'],['Mana','Mana','◆'],['HealthRegen','Health Regen','✚'],['ManaRegen','Mana Regen','↟'],
-  ['Boots','Boots','♟'],['NonbootsMovement','Move Speed','»']
+// Keep the client's filter order, while sharing artwork with Champion Stats.
+const SHOP_FILTER_GROUPS = [
+  ['Physical', [['Damage','Attack Damage','AD'],['CriticalStrike','Critical Strike','Crit %'],['AttackSpeed','Attack Speed','AS'],['OnHit','On-hit','On-hit'],['ArmorPenetration','Armor Penetration','ARPen']]],
+  ['Magic', [['SpellDamage','Ability Power','AP'],['Mana','Mana & Mana Regen','MP'],['MagicPenetration','Magic Penetration','MRPen']]],
+  ['Defense', [['Health','Health & Health Regen','HP'],['Armor','Armor','Arm'],['SpellBlock','Magic Resist','MR']]],
+  ['Utility', [['AbilityHaste','Ability Haste','AH'],['NonbootsMovement','Move Speed','MS'],['LifeSteal','Lifesteal & Omnivamp','Lifesteal']]],
 ];
+const SHOP_ROLES = [['Fighter',1],['Marksman',2],['Assassin',4],['Mage',16],['Tank',8],['Support',32]];
+function matchesShopStat(id, item, tag) {
+  const aliases={AbilityHaste:['AbilityHaste','CooldownReduction'],Mana:['Mana','ManaRegen'],Health:['Health','HealthRegen'],SpellBlock:['SpellBlock','MagicResist'],LifeSteal:['LifeSteal','SpellVamp'],NonbootsMovement:['NonbootsMovement','Boots']};
+  if(tag==='LifeSteal' && ['PercentLifeStealMod','PercentPhysicalVampMod','PercentOmnivampMod'].some(key=>Number(item.stats?.[key])>0)) return true;
+  return (aliases[tag]||[tag]).some(value=>item.tags?.includes(value)) || (tag==='NonbootsMovement' && isBoot(id));
+}
 function renderBuilderTagFilters() {
   const root=document.getElementById('modalItemFilters');
-  root.innerHTML=SHOP_FILTERS.map(([tag,label,icon])=>`<button type="button" class="shop-filter" data-item-filter="${tag}" aria-label="${label}" title="${label}" aria-pressed="false"><span aria-hidden="true">${icon}</span></button>`).join('');
+  root.innerHTML=SHOP_FILTER_GROUPS.map(([name, filters])=>`<div class="shop-filter-group" role="group" aria-label="${name}">${filters.map(([tag,label,stat])=>`<button type="button" class="shop-filter" data-item-filter="${tag}" aria-label="${label}" title="${label}" aria-pressed="false"><span class="stat-icon" aria-hidden="true">${STAT_ICONS[stat]}</span></button>`).join('')}</div>`).join('');
   root.querySelectorAll('button').forEach(button=>button.onclick=()=>{button.setAttribute('aria-pressed',String(button.getAttribute('aria-pressed')!=='true'));renderModalItemGrid();});
+  document.getElementById('modalItemRoles').innerHTML=SHOP_ROLES.map(([name])=>`<button type="button" class="shop-category" data-item-role="${name}" aria-label="${name}" title="${name}" aria-pressed="false"><img src="assets/shop/${name.toLowerCase()}.png" alt=""></button>`).join('');
+  document.querySelectorAll('[data-item-role]').forEach(button=>button.onclick=()=>{
+    BUILDER.itemRole=BUILDER.itemRole===button.dataset.itemRole?'':button.dataset.itemRole;
+    BUILDER.recommendedOnly=false;
+    renderModalItemGrid();
+  });
 }
 function recommendedItemIds() {
   const source=window.ItemLookupShared.getRecommendedItems?.(BUILDER.cdragonRaw,{mapId:11,mode:'CLASSIC',items:BUILDER.items});
@@ -1032,7 +1079,7 @@ function recommendedItemIds() {
 
 function openItemModal(slot) {
   BUILDER.activeSlot = slot;
-  if(slot>=6){BUILDER.recommendedOnly=false;document.getElementById('modalItemSearch').value='';document.querySelectorAll('[data-item-filter]').forEach(button=>button.setAttribute('aria-pressed','false'));}
+  if(slot>=6){BUILDER.recommendedOnly=false;BUILDER.itemRole='';document.getElementById('modalItemSearch').value='';document.querySelectorAll('[data-item-filter]').forEach(button=>button.setAttribute('aria-pressed','false'));}
   document.getElementById("itemModalTitle").textContent = BUILDER.activeSlot === 6 ? "Select Role Quest" : BUILDER.activeSlot === 7 ? "Select Boots" : "Select Item";
   document.getElementById("itemModal").classList.remove("hidden");
   renderModalItemGrid();
@@ -1048,19 +1095,27 @@ function renderModalItemGrid() {
   const text = document.getElementById("modalItemSearch").value.trim().toLowerCase();
   const tags = new Set([...document.querySelectorAll('[data-item-filter][aria-pressed="true"]')].map(button=>button.dataset.itemFilter));
   const recommendations=recommendedItemIds();
+  const itemData=window.ItemLookupShared.getState();
+  const roleValue=SHOP_ROLES.find(([name])=>name===BUILDER.itemRole)?.[1];
+  document.querySelectorAll('[data-item-role]').forEach(button=>{
+    button.disabled=itemData.status!=='ready' || BUILDER.activeSlot===6;
+    button.title=BUILDER.activeSlot===6 ? `${button.dataset.itemRole} — select a role quest below` : itemData.status==='ready' ? button.dataset.itemRole : `${button.dataset.itemRole} — ${itemData.status==='unavailable'?'class data unavailable':'loading item classes'}`;
+    button.setAttribute('aria-pressed',String(BUILDER.itemRole===button.dataset.itemRole));
+  });
   document.getElementById('recommendedItemsTab').hidden=!recommendations.size;
   if(!recommendations.size)BUILDER.recommendedOnly=false;
-  document.getElementById('allItemsTab').setAttribute('aria-pressed',String(!BUILDER.recommendedOnly));
+  document.getElementById('allItemsTab').setAttribute('aria-pressed',String(!BUILDER.recommendedOnly && !BUILDER.itemRole));
   document.getElementById('recommendedItemsTab').setAttribute('aria-pressed',String(!!BUILDER.recommendedOnly));
   BUILDER.modalItemFiltered = Object.entries(BUILDER.items)
     .filter(([id]) => roleItemAllowed(id, BUILDER.activeSlot) && (!BUILDER.recommendedOnly || recommendations.has(id)))
-    .filter(([id, item]) => (!text || item.name.toLowerCase().includes(text)) && (!tags.size || Array.from(tags).every(t=>t==='AbilityHaste' ? item.tags?.some(tag=>['AbilityHaste','CooldownReduction'].includes(tag)) : t==='Boots' ? isBoot(id) : item.tags?.includes(t))))
+    .filter(([id]) => !roleValue || itemData.cdragonById[id]?.mItemAttributes?.includes(roleValue))
+    .filter(([id, item]) => (!text || item.name.toLowerCase().includes(text)) && Array.from(tags).every(tag=>matchesShopStat(id,item,tag)))
     .sort((a,b)=>(a[1].gold?.total||0)-(b[1].gold?.total||0)||a[1].name.localeCompare(b[1].name))
     .map(([id]) => id);
   const ids = BUILDER.modalItemFiltered;
   document.getElementById("modalResultsCount").textContent = `${ids.length} ${BUILDER.recommendedOnly?'recommended items':'items shown'}`;
   document.getElementById("modalItemGrid").innerHTML = ids
-    .map((id) => `<button class="item-button-icon" data-item-id="${id}" title="${BUILDER.items[id].name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${BUILDER.items[id].name}" loading="lazy" decoding="async"><span class="shop-item-cost">${BUILDER.items[id].gold?.total||0}</span></button>`)
+    .map((id) => `<button class="item-button-icon" data-item-id="${id}" title="${BUILDER.items[id].name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png" alt="${BUILDER.items[id].name}" loading="lazy" decoding="async"></button>`)
     .join("");
   renderModalItemDetail(ids.includes(BUILDER.itemSlots[BUILDER.activeSlot]) ? BUILDER.itemSlots[BUILDER.activeSlot] : ids[0] || null);
 }
@@ -2286,24 +2341,24 @@ function getRuneStats() {
 function renderStats() {
   const root = document.getElementById("statsTable");
   const emptyRows = [
-    { name: "HP", icon: "❤️" },
-    { name: "MP", icon: "🔷" },
-    { name: "HP/5", icon: "💚" },
-    { name: "MP/5", icon: "💙" },
-    { name: "AD", icon: "🗡️" },
-    { name: "AP", icon: "✨" },
-    { name: "Range", icon: "🏹" },
-    { name: "AH", icon: "⏱️" },
-    { name: "Arm", icon: "🛡️" },
-    { name: "MR", icon: "🔮" },
-    { name: "AS", icon: "⚡" },
-    { name: "MS", icon: "👟" },
-    { name: "Crit %", icon: "🎯" },
-    { name: "Crit Dmg", icon: "💥" },
-    { name: "ARPen", icon: "🪓" },
-    { name: "MRPen", icon: "🔹" },
-    { name: "Lifesteal", icon: "🩸" },
-    { name: "Tenacity", icon: "🦶" },
+    { name: "HP", icon: STAT_ICONS["HP"] },
+    { name: "MP", icon: STAT_ICONS["MP"] },
+    { name: "HP/5", icon: STAT_ICONS["HP/5"] },
+    { name: "MP/5", icon: STAT_ICONS["MP/5"] },
+    { name: "AD", icon: STAT_ICONS["AD"] },
+    { name: "AP", icon: STAT_ICONS["AP"] },
+    { name: "Range", icon: STAT_ICONS["Range"] },
+    { name: "AH", icon: STAT_ICONS["AH"] },
+    { name: "Arm", icon: STAT_ICONS["Arm"] },
+    { name: "MR", icon: STAT_ICONS["MR"] },
+    { name: "AS", icon: STAT_ICONS["AS"] },
+    { name: "MS", icon: STAT_ICONS["MS"] },
+    { name: "Crit %", icon: STAT_ICONS["Crit %"] },
+    { name: "Crit Dmg", icon: STAT_ICONS["Crit Dmg"] },
+    { name: "ARPen", icon: STAT_ICONS["ARPen"] },
+    { name: "MRPen", icon: STAT_ICONS["MRPen"] },
+    { name: "Lifesteal", icon: STAT_ICONS["Lifesteal"] },
+    { name: "Tenacity", icon: STAT_ICONS["Tenacity"] },
   ];
   const renderPairedRows = (rows) => {
     const pairRows = [];
@@ -2330,24 +2385,24 @@ function renderStats() {
 
 
   const rows = [
-    { name: "HP", icon: "❤️", value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
-    { name: "MP", icon: "🔷", value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
-    { name: "HP/5", icon: "💚", value: hp5, eq: `(${base.hpregen.toFixed(1)} + ${base.hpregenperlevel.toFixed(2)}*${window.BuildStats.growthFactor(L).toFixed(3)}) * (1 + ${item.hp5PctBase.toFixed(1)}%) + ${item.hp5.toFixed(1)} + ${rune.hp5.toFixed(1)}` },
-    { name: "MP/5", icon: "💙", value: mp5, eq: `(${base.mpregen.toFixed(1)} + ${base.mpregenperlevel.toFixed(2)}*${window.BuildStats.growthFactor(L).toFixed(3)}) * (1 + ${item.mp5PctBase.toFixed(1)}%) + ${item.mp5.toFixed(1)} + ${rune.mp5.toFixed(1)}` },
-    { name: "AD", icon: "🗡️", value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)} + passive(${passiveLedger.statMods.ad.toFixed(1)})` },
-    { name: "AP", icon: "✨", value: ap, eq: `0 + ${item.ap.toFixed(1)} + ${rune.ap.toFixed(1)} + passive(${passiveLedger.statMods.ap.toFixed(1)})` },
-    { name: "Range", icon: "🏹", value: attackRange, eq: `${(base.attackrange || 0).toFixed(1)} + ${item.attackRange.toFixed(1)} + ${rune.attackRange.toFixed(1)} + passive(${getChampionPassiveRangeBonus().toFixed(1)})` },
-    { name: "AH", icon: "⏱️", value: abilityHaste, eq: `0 + ${item.haste.toFixed(1)} + ${rune.haste.toFixed(1)}` },
-    { name: "Arm", icon: "🛡️", value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.armor.toFixed(1)} + ${rune.armor.toFixed(1)}` },
-    { name: "MR", icon: "🔮", value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.mr.toFixed(1)} + ${rune.mr.toFixed(1)}` },
-    { name: "AS", icon: "⚡", value: asTotal, eq: `${base.attackspeed.toFixed(3)} + ${(base.attackspeedratio || base.attackspeed).toFixed(3)} * (growth ${window.BuildStats.growthFactor(L).toFixed(3)} * ${base.attackspeedperlevel}% + ${(item.asPct + rune.asPct).toFixed(1)}%)` },
-    { name: "MS", icon: "👟", value: moveSpeed, eq: `(${base.movespeed.toFixed(1)} + ${item.msFlat.toFixed(1)} + ${rune.msFlat.toFixed(1)}) * (1 + ${(item.msPct + rune.msPct).toFixed(1)}%)` },
-    { name: "Crit %", icon: "🎯", value: critChance, eq: `${base.crit.toFixed(1)} + ${base.critperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.critChance.toFixed(1)} + ${rune.critChance.toFixed(1)}` },
-    { name: "Crit Dmg", icon: "💥", value: critDamage, eq: `${(base.critdamage ? base.critdamage * 100 : 200).toFixed(1)} + ${item.critDamage.toFixed(1)} + ${rune.critDamage.toFixed(1)}; champion modifier included in displayed value` },
-    { name: "ARPen", icon: "🪓", value: 0, eq: `${item.arPenFlat.toFixed(1)} / ${item.arPenPct.toFixed(1)}%` },
-    { name: "MRPen", icon: "🔹", value: 0, eq: `${item.mrPenFlat.toFixed(1)} / ${item.mrPenPct.toFixed(1)}%` },
-    { name: "Lifesteal", icon: "🩸", value: 0, eq: `${item.physicalVamp.toFixed(1)}% / ${item.omniVamp.toFixed(1)}%` },
-    { name: "Tenacity", icon: "🦶", value: 0, eq: `${(100 * (1 - (1 - item.tenacity / 100) * (1 - rune.tenacity / 100))).toFixed(1)}%` },
+    { name: "HP", icon: STAT_ICONS["HP"], value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
+    { name: "MP", icon: STAT_ICONS["MP"], value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
+    { name: "HP/5", icon: STAT_ICONS["HP/5"], value: hp5, eq: `(${base.hpregen.toFixed(1)} + ${base.hpregenperlevel.toFixed(2)}*${window.BuildStats.growthFactor(L).toFixed(3)}) * (1 + ${item.hp5PctBase.toFixed(1)}%) + ${item.hp5.toFixed(1)} + ${rune.hp5.toFixed(1)}` },
+    { name: "MP/5", icon: STAT_ICONS["MP/5"], value: mp5, eq: `(${base.mpregen.toFixed(1)} + ${base.mpregenperlevel.toFixed(2)}*${window.BuildStats.growthFactor(L).toFixed(3)}) * (1 + ${item.mp5PctBase.toFixed(1)}%) + ${item.mp5.toFixed(1)} + ${rune.mp5.toFixed(1)}` },
+    { name: "AD", icon: STAT_ICONS["AD"], value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)} + passive(${passiveLedger.statMods.ad.toFixed(1)})` },
+    { name: "AP", icon: STAT_ICONS["AP"], value: ap, eq: `0 + ${item.ap.toFixed(1)} + ${rune.ap.toFixed(1)} + passive(${passiveLedger.statMods.ap.toFixed(1)})` },
+    { name: "Range", icon: STAT_ICONS["Range"], value: attackRange, eq: `${(base.attackrange || 0).toFixed(1)} + ${item.attackRange.toFixed(1)} + ${rune.attackRange.toFixed(1)} + passive(${getChampionPassiveRangeBonus().toFixed(1)})` },
+    { name: "AH", icon: STAT_ICONS["AH"], value: abilityHaste, eq: `0 + ${item.haste.toFixed(1)} + ${rune.haste.toFixed(1)}` },
+    { name: "Arm", icon: STAT_ICONS["Arm"], value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.armor.toFixed(1)} + ${rune.armor.toFixed(1)}` },
+    { name: "MR", icon: STAT_ICONS["MR"], value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.mr.toFixed(1)} + ${rune.mr.toFixed(1)}` },
+    { name: "AS", icon: STAT_ICONS["AS"], value: asTotal, eq: `${base.attackspeed.toFixed(3)} + ${(base.attackspeedratio || base.attackspeed).toFixed(3)} * (growth ${window.BuildStats.growthFactor(L).toFixed(3)} * ${base.attackspeedperlevel}% + ${(item.asPct + rune.asPct).toFixed(1)}%)` },
+    { name: "MS", icon: STAT_ICONS["MS"], value: moveSpeed, eq: `(${base.movespeed.toFixed(1)} + ${item.msFlat.toFixed(1)} + ${rune.msFlat.toFixed(1)}) * (1 + ${(item.msPct + rune.msPct).toFixed(1)}%)` },
+    { name: "Crit %", icon: STAT_ICONS["Crit %"], value: critChance, eq: `${base.crit.toFixed(1)} + ${base.critperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.critChance.toFixed(1)} + ${rune.critChance.toFixed(1)}` },
+    { name: "Crit Dmg", icon: STAT_ICONS["Crit Dmg"], value: critDamage, eq: `${(base.critdamage ? base.critdamage * 100 : 200).toFixed(1)} + ${item.critDamage.toFixed(1)} + ${rune.critDamage.toFixed(1)}; champion modifier included in displayed value` },
+    { name: "ARPen", icon: STAT_ICONS["ARPen"], value: 0, eq: `${item.arPenFlat.toFixed(1)} / ${item.arPenPct.toFixed(1)}%` },
+    { name: "MRPen", icon: STAT_ICONS["MRPen"], value: 0, eq: `${item.mrPenFlat.toFixed(1)} / ${item.mrPenPct.toFixed(1)}%` },
+    { name: "Lifesteal", icon: STAT_ICONS["Lifesteal"], value: 0, eq: `${item.physicalVamp.toFixed(1)}% / ${item.omniVamp.toFixed(1)}%` },
+    { name: "Tenacity", icon: STAT_ICONS["Tenacity"], value: 0, eq: `${(100 * (1 - (1 - item.tenacity / 100) * (1 - rune.tenacity / 100))).toFixed(1)}%` },
   ];
 
   const bonusKeys={HP:"hp",AD:"ad",AP:"ap",Arm:"armor",MR:"mr",AS:"asTotal",Range:"attackRange","Crit %":"critChance"};
