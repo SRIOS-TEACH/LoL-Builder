@@ -229,10 +229,10 @@
   }
 
   function render(result) {
-    if (!result.rows.length) return `<div class="ability-dps"><strong>DPS:</strong> ${escape(result.status)}</div>`;
+    if (!result.rows.length) return `<div class="ability-dps"><strong>Damage:</strong> ${escape(result.status)}</div>`;
     const damage=a=>finite(a.value)?fmt(a.value):a.text;
     const dps=(a,period)=>!finite(period)||period<=0?'Unavailable (no repeat cooldown)':finite(a.value)?fmt(a.value/period):`(${a.text}) ÷ ${period.toFixed(2)}s`;
-    return `<div class="ability-dps"><strong>DPS</strong><table class="ability-dps-table"><thead><tr><th>Outcome</th><th>Damage</th><th>DPS</th></tr></thead><tbody>${result.rows.map(r=>`<tr><td>${escape(r.label)}</td><td>${escape(damage(r.damage))}${r.sweet?` (${escape(damage(r.sweet))})`:''}</td><td>${r.timingMissing?'Enter recast timing':escape(dps(r.damage,r.period))}${r.sweet?` (${escape(dps(r.sweet,r.period))})`:''}</td></tr>`).join('')}</tbody></table><small>${escape(result.note)}</small></div>`;
+    return `<div class="ability-dps"><strong>Damage</strong><table class="ability-dps-table"><thead><tr><th>Part</th><th>Damage</th><th>DPS</th></tr></thead><tbody>${result.rows.map(r=>`<tr><td>${escape(r.label)}</td><td>${escape(damage(r.damage))}${r.sweet?` (${escape(damage(r.sweet))})`:''}</td><td>${r.timingMissing?'Enter recast timing':escape(dps(r.damage,r.period))}${r.sweet?` (${escape(dps(r.sweet,r.period))})`:''}</td></tr>`).join('')}</tbody></table><small>${escape(result.note)}</small></div>`;
   }
   const api={cooldown,cycleTime,components,profile,render,timingFields};
   scope.AbilityDps=api;

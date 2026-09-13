@@ -282,13 +282,14 @@ function wireBuilderUiEvents() {
 
 function wireLevelOptions() {
   const level = document.getElementById("builderLevel");
-  level.innerHTML = Array.from({ length: 18 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
-  level.addEventListener("change", () => {
+  level.innerHTML = Array.from({ length: roleLevelCap() }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
+  level.value = String(BUILDER.level);
+  level.onchange = () => {
     BUILDER.level = Number(level.value);
     enforceAbilityRules();
     renderAbilityCards();
     renderStats();
-  });
+  };
 }
 
 function getItemLookupShared() {
@@ -310,7 +311,10 @@ async function loadBuilderData() {
       window.ItemPolicy.isPurchasableItem(id, item) && item.maps?.[11]),
     new Set([11]),
   );
-  const questEntries = Object.entries(items.data).filter(([id,item]) => /quest/i.test(item.name) && /^(109[0-4]|12[0-2][0-9])$/.test(id));
+  const questEntries = Object.entries(items.data).filter(([id]) => /^120[0-4]$/.test(id));
+  const midBoots = Object.entries(items.data).filter(([id])=>["3170","3171","3172","3173","3174","3175","3176"].includes(id));
+  BUILDER.midBootIds = new Set(midBoots.map(([id])=>id));
+  for(const entry of midBoots) if(!entries.some(([id])=>id===entry[0])) entries.push(entry);
   BUILDER.questItemIds = new Set(questEntries.map(([id])=>id));
   for(const entry of questEntries) if(!entries.some(([id])=>id===entry[0])) entries.push(entry);
   BUILDER.items = Object.fromEntries(entries.map(([id, item]) => [id, {
@@ -950,7 +954,7 @@ async function setChampion(name) {
 
 function renderItemSlots() {
   const root = document.getElementById("itemSlots");
-  root.innerHTML = BUILDER.itemSlots.map((_, i) => `<button class="item-slot-btn ${i===6?'role-quest-slot':''}" aria-label="${i===6?'Role quest item':'Item slot '+(i+1)}" title="${i===6?'Role quest item':'Item slot '+(i+1)}" data-slot="${i}"><div id="slotText${i}" class="item-slot-empty">+</div></button>`).join("");
+  root.innerHTML = BUILDER.itemSlots.map((_, i) => `<button class="item-slot-btn ${i===6?'role-quest-slot':i===7?'bot-boots-slot':''}" aria-label="${i===6?'Role quest':i===7?'Bot quest boots':'Item slot '+(i+1)}" title="${i===6?'Role quest item':'Item slot '+(i+1)}" data-slot="${i}"><div id="slotText${i}" class="item-slot-empty">+</div></button>`).join("");
   refreshSlotLabels();
 }
 
@@ -991,7 +995,7 @@ function renderBuilderTagFilters() {
 
 function openItemModal(slot) {
   BUILDER.activeSlot = slot;
-  document.getElementById("itemModalTitle").textContent = BUILDER.activeSlot === 6 ? "Select Role Quest Item" : "Select Item";
+  document.getElementById("itemModalTitle").textContent = BUILDER.activeSlot === 6 ? "Select Role Quest" : BUILDER.activeSlot === 7 ? "Select Boots" : "Select Item";
   document.getElementById("itemModal").classList.remove("hidden");
   renderModalItemGrid();
 }
@@ -1005,7 +1009,7 @@ function renderModalItemGrid() {
   const text = document.getElementById("modalItemSearch").value.trim().toLowerCase();
   const tags = new Set(Array.from(document.querySelectorAll(".modal-tag:checked")).map((cb) => cb.value));
   BUILDER.modalItemFiltered = Object.entries(BUILDER.items)
-    .filter(([id]) => BUILDER.activeSlot === 6 ? BUILDER.questItemIds.has(id) : !BUILDER.questItemIds.has(id))
+    .filter(([id]) => roleItemAllowed(id, BUILDER.activeSlot))
     .filter(([, item]) => (!text || item.name.toLowerCase().includes(text)) && (!tags.size || Array.from(tags).every((t) => item.tags?.includes(t))))
     .sort((a, b) => a[1].name.localeCompare(b[1].name))
     .map(([id]) => id);
@@ -1096,15 +1100,36 @@ function renderModalItemDetail(id) {
 
 }
 
+function roleLevelCap() { return BUILDER.itemSlots[6] === '1200' ? 20 : 18; }
+function isBoot(id) { return !!BUILDER.items[id]?.tags?.includes('Boots') || !!BUILDER.midBootIds?.has(id); }
+function roleItemAllowed(id, slot) {
+  if(slot===6) return BUILDER.questItemIds.has(id);
+  if(BUILDER.questItemIds.has(id)) return false;
+  if(BUILDER.midBootIds.has(id) && BUILDER.itemSlots[6]!=='1201') return false;
+  if(slot===7) return BUILDER.itemSlots[6]==='1202' && isBoot(id);
+  return !(BUILDER.itemSlots[6]==='1202' && isBoot(id));
+}
 function setSlotItem(itemId) {
-  if (!Number.isInteger(BUILDER.activeSlot) || BUILDER.activeSlot < 0 || BUILDER.activeSlot >= 7) return;
-  if (itemId && !BUILDER.items[itemId]) return;
-  if (itemId && (BUILDER.activeSlot===6) !== BUILDER.questItemIds.has(itemId)) return;
-  BUILDER.itemSlots[BUILDER.activeSlot] = itemId;
-  refreshSlotLabels();
-  renderStats();
-  renderAbilityCards();
-  closeItemModal();
+  const slot=BUILDER.activeSlot;
+  if (!Number.isInteger(slot) || slot < 0 || slot >= BUILDER.itemSlots.length) return;
+  if (itemId && (!BUILDER.items[itemId] || !roleItemAllowed(itemId,slot))) return;
+  if(slot===6) {
+    // Preserve the extra-slot item when leaving Bot; never silently discard an item.
+    if(BUILDER.itemSlots[7] && itemId!=='1202') {
+      const free=BUILDER.itemSlots.slice(0,6).findIndex(id=>!id);
+      if(free<0) { setStatus('Free a regular item slot before changing the Bot quest.',true); return; }
+      BUILDER.itemSlots[free]=BUILDER.itemSlots[7];
+    }
+    BUILDER.itemSlots[6]=itemId;
+    if(itemId==='1202') {
+      BUILDER.itemSlots[7]=BUILDER.itemSlots[7] || '';
+      const boot=BUILDER.itemSlots.slice(0,6).findIndex(isBoot);
+      if(boot>=0 && !BUILDER.itemSlots[7]) { BUILDER.itemSlots[7]=BUILDER.itemSlots[boot];BUILDER.itemSlots[boot]=''; }
+    } else BUILDER.itemSlots.length=7;
+    if(itemId!=='1201') BUILDER.itemSlots=BUILDER.itemSlots.map(id=>BUILDER.midBootIds.has(id)?(BUILDER.items[id].from?.find(isBoot)||''):id);
+    BUILDER.level=Math.min(BUILDER.level,roleLevelCap()); wireLevelOptions(); enforceAbilityRules();
+  } else BUILDER.itemSlots[slot]=itemId;
+  renderItemSlots(); renderStats(); renderAbilityCards(); closeItemModal();setStatus('');
 }
 
 function abilityMaxByLevel(level, spellKey) {
@@ -1997,7 +2022,7 @@ function renderAlternateAbilityDps(spell, rank, slot) {
   const payload=BUILDER.cdragonAbilityData?.byAlias?.[canonicalizeToken(form[0])]?.payload;
   const loc=payload?.spellData?.mClientData?.mTooltipData?.mLocKeys;
   const raw=BUILDER.strings?.[loc?.keyTooltip?.toLowerCase()];
-  if(!payload || !raw)return `<div class="ability-dps"><strong>${form[1]} DPS:</strong> Alternate form data unavailable</div>`;
+  if(!payload || !raw)return `<div class="ability-dps"><strong>${form[1]} Damage:</strong> Alternate form data unavailable</div>`;
   // Cougar skills scale with Aspect of the Cougar rather than their human skill ranks.
   const formRank=['Takedown','Pounce','Swipe'].includes(form[0])?Math.max(1,BUILDER.abilityRanks.r):rank;
   const alternate={...spell,id:form[0],tooltip:raw,cooldown:payload.spellData.cooldownTime?.slice(1)};
@@ -2056,14 +2081,18 @@ function renderAbilityCards() {
       resolve:token=>resolveAbilityToken(token, context), payload:context?.cdragonSpell,
       timing:{delay:BUILDER.combatValues[`dps:${key}:delay`],overlap:BUILDER.combatValues[`dps:${key}:overlap`]}}));
     dps += renderAlternateAbilityDps(spell,rank,key);
-    return `<div class="ability-card" data-ability-slot="${key}"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div>${description(key,spell.description,detail,abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank))}<div class="ability-inputs"></div><div class="ability-meta"><span><strong>Cooldown:</strong> ${cd}</span><span><strong>Cost:</strong> ${cost}</span><span><strong>Range:</strong> ${range}</span></div>${dps}</div>`;
+    const parsed = document.createElement('div'); parsed.innerHTML=dps;
+    const damageNumbers=[...parsed.querySelectorAll('tbody tr')].map(row=>row.children[1]?.textContent.trim()).filter(Boolean);
+    const damageSummary=damageNumbers.length ? damageNumbers.join(' / ') : '—';
+    return `<div class="ability-card" data-ability-slot="${key}"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div>${description(key,spell.description,detail,abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank)+dps)}<div class="ability-inputs"></div><div class="ability-meta"><span><strong>Cooldown:</strong> ${cd}</span><span><strong>Cost:</strong> ${cost}</span><span><strong>Range:</strong> ${range}</span><span class="ability-damage-summary"><strong>Damage:</strong> ${escapeAttack(damageSummary)}</span></div></div>`;
   }).join("");
 
-  const expanded = new Set(root.dataset.descriptionChampion === BUILDER.selectedChampion ? [...root.querySelectorAll('.detail-toggle[aria-expanded="true"]')].map(el=>el.parentElement.dataset.descriptionSlot) : []);
+  const expanded = new Set(root.dataset.descriptionChampion === BUILDER.selectedChampion ? [...root.querySelectorAll('.detail-toggle[aria-expanded="true"]')].map(el=>el.closest('.ability-card').querySelector('.ability-description').dataset.descriptionSlot) : []);
   root.dataset.descriptionChampion = BUILDER.selectedChampion;
   root.innerHTML = passive + attackCard + spells;
   root.querySelectorAll('.detail-toggle').forEach(button=>{
     const container=button.parentElement;
+    container.closest('.ability-card').querySelector('.ability-head').append(button);
     const update=active=>{button.setAttribute('aria-expanded',String(active));button.textContent=active?'Simple view':'Detailed view';container.querySelector('.simple-description').hidden=active;container.querySelector('.detailed-description').hidden=!active;};
     update(expanded.has(container.dataset.descriptionSlot));
     button.addEventListener('click',()=>update(button.getAttribute('aria-expanded')!=='true'));
