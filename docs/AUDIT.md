@@ -2,6 +2,8 @@
 
 ## Outcome
 
+14 September passive fix follow-up: AD growth now preserves Community Dragon's named/hashed growth value when Data Dragon supplies zero. Detailed passive/item prose uses the public game localization table, with numerical values in context. All 236 selectable item descriptions resolve in melee and ranged fixture audits. Independent enabled states affect the registered attack effects and supported stat passives; reference-only effects are labeled in the Passives window. In particular, Muramana's ability Shock remains outside the champion-only Q/W/E/R tables. Text resolution and toggling reference state do not establish universal item-trigger simulation. See [ON-ATTACK.md](ON-ATTACK.md) and [TESTING.md](TESTING.md).
+
 First stabilization pass, not a claim of in-game accuracy or zero bugs. The generic lookup/build workflows have repeatable regression coverage. Advanced formulas and special champion systems remain incomplete.
 
 Audited baseline: `main` commit `5f403aa4c7ffe3da8881babb9d4d15abe9b91ded`. Tests used real Data Dragon `16.17.1` payloads. Original source was preserved separately during the audit.

@@ -8,7 +8,8 @@
     "test:combat": "node tests/combat-audit.cjs",
     "test:attacks": "node tests/attack-browser.cjs",
     "test:dashboard": "node tests/dashboard-browser.cjs",
-    "test:pickers": "node tests/picker-browser.cjs"
+    "test:pickers": "node tests/picker-browser.cjs",
+    "test:passives": "node tests/passives-browser.cjs"
   },
   "engines": {
     "node": ">=20"

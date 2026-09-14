@@ -7,6 +7,19 @@
   function attackSpeed(base, growth, ratio, level, bonusPercent) {
     return base + (ratio > 0 ? ratio : base) * (growth * growthFactor(level) + bonusPercent) / 100;
   }
+  function mergeChampionStats(ddragonStats = {}, cdragonStats = {}) {
+    const stats = { ...ddragonStats };
+    // Data Dragon currently publishes zero AD growth for every champion. Read
+    // the character record's value when present, including legitimate zeroes.
+    // Keep other Data Dragon stats: regeneration uses different source units.
+    if (Number.isFinite(cdragonStats.attackdamageperlevel)) {
+      stats.attackdamageperlevel = cdragonStats.attackdamageperlevel;
+    }
+    if (Number.isFinite(cdragonStats.attackspeedratio) && cdragonStats.attackspeedratio > 0) {
+      stats.attackspeedratio = cdragonStats.attackspeedratio;
+    }
+    return stats;
+  }
   const labels = {
     'Health': 'FlatHPPoolMod', 'Mana': 'FlatMPPoolMod',
     'Attack Damage': 'FlatPhysicalDamageMod', 'Ability Power': 'FlatMagicDamageMod',
@@ -33,6 +46,6 @@
     }
     return { ...stats, ...numericStats };
   }
-  scope.BuildStats = { growthFactor, attackSpeed, itemStatsFromDescription };
+  scope.BuildStats = { growthFactor, attackSpeed, mergeChampionStats, itemStatsFromDescription };
   if (typeof module !== 'undefined') module.exports = scope.BuildStats;
 })(typeof window !== 'undefined' ? window : globalThis);

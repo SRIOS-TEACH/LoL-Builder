@@ -16,6 +16,10 @@ Item bindings cover Recurve Bow, Nashor's Tooth, Wit's End, Rageblade, Muramana,
 
 Damage is **amortized per attack**, not next-hit burst: a 100-damage proc every two seconds at two attacks per second contributes 25 damage per attack and 50 DPS.
 
+The Passives window combines game-authored descriptions with current calculated values and stores independent enabled states. Registered attack effects and supported stat passives (Muramana/Seraph Awe, Deathcap and Warmog's Vitality) honor those states without removing the item's flat stats. Conditional attack toggles stay synchronized with their Passives controls. The source Spellblade cooldown supplies both the default and minimum interval (currently 1.5 seconds); the breakdown distinguishes full proc damage from its average contribution.
+
+Description coverage is broader than combat coverage. Muramana's ability-triggered Shock is displayed separately using 3% maximum mana for ranged champions and 4% for melee champions, but is not added to Q/W/E/R damage-per-cooldown tables. Those tables report champion ability damage, without an item-proc timeline. Other unregistered passives remain reference effects; changing their enabled state does not simulate healing, shielding, utility, or unregistered damage triggers.
+
 ## Special attacks and item interactions
 
 `JS/shared/attackChampions.js` supplies explicit bindings for every champion previously flagged by the attack model's partial-coverage catalog. These include Aphelios' five weapon profiles and upgrades; Graves' pellets and reload; Zeri's Q and charged/uncharged right-click; Kalista's hopping interval; Akshan's second shot; Sett's alternating punches; Bel'Veth's true form; Elise, Gnar, Jayce and Nidalee forms; and the empowered attacks, damage-over-time passives and temporary stat buffs in that catalog. Caitlyn's Headshot, Yunara's critical magic damage and Samira's melee passive are also bound.

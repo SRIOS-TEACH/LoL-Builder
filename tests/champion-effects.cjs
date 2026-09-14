@@ -38,7 +38,7 @@ const server=http.createServer((req,res)=>{
    return route.fulfill({contentType:'application/json',body:read(file)});
  });
  await page.goto(base+'/Builder.html');
- await page.waitForFunction(()=>document.querySelectorAll('#itemSlots button').length===6);
+ await page.waitForFunction(()=>document.querySelectorAll('#itemSlots button').length===7);
 
 
  const results=await page.evaluate(async()=>{
@@ -73,10 +73,30 @@ const server=http.createServer((req,res)=>{
    BUILDER.combatValues={};BUILDER.abilityRanks={q:5,w:5,e:5,r:3};near(computeDerivedBuildStats().hp,initial.hp,'Clear stacks');
    results.push(name);
   }
+  for(const [name,key,cap]of [['Ezreal','state:risingSpellForceStacks',5],['Aurora','state:auroraSpirits',4]]){
+   await setChampion(name);BUILDER.level=18;BUILDER.combatValues={};renderAbilityCards();
+   const initial=computeDerivedBuildStats();
+   const control=()=>document.querySelector(`[data-combat-key="${key}"]`);
+   if(!control()||control().min!=='0'||control().max!==String(cap)||control().step!=='1')throw Error(`${name} missing bounded passive control`);
+   const edit=value=>{const element=control();element.value=String(value);element.dispatchEvent(new Event('change',{bubbles:true}));};
+   edit(100);if(BUILDER.combatValues[key]!==cap||control().value!==String(cap))throw Error(`${name} cap not enforced`);
+   const detail=buildDetailedPassiveText();
+   if(name==='Ezreal'){
+    near(computeDerivedBuildStats().asTotal-initial.asTotal,initial.base.attackspeedratio*.5,'Ezreal stacked attack speed');
+    if(!/Ability hits grant/i.test(detail)||!/5\/5 stacks/.test(detail)||/value unavailable/i.test(detail))throw Error('Ezreal detailed game text missing');
+   }else{
+    if(!/maximum HP as magic damage/i.test(detail)||!/up to 4 spirits/.test(detail)||!/4\/4 spirits/.test(detail)||/Move.?Speed|value unavailable/i.test(detail))throw Error('Aurora detailed healing/damage text incorrect');
+    near(computeDerivedBuildStats().moveSpeed,initial.moveSpeed,'Aurora has no passive movement speed');
+   }
+   edit(2.5);if(BUILDER.combatValues[key]!==2)throw Error(`${name} fractional stacks accepted`);
+   edit(-1);if(BUILDER.combatValues[key]!==0||control().value!=='0')throw Error(`${name} negative stacks accepted`);
+   edit('');if(Object.hasOwn(BUILDER.combatValues,key))throw Error(`${name} blank did not restore default`);
+   results.push(name);
+  }
   for(const [name,slot]of [['Garen','e'],['Belveth','q'],['Belveth','e'],['Sett','w'],['Syndra','w'],['XinZhao','e'],['Kaisa','q'],['Kaisa','w'],['Kaisa','e'],['Bard','w'],['Malphite','w']]){
    await setChampion(name);BUILDER.level=18;BUILDER.abilityRanks={q:5,w:5,e:5,r:3};
    const html=buildDetailedAbilityText(BUILDER.championData.spells[['q','w','e','r'].indexOf(slot)],5,slot);
-   if(/value unavailable/i.test(html))throw Error(`${name} ${slot} still unavailable`);
+   if(/value unavailable/i.test(html))throw Error(`${name} ${slot} still unavailable: ${html}`);
   }
 
   for(const name of ['Veigar','Thresh','Syndra']){

@@ -27,7 +27,7 @@
           <label class="champ-level-control toolbar-level">Level <select id="builderLevel" class="form-control"></select></label>
           <div class="toolbar-build"><div class="toolbar-items-label"><span class="dashboard-label">Items</span><span class="build-gold" aria-label="Total build cost: 0 gold" title="Total build cost"><img src="assets/shop/gold.png" alt="" aria-hidden="true"><span id="buildGoldCost">0</span></span></div><div id="itemSlots" class="item-slots item-slots-icons"></div></div>
           <label class="toolbar-skin">Skin<select id="skinSelector" class="form-control" disabled><option>Original</option></select></label>
-          <button id="passiveToggleBtn" class="btn btn-sm" type="button">Item passives</button>
+          <button id="passiveToggleBtn" class="btn btn-sm" type="button">Passives</button>
           <p id="builderStatus" class="status-text" role="status"></p>
         </header>
         <aside class="dashboard-left">
@@ -83,7 +83,7 @@
   <div id="passiveModal" class="item-modal hidden" role="dialog" aria-modal="true">
     <div class="item-modal-body rune-modal-body">
       <div class="item-modal-header">
-        <h3>Detected Passives</h3>
+        <h3>Passives</h3>
         <button id="closePassiveModalBtn" class="btn btn-sm" type="button">Close</button>
       </div>
       <div id="passiveModalList" class="passive-modal-list"></div>
@@ -101,6 +101,7 @@
   <script src="JS/shared/attackEffects.js"></script>
   <script src="JS/shared/attackChampions.js"></script>
   <script src="JS/shared/itemData.js"></script>
+  <script src="JS/shared/itemDescriptions.js"></script>
   <script src="JS/builder.js"></script>
 </body>
 </html>
