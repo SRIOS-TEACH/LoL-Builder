@@ -1,6 +1,11 @@
 /** Script-to-data bindings. Balance values are read from the loaded champion data. */
 (function(scope){
   const C=scope.Calculations;
+  const finiteOrZero=value=>Number.isFinite(value)?value:0;
+  const percentCombined=(...values)=>100*(1-values.reduce((remaining,value)=>remaining*(1-Math.min(100,Math.max(0,Number.isFinite(value)?value:0))/100),1));
+  const penetrationStats=s=>({...s,
+    armorPenPct:percentCombined(s.item?.arPenPct,s.rune?.arPenPct),magicPenPct:percentCombined(s.item?.mrPenPct,s.rune?.mrPenPct),
+    armorPenFlat:finiteOrZero(s.item?.arPenFlat)+finiteOrZero(s.rune?.arPenFlat),magicPenFlat:finiteOrZero(s.item?.mrPenFlat)+finiteOrZero(s.rune?.mrPenFlat)});
   function model(state){
     const champion=state.selectedChampion, values=state.combatValues||{}, ranks=state.abilityRanks||{};
     const payload=slot=>state.cdragonAbilityData?.[slot];
@@ -15,19 +20,32 @@
     };
     const fields=[];
     const field=(slot,key,label,extra={})=>fields.push({slot,key,label,kind:key.split(':')[0],owners:new Set([label]),defaultValue:0,...extra});
-    if(!state.cdragonAbilityData)return {fields,data,calc,apply:s=>({...s,championBonuses:{}}),token:()=>null,passiveSummary:()=>null};
+    if(!state.cdragonAbilityData)return {fields,data,calc,apply:s=>({...penetrationStats(s),championBonuses:{},championPenetration:{}}),token:()=>null,passiveSummary:()=>null};
     if(champion==='Ezreal')field('p','state:risingSpellForceStacks','Rising Spell Force stacks',{min:0,max:data('p','MaxStacks'),step:1});
     // The spirit counter is maintained by Aurora's passive script, outside the
     // exported HealCalc. Each active spirit contributes one HealCalc per second.
     if(champion==='Aurora')field('p','state:auroraSpirits','Active spirits',{min:0,max:4,step:1});
+    if(champion==='Aphelios')field('p','buff:{f79080ae}','Lethality upgrade ranks',{min:0,max:data('p','MaxRanksPerStat'),step:1});
     if(champion==='Poppy')field('w','self:healthPercent:0','Current health (%) — W resistance bonus',{percent:true,defaultValue:1});
     if(champion==='Malphite')field('p','state:graniteShield','Granite Shield active',{boolean:true,defaultValue:false});
     const stacks={Chogath:['r','buff:{8682fc00}','Feast stacks'],Swain:['p','buff:{0dc6979e}','Soul fragments'],Thresh:['p','buff:{5fbfbf13}','Souls collected'],Senna:['p','buff:{e88568f8}','Mist stacks'],Belveth:['p','buff:{7f3c01cf}','Lavender stacks'],Veigar:['p','state:phenomenalEvil','Phenomenal Evil stacks'],Sion:['w','state:soulFurnaceHealth','Permanent health gained from Soul Furnace'],Garen:['w','buff:{9e10ce18}','Courage kill stacks'],Syndra:['p','state:splinters','Splinters of Wrath']};
     if(stacks[champion])field(...stacks[champion]);
     if(champion==='Bard')field('w','state:shrines','Active shrines',{max:data('w','MaxPacks')});
     const apply=s=>{
-      const out={...s,championBonuses:{},bonusAttackSpeedFromChampion:0};
+      const out={...penetrationStats(s),championBonuses:{},championPenetration:{},bonusAttackSpeedFromChampion:0};
       const add=(stat,value)=>{if(Number.isFinite(value)){out[stat]+=value;out.championBonuses[stat]=(out.championBonuses[stat]||0)+value;}};
+      const addPercentPen=(stat,percent)=>{if(Number.isFinite(percent)){out.championPenetration[stat]=percent;add(stat,percentCombined(out[stat],percent)-out[stat]);}};
+      // These are innate penetration passives, not armor/MR reductions on a
+      // target. Source data uses percentages for Darius and fractions for the
+      // others; percentage penetration sources combine multiplicatively.
+      if(champion==='Darius'&&rank('e'))addPercentPen('armorPenPct',data('e','PassivePercentArmorPen'));
+      if(champion==='Pantheon'&&rank('r'))addPercentPen('armorPenPct',data('r','ArmorPenetration')*100);
+      if(champion==='Mordekaiser'&&rank('e'))addPercentPen('magicPenPct',data('e','MagicPen')*100);
+      if(champion==='Nilah'&&rank('q'))addPercentPen('armorPenPct',calc('q','CritArmorPen',{critChance:Math.min(100,Math.max(0,s.critChance||0))/100})*100);
+      if(champion==='Aphelios'){
+        const bonus=boundedStacks('buff:{f79080ae}',data('p','MaxRanksPerStat'))*data('p','APPerRank');
+        if(Number.isFinite(bonus)){out.championPenetration.armorPenFlat=bonus;add('armorPenFlat',bonus);}
+      }
       if(champion==='Ezreal'){
         const bonus=boundedStacks('state:risingSpellForceStacks',data('p','MaxStacks'))*data('p','AttackSpeedPerStack');
         if(Number.isFinite(bonus)){

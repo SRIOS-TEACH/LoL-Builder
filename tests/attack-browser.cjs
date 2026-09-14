@@ -55,17 +55,20 @@ const server=http.createServer((req,res)=>{
    for(const n of ['Yasuo','Yone','Senna']){await select(n);await equip(['3031']);x=await result();assert.ok(x.s.critDamage<230,n+' crit modifier');assert.ok(x.p.autoAttackDamage>x.s.ad,n+' averaged crit');}
    await select('Ahri');await equip(['3115','3091','3302']);x=await result();assert.equal(x.p.rows.length,3);assert.ok(x.p.rows.every(r=>r.value>0));
    await equip(['3153']);x=await result();assert.equal(x.p.autoAttackDamage,null);
-   await page.locator('[data-attack-control="attack:target:currentHp"]').fill('2000');await page.locator('[data-attack-control="attack:target:currentHp"]').dispatchEvent('change');x=await result();near(x.p.rows[0].value,120,'ranged BORK');
+   await page.locator('#targetEnabled').click();
+   for(const [selector,value]of [['#targetMaxHp','2000'],['#targetCurrentHp','2000'],['#targetArmor','0'],['#targetMr','0'],['#targetDamageReduction','0']]){await page.locator(selector).fill(value);await page.locator(selector).dispatchEvent('change');}
+   x=await result();near(x.p.rows[0].value,120,'ranged BORK');
    await select('KogMaw');await equip([]);const initial=(await result()).p.autoAttackDamage;
-   await page.locator('[data-attack-control="attack:target:hp"]').fill('2000');await page.locator('[data-attack-control="attack:target:hp"]').dispatchEvent('change');
+   await page.locator('#targetMaxHp').fill('2000');await page.locator('#targetMaxHp').dispatchEvent('change');
    await page.locator('[data-ability-slot="w"] [data-attack-control="attack:championOnHit"]').click();x=await result();near(x.p.autoAttackDamage-initial,2000*(0.06+x.s.ap*0.00015),'Kog W health onhit');
    await page.locator('[data-attack-control="attack:championOnHit"]').click();near((await result()).p.autoAttackDamage,initial,'toggle off');
    await select('Teemo');x=await result();assert.ok(x.p.rows.find(r=>r.dot));
-   await select('Jhin');x=await result();assert.ok(x.p.rate<x.s.asTotal);assert.equal(x.p.autoAttackDamage,null);
+   await select('Jhin');x=await result();assert.ok(x.p.rate<x.s.asTotal);assert.ok(Number.isFinite(x.p.autoAttackDamage));
+   await page.locator('#targetEnabled').click();assert.equal((await result()).p.autoAttackDamage,null);
  }
  const audit=[];
  for(const name of Object.keys(index)){
-   await select(name);await equip([]);x=await result();await page.evaluate(()=>{for(let pass=0;pass<3;pass++){const p=computeAutoAttackProfile(computeDerivedBuildStats());for(const c of p.controls)BUILDER.combatValues[c.key]=c.type==='toggle'?true:c.key.endsWith(':hp')?2000:c.key.endsWith(':currentHp')?1000:Math.min(c.max??2,2);}renderStats();renderAbilityCards();});x=await result();audit.push({name,damage:x.p.autoAttackDamage,rows:x.p.rows,warnings:x.p.warnings});
+   await select(name);await equip([]);x=await result();await page.evaluate(()=>{BUILDER.target={enabled:true,maxHp:2000,currentHp:1000,armor:0,mr:0,damageReduction:0};for(let pass=0;pass<3;pass++){const p=computeAutoAttackProfile(computeDerivedBuildStats());for(const c of p.controls)BUILDER.combatValues[c.key]=c.type==='toggle'?true:Math.min(c.max??2,2);}renderStats();renderAbilityCards();});x=await result();audit.push({name,damage:x.p.autoAttackDamage,rows:x.p.rows,warnings:x.p.warnings});
    assert.ok(x.p.autoAttackDamage===null||Number.isFinite(x.p.autoAttackDamage),name+' finite damage');
    assert.ok(x.p.attackDps===null||Number.isFinite(x.p.attackDps),name+' finite DPS');
    if(process.env.ADVANCED_DATA){assert.equal(x.p.partial,false,name+' incomplete binding');assert.ok(Number.isFinite(x.p.autoAttackDamage),name+': '+x.p.breakdown);}
@@ -74,7 +77,7 @@ const server=http.createServer((req,res)=>{
    await select('Ahri');
    for(const id of ['1043','3115','3091','3124','3153','3042','3302','3748','3057','3078','3100','6662','3508','3877','2510','6672','3094','3095','2015','3087','3504','6699','3179','6610','2512','4645','3032','3181','3742','2523','3036','3161']){
      if(!await page.evaluate(id=>!!BUILDER.items[id],id))continue;
-     await equip([id]);await page.evaluate(()=>{BUILDER.combatValues={};for(let pass=0;pass<3;pass++)for(const c of computeAutoAttackProfile(computeDerivedBuildStats()).controls)BUILDER.combatValues[c.key]=c.type==='toggle'?true:c.key.endsWith(':currentHp')?1000:c.key.endsWith(':hp')?2000:Math.min(c.max??10,10);});
+     await equip([id]);await page.evaluate(()=>{BUILDER.target={enabled:true,maxHp:2000,currentHp:1000,armor:0,mr:0,damageReduction:0};BUILDER.combatValues={};for(let pass=0;pass<3;pass++)for(const c of computeAutoAttackProfile(computeDerivedBuildStats()).controls)BUILDER.combatValues[c.key]=c.type==='toggle'?true:Math.min(c.max??10,10);});
      x=await result();assert.ok(Number.isFinite(x.p.autoAttackDamage),'item '+id+': '+x.p.breakdown);
    }
  }
@@ -88,7 +91,7 @@ const server=http.createServer((req,res)=>{
    await page.locator('[data-attack-control="attack:chakramCycle"]').fill('0.5');await page.locator('[data-attack-control="attack:chakramCycle"]').dispatchEvent('change');
    assert.ok(Number.isFinite((await result()).p.attackDps));
    await select('Elise');await equip(['3153']);
-   await page.locator('[data-attack-control="attack:target:currentHp"]').fill('1000');await page.locator('[data-attack-control="attack:target:currentHp"]').dispatchEvent('change');
+   await page.locator('#targetCurrentHp').fill('1000');await page.locator('#targetCurrentHp').dispatchEvent('change');
    near((await result()).p.rows.find(r=>r.label==='Blade of the Ruined King').value,60,'human BORK');
    await page.locator('[data-attack-control="attack:spider"]').click();near((await result()).p.rows.find(r=>r.label==='Blade of the Ruined King').value,90,'spider BORK');
  }
@@ -99,5 +102,4 @@ const server=http.createServer((req,res)=>{
  console.log('Attack browser checks passed for '+Object.keys(index).length+' champions');
  } finally {await browser.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});
-
 

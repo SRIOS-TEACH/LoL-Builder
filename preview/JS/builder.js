@@ -37,6 +37,7 @@ const BUILDER = {
   championDetailCache: {},
   cdragonAbilityData: null,
   combatValues: {},
+  target: { enabled:false, maxHp:2000, currentHp:2000, armor:100, mr:100, damageReduction:0 },
   disabledItemPassives: {},
   inspectedItemId: null,
   championModalRequestId: 0,
@@ -232,6 +233,7 @@ async function initBuilder() {
   try {
     setStatus("Loading champion and item data...");
     wireLevelOptions();
+    initTargetSettings();
     await loadBuilderData();
     renderChampionSelect();
     renderItemSlots();
@@ -250,6 +252,43 @@ async function initBuilder() {
     console.error(error);
     setStatus("Failed to load data. Check internet connection and refresh.", true);
   }
+}
+
+function initTargetSettings() {
+  const fields={targetMaxHp:'maxHp',targetCurrentHp:'currentHp',targetArmor:'armor',targetMr:'mr',targetDamageReduction:'damageReduction'};
+  const sync=()=>{
+    BUILDER.target=window.TargetDamage.normalize(BUILDER.target);
+    for(const [id,key]of Object.entries(fields))document.getElementById(id).value=BUILDER.target[key];
+    document.getElementById('targetCurrentHp').max=BUILDER.target.maxHp;
+    const button=document.getElementById('targetEnabled');
+    button.setAttribute('aria-pressed',String(BUILDER.target.enabled));button.textContent=BUILDER.target.enabled?'On':'Off';
+    document.getElementById('targetFields').classList.toggle('target-inactive',!BUILDER.target.enabled);
+    document.getElementById('targetStatus').textContent=BUILDER.target.enabled?'On: damage against this target. True damage ignores defences and reduction.':'Off: damage before target defences. Target values are retained.';
+  };
+  let rendered=JSON.stringify(BUILDER.target);
+  const update=(commit=true)=>{
+    if(commit)sync();
+    const next=JSON.stringify(BUILDER.target);
+    if(next===rendered)return;
+    rendered=next;renderStats();renderAbilityCards();if(BUILDER.activeSlot!==null)renderModalItemDetail(BUILDER.inspectedItemId);
+  };
+  document.getElementById('targetEnabled').addEventListener('click',()=>{BUILDER.target.enabled=!BUILDER.target.enabled;update();});
+  const read=()=>{
+    const draft={...BUILDER.target};
+    for(const [id,key]of Object.entries(fields)){
+      const input=document.getElementById(id),value=Number(input.value);
+      if(input.value.trim()&&Number.isFinite(value))draft[key]=value;
+    }
+    BUILDER.target=window.TargetDamage.normalize(draft);
+  };
+  for(const id of Object.keys(fields)){
+    const input=document.getElementById(id);
+    input.addEventListener('input',()=>{read();update(false);});
+    // Damage updates while typing, so a later blur does not replace the button
+    // the user is in the middle of clicking. Commit only formats/clamps fields.
+    input.addEventListener('change',()=>{read();update();});
+  }
+  sync();
 }
 
 function wireBuilderUiEvents() {
@@ -1459,7 +1498,7 @@ function renderPassivePanel() {
     const result=resolveItemDescriptionHtml(item,id);
     for(const section of result.sections||[]){
       if(section.active)continue;
-      const key=`${id}:${section.key}`,activation=window.AttackEffects.itemPassiveBindings?.[id]?.[section.key];
+      const key=`${id}:${section.key}`,activation=id==='4645'&&BUILDER.target.enabled?null:window.AttackEffects.itemPassiveBindings?.[id]?.[section.key];
       const modeled=Object.hasOwn(window.AttackEffects.itemPassiveBindings?.[id]||{},section.key)
         || ['3042:awe','3040:awe','3089:magical-opus','3083:warmog-s-vitality'].includes(key);
       const enabled=itemPassiveEnabled(id,section.key) && (!activation || BUILDER.combatValues[activation]===true);
@@ -1540,6 +1579,10 @@ function buildDetailedPassiveText() {
   if(summary?.type==='aurora'){
     // Current script has no movement-speed buff; old unused BIN calculations remain.
     text=`Damaging an enemy 3 times with abilities or attacks deals <magicDamage>${f(summary.healthFraction*100)}% of their maximum HP as magic damage</magicDamage>. Against champions, this frees a spirit for ${f(summary.spiritDuration)} seconds. Each spirit restores <healing>${f(summary.healPerSpirit)} HP per second</healing>, up to ${summary.maxSpirits} spirits.<br><br><span class="passive-current-value">${summary.spirits}/${summary.maxSpirits} spirits: <healing>${f(summary.healingPerSecond)} HP per second</healing>.</span><br><rules>Damage against monsters is capped at 100–270, based on level.</rules>`;
+    if(BUILDER.target.enabled){
+      const amount=window.DamageText.damage(summary.healthFraction*BUILDER.target.maxHp,'magic',{target:BUILDER.target,stats:ctx.stats},`${f(summary.healthFraction*100)}% × ${BUILDER.target.maxHp} target max HP`);
+      text=text.replace('maximum HP as magic damage',`maximum HP as magic damage (${amount} against target)`);
+    }
   }
   if(!BUILDER.stringsReady && !summary)text+=`<p class="text-muted">${BUILDER.stringsLoading?'Loading detailed game description…':'Detailed game description unavailable; showing the summary.'}</p>`;
   return text;
@@ -1562,8 +1605,17 @@ function getComputedChampionStatsForTooltips() {
   const baseMp = base.mp + base.mpperlevel * window.BuildStats.growthFactor(L);
   const totalMp = mp;
 
+  let spellDamageMultiplier=1;
+  if(BUILDER.target.enabled&&BUILDER.itemSlots.includes('4645')&&itemPassiveEnabled('4645','cinderbloom')){
+    const source=window.ItemLookupShared.getState().cdragonById['4645'];
+    const threshold=window.Calculations.dataValue(source?.mDataValues,'HealthThreshold').value;
+    const amp=window.Calculations.dataValue(source?.mDataValues,'SpellItemDamageAmp').value;
+    if(Number.isFinite(threshold)&&Number.isFinite(amp)&&BUILDER.target.currentHp/BUILDER.target.maxHp<Number(threshold.toPrecision(7)))spellDamageMultiplier=1+amp;
+  }
+
   return {
     ap: totalAp, baseAp: 0,
+    magicDamageMultiplier:spellDamageMultiplier,trueDamageMultiplier:spellDamageMultiplier,
     itemHp: item.hp,
     ranged: computed.ranged ?? base.attackrange > 300,
     healShieldPower: BUILDER.itemSlots.filter(Boolean).reduce((sum,id)=>sum+(window.ItemLookupShared.getState().cdragonById[id]?.mPercentHealingAmountMod||0),0),
@@ -1575,7 +1627,8 @@ function getComputedChampionStatsForTooltips() {
     haste: computed.abilityHaste,
     cooldownReduction: computed.abilityHaste / (100 + computed.abilityHaste),
     lifeSteal: (item.physicalVamp + (computed.championLifeSteal||0)) / 100, physicalVamp: (item.physicalVamp + (computed.championLifeSteal||0)) / 100, omniVamp: item.omniVamp / 100,
-    magicPenFlat: item.mrPenFlat, lethality: item.arPenFlat, tenacity: item.tenacity / 100,
+    magicPenFlat: computed.magicPenFlat, magicPenPct:computed.magicPenPct,
+    lethality: computed.armorPenFlat, armorPenFlat:computed.armorPenFlat, armorPenPct:computed.armorPenPct, tenacity: item.tenacity / 100,
     attackRange: computed.attackRange, baseAttackRange: base.attackrange,
     bonusAttackRange: computed.attackRange - base.attackrange,
     totalAd,
@@ -1666,7 +1719,8 @@ function isMissingGameCalculation(result) {
 
 function baseCalculationContext(stats, dataValues = [], rank = 1, calculations = {}, effects = []) {
   return {
-    stats, dataValues, rank, calculations, effects, level: BUILDER.level, targetFormulaOnly:true, automaticSelfStats:true,
+    stats, dataValues, rank, calculations, effects, level: BUILDER.level,
+    target:BUILDER.target, targetStats:window.TargetDamage.targetStats(BUILDER.target), targetFormulaOnly:!BUILDER.target.enabled, managedTarget:true, automaticSelfStats:true,
     resolveExternal: (path, key) => {
       const record=window.Calculations.lookup(BUILDER.cdragonRaw,path);
       const payload=extractCdragonSpell(record);
@@ -2099,11 +2153,7 @@ function buildDetailedAbilityText(spell, rank, spellKey, context) {
   const raw = expandAbilityLocalization(spell.tooltip || spell.description || "");
   if (!(Number(rank) > 0)) return spell.description || "";
   const ctx = context || buildAbilityContext(spell, rank, spellKey);
-  const replaced = raw.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (full, tokenRaw) => {
-    const resolved = resolveAbilityToken(tokenRaw, ctx);
-    if (resolved) return resolved.html;
-    return `<span class="ability-detail-missing">[value unavailable]</span>`;
-  });
+  const replaced = window.DamageText.render(raw,token=>resolveAbilityToken(token,ctx),{target:BUILDER.target,stats:ctx.stats});
 
   return replaced
     .replace(/<physicalDamage>/gi, '<span class="ability-damage-physical">')
@@ -2122,6 +2172,9 @@ function buildDetailedAbilityText(spell, rank, spellKey, context) {
 }
 
 function abilityEffectValues(payload,rank) {
+  // Target mode presents damage through typed prose and outcome tables. Raw
+  // calculation records also contain ratios/hidden totals with no damage type.
+  if(BUILDER.target.enabled)return '';
   if(!payload || !rank)return '';
   const context=calculationContext(getComputedChampionStatsForTooltips(),payload.dataValues,rank,payload.calculations,payload.effects);
   const escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2156,7 +2209,7 @@ function renderAlternateAbilityDps(spell, rank, slot) {
   Object.assign(context,buildResolvedSpellPayload(payload,formRank,context.stats));
   const result=window.AbilityDps.profile({spell:alternate,rank:formRank,payload,
     tooltip:expandAbilityLocalization(raw),resolve:token=>resolveAbilityToken(token,context),
-    cooldown:window.AbilityDps.cooldown(alternate,formRank,context.stats,payload)});
+    cooldown:window.AbilityDps.cooldown(alternate,formRank,context.stats,payload),target:BUILDER.target,stats:context.stats});
   return `<div class="ability-dps-form"><strong>${form[1]}</strong>${window.AbilityDps.render(result)}</div>`;
 }
 
@@ -2176,7 +2229,7 @@ function renderAbilityCards() {
   const computed = computeDerivedBuildStats();
   const attack = computed ? computeAutoAttackProfile(computed) : null;
   const passiveText = buildDetailedPassiveText();
-  const description = (slot,simple,detailed,values='') => `<div class="ability-description" data-description-slot="${slot}"><div class="simple-description">${simple||''}</div><div class="detailed-description" hidden>${detailed}${values}</div><button type="button" class="btn btn-sm detail-toggle" aria-expanded="false">Detailed view</button></div>`;
+  const description = (slot,simple,detailed,values='') => `<div class="ability-description" data-description-slot="${slot}"><div class="simple-description">${BUILDER.target.enabled?window.DamageText.render(simple,token=>({html:'{{'+token+'}}',numeric:null}),{target:BUILDER.target,stats:getComputedChampionStatsForTooltips()}):simple||''}</div><div class="detailed-description" hidden>${detailed}${values}</div><button type="button" class="btn btn-sm detail-toggle" aria-expanded="false">Detailed view</button></div>`;
   const passive = `<div class="ability-card ability-passive-card" data-ability-slot="p"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div>${description("p",champ.passive.description,passiveText)}<div class="ability-inputs"></div></div>`;
   const escapeAttack = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const attackNumber = (value, key) => `<span class="attack-result" data-attack-result="${key}" tabindex="0" title="${escapeAttack(attack.breakdown)}">${Number.isFinite(value) ? value.toFixed(1) + (attack.partial ? ' (partial)' : '') : 'Unavailable — see calculation'}</span>`;
@@ -2184,7 +2237,7 @@ function renderAbilityCards() {
   <div><strong>On-attack damage:</strong> ${attack ? attackNumber(attack.autoAttackDamage,'damage') : '-'}</div>
   <div><strong>On-Attack DPS:</strong> ${attack ? attackNumber(attack.attackDps,'dps') : '-'}</div>
   <div><strong>Attack Range:</strong> ${attack ? attack.attackRange.toFixed(1) : '-'}</div>
-  <small>Average damage · before mitigation</small>
+  <small>Average damage · ${BUILDER.target.enabled?'against target':'before target defences'}</small>
   <details class="dashboard-detail"><summary>Calculation breakdown</summary><div class="detail-content">${attack?.warnings.map(w=>`<p class="text-muted">${escapeAttack(w)}</p>`).join('')||''}
   <pre style="white-space:pre-wrap">${escapeAttack(attack?.breakdown||'Select a champion')}</pre></div></details></div>`;
 
@@ -2204,13 +2257,13 @@ function renderAbilityCards() {
     const detail = buildDetailedAbilityText(spell, rank, key, context);
     let dps = window.AbilityDps.render(window.AbilityDps.profile({spell, rank, cooldown:cdNumeric,
       tooltip:expandAbilityLocalization(spell.tooltip || spell.description || ''),
-      resolve:token=>resolveAbilityToken(token, context), payload:context?.cdragonSpell,
+      resolve:token=>resolveAbilityToken(token, context), payload:context?.cdragonSpell,target:BUILDER.target,stats:context?.stats,
       timing:{delay:BUILDER.combatValues[`dps:${key}:delay`],overlap:BUILDER.combatValues[`dps:${key}:overlap`]}}));
     dps += renderAlternateAbilityDps(spell,rank,key);
     const parsed = document.createElement('div'); parsed.innerHTML=dps;
-    const damageNumbers=[...parsed.querySelectorAll('tbody tr')].map(row=>row.children[1]?.textContent.trim()).filter(Boolean);
+    const damageNumbers=[...parsed.querySelectorAll('tbody tr')].map(row=>row.children[1]?.innerHTML.trim()).filter(Boolean);
     const damageSummary=damageNumbers.length ? damageNumbers.join(' / ') : '—';
-    return `<div class="ability-card" data-ability-slot="${key}"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div>${description(key,spell.description,detail,abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank)+dps)}<div class="ability-inputs"></div><div class="ability-meta"><span><strong>Cooldown:</strong> ${cd}</span><span><strong>Cost:</strong> ${cost}</span><span><strong>Range:</strong> ${range}</span><span class="ability-damage-summary"><strong>Damage:</strong> ${escapeAttack(damageSummary)}</span></div></div>`;
+    return `<div class="ability-card" data-ability-slot="${key}"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="rank_${key}">${opts}</select></label></div>${description(key,spell.description,detail,abilityEffectValues(BUILDER.cdragonAbilityData?.[key],rank)+dps)}<div class="ability-inputs"></div><div class="ability-meta"><span><strong>Cooldown:</strong> ${cd}</span><span><strong>Cost:</strong> ${cost}</span><span><strong>Range:</strong> ${range}</span><span class="ability-damage-summary"><strong>Damage:</strong> ${damageSummary}</span></div></div>`;
   }).join("");
 
   const expanded = new Set(root.dataset.descriptionChampion === BUILDER.selectedChampion ? [...root.querySelectorAll('.detail-toggle[aria-expanded="true"]')].map(el=>el.closest('.ability-card').querySelector('.ability-description').dataset.descriptionSlot) : []);
@@ -2259,7 +2312,7 @@ function renderAbilityCards() {
     (control.slot === 'attack' || control.key.includes('target:') ? document.getElementById('attackSettings') : card).append(wrapper);
   }
   document.getElementById('attackSummary').append(root.querySelector('.ability-attack-card'));
-  document.querySelector('.target-hint').textContent = document.getElementById('attackSettings').children.length ? 'Blank values remain unknown. Enable effects to show their inputs.' : 'No additional target inputs for this build.';
+  document.querySelector('.attack-settings-hint').textContent = document.getElementById('attackSettings').children.length ? 'Enable effects to show their inputs.' : 'No additional attack settings for this build.';
   root.querySelectorAll('.ability-card').forEach(card => {
     const controls = [...card.querySelectorAll(':scope > .attack-control')].filter(control => control.querySelector('input'));
     if (controls.length > 2) {
@@ -2425,8 +2478,8 @@ function renderStats() {
     { name: "MS", icon: STAT_ICONS["MS"], value: moveSpeed, eq: `(${base.movespeed.toFixed(1)} + ${item.msFlat.toFixed(1)} + ${rune.msFlat.toFixed(1)}) * (1 + ${(item.msPct + rune.msPct).toFixed(1)}%)` },
     { name: "Crit %", icon: STAT_ICONS["Crit %"], value: critChance, eq: `${base.crit.toFixed(1)} + ${base.critperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.critChance.toFixed(1)} + ${rune.critChance.toFixed(1)}` },
     { name: "Crit Dmg", icon: STAT_ICONS["Crit Dmg"], value: critDamage, eq: `${(base.critdamage ? base.critdamage * 100 : 200).toFixed(1)} + ${item.critDamage.toFixed(1)} + ${rune.critDamage.toFixed(1)}; champion modifier included in displayed value` },
-    { name: "ARPen", icon: STAT_ICONS["ARPen"], value: 0, eq: `${item.arPenFlat.toFixed(1)} / ${item.arPenPct.toFixed(1)}%` },
-    { name: "MRPen", icon: STAT_ICONS["MRPen"], value: 0, eq: `${item.mrPenFlat.toFixed(1)} / ${item.mrPenPct.toFixed(1)}%` },
+    { name: "ARPen", icon: STAT_ICONS["ARPen"], value: 0, eq: `Flat: items ${item.arPenFlat.toFixed(1)} + runes ${rune.arPenFlat.toFixed(1)} + passive ${(computed.championPenetration?.armorPenFlat||0).toFixed(1)}; percent: 100 × (1 − (1 − ${item.arPenPct.toFixed(1)}%) × (1 − ${rune.arPenPct.toFixed(1)}%) × (1 − ${(computed.championPenetration?.armorPenPct||0).toFixed(1)}%))` },
+    { name: "MRPen", icon: STAT_ICONS["MRPen"], value: 0, eq: `Flat: items ${item.mrPenFlat.toFixed(1)} + runes ${rune.mrPenFlat.toFixed(1)}; percent: 100 × (1 − (1 − ${item.mrPenPct.toFixed(1)}%) × (1 − ${rune.mrPenPct.toFixed(1)}%) × (1 − ${(computed.championPenetration?.magicPenPct||0).toFixed(1)}%))` },
     { name: "Lifesteal", icon: STAT_ICONS["Lifesteal"], value: 0, eq: `${item.physicalVamp.toFixed(1)}% / ${item.omniVamp.toFixed(1)}%` },
     { name: "Tenacity", icon: STAT_ICONS["Tenacity"], value: 0, eq: `${(100 * (1 - (1 - item.tenacity / 100) * (1 - rune.tenacity / 100))).toFixed(1)}%` },
   ];
@@ -2434,8 +2487,8 @@ function renderStats() {
   const bonusKeys={HP:"hp",AD:"ad",AP:"ap",Arm:"armor",MR:"mr",AS:"asTotal",Range:"attackRange","Crit %":"critChance"};
   for(const row of rows){const bonus=computed.championBonuses?.[bonusKeys[row.name]];if(bonus)row.eq+=` + champion abilities (${bonus.toFixed(2)})`;}
   const tableHtml = renderPairedRows(rows.map((row) => {
-    if (row.name === "ARPen") return { ...row, displayValue: `${item.arPenFlat.toFixed(1)}/${item.arPenPct.toFixed(1)}%` };
-    if (row.name === "MRPen") return { ...row, displayValue: `${item.mrPenFlat.toFixed(1)}/${item.mrPenPct.toFixed(1)}%` };
+    if (row.name === "ARPen") return { ...row, displayValue: `${computed.armorPenFlat.toFixed(1)}/${computed.armorPenPct.toFixed(1)}%` };
+    if (row.name === "MRPen") return { ...row, displayValue: `${computed.magicPenFlat.toFixed(1)}/${computed.magicPenPct.toFixed(1)}%` };
     if (row.name === "Lifesteal") return { ...row, displayValue: `${(item.physicalVamp+(computed.championLifeSteal||0)).toFixed(1)}%/${item.omniVamp.toFixed(1)}%` };
     if (row.name === "Tenacity") return { ...row, displayValue: `${(100 * (1 - (1 - item.tenacity / 100) * (1 - rune.tenacity / 100))).toFixed(1)}%` };
     return {

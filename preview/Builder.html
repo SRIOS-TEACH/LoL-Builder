@@ -37,7 +37,18 @@
         <section class="dashboard-center"><div class="dashboard-heading"><h2>Abilities</h2><small id="abilityRuleHint" class="text-muted"></small></div><div id="abilityCards" class="ability-grid ability-layout"></div></section>
         <aside class="dashboard-right">
           <section id="attackSummary" aria-label="Attack results"></section>
-          <section class="section-card dashboard-panel target-panel"><h2>Target &amp; attack settings</h2><p class="target-hint text-muted">Select a champion to configure combat conditions.</p><div id="combatInputs" class="combat-inputs"></div><div id="attackSettings"></div></section>
+          <section class="section-card dashboard-panel target-panel">
+            <div class="target-heading"><h2>Target settings</h2><button id="targetEnabled" class="btn btn-sm" type="button" aria-label="Apply target settings" aria-pressed="false">Off</button></div>
+            <div id="targetFields" class="target-fields">
+              <label for="targetMaxHp">Max HP<input id="targetMaxHp" class="form-control" type="number" min="1" step="any" value="2000"></label>
+              <label for="targetCurrentHp">Current HP<input id="targetCurrentHp" class="form-control" type="number" min="0" max="2000" step="any" value="2000"></label>
+              <label for="targetArmor">Armor (AR)<input id="targetArmor" class="form-control" type="number" step="any" value="100"></label>
+              <label for="targetMr" title="Magic resistance">MR<input id="targetMr" class="form-control" type="number" step="any" value="100" aria-label="Magic resistance (MR)"></label>
+              <label for="targetDamageReduction" class="target-reduction">Damage reduction %<input id="targetDamageReduction" class="form-control" type="number" min="0" max="100" step="any" value="0"></label>
+            </div>
+            <p id="targetStatus" class="target-hint text-muted">Off: damage before target defences.</p>
+            <h3 class="attack-settings-heading">Attack settings</h3><p class="target-hint attack-settings-hint text-muted">Select a champion to configure combat conditions.</p><div id="combatInputs" class="combat-inputs"></div><div id="attackSettings"></div>
+          </section>
         </aside>
       </main>
     </div>
@@ -93,6 +104,8 @@
   <script src="JS/shared/apiClient.js"></script>
   <script src="JS/shared/itemPolicy.js"></script>
   <script src="JS/shared/abilityRules.js"></script>
+  <script src="JS/shared/targetDamage.js"></script>
+  <script src="JS/shared/damageText.js"></script>
   <script src="JS/shared/abilityDps.js"></script>
   <script src="JS/shared/buildStats.js"></script>
   <script src="JS/shared/calculations.js"></script>

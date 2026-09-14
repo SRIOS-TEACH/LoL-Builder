@@ -1,14 +1,34 @@
-/** Damage per cooldown, before mitigation. See docs/DPS.md for timing conventions. */
+/** Damage per cooldown with separately typed damage packets. See docs/DPS.md for timing conventions. */
 (function (scope) {
   const finite = value => typeof value === 'number' && Number.isFinite(value);
   const fmt = value => finite(value) ? (Math.round(value * 10) / 10).toFixed(1) : 'Value unavailable';
   const plain = text => String(text || '').replace(/<[^>]*>/g, '').trim();
   const escape = text => String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const amount = (value, text) => ({value:finite(value) ? value : null, text:text || fmt(value)});
-  const multiply = (a, n) => amount(finite(a.value) && finite(n) ? a.value * n : null,
-    finite(n) ? `${fmt(n)} × (${a.text})` : 'Value unavailable');
-  const sum = values => amount(values.every(a=>finite(a.value)) ? values.reduce((n,a)=>n+a.value,0) : null,
-    values.map(a=>`(${a.text})`).join(' + '));
+  const damageType = tag => ({physicaldamage:'physical',magicdamage:'magic',truedamage:'true'}[String(tag).toLowerCase()] || null);
+  const amount = (value, text, type=null) => ({value:finite(value) ? value : null, text:text || fmt(value),
+    components:[{value:finite(value)?value:null,type,text:text || fmt(value)}]});
+  const multiply = (a, n) => ({...amount(finite(a.value) && finite(n) ? a.value * n : null,
+    finite(n) ? `${fmt(n)} × (${a.text})` : 'Value unavailable'),
+    components:a.components.map(c=>({...c,value:finite(c.value)&&finite(n)?c.value*n:null}))});
+  const sum = values => ({...amount(values.every(a=>finite(a.value)) ? values.reduce((n,a)=>n+a.value,0) : null,
+    values.map(a=>`(${a.text})`).join(' + ')),components:values.flatMap(a=>a.components)});
+  const typed = (a,type) => ({...a,components:a.components.map(c=>({...c,type}))});
+  const conversion = (a,fraction,from='physical') => finite(fraction)?sum([
+    multiply(typed(a,from),1-Math.max(0,Math.min(1,fraction))),
+    multiply(typed(a,'true'),Math.max(0,Math.min(1,fraction))),
+  ]):typed(a,null);
+
+  function mitigated(a,target,stats) {
+    const helper=scope.TargetDamage;
+    const packets=a.components.filter(c=>c.value!==0).map(c=>{
+      const result=helper?helper.apply(c.value,c.type,{target,stats}):{value:c.value,rawValue:c.value,type:c.type,multiplier:1,text:target?.enabled?'Target mitigation unavailable.':`Raw ${c.type || 'untyped'} damage: ${fmt(c.value)}`};
+      return {...c,...result};
+    });
+    const value=finite(a.value)&&packets.every(c=>finite(c.value))?packets.reduce((total,c)=>total+c.value,0):null;
+    const unresolvedType=target?.enabled&&packets.some(c=>!['physical','magic','true'].includes(c.type));
+    return {...a,value,text:unresolvedType?'Unavailable (damage type not identified)':a.text,
+      rawValue:a.value,components:packets,breakdownText:[a.text,...packets.map(c=>c.text)].filter(Boolean).join('\n')};
+  }
 
   function cooldown(spell, rank, stats = {}, payload) {
     if (!(rank > 0)) return null;
@@ -30,14 +50,15 @@
   }
 
   // Only typed damage passages are candidates; never choose a formula by a fuzzy name.
-  // Preserve percentages/target-health expressions as formulas instead of treating them as flat damage.
-  function components(tooltip, resolve) {
+  // Percent-health expressions are scalar only when target settings supply the health pool.
+  // A percent coefficient is never itself a flat damage number.
+  function components(tooltip, resolve, {target} = {}) {
     const rows = [];
     tooltip=tooltip.replace(/<(physicalDamage|magicDamage|trueDamage)>\s*(\{\{[^}]+\}\})\s*(?:to|and|-)\s*(\{\{[^}]+\}\})\s*((?:physical|magic|true) damage)\s*<\/\1>/gi,
       (_,type,low,high,unit)=>`<${type}>${low} ${unit}</${type}> to <${type}>${high} ${unit}</${type}>`);
     for (const match of tooltip.matchAll(/<(physicalDamage|magicDamage|trueDamage)>([\s\S]*?)<\/\1>/gi)) {
       const raw = match[2];
-      if (/attack damage|damage reduction|damage (?:is )?reduced|damage amplification|\bmana\b/i.test(plain(raw))) continue;
+      if (/attack damage|damage reduction|damage (?:is )?reduced|damage amplification|\bmana\b/i.test(plain(raw).replace(/\bmagic attack damage\b/gi,'magic damage'))) continue;
       if (/suffers\s*$/i.test(plain(tooltip.slice(Math.max(0,match.index-60),match.index)))) continue;
       const tokens = [...raw.matchAll(/\{\{\s*([^}]+?)\s*\}\}/g)];
       if (!tokens.length && !/\d/.test(plain(raw))) continue;
@@ -46,16 +67,31 @@
         const r=resolve(key); return r ? (finite(r.numeric) ? fmt(r.numeric)+(r.isPercent?'%':'') : plain(r.html)) : 'Value unavailable';
       }));
       const skeleton = plain(raw.replace(/\{\{[^}]+\}\}/g, '#'))
+        .replace(/\bmagic attack damage\b/gi,'magic damage')
         .replace(/\b(?:physical|magic|magical|true|bonus|additional|extra|total|damage)\b/gi,'').trim().replace(/\.$/,'').trim();
       // A complete scalar, or an explicit sum of scalar terms. Other grammar remains symbolic.
       let value = null;
       if (/^#(?:\s*\+\s*#)*$/.test(skeleton) && resolved.every(r=>r && finite(r.numeric) && !r.isPercent)) {
         value = resolved.reduce((n,r)=>n+r.numeric,0);
       } else if (/^\d+(?:\.\d+)?$/.test(skeleton)) value = Number(skeleton);
+      else if(target?.enabled && !/\byour\b|\bown\b/i.test(skeleton)) {
+        let index=0;
+        const parts=skeleton.split(/\s*\+\s*/).map(term=>{
+          const match=term.match(/^(#|\d+(?:\.\d+)?)(%)?\s*(?:(?:of\s+)?(?:the\s+)?(?:target(?:'s)?|enemy(?:'s)?|their|its)\s+)?(max(?:imum)?|current|missing)\s+(?:health|hp)$/i);
+          const coefficient=term.includes('#')?resolved[index++]:null;
+          if(!match)return term==='#'&&coefficient&&!coefficient.isPercent&&finite(coefficient.numeric)?coefficient.numeric:null;
+          const numeric=match[1]==='#'?coefficient?.numeric:Number(match[1]);
+          if(!finite(numeric) || (!match[2]&&!coefficient?.isPercent))return null;
+          const health=/^max/i.test(match[3])?target.maxHp:/current/i.test(match[3])?target.currentHp:
+            finite(target.maxHp)&&finite(target.currentHp)?Math.max(0,target.maxHp-target.currentHp):null;
+          return finite(health)?numeric/100*health:null;
+        });
+        if(parts.length&&parts.every(finite))value=parts.reduce((a,b)=>a+b,0);
+      }
       const label = tokens.length ? tokens.map(m=>m[1].replace(/^spell\.[^:]+:/i,'').replace(/(?:tooltiponly|tooltip|calc)$/i,'')
         .replace(/([a-z])([A-Z])/g,'$1 $2').replace(/(total|bonus|empowered|minimum|maximum|initial|recast|damage|basic|second|first|third|missile|strike|per|stack)/gi,' $1 ').replace(/_/g,' ').replace(/\s+/g,' ').trim()).join(' + ') : 'Damage';
       const identity=match[1].toLowerCase()+':'+raw.trim();
-      let damage=amount(value,text);
+      let damage=amount(value,text,damageType(match[1]));
       const after=plain(tooltip.slice(match.index+match[0].length));
       if(/per second/i.test(text)||/^per second\b/i.test(after)) {
         const duration=after.match(/^per second for\s*\{\{\s*([^}]+)\s*\}\}\s*seconds/i);
@@ -80,13 +116,38 @@
     ];
   }
 
-  function profile({spell, rank, cooldown:cd, tooltip = '', resolve, payload, timing = {}}) {
+  // These types describe the actual damage in the spell tooltip, never its AD/AP ratio.
+  // They also cover sequence totals whose individual formula name is not printed there.
+  const physicalSequences=new Set(['AatroxQ','DariusCleave','YasuoQ1Wrapper','YoneQ','RivenTriCleave','KledE','RenektonSliceAndDice','LeeSinQOne','NaafiriQ','ZaahenQ','GarenE','AatroxW']);
+  const magicSequences=new Set(['ZiggsR','XerathArcaneBarrage2','AhriR','AkaliR','GwenR','XerathLocusOfPower2','GwenQ','YuumiR','AhriW','AkaliE','VexR','OrnnR','RenektonReignOfTheTyrant','Bushwhack']);
+  const tokenKey=name=>String(name).replace(/^spell\.[^:]+:/i,'').replace(/\s/g,'').toLowerCase();
+  function tokenTypes(tooltip) {
+    const types=new Map();
+    for(const match of tooltip.matchAll(/<(physicalDamage|magicDamage|trueDamage)>([\s\S]*?)<\/\1>/gi)) {
+      if(/attack damage|damage reduction|damage (?:is )?reduced|damage amplification|\bmana\b/i.test(plain(match[2]).replace(/\bmagic attack damage\b/gi,'magic damage')))continue;
+      for(const token of match[2].matchAll(/\{\{\s*([^}]+?)\s*\}\}/g)) {
+        const key=tokenKey(token[1]),set=types.get(key)||new Set();
+        set.add(damageType(match[1]));types.set(key,set);
+      }
+    }
+    return types;
+  }
+
+  function profile({spell, rank, cooldown:cd, tooltip = '', resolve, payload, timing = {}, target, stats = {}}) {
     if (!(rank > 0)) return {status:'Unlearned',rows:[]};
-    const token = name => {
+    const types=tokenTypes(tooltip);
+    const fallback=physicalSequences.has(spell.id)?'physical':magicSequences.has(spell.id)?'magic':null;
+    const token = (name,explicitType) => {
       const r=resolve(name);
-      return amount(r?.numeric, r ? plain(r.html) : 'Value unavailable');
+      const set=types.get(tokenKey(name));
+      const type=typeof explicitType==='string'?explicitType:(set?.size===1?[...set][0]:set?.size>1?null:fallback);
+      return amount(r?.numeric, r ? plain(r.html) : 'Value unavailable',type);
     };
     const number = name => token(name).value;
+    const fraction = name => {
+      const r=resolve(name);
+      return finite(r?.numeric)?r.numeric/(r.isPercent?100:1):null;
+    };
     const rows=[];
     const add=(label,damage,sweet=null,period=cd)=>rows.push({label,damage,sweet,period});
     let note='Damage ÷ cooldown; before mitigation. Separate outcomes are not added together.';
@@ -127,7 +188,7 @@
       case 'XerathArcaneBarrage2':
         add('Outer blast (centre)',token('TotalDamage'),token('SweetSpotTotalDamage'));break;
       case 'LilliaQ':
-        add('Inner hit (outer edge)',token('TotalDamage'),sum([token('TotalDamage'),token('BonusTrueDamage')]));break;
+        add('Inner hit (outer edge)',token('TotalDamage','magic'),sum([token('TotalDamage','magic'),token('BonusTrueDamage','true')]));break;
       case 'YasuoQ1Wrapper':
       case 'YoneQ':
         add('Basic Q',token(spell.id==='YoneQ'?'QDamage':'TotalDamage'));
@@ -149,7 +210,7 @@
         break;
       }
       case 'CamilleQ': {
-        const base=token('BonusDamage'),empowered=token('EmpoweredBonusDamage');
+        const base=token('BonusDamage','physical'),empowered=conversion(token('EmpoweredBonusDamage'),fraction('DamageConversionPercentage'));
         add('Q1 bonus / minimum',base);add('Empowered Q2 bonus',empowered);
         combined(sum([base,empowered]),[number('QRampUpTime')],'last');
         note+=' Bonus damage only; excludes the underlying attacks.';
@@ -198,14 +259,18 @@
         note='Damage ÷ cooldown; parentheses show nearest-target damage. Full duration uses the current build’s number of spins. Before mitigation.';break;
       }
       case 'YoneR':
-        add('Physical + magic total',multiply(token('TooltipDamage'),2));break;
-      case 'GwenQ':
-        add('No stacks / minimum',sum([token('MiniSwipeDamage'),token('FinalSwipeDamage')]));add('Four stacks',token('MaxDamage'));break;
+        add('Physical + magic total',sum([token('TooltipDamage','physical'),token('TooltipDamage','magic')]));break;
+      case 'GwenQ': {
+        const minimum=sum([token('MiniSwipeDamage'),token('FinalSwipeDamage')]),maximum=token('MaxDamage'),ratio=fraction('TrueDamageConversion');
+        add('No stacks / minimum',minimum,finite(ratio)?conversion(minimum,ratio,'magic'):null);
+        add('Four stacks',maximum,finite(ratio)?conversion(maximum,ratio,'magic'):null);
+        note+=' Centre hits convert part of the damage to true damage; excludes A Thousand Cuts procs.';break;
+      }
       case 'YuumiR':
         add('One wave / minimum',token('TotalMissileDamage'));add('All waves',token('MultiMissileTotal'));break;
       case 'AhriQ':
-        add('Outgoing / minimum',token('TotalDamage'));add('Return',token('TotalDamage'));
-        add('Combined total',multiply(token('TotalDamage'),2));break;
+        add('Outgoing / minimum',token('TotalDamage','magic'));add('Return',token('TotalDamage','true'));
+        add('Combined total',sum([token('TotalDamage','magic'),token('TotalDamage','true')]));break;
       case 'AhriW':
         add('First fox-fire / minimum',token('SingleFireDamage'));
         add('All three fox-fires',sum([token('SingleFireDamage'),multiply(token('MultiFireDamage'),2)]));break;
@@ -216,7 +281,7 @@
       case 'Bushwhack':
         add('Full bleed duration',multiply(token('DamagePerSecond'),number('DotDuration')));break;
       default:
-        components(tooltip,resolve).forEach(row=>add(row.label,row.damage));
+        components(tooltip,resolve,{target}).forEach(row=>add(row.label,row.damage));
     }
     if (!rows.length) {
       // Absence of a typed number does not prove there is no damaging mechanic.
@@ -225,6 +290,12 @@
       return {status:damaging?'Damage formula unavailable':'No direct damage',rows:[]};
     }
     if(rows.some(r=>r.sweet)&&!note.includes('Parentheses')&&!note.includes('parentheses'))note+=' Parentheses show the sweet-spot outcome.';
+    rows.forEach(r=>{r.damage=mitigated(r.damage,target,stats);if(r.sweet)r.sweet=mitigated(r.sweet,target,stats);});
+    if(target?.enabled) {
+      note=note.replace(/before mitigation/gi,'after target mitigation');
+      note+=' Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction.';
+      if(rows.some(r=>[r.damage,r.sweet].filter(Boolean).some(a=>a.components.some(c=>!c.type))))note+=' A damage portion with no identified type remains unresolved.';
+    }
     return {rows,note:note+(rows.some(r=>r.damage.value===null)?' Target-dependent or unresolved damage stays symbolic.':'')};
   }
 
@@ -232,7 +303,8 @@
     if (!result.rows.length) return `<div class="ability-dps"><strong>Damage:</strong> ${escape(result.status)}</div>`;
     const damage=a=>finite(a.value)?fmt(a.value):a.text;
     const dps=(a,period)=>!finite(period)||period<=0?'Unavailable (no repeat cooldown)':finite(a.value)?fmt(a.value/period):`(${a.text}) ÷ ${period.toFixed(2)}s`;
-    return `<div class="ability-dps"><strong>Damage</strong><table class="ability-dps-table"><thead><tr><th>Part</th><th>Damage</th><th>DPS</th></tr></thead><tbody>${result.rows.map(r=>`<tr><td>${escape(r.label)}</td><td>${escape(damage(r.damage))}${r.sweet?` (${escape(damage(r.sweet))})`:''}</td><td>${r.timingMissing?'Enter recast timing':escape(dps(r.damage,r.period))}${r.sweet?` (${escape(dps(r.sweet,r.period))})`:''}</td></tr>`).join('')}</tbody></table><small>${escape(result.note)}</small></div>`;
+    const explanation=r=>[r.damage.breakdownText,r.sweet?`Sweet spot:\n${r.sweet.breakdownText}`:''].filter(Boolean).join('\n');
+    return `<div class="ability-dps"><strong>Damage</strong><table class="ability-dps-table"><thead><tr><th>Part</th><th>Damage</th><th>DPS</th></tr></thead><tbody>${result.rows.map(r=>`<tr><td>${escape(r.label)}</td><td title="${escape(explanation(r))}">${escape(damage(r.damage))}${r.sweet?` (${escape(damage(r.sweet))})`:''}</td><td title="${escape(explanation(r)+(finite(r.period)?`\nDamage ÷ ${r.period.toFixed(2)}s cooldown/cycle`:'\nRepeat cooldown unavailable'))}">${r.timingMissing?'Enter recast timing':escape(dps(r.damage,r.period))}${r.sweet?` (${escape(dps(r.sweet,r.period))})`:''}</td></tr>`).join('')}</tbody></table><small>${escape(result.note)}</small></div>`;
   }
   const api={cooldown,cycleTime,components,profile,render,timingFields};
   scope.AbilityDps=api;

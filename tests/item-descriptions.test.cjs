@@ -3,6 +3,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 require('../JS/shared/calculations.js');
+require('../JS/shared/targetDamage.js');
+require('../JS/shared/damageText.js');
 const ItemDescriptions=require('../JS/shared/itemDescriptions.js');
 const ItemPolicy=require('../JS/shared/itemPolicy.js');
 const excerpts=require('./attack-excerpts.json');
@@ -13,6 +15,18 @@ const context=(ranged=true)=>({level:18,ranged,targetFormulaOnly:true,automaticS
 // Exact localization snippets from the captured 16.18 game string table.
 const lichText='<passive>Spellblade</passive> {{ Item_Cooldown}}<br>After using an Ability, your next Attack within @SpellBladeDuration@ seconds gains <attackSpeed>@SheenASBuff*100@% Attack Speed</attackSpeed> and deals <magicDamage>@SpellbladeDamage@ bonus magic damage</magicDamage> {{ Item_Keyword_OnHit }}.';
 const strings={item_3100_tooltip:lichText,item_cooldown:'%i:cooldown% (@Cooldown@s)',item_keyword_onhit:'%i:OnHit% <OnHit>On-Hit</OnHit>'};
+
+test('target defenses change Muramana physical damage without reducing its mana coefficient or Awe AD',()=>{
+  const ctx=context(true);ctx.targetFormulaOnly=false;
+  ctx.target={enabled:true,maxHp:2500,currentHp:1500,armor:100,mr:300,damageReduction:20};
+  const result=ItemDescriptions.describe({id:'3042',item:{name:'Muramana'},source:excerpts.items['3042'],context:ctx});
+  const text=plain(result.html);
+  assert.match(text,/2% max Mana.*\+45\.8 AD/);
+  assert.match(text,/1\.2% \(12\.21\) max Mana/);
+  assert.match(text,/3% \(30\.53\) max Mana/);
+  assert.equal((result.html.match(/data-damage-type="physical"/g)||[]).length,2);
+  assert.match(result.html,/80 effective armor/);
+});
 
 test('Muramana prose combines coefficients and values for separate Awe, attack and ability effects',()=>{
   const describe=ranged=>ItemDescriptions.describe({id:'3042',item:{name:'Muramana'},source:excerpts.items['3042'],context:context(ranged)});

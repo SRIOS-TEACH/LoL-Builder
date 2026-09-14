@@ -41,6 +41,8 @@ The unit suite includes focused source regressions in `ad-growth.test.cjs`, `cha
 
 ## Manual/live validation still required
 
+Target settings have a fixture-backed UI suite: `npm run test:targets`. Use the same advanced fixtures and browser environment above. It verifies physical/magic/true/mixed damage, penetration, target-health scaling, descriptions and controls; see [TARGETS.md](TARGETS.md) for coverage and assumptions. `TARGET_SETTINGS=1 ADVANCED_DATA=1 npm run test:dps` adds a full-champion target-enabled audit that rejects damage-type regressions.
+
 Run `python -m http.server 8000` from the repository root. Visit `http://127.0.0.1:8000/main.html`. Verify current Community Dragon access, compare supported calculations to the current game patch, and exercise the remaining items in `AUDIT.md` before declaring game-level correctness.
 
 

@@ -4,7 +4,7 @@ The Attack card reports **On-attack damage** and **On-Attack DPS**. Hover either
 
 The ordinary contribution is `AD × (1 + clamp(critChance, 0, 1) × (critDamageMultiplier − 1))`. Critical damage comes from the champion record, with a 200% Data Dragon-only fallback. Infinity Edge is included before champion modifiers. Explicit rules cover Yasuo/Yone doubled chance and excess-crit AD, Senna's crit modifier and existing Mist stats, Tryndamere Fury, Ashe Frost Shot, and Jhin's AD/crit conversion. Jhin averages three ordinary shots and a guaranteed fourth critical strike plus its missing-health damage. His idealized magazine rate is `4 / (3 / attackSpeed + reloadTime)`; animation windup is not simulated.
 
-Values are before mitigation against one champion at constant target health. Target inputs affect only this attack model; ability tooltips keep symbolic target formulas. Missing health, proc timing, or formula data makes the result unavailable instead of dropping the effect.
+Values are before mitigation with Target settings off. Enabling [Target settings](TARGETS.md) shares entered health and defenses across attacks, abilities, passives and item descriptions. Values assume one champion at constant target health. Missing health, proc timing, or formula data makes the result unavailable instead of dropping the effect.
 
 ## Effects and controls
 
@@ -32,7 +32,7 @@ The item registry now also includes Dusk & Dawn's extra on-hit, Hullbreaker's fi
 
 The result is a sustained, single-target estimate at the supplied health and state. Counts, charges, forms and temporary buffs are explicit controls. Reload, hopping, projectile-return and empowered-attack intervals describe the chosen attack sequence; supply them when that sequence is enabled. The calculation does not infer movement, target distance, cooldown resets or buff uptime from a build. Missing required inputs produce an unavailable result with an explanation.
 
-Kraken amplification uses an explicit percentage control; blank means minimum damage. Splash damage, Runaan bolts on other enemies, execute thresholds, pets, external ally buffs beyond explicit controls, and rune damage are outside this attack model. The registered bindings cover the previously documented gaps, but this is not an assertion that every possible combat sequence or future patch is numerically certified.
+Kraken amplification derives from missing-health proportion when Target settings are enabled. Shadowflame similarly checks the configured current-health threshold. Splash damage, Runaan bolts on other enemies, execute thresholds, pets, external ally buffs beyond explicit controls, and rune damage are outside this attack model. The registered bindings cover the previously documented gaps, but this is not an assertion that every possible combat sequence or future patch is numerically certified.
 
 ## Verification
 

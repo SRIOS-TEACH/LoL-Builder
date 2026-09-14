@@ -76,23 +76,42 @@ const server=http.createServer((req,res)=>{
      assert.doesNotMatch(await page.locator('[data-ability-slot="q"] .ability-dps-form').innerText(),/Alternate form data unavailable/);
    }
  }
+ const targetMode=process.env.TARGET_SETTINGS==='1';
+ if(targetMode)await page.evaluate(()=>{
+   BUILDER.target={enabled:true,maxHp:2000,currentHp:1000,armor:100,mr:100,damageReduction:10};
+   renderStats();renderAbilityCards();
+ });
  const audit=[];
  for(const name of Object.keys(index)) {
    await select(name);
-   const results=await page.evaluate(()=>BUILDER.championData.spells.map((spell,i)=>{
-     const key=['q','w','e','r'][i],rank=BUILDER.abilityRanks[key],ctx=buildAbilityContext(spell,rank,key);
-     const tooltip=expandAbilityLocalization(spell.tooltip||spell.description||'');
-     const result=AbilityDps.profile({spell,rank,tooltip,payload:ctx.cdragonSpell,
-       cooldown:AbilityDps.cooldown(spell,rank,ctx.stats,ctx.cdragonSpell),resolve:token=>resolveAbilityToken(token,ctx)});
-     return {id:spell.id,rows:result.rows,status:result.status,tooltip};
-   }));
+   const results=await page.evaluate(targetMode=>{
+     const savedTarget=BUILDER.target;
+     const profiles=()=>BUILDER.championData.spells.map((spell,i)=>{
+       const key=['q','w','e','r'][i],rank=BUILDER.abilityRanks[key],ctx=buildAbilityContext(spell,rank,key);
+       const tooltip=expandAbilityLocalization(spell.tooltip||spell.description||'');
+       const result=AbilityDps.profile({spell,rank,tooltip,payload:ctx.cdragonSpell,
+         cooldown:AbilityDps.cooldown(spell,rank,ctx.stats,ctx.cdragonSpell),resolve:token=>resolveAbilityToken(token,ctx),
+         target:BUILDER.target,stats:ctx.stats});
+       return {id:spell.id,rows:result.rows,status:result.status,tooltip};
+     });
+     let raw;
+     if(targetMode){BUILDER.target={...savedTarget,enabled:false};raw=profiles();BUILDER.target=savedTarget;}
+     const results=profiles();
+     return results.map((result,i)=>({...result,...(targetMode?{rawRows:raw[i].rows,
+       unresolvedDamageTypes:result.rows.flatMap((row,j)=>['damage','sweet'].filter(kind=>Number.isFinite(raw[i].rows[j]?.[kind]?.value)&&row[kind]?.components?.some(c=>!['physical','magic','true'].includes(c.type))).map(kind=>({label:row.label,kind,rawValue:raw[i].rows[j][kind].value,components:row[kind].components}))),
+     }:{})}));
+   },targetMode);
    assert.doesNotMatch(await page.locator('#abilityCards').innerText(),/NaN|Infinity|undefined|Not modeled/);
    audit.push(...results);
  }
  if(process.env.AUDIT_OUTPUT)fs.writeFileSync(process.env.AUDIT_OUTPUT,JSON.stringify(audit,null,2));
+ if(targetMode){
+   const missing=audit.filter(result=>result.unresolvedDamageTypes.length).map(({id,unresolvedDamageTypes})=>({id,unresolvedDamageTypes}));
+   assert.deepEqual(missing,[],'Previously numeric damage outcomes must have identified damage types with targets enabled');
+ }
  await select('Aatrox');
  if(process.env.SCREENSHOT_DIR){fs.mkdirSync(process.env.SCREENSHOT_DIR,{recursive:true});await page.locator('#abilityCards').screenshot({path:path.join(process.env.SCREENSHOT_DIR,'ability-dps.png')});}
  assert.deepEqual(errors,[]);
- console.log(`DPS browser checks passed for ${Object.keys(index).length} champions / ${audit.length} abilities (${process.env.ADVANCED_DATA?'advanced':'fallback'} data).`);
+ console.log(`DPS browser checks passed for ${Object.keys(index).length} champions / ${audit.length} abilities (${process.env.ADVANCED_DATA?'advanced':'fallback'} data${targetMode?', target settings enabled':''}).`);
  } finally {await browser.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});
