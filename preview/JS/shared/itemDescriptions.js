@@ -32,22 +32,26 @@
       });
       if(next===html)break;html=next;
     }
-    html=html.replace(/@([^@]+)@/g,(_full,token)=>{
+    const resolveToken=token=>{
       const match=token.match(/^([^*.]+)(?:\.(\d+))?(?:\*(-?[\d.]+))?$/);
-      if(!match)return '<span class="ability-detail-missing">[value unavailable]</span>';
+      if(!match)return {html:'<span class="ability-detail-missing">[value unavailable]</span>',numeric:null};
       const [,key,,multiplier]=match;
       const row=value(key),scale=multiplier?Number(multiplier):row.displayAsPercent?100:1;
-      if(row.value===null||row.value===undefined)return `<span class="ability-detail-missing" title="${escape(row.text||'Missing game value')}">[value unavailable]</span>`;
-      return `<span class="item-calculated-value" title="${escape(row.text||key)}">${number(row.value*scale)}${row.displayAsPercent&&!multiplier?'%':''}</span>`;
-    }).replace(/%i:[^%]+%/g,'').replace(/\{\{[^{}]*\}\}/g,'<span class="ability-detail-missing">[text unavailable]</span>');
+      if(row.value===null||row.value===undefined)return {html:`<span class="ability-detail-missing" title="${escape(row.text||'Missing game value')}">[value unavailable]</span>`,numeric:null};
+      const isPercent=!!row.displayAsPercent&&!multiplier;
+      return {html:`<span class="item-calculated-value" title="${escape(row.text||key)}">${number(row.value*scale)}${isPercent?'%':''}</span>`,numeric:row.value*scale,isPercent};
+    };
+    html=(scope.DamageText?scope.DamageText.render(html,resolveToken,context,'item'):html.replace(/@([^@]+)@/g,(_full,token)=>resolveToken(token).html))
+      .replace(/%i:[^%]+%/g,'').replace(/\{\{[^{}]*\}\}/g,'<span class="ability-detail-missing">[text unavailable]</span>');
     // Muramana has distinct attack/ability procs. Keep percentages and results together.
     if(String(id)==='3042' && source){
       const awe=calc('BonusADFromMana'),hit=calc('OnHitDamage'),ability=calc(rangeKey);
+      const damage=value=>context.target?.enabled&&scope.DamageText?scope.DamageText.damage(value,'physical',context):number(value);
       const ratio=data(context.ranged?'AbilityManaRatioRangedTOOLTIPONLY':'AbilityManaRatioMeleeTOOLTIPONLY');
-      const abilityAmount=typeof context.ranged==='boolean'?`${percent(ratio)}% (${number(ability.value)})`:
-        `${percent(data('AbilityManaRatioRangedTOOLTIPONLY'))}% (${number(calc('RangedItemCalcValue').value)}) for ranged champions or ${percent(data('AbilityManaRatioMeleeTOOLTIPONLY'))}% (${number(calc('MeleeItemCalcValue').value)}) for melee champions`;
+      const abilityAmount=typeof context.ranged==='boolean'?`${percent(ratio)}% (${damage(ability.value)})`:
+        `${percent(data('AbilityManaRatioRangedTOOLTIPONLY'))}% (${damage(calc('RangedItemCalcValue').value)}) for ranged champions or ${percent(data('AbilityManaRatioMeleeTOOLTIPONLY'))}% (${damage(calc('MeleeItemCalcValue').value)}) for melee champions`;
       html=`<passive>Awe</passive><br>Gain ${percent(data('BonusADManaRatioTOOLTIPONLY'))}% max Mana as bonus Attack Damage (<scaleAD>+${number(awe.value)} AD</scaleAD>).<br><br>`+
-        `<passive>Shock (On-Hit)</passive><br>Attacks against champions deal ${percent(data('OnHitManaRatioTOOLTIPONLY'))}% (${number(hit.value)}) max Mana as bonus physical damage.<br><br>`+
+        `<passive>Shock (On-Hit)</passive><br>Attacks against champions deal ${percent(data('OnHitManaRatioTOOLTIPONLY'))}% (${damage(hit.value)}) max Mana as bonus physical damage.<br><br>`+
         `<passive>Shock</passive><br>Dealing ability damage to champions with a champion ability deals ${abilityAmount} max Mana as bonus physical damage.${typeof context.ranged==='boolean'?` <rules>${context.ranged?'Ranged':'Melee'} champion scaling.</rules>`:''}`;
     }
     const sections=[];

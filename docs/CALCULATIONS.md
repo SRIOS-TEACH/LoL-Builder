@@ -19,7 +19,7 @@ This is not an entirely data-defined game simulator. Stat growth rules, rune sha
 
 See [the ability report](ABILITY-UNAVAILABLE.md) for the complete current unavailable-field list and testing scope. The renderer audit is broader than the original calculation-record inventory: it also detects unresolved Data Dragon placeholders and incorrect spell selection.
 
-Self scaling reads the current build automatically. Enemy scaling is symbolic, with no proxy target values or enemy-stat fields. Shared counters are entered once in the relevant ability/passive card; Smolder's Dragon Practice is one counter for Q/W/E. Counter names and their hashed references normalize to one identity.
+Self scaling reads the current build automatically. Enemy scaling is symbolic while Target settings are off. Enabling [Target settings](TARGETS.md) supplies the entered target health and defenses to formulas and typed mitigation. Shared counters are entered once in the relevant ability/passive card; Smolder's Dragon Practice is one counter for Q/W/E. Counter names and their hashed references normalize to one identity.
 
 Primary records are resolved using their declared mRootSpell, including abilities with no mChildSpells list. Passive records use mCharacterPassiveSpell, including hashed records. Exact named auxiliary spell references are registered for qualified tooltip tokens. Precision suffixes are formatting metadata rather than separate variable names.
 
@@ -39,4 +39,4 @@ These definitions remain explicitly unavailable. Resolving them numerically requ
 
 ## Remaining game-level acceptance work
 
-All calculations are **not yet certified game-correct**. Full passive application, item interactions, damage mitigation and effects implemented only in scripts remain outside the interpreter's coverage. Ability damage-per-cooldown comparisons, recast models and alternate outcomes are documented in [DPS.md](DPS.md), including remaining unsupported sequence totals. Validate those against the selected patch before moving to unrelated layout/features.
+All calculations are **not yet certified game-correct**. Full passive application, item interactions and effects implemented only in scripts remain outside the interpreter's coverage. Typed target mitigation is described in [TARGETS.md](TARGETS.md). Ability damage-per-cooldown comparisons, recast models and alternate outcomes are documented in [DPS.md](DPS.md), including remaining unsupported sequence totals. Validate those against the selected patch before moving to unrelated layout/features.

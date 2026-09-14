@@ -1,8 +1,8 @@
 # Ability damage per cooldown
 
-Ability cards show damage and DPS for each identified outcome. DPS is damage divided by the current rank's cooldown, adjusted for the build's ability haste. No damage mitigation is applied. Both root and preview use the same module.
+Ability cards show damage and DPS for each identified outcome. DPS is damage divided by the current rank's cooldown, adjusted for the build's ability haste. [Target settings](TARGETS.md) optionally apply health scaling, penetration and typed damage mitigation before dividing by cooldown. With the switch off, values are before target defenses. Both root and preview use the same module.
 
-Damage comes from the existing tooltip calculation resolver. Typed damage passages identify the relevant formulas; calculation names are not searched for a plausible damage value. Alternative outcomes and damage ranges are separate rows. Percent-health, unresolved stacks and other symbolic expressions remain formulas, not invented flat damage. Utility spells and unavailable repeat cooldowns are explicit.
+Damage comes from the existing tooltip calculation resolver. Typed damage passages identify the relevant formulas; calculation names are not searched for a plausible damage value. Alternative outcomes and damage ranges are separate rows. Percent-health expressions resolve when enabled Target settings supply the health pool; unresolved stacks and other missing inputs remain formulas. Utility spells and unavailable repeat cooldowns are explicit.
 
 ## Sequences and sweet spots
 
@@ -28,7 +28,7 @@ Damage coefficients, available delays and alternate tooltips use the project's e
 - [Ziggs data](https://raw.communitydragon.org/latest/game/data/characters/ziggs/ziggs.bin.json): BlastDamage and EmpoweredDamage.
 - [Yasuo ability reference](https://wiki.leagueoflegends.com/en-us/Template%3AData_Yasuo/Steel_Tempest): attack-speed cooldown behavior.
 
-This is a damage-per-cooldown comparison, not a full combat simulation. Unbound repeated attacks, pets, toggled damage, damage storage, resets, passive procs and some scripted multi-part mechanics do not have a certified total. Their listed damage components/formulas must not be interpreted as a complete sequence total. Target-health formulas remain symbolic under the project's existing no-proxy-target policy. Current champion rank constraints are unchanged.
+This is a damage-per-cooldown comparison, not a full combat simulation. Unbound repeated attacks, pets, toggled damage, damage storage, resets, passive procs and some scripted multi-part mechanics do not have a certified total. Their listed damage components/formulas must not be interpreted as a complete sequence total. Target-health formulas remain symbolic while Target settings are off; enabling the switch supplies explicitly entered health. Current champion rank constraints are unchanged.
 
 ## Verification
 

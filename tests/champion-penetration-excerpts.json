@@ -1,0 +1,143 @@
+{
+  "source": "Community Dragon 16.18: game/data/characters/{name}/{name}.bin.json. Source spell data and calculations, captured 2026-09-14.",
+  "champions": {
+    "Darius": {
+      "e": {
+        "dataValues": [
+          {
+            "name": "PassivePercentArmorPen",
+            "values": [
+              20,
+              20,
+              25,
+              30,
+              35,
+              40,
+              45
+            ],
+            "__type": "SpellDataValue"
+          }
+        ],
+        "calculations": {}
+      }
+    },
+    "Pantheon": {
+      "r": {
+        "dataValues": [
+          {
+            "name": "ArmorPenetration",
+            "values": [
+              0,
+              0.10000000149011612,
+              0.20000000298023224,
+              0.30000001192092896,
+              0.4000000059604645,
+              0.5,
+              0.6000000238418579
+            ],
+            "__type": "SpellDataValue"
+          }
+        ],
+        "calculations": {}
+      }
+    },
+    "Mordekaiser": {
+      "e": {
+        "dataValues": [
+          {
+            "name": "MagicPen",
+            "values": [
+              0.02500000037252903,
+              0.05000000074505806,
+              0.07500000298023224,
+              0.10000000149011612,
+              0.125,
+              0.15000000596046448,
+              0.17499999701976776
+            ],
+            "__type": "SpellDataValue"
+          }
+        ],
+        "calculations": {}
+      }
+    },
+    "Nilah": {
+      "q": {
+        "dataValues": [
+          {
+            "name": "CritArmorPenScalar",
+            "values": [
+              0.30000001192092896,
+              0.30000001192092896,
+              0.30000001192092896,
+              0.30000001192092896,
+              0.30000001192092896,
+              0.30000001192092896,
+              0.30000001192092896
+            ],
+            "__type": "SpellDataValue"
+          }
+        ],
+        "calculations": {
+          "CritArmorPen": {
+            "mFormulaParts": [
+              {
+                "mStat": 8,
+                "mDataValue": "CritArmorPenScalar",
+                "__type": "StatByNamedDataValueCalculationPart"
+              }
+            ],
+            "mDisplayAsPercent": true,
+            "__type": "GameCalculation"
+          }
+        }
+      }
+    },
+    "Aphelios": {
+      "p": {
+        "dataValues": [
+          {
+            "name": "MaxRanksPerStat",
+            "values": [
+              6,
+              6,
+              6,
+              6,
+              6,
+              6,
+              6
+            ],
+            "__type": "SpellDataValue"
+          },
+          {
+            "name": "APPerRank",
+            "values": [
+              4.5,
+              4.5,
+              4.5,
+              4.5,
+              4.5,
+              4.5,
+              4.5
+            ],
+            "__type": "SpellDataValue"
+          }
+        ],
+        "calculations": {
+          "ArPenBonus": {
+            "mExpandedTooltipCalculationDisplay": 5,
+            "mFormulaParts": [
+              {
+                "mBuffName": "{f79080ae}",
+                "mDataValue": "APPerRank",
+                "__type": "BuffCounterByNamedDataValueCalculationPart"
+              }
+            ],
+            "mPrecision": -1,
+            "__type": "GameCalculation"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
 /** Explicit attack-script bindings. Coefficients come from the loaded game data.
- * Damage is before mitigation, against one champion. Procs are amortised over
+ * Damage packets are resolved against one champion. Procs are amortised over
  * their cadence; optional effects require an explicit activation/interval.
  */
 (function(scope){
@@ -38,14 +38,15 @@
     const itemData=(id,key)=>read(items[id],key);
     const context=(s)=>{
       const growth=scope.BuildStats.growthFactor(level),baseAd=s.base.attackdamage+s.base.attackdamageperlevel*growth;
-      const targetStats={};
-      for(const key of ['hp','currentHp','bonusHp'])if(finite(values['attack:target:'+key]))targetStats[key]=values['attack:target:'+key];
+      const targetStats=state.target&&scope.TargetDamage?scope.TargetDamage.targetStats(state.target):{};
+      if(!state.target)for(const key of ['hp','currentHp','bonusHp'])if(finite(values['attack:target:'+key]))targetStats[key]=values['attack:target:'+key];
       const stats={totalAd:s.ad,baseAd,bonusAd:s.ad-baseAd,ap:s.ap,hp:s.hp,mp:s.mp,
         bonusHp:s.hp-s.base.hp-s.base.hpperlevel*growth,bonusMp:s.mp-s.base.mp-s.base.mpperlevel*growth,
         armor:s.armor,bonusArmor:s.armor-s.base.armor-s.base.armorperlevel*growth,mr:s.mr,bonusMr:s.mr-s.base.spellblock-s.base.spellblockperlevel*growth,
         critChance:s.critChance/100,critDamage:s.critDamage/100,bonusCritDamage:((s.item.critDamage||0)+(s.rune.critDamage||0))/100,
         attackSpeed:s.asTotal,bonusAttackSpeed:(s.base.attackspeedperlevel*growth+s.item.asPct+s.rune.asPct)/100+(s.bonusAttackSpeedFromChampion||0),
-        lethality:(s.item.lethality||0)+(s.rune.lethality||0)};
+        magicPenFlat:s.magicPenFlat??((s.item.mrPenFlat||0)+(s.rune.mrPenFlat||0)),
+        lethality:s.armorPenFlat??s.lethality??((s.item.arPenFlat??s.item.lethality??0)+(s.rune.arPenFlat??s.rune.lethality??0))};
       const defaults=Object.fromEntries((scope.ChampionEffects?.model(state).fields||[]).filter(f=>f.key.startsWith('buff:')).map(f=>[f.key,f.defaultValue]));
       const buffs=Object.fromEntries(Object.entries({...defaults,...values}).filter(([k])=>k.startsWith('buff:')).map(([k,v])=>[k.slice(5),v]));
       if(name==='Nasus')buffs['{1b1d7345}']=values['attack:nasusStacks']??0;
@@ -71,7 +72,13 @@
       const disabled=slot!=='attack'&&slot!=='p'&&!rank(slot)&&!innateForm;
       controls.push({slot,key:'attack:'+key,label,type:'toggle',disabled});return values['attack:'+key]===true&&!disabled;
     };
-    const input=(slot,key,label,extra={})=>{controls.push({slot,key:'attack:'+key,label,type:'number',min:0,...extra});return values['attack:'+key];};
+    const input=(slot,key,label,extra={})=>{
+      // Maximum/current target health belongs to the shared Target panel. Old
+      // callers without a managed target retain their explicit legacy inputs.
+      if(state.target&&['target:hp','target:currentHp'].includes(key))return scope.TargetDamage?.targetStats(state.target)[key.slice(7)];
+      if(state.target&&!state.target.enabled&&key==='target:bonusHp')return undefined;
+      controls.push({slot,key:'attack:'+key,label,type:'number',min:0,...extra});return values['attack:'+key];
+    };
     const choice=(slot,key,label,options)=>{controls.push({slot,key:'attack:'+key,label,type:'select',options});return clamp(Number(values['attack:'+key])||0,0,options.length-1);};
     const speedBuff={Ashe:['q','BonusAS','Ranger’s Focus',100,'asheQ'],MasterYi:['r','RASBonus','Highlander',100],Tristana:['q','AttackSpeedMod','Rapid Fire',1],Twitch:['q','AttackSpeedMod','Ambush',1],Draven:['w','AttackSpeed','Blood Rush',1],Teemo:['p','BonusAttackSpeed','Guerrilla Warfare',1,null,true],Gwen:['e','BonusAttackSpeed','Skip ’n Slash',100,null,true]};
     function apply(s){
@@ -220,7 +227,7 @@
         }
       }
       if(name==='KogMaw'&&toggle('w','championOnHit','Bio-Arcane Barrage active')){
-        const fraction=calc('w','TotalHealthDamage',s),hp=values['attack:target:hp'];
+        const fraction=calc('w','TotalHealthDamage',s),hp=input('attack','target:hp','Target maximum health');
         row('Bio-Arcane Barrage',finite(hp)&&finite(fraction.value)?hp*fraction.value:null,'magic',1,`${fraction.text} × target maximum HP`);
       }
       const replacement={Nasus:['q','TotalDamage','Siphoning Strike'],Trundle:['q','TotalDamage','Chomp'],Garen:['q','TotalDamage','Decisive Strike']};
@@ -255,8 +262,14 @@
         row('Blade of the Ruined King',finite(hp)&&finite(ratio)?hp*ratio:null,'physical',1,`${finite(ratio)?(ratio*100).toFixed(1)+'%':'ratio unavailable'} × target current HP`);
       }
       if(enabled(6672,'bring-it-down')){
-        const amp=input('attack','krakenAmp','Kraken missing-health amplification (%)',{max:((itemData(6672,'MaxAmpNumber')??1)-1)*100});
-        const r=evaluate(items[6672],'DamageAmount',s);row('Kraken Slayer (every third hit)',finite(r.value)?r.value*(1+(Number(amp)||0)/100):null,'physical',itemData(6672,'AttackCount')||3,r.text+' × selected amplification',{onHit:false});
+        const maxAmp=(itemData(6672,'MaxAmpNumber')??1)-1;
+        // Riot 25.14 describes 0–75% amplification based on missing health;
+        // the current item data publishes MaxAmpNumber. Interpret that range
+        // proportionally across missing-health fraction; no extra HP threshold.
+        const amp=state.target?.enabled?ctx.targetStats.missingHealthPercent*maxAmp*100:
+          input('attack','krakenAmp','Kraken missing-health amplification (%)',{max:maxAmp*100});
+        const explanation=state.target?.enabled?` × (1 + ${(maxAmp*100).toFixed(2)}% × ${(ctx.targetStats.missingHealthPercent*100).toFixed(2)}% target missing health)`:' × selected amplification';
+        const r=evaluate(items[6672],'DamageAmount',s);row('Kraken Slayer (every third hit)',finite(r.value)?r.value*(1+(Number(amp)||0)/100):null,'physical',itemData(6672,'AttackCount')||3,r.text+explanation,{onHit:false});
       }
       const spellblade=[3057,3078,3100,6662,3508,3877,2510].filter(id=>enabled(id,'spellblade'));
       if(spellblade.length){
@@ -336,41 +349,56 @@
         amplify(factor,r=>r.type!=='true','Giant Slayer');
         warnings.push(`Giant Slayer: non-true damage × ${finite(factor)?factor.toFixed(4):'unavailable (enter target bonus HP)'}.`);
       }
-      if(enabled(4645,'cinderbloom')&&toggle('attack','shadowflame','Shadowflame: target below health threshold')){
+      const shadowflameActive=enabled(4645,'cinderbloom')&&(state.target?.enabled
+        ?ctx.targetStats.healthPercent<Number(itemData(4645,'HealthThreshold')?.toPrecision(7))
+        :state.target?values['attack:shadowflame']===true:toggle('attack','shadowflame','Shadowflame: target below health threshold'));
+      if(shadowflameActive){
         const amp=itemData(4645,'SpellItemDamageAmp');for(const r of rows)if(['magic','true'].includes(r.type))r.value=finite(r.value)&&finite(amp)?r.value*(1+amp):null;
         if(['magic','true'].includes(extended.baseType))base=finite(base)&&finite(amp)?base*(1+amp):null;
       }
       const unsupported={Aphelios:'weapon-specific attacks',Graves:'pellets and reload',Zeri:'charged right-click and Q attacks',Kalista:'attack timing',Akshan:'double-shot timing',Sett:'alternating-punch timing',
         Belveth:'R true damage and special attack-speed rules',Bard:'meep availability and chime scaling',Braum:'Concussive Blows',Camille:'Precision Protocol conversion',Darius:'Hemorrhage and Noxian Might',DrMundo:'Blunt Force Trauma',Elise:'spider-form attacks',Fiora:'vitals and Bladework',Fizz:'Seastone Trident',Galio:'Colossal Smash',Gangplank:'Trial by Fire',Gnar:'Hyper and transformation stats',Illaoi:'Harsh Lesson',JarvanIV:'Martial Cadence',Jayce:'stance-specific attacks',Jinx:'Switcheroo and Get Excited',Kindred:'Mounting Dread',Nautilus:'Staggering Blow and Titan’s Wrath',Nidalee:'Takedown',Nilah:'Formless Blade',Nocturne:'Umbra Blades',Pantheon:'empowered Shield Vault',RekSai:'Queen’s Wrath',Renekton:'Ruthless Predator',Rengar:'Savagery and Bonetooth Necklace',Rumble:'Overheat',Sejuani:'Icebreaker',Shyvana:'form-specific attacks',Skarner:'Shattered Earth',Sylas:'Petricite Burst',Talon:'Blade’s End',Thresh:'Flay charge',Twitch:'Deadly Venom and Spray and Pray',Udyr:'stance-specific attacks',Urgot:'Purge and shotgun legs',Viktor:'Siphon Power',Zed:'Contempt for the Weak'};
       if(unsupported[name]&&!extended.covered)warnings.push(`${name}: ${unsupported[name]} are not yet modeled; this is a partial estimate.`);
-      let damage=base,dps=finite(base)&&finite(rate)?base*rate:null;
+      const mitigate=(value,type)=>scope.TargetDamage?scope.TargetDamage.apply(value,type,{target:state.target,stats:s}):{value,rawValue:value,multiplier:1,text:''};
+      const baseResult=mitigate(base,extended.baseType||'physical'),rawBase=base;base=baseResult.value;
+      for(const r of rows){const result=mitigate(r.value,r.type);r.rawValue=result.rawValue;r.value=result.value;r.targetMultiplier=result.multiplier;r.targetExplanation=result.text;}
+      let damage=base,dps=finite(base)&&finite(rate)?base*rate:null,rawDamage=rawBase,rawDps=finite(rawBase)&&finite(rate)?rawBase*rate:null;
       const formula=[`Average attack = ${s.ad.toFixed(2)} AD × (1 + ${(chance*100).toFixed(2)}% × (${crit.toFixed(3)} − 1))`,`${name==='Jhin'?'Magazine-adjusted':'Attack'} rate = ${finite(rate)?rate.toFixed(3):'unavailable'} attacks/s`];
       formula.push(`Stats: ${ctx.stats.baseAd.toFixed(2)} base AD + ${ctx.stats.bonusAd.toFixed(2)} bonus AD; ${s.ap.toFixed(2)} AP; ${s.hp.toFixed(2)} own HP; ${s.mp.toFixed(2)} own mana.`);
       if(Object.keys(ctx.targetStats).length)formula.push('Target: '+Object.entries(ctx.targetStats).map(([k,v])=>`${k} = ${v}`).join(', '));
       if(name==='Jhin')formula.push('Whisper: average the first three probabilistic critical strikes and a guaranteed fourth critical strike; add missing-health damage on the fourth shot. Rate = 4 / (3 / attack speed + reload seconds), excluding animation windup.');
       if(name==='Ashe')formula.push('Frost Shot replaces the ordinary critical-strike formula. Only frosted targets receive its damage bonus; Ranger’s Focus multiplies that attack when enabled.');
-      formula.push(`Attack contribution after champion rules = ${finite(base)?base.toFixed(2):'unavailable'}`);
+      formula.push(`Attack contribution after champion rules = ${finite(rawBase)?rawBase.toFixed(2):'unavailable'}`);
+      if(state.target?.enabled)formula.push('Attack target calculation: '+baseResult.text);
       const extraHitRates=rows.filter(r=>r.extraHit).map(r=>Object.hasOwn(r,'interval')?(finite(r.interval)&&r.interval>0&&finite(rate)?Math.min(rate,1/r.interval)*Number(r.extraHit):null):(finite(rate)&&r.cadence>0?rate/r.cadence*Number(r.extraHit):null));
       const extraHits=extraHitRates.some(r=>r===null)?null:extraHitRates.reduce((a,b)=>a+b,0);
       for(const r of rows){
         const multiplier=r.onHit===false||r.dot?1:extraHits===null?null:(phantom+(rate>0?extraHits/rate:0))*extended.onHitScale;
-        let perHit=r.value===null||multiplier===null?null:r.value*multiplier/r.cadence;
-        let perSecond=perHit===null||!finite(rate)?null:perHit*rate;
-        if(Object.hasOwn(r,'interval')){
-          perSecond=finite(r.interval)&&r.interval>0&&r.value!==null&&finite(rate)?r.value*Math.min(rate,1/r.interval):null;
-          perHit=perSecond!==null&&rate>0?perSecond/rate:null;
-        }
-        if(r.dot){perSecond=r.value!==null&&finite(rate)?r.value*Math.min(1,rate*r.duration):null;perHit=perSecond!==null&&rate>0?perSecond/rate:null;}
+        const contribution=value=>{
+          let perHit=value===null||multiplier===null?null:value*multiplier/r.cadence;
+          let perSecond=perHit===null||!finite(rate)?null:perHit*rate;
+          if(Object.hasOwn(r,'interval')){
+            perSecond=finite(r.interval)&&r.interval>0&&value!==null&&finite(rate)?value*Math.min(rate,1/r.interval):null;
+            perHit=perSecond!==null&&rate>0?perSecond/rate:null;
+          }
+          if(r.dot){perSecond=value!==null&&finite(rate)?value*Math.min(1,rate*r.duration):null;perHit=perSecond!==null&&rate>0?perSecond/rate:null;}
+          return {perHit,perSecond};
+        };
+        const {perHit,perSecond}=contribution(r.value),raw=contribution(r.rawValue);
+        r.rawPerHit=raw.perHit;r.rawPerSecond=raw.perSecond;
         r.perHit=perHit;r.perSecond=perSecond;
         damage=damage!==null&&perHit!==null?damage+perHit:null;
         dps=dps!==null&&perSecond!==null?dps+perSecond:null;
+        rawDamage=rawDamage!==null&&raw.perHit!==null?rawDamage+raw.perHit:null;
+        rawDps=rawDps!==null&&raw.perSecond!==null?rawDps+raw.perSecond:null;
         const proc=r.spellbladeId?`${finite(r.value)?r.value.toFixed(2):'unavailable'} ${r.type} per Spellblade proc; minimum cooldown ${r.cooldown}s, selected interval ${r.interval}s → `:'';
         formula.push(`${r.label}: ${r.formula||r.value} → ${proc}${perHit===null?'unavailable (enter required inputs / load data)':perHit.toFixed(2)} ${r.type} per attack${r.spellbladeId?' on average':''}${r.cadence>1?' (every '+r.cadence+' hits)':''}${multiplier!==1?' × phantom-hit average':''}`);
+        if(state.target?.enabled)formula.push('  '+r.targetExplanation);
       }
-      formula.push('DPS = average on-attack damage × effective attacks per second. Before mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included.');
+      formula.push(`DPS = average on-attack damage × effective attacks per second. ${state.target?.enabled?'After target mitigation':'Before mitigation'}; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included.`);
       if(phantom!==1)warnings.push('Rageblade assumes fully stacked, uninterrupted attacks.');
       formula.push(...warnings);
-      return {autoAttackDamage:damage,attackDps:dps,attackRange:s.attackRange,rate,rows,controls:[...new Map(controls.map(c=>[c.key,c])).values()],warnings,partial:!!unsupported[name]&&!extended.covered,breakdown:formula.join('\n')};
+      return {autoAttackDamage:damage,attackDps:dps,rawAutoAttackDamage:rawDamage,rawAttackDps:rawDps,attackRange:s.attackRange,rate,rows,controls:[...new Map(controls.map(c=>[c.key,c])).values()],warnings,partial:!!unsupported[name]&&!extended.covered,breakdown:formula.join('\n')};
     }
     return {apply,profile};
   }

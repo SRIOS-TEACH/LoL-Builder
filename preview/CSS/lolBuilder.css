@@ -1273,3 +1273,13 @@ body.compact-dashboard { background-image:linear-gradient(90deg,rgba(5,11,22,.65
 .passive-current-value { display:block;margin-top:10px; }
 .passive-description { line-height:1.5; }
 .item-calculated-value { font-weight:600; }
+.target-heading { display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px; }
+.target-heading h2 { margin:0; }
+.target-heading button[aria-pressed="true"] { border-color:#c8aa6e;color:#f0ce86;background:#35433d; }
+.target-fields { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 9px; }
+.target-fields label { display:flex;flex-direction:column;gap:3px;font-size:12px;line-height:1.3;margin:0;min-width:0; }
+.target-fields .form-control { height:30px;min-width:0;padding:4px 6px;font-size:13px; }
+.target-reduction { grid-column:1/-1; }
+.target-inactive { opacity:.7; }
+.attack-settings-heading { font-size:14px;margin:14px 0 4px;padding-top:10px;border-top:1px solid #34445a; }
+.target-damage-number { font-variant-numeric:tabular-nums;cursor:help; }

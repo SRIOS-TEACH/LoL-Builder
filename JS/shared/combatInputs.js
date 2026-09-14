@@ -10,7 +10,7 @@
       if(key.startsWith('buff:')||key.startsWith('elapsed:')){
         const [kind,name]=key.split(':');key=`${kind}:${/^\{[0-9a-f]+\}$/i.test(name)?name.toLowerCase():C.hash(name)}`;
       }
-      if(base.targetFormulaOnly && key.startsWith('target:'))return;
+      if((base.targetFormulaOnly || base.managedTarget) && key.startsWith('target:'))return;
       if(base.automaticSelfStats && key.startsWith('self:') && !key.includes('healthPercent') && !key.includes('currentHp') && !key.includes('missingH'))return;
       if(found.has(key)){found.get(key).owners.add(source);return;}
       const [kind,name,mode]=key.split(':');
