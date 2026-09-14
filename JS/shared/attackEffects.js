@@ -6,10 +6,31 @@
   const C=scope.Calculations, finite=Number.isFinite, clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
   const averageCrit=(ad,chance,multiplier)=>ad*(1+clamp(chance,0,1)*(multiplier-1));
   const normalise=v=>v?.mName?[v]:v||[];
+  // Stable source-passive keys shared with the Passives window. A control key
+  // means the effect additionally needs that combat activation; null is innate.
+  const itemPassiveBindings={
+    1043:{sting:null},3115:{'icathian-bite':null},3091:{fray:null},
+    3124:{wrath:null,'seething-strike':null},3042:{'shock-on-hit':null},
+    3302:{shadow:null},3748:{cleave:null,'titanic-crescent':'attack:titanic'},
+    3032:{'practice-makes-lethal':null,flurry:'attack:flurry'},3153:{'mist-s-edge':null},
+    6672:{'bring-it-down':null},
+    3057:{spellblade:'attack:spellblade'},3078:{spellblade:'attack:spellblade'},
+    3100:{spellblade:'attack:spellblade'},6662:{spellblade:'attack:spellblade'},
+    3508:{spellblade:'attack:spellblade'},3877:{spellblade:'attack:spellblade'},2510:{spellblade:'attack:spellblade'},
+    3094:{sharpshooter:'attack:proc3094'},3095:{bolt:'attack:proc3095'},
+    2015:{jolt:'attack:proc2015'},3087:{electrospark:'attack:proc3087'},
+    3504:{sanctify:'attack:ardent'},6699:{firmament:'attack:voltaic'},
+    3179:{nightstalker:'attack:umbral'},3181:{skipper:null},
+    3742:{shipwrecker:'attack:shipwrecker'},2512:{'opening-barrage':'attack:fiendhunter'},
+    6610:{'lightshield-strike':'attack:sundered'},3161:{'focused-will':null},
+    2523:{magnification:null},3036:{'giant-slayer':null},4645:{cinderbloom:'attack:shadowflame'}
+  };
   function model(state,items={}){
     const name=state.selectedChampion, values=state.combatValues||{}, ranks=state.abilityRanks||{};
     const level=Number(state.level)||1, equipped=[...new Set(state.itemSlots.filter(Boolean).map(String))];
     const has=id=>equipped.includes(String(id));
+    const enabled=(id,key)=>has(id)&&state.disabledItemPassives?.[`${id}:${key}`]!==true
+      &&!(id===3153&&state.disabledItemPassives?.['3153:mists-edge']===true);
     const payload=slot=>state.cdragonAbilityData?.[slot]||state.cdragonAbilityData?.byAlias?.[slot.toLowerCase().replace(/[^a-z0-9]/g,'')]?.payload;
     const rank=slot=>slot==='p'||slot.length>1?1:ranks[slot]||0;
     const read=(p,key,r=1)=>C.dataValue(normalise(p?.dataValues??p?.mDataValues),key,r,level).value;
@@ -55,7 +76,7 @@
     const speedBuff={Ashe:['q','BonusAS','Ranger’s Focus',100,'asheQ'],MasterYi:['r','RASBonus','Highlander',100],Tristana:['q','AttackSpeedMod','Rapid Fire',1],Twitch:['q','AttackSpeedMod','Ambush',1],Draven:['w','AttackSpeed','Blood Rush',1],Teemo:['p','BonusAttackSpeed','Guerrilla Warfare',1,null,true],Gwen:['e','BonusAttackSpeed','Skip ’n Slash',100,null,true]};
     function apply(s){
       const out={...s,championBonuses:{...s.championBonuses}};
-      const earnedCrit=has(3032)?clamp(Number(values['attack:yunTalCrit'])||0,0,itemData(3032,'CritMax')):0;
+      const earnedCrit=enabled(3032,'practice-makes-lethal')?clamp(Number(values['attack:yunTalCrit'])||0,0,itemData(3032,'CritMax')):0;
       const rawCrit=(s.base.crit+s.base.critperlevel*scope.BuildStats.growthFactor(level))*100+s.item.critChance+s.rune.critChance+earnedCrit;
       out.critChance=clamp(out.critChance+earnedCrit,0,100);
       if(name==='Senna'){
@@ -76,7 +97,7 @@
         const fury=clamp(Number(values['attack:fury'])||0,0,100),rate=calc('p','PassiveCritConversionTooltip',out).value;
         if(finite(rate))out.critChance=clamp(rawCrit+fury*rate,0,100);
       }
-      if(has(3124)){
+      if(enabled(3124,'seething-strike')){
         const stacks=clamp(Number(values['attack:rageStacks'])||0,0,itemData(3124,'MaxStacks')??4),bonus=stacks*itemData(3124,'AttackSpeedPerStack');
         if(finite(bonus)){out.asTotal+=(s.base.attackspeedratio??s.base.attackspeed)*bonus;out.bonusAttackSpeedFromChampion=(out.bonusAttackSpeedFromChampion||0)+bonus;}
       }
@@ -87,7 +108,7 @@
           if(finite(bonus)){out.asTotal+=(s.base.attackspeedratio??s.base.attackspeed)*bonus/divisor;out.bonusAttackSpeedFromChampion=(out.bonusAttackSpeedFromChampion||0)+bonus/divisor;}
         }
       }
-      for(const [id,key,dataKey]of [[3504,'ardent','AttackSpeedMin'],[2512,'fiendhunter','BonusAS'],[3032,'flurry','ASMod']])if(has(id)&&values['attack:'+key]===true){
+      for(const [id,key,dataKey,passive]of [[3504,'ardent','AttackSpeedMin','sanctify'],[2512,'fiendhunter','BonusAS','opening-barrage'],[3032,'flurry','ASMod','flurry']])if(enabled(id,passive)&&values['attack:'+key]===true){
         const bonus=itemData(id,dataKey);if(finite(bonus)){out.asTotal+=(s.base.attackspeedratio??s.base.attackspeed)*bonus;out.bonusAttackSpeedFromChampion=(out.bonusAttackSpeedFromChampion||0)+bonus;}
       }
       if(scope.AttackChampions)Object.assign(out,scope.AttackChampions.apply({name,s:out,data,calc,values,rank}));
@@ -219,68 +240,70 @@
       base=extended.base;rate=extended.rate;warnings.push(...extended.notes);
       const championRows=rows.length;
       let phantom=1;
-      if(has(3032)){input('attack','yunTalCrit','Yun Tal earned critical chance (%)',{max:itemData(3032,'CritMax')});toggle('attack','flurry','Yun Tal Flurry active');}
-      if(has(3124)){
+      if(enabled(3032,'practice-makes-lethal'))input('attack','yunTalCrit','Yun Tal earned critical chance (%)',{max:itemData(3032,'CritMax')});
+      if(enabled(3032,'flurry'))toggle('attack','flurry','Yun Tal Flurry active');
+      if(enabled(3124,'seething-strike')){
         const stacks=input('attack','rageStacks','Guinsoo’s Rageblade stacks',{max:itemData(3124,'MaxStacks')??4});
         if(stacks>=itemData(3124,'MaxStacks'))phantom=4/3;
       }
-      const always={1043:['OnHitDamage','Recurve Bow','physical','data'],3115:['TotalOnHitDamage',"Nashor’s Tooth"],3091:['OnHitDamage',"Wit’s End",'magic'],3124:['OnHitDamage',"Guinsoo’s Rageblade",'magic','data'],3042:['OnHitDamage','Muramana','physical'],3302:['OnHitDamage','Terminus'],3748:['OnHitDamageCalc','Titanic Hydra','physical']};
+      const always={1043:['OnHitDamage','Recurve Bow','physical','data','sting'],3115:['TotalOnHitDamage',"Nashor’s Tooth",'magic',null,'icathian-bite'],3091:['OnHitDamage',"Wit’s End",'magic',null,'fray'],3124:['OnHitDamage',"Guinsoo’s Rageblade",'magic','data','wrath'],3042:['OnHitDamage','Muramana','physical',null,'shock-on-hit'],3302:['OnHitDamage','Terminus','magic',null,'shadow'],3748:['OnHitDamageCalc','Titanic Hydra','physical',null,'cleave']};
       for(const id of equipped){
-        if(always[id]){const [key,label,type='magic',source]=always[id],r=source==='data'?{value:itemData(id,key),text:key}:evaluate(items[id],key,s);row(label,r.value,type,1,r.text);}
+        if(always[id]){const [key,label,type='magic',source,passive]=always[id];if(!enabled(id,passive))continue;const r=source==='data'?{value:itemData(id,key),text:key}:evaluate(items[id],key,s);row(label,r.value,type,1,r.text,{itemId:Number(id),passiveKey:passive});}
       }
-      if(has(3153)){
+      if(enabled(3153,'mist-s-edge')){
         const hp=input('attack','target:currentHp','Target current health'),ratio=itemData(3153,ctx.ranged?'RangedValue':'MeleeValue');
         row('Blade of the Ruined King',finite(hp)&&finite(ratio)?hp*ratio:null,'physical',1,`${finite(ratio)?(ratio*100).toFixed(1)+'%':'ratio unavailable'} × target current HP`);
       }
-      if(has(6672)){
+      if(enabled(6672,'bring-it-down')){
         const amp=input('attack','krakenAmp','Kraken missing-health amplification (%)',{max:((itemData(6672,'MaxAmpNumber')??1)-1)*100});
         const r=evaluate(items[6672],'DamageAmount',s);row('Kraken Slayer (every third hit)',finite(r.value)?r.value*(1+(Number(amp)||0)/100):null,'physical',itemData(6672,'AttackCount')||3,r.text+' × selected amplification',{onHit:false});
       }
-      const spellblade=[3057,3078,3100,6662,3508,3877,2510].filter(has);
+      const spellblade=[3057,3078,3100,6662,3508,3877,2510].filter(id=>enabled(id,'spellblade'));
       if(spellblade.length){
-        const enabled=toggle('attack','spellblade','Spellblade procs enabled');
-        if(enabled){
-          const interval=input('attack','spellbladeInterval','Seconds between Spellblade attacks',{min:0.01});
+        if(toggle('attack','spellblade','Spellblade procs enabled')){
           // Spellblade effects share a group; choose the strongest eligible hit.
           const candidates=spellblade.map(id=>({id,r:evaluate(items[id],'SpellbladeDamage',s)}));
           const best=candidates.every(x=>finite(x.r.value))?candidates.reduce((a,b)=>a.r.value>b.r.value?a:b):candidates.find(x=>!finite(x.r.value));
-          const cooldown=itemData(best.id,'Cooldown');
-          row(state.items?.[best.id]?.name||'Spellblade',best.r.value,[3100,2510].includes(best.id)?'magic':'physical',1,best.r.text,{interval:finite(interval)&&finite(cooldown)?Math.max(interval,cooldown):null,onHit:false,spellbladeId:best.id,extraHit:best.id===2510});
+          // The specific field is authoritative; older snapshots use Cooldown.
+          const cooldown=[itemData(best.id,'SpellbladeCooldown'),itemData(best.id,'Cooldown'),1.5].find(value=>finite(value)&&value>0);
+          const requested=input('attack','spellbladeInterval','Seconds between Spellblade attacks',{min:cooldown,defaultValue:cooldown,step:0.1});
+          const interval=finite(requested)?Math.max(requested,cooldown):cooldown;
+          row(state.items?.[best.id]?.name||'Spellblade',best.r.value,[3100,2510].includes(best.id)?'magic':'physical',1,best.r.text,{interval,onHit:false,spellbladeId:best.id,itemId:best.id,passiveKey:'spellblade',cooldown,extraHit:best.id===2510});
         }
       }
-      const energized={3094:['BonusDamage','Rapid Firecannon','data'],3095:['TotalProcDamage','Stormrazor'],2015:['EnergizedDamage','Scout’s Slingshot','data'],3087:['ChainDamage','Statikk Shiv','data']};
-      for(const id of equipped)if(energized[id]&&toggle('attack','proc'+id,(state.items?.[id]?.name||energized[id][1])+' procs enabled')){
+      const energized={3094:['BonusDamage','Rapid Firecannon','data','sharpshooter'],3095:['TotalProcDamage','Stormrazor',null,'bolt'],2015:['EnergizedDamage','Scout’s Slingshot','data','jolt'],3087:['ChainDamage','Statikk Shiv','data','electrospark']};
+      for(const id of equipped)if(energized[id]&&enabled(id,energized[id][3])&&toggle('attack','proc'+id,(state.items?.[id]?.name||energized[id][1])+' procs enabled')){
         const interval=input('attack','interval'+id,'Seconds between '+energized[id][1]+' procs',{min:0.01});
         const [key,label,source]=energized[id],r=source==='data'?{value:itemData(id,key),text:key}:evaluate(items[id],key,s);
         row(label,r.value,'magic',1,r.text,{interval:finite(interval)&&interval>0?interval:null,onHit:false});
       }
-      if(has(3504)&&toggle('attack','ardent','Ardent Censer buff active'))row('Sanctify',itemData(3504,'OnHitMin'));
-      if(has(6699)&&toggle('attack','voltaic','Voltaic Cyclosword procs enabled')){
+      if(enabled(3504,'sanctify')&&toggle('attack','ardent','Ardent Censer buff active'))row('Sanctify',itemData(3504,'OnHitMin'));
+      if(enabled(6699,'firmament')&&toggle('attack','voltaic','Voltaic Cyclosword procs enabled')){
         const hp=input('attack','target:currentHp','Target current health'),interval=input('attack','voltaicInterval','Seconds between Firmament procs',{min:0.01}),fraction=itemData(6699,ctx.ranged?'PercentCurrentHPRanged':'PercentCurrentHPMelee');
         row('Firmament',finite(hp)&&finite(fraction)?hp*fraction/100:null,'physical',1,'Current target HP × Firmament percentage',{interval:finite(interval)&&interval>0?interval:null,onHit:false});
       }
-      if(has(3179)&&toggle('attack','umbral','Umbral Glaive unseen procs enabled')){
+      if(enabled(3179,'nightstalker')&&toggle('attack','umbral','Umbral Glaive unseen procs enabled')){
         const interval=input('attack','umbralInterval','Seconds between unseen attacks',{min:0.01}),r=evaluate(items[3179],'ProcDamage',s);
         row('Umbral Glaive',r.value,'true',1,r.text,{interval:finite(interval)&&interval>0?interval:null,onHit:false});
       }
-      if(has(3748)&&toggle('attack','titanic','Titanic Crescent procs enabled')){
+      if(enabled(3748,'titanic-crescent')&&toggle('attack','titanic','Titanic Crescent procs enabled')){
         const interval=input('attack','titanicInterval','Seconds between Titanic Crescent attacks',{min:itemData(3748,'Cooldown')??0.01}),r=evaluate(items[3748],'CalcValueC',s);
         row('Titanic Crescent',r.value,'physical',1,r.text,{interval:finite(interval)&&interval>0?interval:null,onHit:false});
       }
-      if(has(3181)){const r=evaluate(items[3181],'MaxStackDamage',s);row('Hullbreaker: Skipper',r.value,'physical',5,r.text,{onHit:false});}
-      if(has(3742)&&toggle('attack','shipwrecker','Dead Man’s Plate procs enabled')){
+      if(enabled(3181,'skipper')){const r=evaluate(items[3181],'MaxStackDamage',s);row('Hullbreaker: Skipper',r.value,'physical',5,r.text,{onHit:false});}
+      if(enabled(3742,'shipwrecker')&&toggle('attack','shipwrecker','Dead Man’s Plate procs enabled')){
         const stacks=input('attack','momentum','Momentum discharged per attack',{max:itemData(3742,'MaxStacks')}),interval=input('attack','momentumInterval','Seconds between Shipwrecker attacks',{min:0.01}),r=evaluate(items[3742],'MaxDamageCalc',s);
         row('Shipwrecker',finite(stacks)&&finite(r.value)?r.value*stacks/itemData(3742,'MaxStacks'):null,'physical',1,`${r.text} × momentum / maximum momentum`,{onHit:false,interval:finite(interval)&&interval>0?interval:null});
       }
-      const fiendActive=has(2512)&&values['attack:fiendhunter']===true;
+      const fiendActive=enabled(2512,'opening-barrage')&&values['attack:fiendhunter']===true;
       const itemCritChance=name==='Jhin'?(3*chance+1)/4:chance;
-      if(has(6610)&&toggle('attack','sundered','Sundered Sky procs enabled')){
+      if(enabled(6610,'lightshield-strike')&&toggle('attack','sundered','Sundered Sky procs enabled')){
         const interval=input('attack','sunderedInterval','Seconds between Lightshield Strike attacks',{min:itemData(6610,'Cooldown')??0.01}),mod=itemData(6610,'CritModifier');
         const previous=fiendActive?crit*itemData(2512,'CritModifier'):1;
         row('Lightshield Strike bonus over average attack',finite(mod)?(name==='Ashe'?0:s.ad*(1-itemCritChance)*Math.max(0,crit*mod-previous)):null,'physical',1,'Non-critical chance × AD × additional forced-crit multiplier (shared forced crit does not stack)',{interval:finite(interval)&&interval>0?interval:null,onHit:false,attackDamage:true});
         if(fiendActive)row('Opening Barrage on Lightshield Strike',s.ad*crit*mod*(1-itemCritChance)*itemData(2512,'BonusTrueDamage'),'true',1,'Previously non-critical chance × Lightshield critical damage × Opening Barrage ratio',{interval:finite(interval)&&interval>0?interval:null,onHit:false});
       }
-      if(has(2512)&&toggle('attack','fiendhunter','Fiendhunter Bolts post-ultimate attacks active')){
+      if(enabled(2512,'opening-barrage')&&toggle('attack','fiendhunter','Fiendhunter Bolts post-ultimate attacks active')){
         const mod=itemData(2512,'CritModifier'),bonus=itemData(2512,'BonusTrueDamage');
         row('Opening Barrage physical bonus',finite(mod)?(name==='Ashe'?0:s.ad*(1-itemCritChance)*(crit*mod-1)):null,'physical',1,'Non-critical chance × AD × (Opening Barrage crit multiplier − 1)',{onHit:false,attackDamage:true});
         row('Opening Barrage true bonus',finite(bonus)?s.ad*crit*itemCritChance*bonus:null,'true',1,'Critical chance × critical damage × Opening Barrage true-damage ratio',{onHit:false});
@@ -296,24 +319,24 @@
           r.value=finite(r.value)&&finite(amount)?r.value-amount:null;
         }
       }
-      if(has(3161)){
+      if(enabled(3161,'focused-will')){
         const stacks=input('attack','shojinStacks','Focused Will stacks',{max:itemData(3161,'StackCount')}),factor=1+(Number(stacks)||0)*itemData(3161,'SpellDamageIncrease')*(ctx.ranged?itemData(3161,'RangedMod'):1);
         amplify(factor,r=>r.source==='champion'&&!r.replacementDebit,'Focused Will');
       }
-      if(has(2523)){
+      if(enabled(2523,'magnification')){
         const distance=input('attack','distance','Distance to target'),factor=finite(distance)?1+clamp(distance/itemData(2523,'MaxRange'),0,1)*itemData(2523,'MaxDamageAmp'):null;
         base=finite(base)&&finite(factor)?base*factor:null;
         // Magnification modifies the attack damage packet, not independent on-hits.
         amplify(factor,r=>r.attackDamage===true,'Magnification');
         warnings.push(`Magnification: attack damage × ${finite(factor)?factor.toFixed(4):'unavailable (enter distance)'}. Independent on-hit packets are not attack damage.`);
       }
-      if(has(3036)){
+      if(enabled(3036,'giant-slayer')){
         const hp=input('attack','target:bonusHp','Target bonus health'),factor=finite(hp)?1+clamp(hp/itemData(3036,'MaxBonusHealth'),0,1)*itemData(3036,'MaxBonusDamagePercent'):null;
         base=finite(base)&&finite(factor)?base*factor:null;
         amplify(factor,r=>r.type!=='true','Giant Slayer');
         warnings.push(`Giant Slayer: non-true damage × ${finite(factor)?factor.toFixed(4):'unavailable (enter target bonus HP)'}.`);
       }
-      if(has(4645)&&toggle('attack','shadowflame','Shadowflame: target below health threshold')){
+      if(enabled(4645,'cinderbloom')&&toggle('attack','shadowflame','Shadowflame: target below health threshold')){
         const amp=itemData(4645,'SpellItemDamageAmp');for(const r of rows)if(['magic','true'].includes(r.type))r.value=finite(r.value)&&finite(amp)?r.value*(1+amp):null;
         if(['magic','true'].includes(extended.baseType))base=finite(base)&&finite(amp)?base*(1+amp):null;
       }
@@ -341,7 +364,8 @@
         r.perHit=perHit;r.perSecond=perSecond;
         damage=damage!==null&&perHit!==null?damage+perHit:null;
         dps=dps!==null&&perSecond!==null?dps+perSecond:null;
-        formula.push(`${r.label}: ${r.formula||r.value} → ${perHit===null?'unavailable (enter required inputs / load data)':perHit.toFixed(2)} ${r.type} per attack${r.cadence>1?' (every '+r.cadence+' hits)':''}${multiplier!==1?' × phantom-hit average':''}`);
+        const proc=r.spellbladeId?`${finite(r.value)?r.value.toFixed(2):'unavailable'} ${r.type} per Spellblade proc; minimum cooldown ${r.cooldown}s, selected interval ${r.interval}s → `:'';
+        formula.push(`${r.label}: ${r.formula||r.value} → ${proc}${perHit===null?'unavailable (enter required inputs / load data)':perHit.toFixed(2)} ${r.type} per attack${r.spellbladeId?' on average':''}${r.cadence>1?' (every '+r.cadence+' hits)':''}${multiplier!==1?' × phantom-hit average':''}`);
       }
       formula.push('DPS = average on-attack damage × effective attacks per second. Before mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included.');
       if(phantom!==1)warnings.push('Rageblade assumes fully stacked, uninterrupted attacks.');
@@ -350,5 +374,5 @@
     }
     return {apply,profile};
   }
-  scope.AttackEffects={model,averageCrit};
+  scope.AttackEffects={model,averageCrit,itemPassiveBindings};
 })(typeof window!=='undefined'?window:globalThis);

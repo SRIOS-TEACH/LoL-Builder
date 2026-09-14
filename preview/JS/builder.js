@@ -37,6 +37,7 @@ const BUILDER = {
   championDetailCache: {},
   cdragonAbilityData: null,
   combatValues: {},
+  disabledItemPassives: {},
   inspectedItemId: null,
   championModalRequestId: 0,
   championRequestId: 0,
@@ -952,24 +953,38 @@ async function populateSkinSelector(name, records, requestId) {
   selector.onchange = () => { if(selector.value !== '') document.body.style.setProperty('--builder-splash-url',`url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_${selector.value}.jpg)`); };
 }
 
+let gameTextRequest=null;
+function ensureGameText() {
+  if(BUILDER.stringsReady) return Promise.resolve(BUILDER.strings);
+  if(gameTextRequest) return gameTextRequest;
+  BUILDER.stringsLoading=true;
+  gameTextRequest=window.ApiClient.fetchJson('https://raw.communitydragon.org/latest/game/en_us/data/menu/en_us/lol.stringtable.json')
+    .then(data=>{if(!data?.entries)throw new Error('Game descriptions unavailable');BUILDER.strings=data.entries;BUILDER.stringsReady=true;return BUILDER.strings;})
+    .catch(()=>null).finally(()=>{
+      gameTextRequest=null;BUILDER.stringsLoading=false;
+      if(BUILDER.uiReady){renderStats();renderAbilityCards();if(BUILDER.activeSlot!==null)renderModalItemDetail(BUILDER.inspectedItemId);}
+    });
+  return gameTextRequest;
+}
+function gameTooltip(payload,fallback='') {
+  const loc=payload?.spellData?.mClientData?.mTooltipData?.mLocKeys;
+  return BUILDER.strings?.[loc?.keyTooltip?.toLowerCase()] || BUILDER.strings?.[loc?.keyTooltipExtended?.toLowerCase()] || fallback;
+}
+
 async function setChampion(name) {
   const requestId = ++BUILDER.championRequestId;
   setStatus(`Loading ${name}...`);
   try {
-    const [details, raw, strings] = await Promise.all([
+    ensureGameText();
+    const [details, raw] = await Promise.all([
       window.ApiClient.fetchChampionDetails(BUILDER.version, name),
       window.ApiClient.fetchCommunityDragonChampion(name).catch(() => null),
-      ['Akshan','Gangplank','Aphelios','Jayce','Nidalee','Elise','Gnar'].includes(name)
-        ? window.ApiClient.fetchJson('https://raw.communitydragon.org/latest/game/en_us/data/menu/en_us/lol.stringtable.json').catch(()=>null)
-        : null,
     ]);
     if (requestId !== BUILDER.championRequestId) return;
     const champion = details.data?.[name];
     if (!champion?.stats || !champion.spells) throw new Error('Champion data is incomplete');
     const extraStats = extractChampionStatsFromBinRoot(raw, name, name.toLowerCase());
-    // Data Dragon supplies patch-consistent base stats and regeneration units.
-    const stats = { ...DEFAULT_CHAMPION_BASE_STATS, ...champion.stats };
-    if (extraStats.attackspeedratio > 0) stats.attackspeedratio = extraStats.attackspeedratio;
+    const stats = window.BuildStats.mergeChampionStats({ ...DEFAULT_CHAMPION_BASE_STATS, ...champion.stats },extraStats);
     const characterRoot = raw?.[`Characters/${name}/CharacterRecords/Root`];
     if (Number.isFinite(characterRoot?.critDamageMultiplier)) stats.critdamage = characterRoot.critDamageMultiplier;
     const abilityData = raw ? extractAbilityDataFromRoot(raw, name, normalizeCdragonChampionPath(name), champion.spells) : null;
@@ -977,7 +992,6 @@ async function setChampion(name) {
     BUILDER.championData = { ...champion, stats };
     BUILDER.cdragonAbilityData = abilityData;
     BUILDER.cdragonRaw = raw;
-    BUILDER.strings = strings?.entries || {};
     BUILDER.combatValues = {};
     BUILDER.abilityRanks = { q: 0, w: 0, e: 0, r: 0 };
     BUILDER.level = Number(document.getElementById('builderLevel').value) || 1;
@@ -1078,6 +1092,7 @@ function recommendedItemIds() {
 }
 
 function openItemModal(slot) {
+  ensureGameText();
   BUILDER.activeSlot = slot;
   if(slot>=6){BUILDER.recommendedOnly=false;BUILDER.itemRole='';document.getElementById('modalItemSearch').value='';document.querySelectorAll('[data-item-filter]').forEach(button=>button.setAttribute('aria-pressed','false'));}
   document.getElementById("itemModalTitle").textContent = BUILDER.activeSlot === 6 ? "Select Role Quest" : BUILDER.activeSlot === 7 ? "Select Boots" : "Select Item";
@@ -1179,18 +1194,9 @@ function renderModalItemDetail(id) {
     .sort((a, b) => a.label.localeCompare(b.label))
     .map((row) => `<div>${row.label}: ${row.isPct ? `${(row.value * 100).toFixed(1)}%` : row.value}</div>`)
     .join("");
-  const passiveLabels = extractPassiveLabelsFromText(stripHtml(item.description || ""));
-  const passiveLines = passiveLabels.length
-    ? `<div class='mt-10'><strong>Passives</strong>${passiveLabels.map((label) => `<div>${label}</div>`).join("")}</div>`
-    : "";
-
   const resolvedDescription = resolveItemDescriptionHtml(item, id, { forModal: true });
   const enhancedDescription = resolvedDescription.html;
-  const extractedFormulaRows = resolvedDescription.formulaRows.length
-    ? `<div class='mt-10'><strong>Effects</strong>${resolvedDescription.formulaRows.map((line) => `<div>${line.name}: ${line.formula}</div>`).join("")}</div>`
-    : "";
-
-  root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div>${passiveLines}${extractedFormulaRows}<div class='mt-10'>${enhancedDescription}</div><button class='btn btn-sm mt-10' data-set-item-id='${id}'>Select this item</button><button class='btn btn-sm mt-10 ml-5' data-set-item-id=''>Clear slot</button>`;
+  root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div><div class='mt-10 item-description'>${enhancedDescription}</div><button class='btn btn-sm mt-10' data-set-item-id='${id}'>Select this item</button><button class='btn btn-sm mt-10 ml-5' data-set-item-id=''>Clear slot</button>`;
   const controls=document.createElement('div');controls.className='combat-inputs';controls.dataset.open='true';root.append(controls);
   window.CombatInputs.render(controls,{
     sources:[window.CombatInputs.itemSource(id,window.ItemLookupShared.getState().cdragonById[id],item.name)],
@@ -1269,6 +1275,11 @@ function extractPassiveLabelsFromText(text) {
 function resolveItemDescriptionHtml(item, itemId = "", options = {}) {
   const { forModal = false } = options;
   const shared = getItemLookupShared();
+  if(window.ItemDescriptions){
+    const context=calculationContext(getComputedChampionStatsForTooltips());
+    const result=window.ItemDescriptions.describe({id:itemId,item,source:shared.getState().cdragonById[itemId],strings:BUILDER.strings||{},context});
+    return {html:shared.colorizeStatsInHtml(result.html),formulaRows:[],sections:result.sections};
+  }
   let html = String(item?.description || "");
   if (!shared) return { html, formulaRows: [] };
   if (shared.resolveDescriptionFormulas) html = shared.resolveDescriptionFormulas(item, html);
@@ -1321,7 +1332,7 @@ function buildPassiveLedger(itemTotals, runeTotals) {
     .filter((id) => id && BUILDER.items[id])
     .map((id) => ({ id: String(id), item: BUILDER.items[id] }));
   const passiveEffects = [];
-  const additiveMods = { ad: 0, ap: 0 };
+  const additiveMods = { ad: 0, ap: 0, hp: 0 };
   let apMultiplier = 1;
   let hasRabadon = false;
 
@@ -1333,18 +1344,22 @@ function buildPassiveLedger(itemTotals, runeTotals) {
 
     const source = window.ItemLookupShared.getState().cdragonById[id];
     if (!source) return;
+    if(id==='3083' && itemPassiveEnabled(id,'warmog-s-vitality')){
+      const amp=window.Calculations.dataValue(source.mDataValues,'HPAmp').value;
+      if(Number.isFinite(amp))additiveMods.hp+=itemTotals.hp*amp;
+    }
     const b = BUILDER.championData?.stats;
     const bonusMana = itemTotals.mp + runeTotals.mp;
     const baseMana = b ? b.mp + b.mpperlevel * window.BuildStats.growthFactor(BUILDER.level) : 0;
     const context = {level:BUILDER.level, stats:{mp:baseMana+bonusMana,bonusMp:bonusMana},
       dataValues:source.mDataValues || [], calculations:source.mItemCalculations || {}};
     // Effect bindings identify the passive; coefficients and formulas come from live data.
-    if (id === "3089") {
+    if (id === "3089" && itemPassiveEnabled(id,'magical-opus')) {
       const amp = window.Calculations.dataValue(context.dataValues, "APAmp").value;
       if (amp !== null) { hasRabadon=true; apMultiplier *= 1+amp; }
     }
     const binding = {"3042":["BonusADFromMana","ad"], "3040":["BonusAPCalc","ap"]}[id];
-    if (binding && b) {
+    if (binding && b && itemPassiveEnabled(id,'awe')) {
       const [key,stat] = binding;
       const row = window.Calculations.evaluate(window.Calculations.lookup(context.calculations,key),context);
       if (row.value !== null) {
@@ -1364,6 +1379,7 @@ function buildPassiveLedger(itemTotals, runeTotals) {
   const statMods = {
     ad: additiveMods.ad,
     ap: additiveMods.ap + apAmp,
+    hp: additiveMods.hp,
   };
 
   if (hasRabadon && apAmp > 0) {
@@ -1384,7 +1400,7 @@ function computeDerivedBuildStats() {
   const passiveAd = ledger.statMods.ad;
   const passiveAp = ledger.statMods.ap;
 
-  const hp = (base.hp + base.hpperlevel * window.BuildStats.growthFactor(L) + item.hp + rune.hp);
+  const hp = (base.hp + base.hpperlevel * window.BuildStats.growthFactor(L) + item.hp + rune.hp + (ledger.statMods.hp||0));
   const baseHp5 = base.hpregen + base.hpregenperlevel * window.BuildStats.growthFactor(L);
   const hp5 = (baseHp5 * (1 + item.hp5PctBase / 100) + item.hp5 + rune.hp5);
   const mp = (base.mp + base.mpperlevel * window.BuildStats.growthFactor(L) + item.mp + rune.mp);
@@ -1430,25 +1446,49 @@ function computeDerivedBuildStats() {
   return applied;
 }
 
-function renderPassivePanel(passiveLedger) {
-  const root = document.getElementById("passiveModalList");
-  if (!root) return;
-  if (!passiveLedger) {
-    root.innerHTML = "<div class='ability-card'><p class='text-muted'>Select a champion to inspect passive effects.</p></div>";
-    return;
+function itemPassiveEnabled(id,key) { return BUILDER.disabledItemPassives?.[`${id}:${key}`]!==true; }
+function renderPassivePanel() {
+  const root=document.getElementById('passiveModalList');
+  if(!root)return;
+  const rows=[];
+  const computed=computeDerivedBuildStats();
+  for(const id of [...new Set(BUILDER.itemSlots.filter(Boolean))]){
+    if(BUILDER.questItemIds?.has(id))continue;
+    const item=BUILDER.items[id];
+    if(!item)continue;
+    const result=resolveItemDescriptionHtml(item,id);
+    for(const section of result.sections||[]){
+      if(section.active)continue;
+      const key=`${id}:${section.key}`,activation=window.AttackEffects.itemPassiveBindings?.[id]?.[section.key];
+      const modeled=Object.hasOwn(window.AttackEffects.itemPassiveBindings?.[id]||{},section.key)
+        || ['3042:awe','3040:awe','3089:magical-opus','3083:warmog-s-vitality'].includes(key);
+      const enabled=itemPassiveEnabled(id,section.key) && (!activation || BUILDER.combatValues[activation]===true);
+      let html=section.html;
+      if(id==='3089' && section.key==='magical-opus' && computed){
+        const amp=window.Calculations.dataValue(window.ItemLookupShared.getState().cdragonById[id]?.mDataValues,'APAmp').value;
+        const amount=enabled?computed.ap-computed.ap/(1+amp):0;
+        html+=` <scaleAP>(+${window.ItemDescriptions.number(amount)} AP)</scaleAP>`;
+      }
+      rows.push(`<section class="ability-card passive-effect-card${enabled?'':' passive-disabled'}" data-passive-section="${key}"><div class="passive-effect-heading"><strong>${window.ItemDescriptions.escape(item.name)} — ${window.ItemDescriptions.escape(section.label)}</strong><button type="button" class="btn btn-sm" data-item-passive="${key}" aria-pressed="${enabled}" aria-label="${window.ItemDescriptions.escape(item.name+' — '+section.label)}">${enabled?'On':'Off'}</button></div><div class="passive-description">${html}</div>${modeled?'':'<p class="text-muted passive-coverage">Reference effect: not included in damage or stat totals.</p>'}</section>`);
+    }
   }
-  const rows = passiveLedger.passiveEffects
-    .map((effect) => `<div class='ability-card'><strong>${effect.source}: ${effect.owner}</strong><div>${effect.label}</div>${effect.impact ? `<div class='text-muted'>${effect.impact}</div>` : ""}</div>`)
-    .join("");
-  root.innerHTML = rows || "<div class='ability-card'><p class='text-muted'>No passive effects detected.</p></div>";
+  root.innerHTML=rows.join('')||`<p class="text-muted">${BUILDER.stringsLoading?'Loading passive descriptions…':'Equip items to inspect their passives.'}</p>`;
+  root.querySelectorAll('[data-item-passive]').forEach(button=>button.onclick=()=>{
+    const key=button.dataset.itemPassive;
+    const [id,passive]=key.split(':'),enabled=button.getAttribute('aria-pressed')==='true';
+    BUILDER.disabledItemPassives[key]=enabled;
+    const activation=window.AttackEffects.itemPassiveBindings?.[id]?.[passive];
+    if(!enabled && activation)BUILDER.combatValues[activation]=true;
+    renderStats();renderAbilityCards();
+    if(BUILDER.activeSlot!==null)renderModalItemDetail(BUILDER.inspectedItemId);
+  });
 }
 
 function togglePassivePanel() {
-  document.getElementById("passiveModal").classList.remove("hidden");
-  const computed = computeDerivedBuildStats();
-  renderPassivePanel(computed?.passiveLedger || null);
+  ensureGameText();
+  document.getElementById('passiveModal').classList.remove('hidden');
+  renderPassivePanel();
 }
-
 function closePassiveModal() {
   document.getElementById("passiveModal").classList.add("hidden");
 }
@@ -1487,39 +1527,23 @@ function summarizePassiveNumericData(cdragonPassive) {
 }
 
 function buildDetailedPassiveText() {
-  if (!BUILDER.championData?.passive) return "";
-  const passive = BUILDER.championData.passive;
-  const template = String(passive.description || "");
-  const tokenRe = /{{\s*([^{}]+?)\s*}}/g;
-  const cdragonPassive = BUILDER.cdragonAbilityData?.p || null;
-
-  if (!cdragonPassive) return template;
-
-  const dummySpell = { effectBurn: [], vars: [], costType: "" };
-  const ctx = {
-    spell: dummySpell,
-    safeRank: 1,
-    stats: getComputedChampionStatsForTooltips() || {
-      ap: 0, totalAd: 0, bonusAd: 0, armor: 0, bonusArmor: 0, mr: 0, bonusMr: 0, hp: 0, bonusHp: 0, mp: 0, bonusMp: 0,
-    },
-    vars: [],
-    cdragonSpell: cdragonPassive,
-    ...buildResolvedSpellPayload(cdragonPassive, 1, getComputedChampionStatsForTooltips()),
-    knownTokens: {
-      championlevel: Number(BUILDER.level) || 1,
-    },
-  };
-
-  const resolved = template.replace(tokenRe, (full, tokenRaw) => {
-    const resolved = resolveAbilityToken(tokenRaw, ctx);
-    return resolved ? resolved.html : full;
-  });
-
-  const numericSummary = summarizePassiveNumericData(cdragonPassive);
-  if (!numericSummary.length) return resolved;
-  return `${resolved}<br><span class="ability-detail-eq">${numericSummary.join(" • ")}</span>`;
+  const passive=BUILDER.championData?.passive;
+  if(!passive)return '';
+  const payload=BUILDER.cdragonAbilityData?.p;
+  const raw=gameTooltip(payload,passive.description||'');
+  const dummy={id:'passive',effectBurn:[],vars:[],costType:'',description:passive.description,tooltip:raw};
+  const ctx=buildAbilityContext(dummy,1,'p');
+  let text=buildDetailedAbilityText(dummy,1,'p',ctx);
+  const summary=window.ChampionEffects.model(BUILDER).passiveSummary?.(ctx.stats);
+  const f=window.ItemDescriptions.number;
+  if(summary?.type==='ezreal')text+=`<p class="passive-current-value">${summary.stacks}/${summary.maxStacks} stacks: <attackSpeed>+${f(summary.bonusAttackSpeed*100)}% Attack Speed</attackSpeed>.</p>`;
+  if(summary?.type==='aurora'){
+    // Current script has no movement-speed buff; old unused BIN calculations remain.
+    text=`Damaging an enemy 3 times with abilities or attacks deals <magicDamage>${f(summary.healthFraction*100)}% of their maximum HP as magic damage</magicDamage>. Against champions, this frees a spirit for ${f(summary.spiritDuration)} seconds. Each spirit restores <healing>${f(summary.healPerSpirit)} HP per second</healing>, up to ${summary.maxSpirits} spirits.<br><br><span class="passive-current-value">${summary.spirits}/${summary.maxSpirits} spirits: <healing>${f(summary.healingPerSecond)} HP per second</healing>.</span><br><rules>Damage against monsters is capped at 100–270, based on level.</rules>`;
+  }
+  if(!BUILDER.stringsReady && !summary)text+=`<p class="text-muted">${BUILDER.stringsLoading?'Loading detailed game description…':'Detailed game description unavailable; showing the summary.'}</p>`;
+  return text;
 }
-
 function getComputedChampionStatsForTooltips() {
   const computed = computeDerivedBuildStats();
   if (!computed) return null;
@@ -1540,6 +1564,8 @@ function getComputedChampionStatsForTooltips() {
 
   return {
     ap: totalAp, baseAp: 0,
+    itemHp: item.hp,
+    ranged: computed.ranged ?? base.attackrange > 300,
     healShieldPower: BUILDER.itemSlots.filter(Boolean).reduce((sum,id)=>sum+(window.ItemLookupShared.getState().cdragonById[id]?.mPercentHealingAmountMod||0),0),
     attackSpeed: computed.asTotal,
     bonusAttackSpeed: (base.attackspeedperlevel * window.BuildStats.growthFactor(L) + item.asPct + rune.asPct) / 100 + (computed.bonusAttackSpeedFromChampion || 0),
@@ -1646,7 +1672,7 @@ function baseCalculationContext(stats, dataValues = [], rank = 1, calculations =
       const payload=extractCdragonSpell(record);
       return window.Calculations.dataValue(payload?.dataValues,key,rank,BUILDER.level);
     },
-    ranged: BUILDER.championData ? BUILDER.championData.stats.attackrange > 300 : undefined,
+    ranged: stats?.ranged ?? (BUILDER.championData ? BUILDER.championData.stats.attackrange > 300 : undefined),
     itemCounts: BUILDER.itemSlots.filter(Boolean).reduce((counts,id) => {
       const rarity=window.ItemLookupShared.getState().cdragonById[id]?.epicness;
       if (rarity !== undefined) counts[rarity]=(counts[rarity]||0)+1;
@@ -2151,7 +2177,7 @@ function renderAbilityCards() {
   const attack = computed ? computeAutoAttackProfile(computed) : null;
   const passiveText = buildDetailedPassiveText();
   const description = (slot,simple,detailed,values='') => `<div class="ability-description" data-description-slot="${slot}"><div class="simple-description">${simple||''}</div><div class="detailed-description" hidden>${detailed}${values}</div><button type="button" class="btn btn-sm detail-toggle" aria-expanded="false">Detailed view</button></div>`;
-  const passive = `<div class="ability-card ability-passive-card" data-ability-slot="p"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div>${description("p",champ.passive.description,passiveText,abilityEffectValues(BUILDER.cdragonAbilityData?.p,1))}<div class="ability-inputs"></div></div>`;
+  const passive = `<div class="ability-card ability-passive-card" data-ability-slot="p"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div>${description("p",champ.passive.description,passiveText)}<div class="ability-inputs"></div></div>`;
   const escapeAttack = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const attackNumber = (value, key) => `<span class="attack-result" data-attack-result="${key}" tabindex="0" title="${escapeAttack(attack.breakdown)}">${Number.isFinite(value) ? value.toFixed(1) + (attack.partial ? ' (partial)' : '') : 'Unavailable — see calculation'}</span>`;
   const attackCard = `<div class="ability-card ability-attack-card" data-ability-slot="attack"><div class="ability-head"><strong>Attack</strong></div>
@@ -2222,9 +2248,9 @@ function renderAbilityCards() {
       const label = document.createElement('label'); label.textContent = control.label + ' ';
       element.type = 'number'; element.min = String(control.min ?? 0); element.step = 'any';
       if (control.max !== undefined) element.max = String(control.max);
-      element.value = BUILDER.combatValues[control.key] ?? ''; element.placeholder = 'Enter value';
+      element.value = BUILDER.combatValues[control.key] ?? control.defaultValue ?? ''; element.placeholder = 'Enter value';
       element.addEventListener('change', () => {
-        if (element.value.trim() && element.checkValidity() && Number.isFinite(Number(element.value))) BUILDER.combatValues[control.key] = Number(element.value);
+        if (element.value.trim() && Number.isFinite(Number(element.value))) BUILDER.combatValues[control.key] = Math.max(control.min??0,Math.min(Number.isFinite(control.max)?control.max:Infinity,Number(element.value)));
         else delete BUILDER.combatValues[control.key];
         renderStats(); renderAbilityCards();
       });
@@ -2385,7 +2411,7 @@ function renderStats() {
 
 
   const rows = [
-    { name: "HP", icon: STAT_ICONS["HP"], value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)}` },
+    { name: "HP", icon: STAT_ICONS["HP"], value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)} + passive(${(passiveLedger.statMods.hp||0).toFixed(1)})` },
     { name: "MP", icon: STAT_ICONS["MP"], value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
     { name: "HP/5", icon: STAT_ICONS["HP/5"], value: hp5, eq: `(${base.hpregen.toFixed(1)} + ${base.hpregenperlevel.toFixed(2)}*${window.BuildStats.growthFactor(L).toFixed(3)}) * (1 + ${item.hp5PctBase.toFixed(1)}%) + ${item.hp5.toFixed(1)} + ${rune.hp5.toFixed(1)}` },
     { name: "MP/5", icon: STAT_ICONS["MP/5"], value: mp5, eq: `(${base.mpregen.toFixed(1)} + ${base.mpregenperlevel.toFixed(2)}*${window.BuildStats.growthFactor(L).toFixed(3)}) * (1 + ${item.mp5PctBase.toFixed(1)}%) + ${item.mp5.toFixed(1)} + ${rune.mp5.toFixed(1)}` },

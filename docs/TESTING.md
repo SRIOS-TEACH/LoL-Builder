@@ -33,6 +33,12 @@ Run `node tests/calculation-audit.cjs` with the same `FIXTURES_DIR` to inventory
 
 Optional `SCREENSHOT_DIR` saves a Builder screenshot. The screenshot contains placeholder artwork and is layout evidence only.
 
+## Passive descriptions, growth and Spellblade
+
+`npm run test:passives` uses the advanced fixtures and browser environment above. It checks real AD growth, Ezreal's five-stack attack speed, Aurora's four-spirit healing and percentage-health damage description, Muramana's separate passives and melee/ranged values, independent passive toggles, Spellblade activation synchronization, default/minimum proc intervals, and Warmog's item-only health amplification. It also checks that the Passives window has one card and toggle per effect and that item details contain calculated prose without the raw Effects table.
+
+The unit suite includes focused source regressions in `ad-growth.test.cjs`, `champion-passives.test.cjs` and `item-descriptions.test.cjs`. With advanced fixtures downloaded, run `AUDIT_ITEM_DESCRIPTIONS=1 node --test tests/item-descriptions.test.cjs` and repeat with `AUDIT_ITEM_DESCRIPTIONS=melee` to audit the selectable item catalog. The 16.18.1 snapshot resolves all 236 descriptions in both contexts and retains all 34 named active descriptions. This checks text resolution with a synthetic build, not complete combat simulation coverage. See [ON-ATTACK.md](ON-ATTACK.md) for the modeled attack effects.
+
 ## Manual/live validation still required
 
 Run `python -m http.server 8000` from the repository root. Visit `http://127.0.0.1:8000/main.html`. Verify current Community Dragon access, compare supported calculations to the current game patch, and exercise the remaining items in `AUDIT.md` before declaring game-level correctness.

@@ -1265,3 +1265,11 @@ body.compact-dashboard { background-image:linear-gradient(90deg,rgba(5,11,22,.65
 #modalItemGrid .item-button-icon { align-items:center; }
 @media(max-width:850px) { .shop-category-row { grid-template-columns:40px minmax(0,1fr);gap:10px; } }
 @media(max-width:600px) { .shop-category-row { grid-template-columns:32px minmax(0,1fr);gap:7px; } .shop-category-row .shop-tabs,.shop-role-filters { gap:1px; } .shop-category { width:32px;height:34px; } .shop-category img { width:24px;height:24px; } .shop-filter .stat-icon { font-size:18px; } .shop-filter-group { padding:4px 0; } }
+
+.passive-effect-heading { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:9px; }
+.passive-effect-heading .btn { flex:0 0 auto; }
+.passive-effect-heading .btn[aria-pressed="true"] { border-color:#b8a16b;color:#f0d99b;background:#273a37; }
+.passive-disabled .passive-description { opacity:.5; }
+.passive-current-value { display:block;margin-top:10px; }
+.passive-description { line-height:1.5; }
+.item-calculated-value { font-weight:600; }

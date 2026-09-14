@@ -7,6 +7,7 @@
     const rank=slot=>slot==='p'?1:(ranks[slot]||0);
     const data=(slot,key)=>C.dataValue(payload(slot)?.dataValues||[],key,Math.max(1,rank(slot)),state.level).value ?? NaN;
     const count=key=>Math.max(0,Number(values[key])||0);
+    const boundedStacks=(key,max)=>Math.min(max,Math.floor(count(key)));
     const calc=(slot,key,stats={})=>{
       const p=payload(slot);if(!p)return NaN;
       const buffs=Object.fromEntries(Object.entries(values).filter(([k])=>k.startsWith('buff:')).map(([k,v])=>[k.slice(5),v]));
@@ -14,7 +15,11 @@
     };
     const fields=[];
     const field=(slot,key,label,extra={})=>fields.push({slot,key,label,kind:key.split(':')[0],owners:new Set([label]),defaultValue:0,...extra});
-    if(!state.cdragonAbilityData)return {fields,data,calc,apply:s=>({...s,championBonuses:{}}),token:()=>null};
+    if(!state.cdragonAbilityData)return {fields,data,calc,apply:s=>({...s,championBonuses:{}}),token:()=>null,passiveSummary:()=>null};
+    if(champion==='Ezreal')field('p','state:risingSpellForceStacks','Rising Spell Force stacks',{min:0,max:data('p','MaxStacks'),step:1});
+    // The spirit counter is maintained by Aurora's passive script, outside the
+    // exported HealCalc. Each active spirit contributes one HealCalc per second.
+    if(champion==='Aurora')field('p','state:auroraSpirits','Active spirits',{min:0,max:4,step:1});
     if(champion==='Poppy')field('w','self:healthPercent:0','Current health (%) — W resistance bonus',{percent:true,defaultValue:1});
     if(champion==='Malphite')field('p','state:graniteShield','Granite Shield active',{boolean:true,defaultValue:false});
     const stacks={Chogath:['r','buff:{8682fc00}','Feast stacks'],Swain:['p','buff:{0dc6979e}','Soul fragments'],Thresh:['p','buff:{5fbfbf13}','Souls collected'],Senna:['p','buff:{e88568f8}','Mist stacks'],Belveth:['p','buff:{7f3c01cf}','Lavender stacks'],Veigar:['p','state:phenomenalEvil','Phenomenal Evil stacks'],Sion:['w','state:soulFurnaceHealth','Permanent health gained from Soul Furnace'],Garen:['w','buff:{9e10ce18}','Courage kill stacks'],Syndra:['p','state:splinters','Splinters of Wrath']};
@@ -23,6 +28,13 @@
     const apply=s=>{
       const out={...s,championBonuses:{},bonusAttackSpeedFromChampion:0};
       const add=(stat,value)=>{if(Number.isFinite(value)){out[stat]+=value;out.championBonuses[stat]=(out.championBonuses[stat]||0)+value;}};
+      if(champion==='Ezreal'){
+        const bonus=boundedStacks('state:risingSpellForceStacks',data('p','MaxStacks'))*data('p','AttackSpeedPerStack');
+        if(Number.isFinite(bonus)){
+          out.bonusAttackSpeedFromChampion=bonus;
+          add('asTotal',(s.base.attackspeedratio??s.base.attackspeed)*bonus);
+        }
+      }
       if(champion==='Chogath'&&rank('r')){
         const n=count('buff:{8682fc00}');add('hp',n*data('r','RHealthPerStack'));
         add('attackRange',Math.min(data('r','MaxBonusAttackRange'),n*data('r','AttackRangePerStack')));
@@ -85,7 +97,18 @@
       if(id==='KaisaE'&&key==='f10')return permanentAS*100;
       return null;
     }
-    return {fields,data,calc,apply,token};
+    function passiveSummary(stats={}){
+      if(champion==='Ezreal'){
+        const stacks=boundedStacks('state:risingSpellForceStacks',data('p','MaxStacks')),perStack=data('p','AttackSpeedPerStack');
+        return {type:'ezreal',stacks,maxStacks:data('p','MaxStacks'),attackSpeedPerStack:perStack,bonusAttackSpeed:stacks*perStack,duration:data('p','StackDuration')};
+      }
+      if(champion==='Aurora'){
+        const spirits=boundedStacks('state:auroraSpirits',4),healPerSpirit=calc('p','HealCalc',stats);
+        return {type:'aurora',spirits,maxSpirits:4,healthFraction:calc('p','ProcDamage',stats),healPerSpirit,healingPerSecond:healPerSpirit*spirits,spiritDuration:data('p','SpiritModeDuration')};
+      }
+      return null;
+    }
+    return {fields,data,calc,apply,token,passiveSummary};
   }
   scope.ChampionEffects={model};
 })(typeof window!=='undefined'?window:globalThis);

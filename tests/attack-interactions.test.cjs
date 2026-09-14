@@ -14,6 +14,30 @@ test('Yun Tal earned crit is added once, capped, and survives repeated calculati
   near(x.m.apply(x.s).critChance,50);near(x.profile().autoAttackDamage,165);near(x.profile().autoAttackDamage,165);
   x.state.combatValues['attack:flurry']=true;near(x.m.apply(x.s).asTotal,2.3);
 });
+test('Yun Tal passive toggles isolate earned crit from Flurry attack speed',()=>{
+  const x=model('Ahri',['3032'],{'attack:yunTalCrit':25,'attack:flurry':true});
+  x.state.disabledItemPassives={'3032:practice-makes-lethal':true};near(x.m.apply(x.s).critChance,25);near(x.m.apply(x.s).asTotal,2.3);
+  x.state.disabledItemPassives={'3032:flurry':true};near(x.m.apply(x.s).critChance,50);near(x.m.apply(x.s).asTotal,2);
+});
+test('Rageblade can disable Wrath damage separately from Seething Strike stacks and phantom hits',()=>{
+  const x=model('Ahri',['3124','3115'],{'attack:rageStacks':4});
+  x.state.disabledItemPassives={'3124:wrath':true};let p=x.profile();near(p.rate,2.32);near(p.rows.find(r=>r.label==='Nashor’s Tooth').perHit,40);assert.ok(!p.rows.some(r=>r.label==='Guinsoo’s Rageblade'));
+  x.state.disabledItemPassives={'3124:seething-strike':true};p=x.profile();near(p.rate,2);near(p.rows.find(r=>r.label==='Nashor’s Tooth').perHit,30);near(p.rows.find(r=>r.label==='Guinsoo’s Rageblade').perHit,30);
+});
+test('disabling Dusk Spellblade removes its repeated on-hit without removing the other item',()=>{
+  const x=model('Ahri',['2510','3115'],{'attack:spellblade':true});
+  x.state.disabledItemPassives={'2510:spellblade':true};const p=x.profile();near(p.rows.find(r=>r.label==='Nashor’s Tooth').perSecond,60);assert.ok(!p.rows.some(r=>r.spellbladeId));
+});
+test('turning off an optional item passive overrides an old combat activation',()=>{
+  const x=model('Ahri',['2512','3504','6610'],{'attack:fiendhunter':true,'attack:ardent':true,'attack:sundered':true,'attack:sunderedInterval':10});
+  x.state.disabledItemPassives={'2512:opening-barrage':true,'3504:sanctify':true,'6610:lightshield-strike':true};
+  const p=x.profile();near(p.rate,2);near(p.autoAttackDamage,132.5);assert.equal(p.rows.length,0);
+});
+test('disabled amplifiers do not require their target fields or alter champion and item damage',()=>{
+  const x=model('Fizz',['3161','2523','3036','4645','3115'],{'attack:shojinStacks':4,'attack:shadowflame':true});
+  x.state.disabledItemPassives={'3161:focused-will':true,'2523:magnification':true,'3036:giant-slayer':true,'4645:cinderbloom':true};
+  const p=x.profile(),plain=model('Fizz',['3115']).profile();near(p.autoAttackDamage,plain.autoAttackDamage);near(p.attackDps,plain.attackDps);
+});
 test('Hullbreaker amortizes one Skipper proc per five attacks',()=>{
   const x=model('Ahri',['3181']);near(x.profile().autoAttackDamage,132.5+(50*1.2+1000*.05)/5);
   x.s.base.attackrange=550;near(x.profile().rows[0].value,77);
