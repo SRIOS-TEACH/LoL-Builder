@@ -1672,7 +1672,10 @@ function buildDetailedPassiveText() {
   if(summary?.type==='ezreal')text+=`<p class="passive-current-value">${summary.stacks}/${summary.maxStacks} stacks: <attackSpeed>+${f(summary.bonusAttackSpeed*100)}% Attack Speed</attackSpeed>.</p>`;
   if(summary?.type==='aurora'){
     // Current script has no movement-speed buff; old unused BIN calculations remain.
-    text=`Damaging an enemy 3 times with abilities or attacks deals <magicDamage>${f(summary.healthFraction*100)}% of their maximum HP as magic damage</magicDamage>. Against champions, this frees a spirit for ${f(summary.spiritDuration)} seconds. Each spirit restores <healing>${f(summary.healPerSpirit)} HP per second</healing>, up to ${summary.maxSpirits} spirits.<br><br><span class="passive-current-value">${summary.spirits}/${summary.maxSpirits} spirits: <healing>${f(summary.healingPerSecond)} HP per second</healing>.</span><br><rules>Damage against monsters is capped at 100–270, based on level.</rules>`;
+    const passiveModel=window.ChampionEffects.model(BUILDER);
+    const baseFraction=passiveModel.passiveSummary({...ctx.stats,ap:0}).healthFraction;
+    const apCoefficient=passiveModel.passiveSummary({...ctx.stats,ap:100}).healthFraction-baseFraction;
+    text=`Damaging an enemy 3 times with abilities or attacks deals <magicDamage>${f(summary.healthFraction*100)}% ((${f(baseFraction*100)}) + (${f(apCoefficient*100)}% Ability Power))% of their maximum HP as magic damage</magicDamage>. Against champions, this frees a spirit for ${f(summary.spiritDuration)} seconds. Each spirit restores <healing>${f(summary.healPerSpirit)} HP per second</healing>, up to ${summary.maxSpirits} spirits.<br><br><span class="passive-current-value">${summary.spirits}/${summary.maxSpirits} spirits: <healing>${f(summary.healingPerSecond)} HP per second</healing>.</span><br><rules>Damage against monsters is capped at 100–270, based on level.</rules>`;
     if(BUILDER.target.enabled){
       const amount=window.DamageText.damage(summary.healthFraction*BUILDER.target.maxHp,'magic',{target:BUILDER.target,stats:ctx.stats},`${f(summary.healthFraction*100)}% × ${BUILDER.target.maxHp} target max HP`);
       text=text.replace('maximum HP as magic damage',`maximum HP as magic damage (${amount} against target)`);
@@ -1936,6 +1939,14 @@ function buildResolvedSpellPayload(rawPayload, safeRank, stats) {
   const calculations = payload?.calculations || {};
   const dataValues = payload?.dataValues || [];
   const calcLookup = Object.fromEntries(Object.entries(calculations).map(([k, calc]) => {
+    // The source exposes only the maximum recall tooltip calculation. Resolve
+    // its multiplier against the configured target before prose and DPS use it.
+    if(BUILDER.selectedChampion==='Aurora' && k.toLowerCase()==='q2damagemax'){
+      const target=window.TargetDamage.normalize(BUILDER.target);
+      const missing=target.enabled?1-target.currentHp/target.maxHp:0;
+      const bonus=window.Calculations.dataValue(dataValues,'MissingHealthPercentMod',safeRank).value;
+      calc={...calc,mMultiplier:{__type:'NumberCalculationPart',mNumber:1+(bonus??0.5)*missing}};
+    }
     const evaluated = stats ? evaluateGameCalculation(calc, dataValues, safeRank, stats, calculations, payload?.effects || []) : null;
     return [String(k).toLowerCase(), evaluated];
   }));
@@ -2251,7 +2262,8 @@ function buildAbilityContext(spell, rank, spellKey) {
 }
 
 function buildDetailedAbilityText(spell, rank, spellKey, context) {
-  const raw = expandAbilityLocalization(spell.tooltip || spell.description || "");
+  let raw = expandAbilityLocalization(spell.tooltip || spell.description || "");
+  if(BUILDER.selectedChampion==='Aurora' && spellKey==='q')raw=raw.replace(/up to\s+(?=<magicDamage>\s*(?:\{\{|@)\s*q2damagemax)/i,'');
   if (!(Number(rank) > 0)) return spell.description || "";
   const ctx = context || buildAbilityContext(spell, rank, spellKey);
   const replaced = window.DamageText.render(raw,token=>resolveAbilityToken(token,ctx),{target:BUILDER.target,stats:ctx.stats});

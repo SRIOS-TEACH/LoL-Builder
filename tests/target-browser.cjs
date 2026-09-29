@@ -320,9 +320,25 @@ const server = http.createServer((request, response) => {
     const expectedProc = 4000 * (0.01 + 0.00027 * auroraStats.stats.ap) * 0.2;
     const auraText = await detailed('p');
     assert.match(auraText, /max(?:imum)?\s+HP/i, 'Aurora keeps the max-health scaling explanation');
+    assert.match(auraText, /\(\(1\)\s*\+\s*\(2\.7% Ability Power\)\)%/, 'Aurora shows the passive calculation');
     assert.ok(numbers(auraText).some(value => Math.abs(value - expectedProc) < 0.11), `Aurora passive prose resolves target max-health proc damage after MR (${expectedProc}): ${auraText}`);
     const expectedHealing = 4 * (20 + 0.02 * auroraStats.stats.ap);
     assert.ok(numbers(auraText).some(value => Math.abs(value - expectedHealing) < 0.11), 'Aurora spirit healing is not reduced by target resists or damage reduction');
+
+    for(const [on,hp,multiplier] of [[true,4000,1],[true,2000,1.25],[true,0,1.5],[false,0,1]]){
+      await target({currentHp:hp});
+      await enabled(on);
+      const recall=await page.evaluate(()=>{
+        const spell=BUILDER.championData.spells[0];
+        const ctx=buildAbilityContext(spell,5,'q');
+        return {base:ctx.calcLookup.damage.total,recall:ctx.calcLookup.q2damagemax.total};
+      });
+      near(recall.recall,recall.base*multiplier,`Aurora recall at ${hp} HP, target ${on}`);
+      const expected=recall.recall*(on?0.2:1);
+      assert.ok(numbers(await prose('q')).some(value=>Math.abs(value-expected)<0.11),'Aurora recall prose uses configured health and mitigation');
+      assert.ok((await rows('q')).some(row=>numbers(row.damage).some(value=>Math.abs(value-expected)<0.11)),'Aurora recall damage table uses configured health');
+    }
+    await enabled(true);
 
     await select('Ezreal');
     await equip(['3100']);
