@@ -1,0 +1,122 @@
+{
+  "_source": "Community Dragon items.cdtb.bin.json (fixture patch 16.18.1)",
+  "items": {
+    "3161": {
+      "mDataValues": [
+        {
+          "mName": "SpellDamageIncrease",
+          "mValue": 0.029999999329447746,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "AHBase",
+          "mValue": 25.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "StackDuration",
+          "mValue": 6.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "StackCount",
+          "mValue": 4.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "RangedMod",
+          "mValue": 0.5,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "TooltipValue",
+          "mValue": 3.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "CastIDLockout",
+          "mValue": 1.0,
+          "__type": "ItemDataValue"
+        }
+      ]
+    },
+    "3118": {
+      "mDataValues": [
+        {
+          "mName": "AOESize",
+          "mValue": 250.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "UltimateHaste",
+          "mValue": 20.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "GroundDuration",
+          "mValue": 3.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "BaseDamage",
+          "mValue": 60.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "APRatio",
+          "mValue": 0.05000000074505806,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "MaxRadius",
+          "mValue": 550.0,
+          "__type": "ItemDataValue"
+        }
+      ]
+    },
+    "3073": {
+      "mDataValues": [
+        {
+          "mName": "UltimateHaste",
+          "mValue": 30.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "MovementSpeedBonus",
+          "mValue": 0.20000000298023224,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "HasteDuration",
+          "mValue": 8.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "Cooldown",
+          "mValue": 30.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "BonusASRanged",
+          "mValue": 35.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "BonusASMelee",
+          "mValue": 50.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "BonusMSRanged",
+          "mValue": 14.0,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "BonusMSMelee",
+          "mValue": 20.0,
+          "__type": "ItemDataValue"
+        }
+      ]
+    }
+  }
+}

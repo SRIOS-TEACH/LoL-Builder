@@ -61,6 +61,40 @@ const server=http.createServer((req,res)=>{
 
  await page.screenshot({path:path.join(out,'dashboard-desktop.png')});
 
+ const originalRunes=await page.evaluate(()=>structuredClone(BUILDER.runeSelections));
+ await page.evaluate(()=>{
+   BUILDER.runeSelections={primaryPath:'sorcery',secondaryPath:'domination',primary:['summon-aery','manaflow-band','transcendence','gathering-storm'],secondary:['taste-of-blood','ultimate-hunter'],shards:[]};
+   renderRunePanel();renderStats();renderAbilityCards();
+ });
+ const positions=await page.evaluate(()=>({time:document.getElementById('gameTime').getBoundingClientRect().top,passives:document.getElementById('passiveToggleBtn').getBoundingClientRect().bottom}));
+ assert.ok(positions.time>=positions.passives,'game time sits below Passives');
+ await page.locator('#gameTime').fill('20');
+ assert.ok(Math.abs(await page.evaluate(()=>getRuneStats().ad)-14.4)<.001,'Gathering Storm uses game minutes');
+ await page.locator('#runeStacksBtn').click();
+ assert.equal(await page.locator('#runeStacksList input').count(),2,'only selected stacking runes are listed');
+ await page.locator('[data-rune-stack="manaflow-band"]').fill('7');
+ assert.equal(await page.evaluate(()=>getRuneStats().mp),175);
+ await page.locator('[data-rune-stack="ultimate-hunter"]').fill('5');
+ assert.equal(await page.evaluate(()=>computeDerivedBuildStats().ultimateHaste),31);
+ assert.equal(await page.evaluate(()=>buildAbilityContext(BUILDER.championData.spells[3],3,'r').stats.haste),41,'ultimate stacks affect the real R cooldown context');
+ await page.locator('[data-rune-stack="manaflow-band"]').fill('99');
+ await page.locator('[data-rune-stack="manaflow-band"]').press('Tab');
+ assert.equal(await page.locator('[data-rune-stack="manaflow-band"]').inputValue(),'10');
+ assert.equal(await page.evaluate(()=>getRuneStats().mp),250);
+ await page.screenshot({path:path.join(out,'rune-stacks.png')});
+ await page.keyboard.press('Escape');assert.equal(await page.locator('#runeStacksModal').isVisible(),false);
+ await page.locator('[data-rune-choice-id="manaflow-band"]').hover();
+ const tip=page.locator('#runeTooltip');await tip.waitFor({state:'visible'});
+ assert.match(await tip.innerText(),/Manaflow Band/);
+ const floating=await tip.evaluate(el=>({parent:el.parentElement.tagName,position:getComputedStyle(el).position,rect:el.getBoundingClientRect().toJSON(),z:Number(getComputedStyle(el).zIndex)}));
+ assert.equal(floating.parent,'BODY');assert.equal(floating.position,'fixed');assert.ok(floating.z>1000);
+ assert.ok(floating.rect.left>=0&&floating.rect.right<=1440&&floating.rect.bottom<=900,'tooltip stays within viewport');
+ await page.screenshot({path:path.join(out,'rune-tooltip.png')});
+ await page.keyboard.press('Escape');assert.equal(await tip.isVisible(),false);
+ await page.locator('#gameTime').fill('-1');await page.locator('#gameTime').press('Tab');
+ assert.equal(await page.locator('#gameTime').inputValue(),'0');
+ await page.evaluate(saved=>{BUILDER.runeSelections=saved;renderRunePanel();renderStats();renderAbilityCards();},originalRunes);
+
  const q=page.locator('[data-ability-slot="q"]');
  assert.ok(await q.locator('.simple-description').isVisible());await q.locator('.detail-toggle').click();
  assert.ok(await q.locator('.detailed-description').isVisible());assert.equal(await q.locator('.simple-description').isVisible(),false);

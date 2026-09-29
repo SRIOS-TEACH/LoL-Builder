@@ -9,6 +9,25 @@ const render=(template,values={},extra={},syntax='ability')=>DamageText.render(t
 const packets=html=>[...html.matchAll(/<span class="target-damage-number"[^>]*data-raw-damage="([^"]+)"[^>]*data-damage-type="([^"]+)"[^>]*>([^<]+)<\/span>/g)]
   .map(([,raw,type,value])=>({raw:Number(raw),type,value:Number(value.replace(/,/g,''))}));
 
+test('Focused Will increases ability prose with target settings on or off, including true damage',()=>{
+ const template='<physicalDamage>{{ hit }} damage</physicalDamage><magicDamage>{{ hit }} damage</magicDamage><trueDamage>{{ hit }} damage</trueDamage>';
+ for(const enabled of [false,true]){
+   const html=render(template,{hit:100},{target:{...target,enabled},stats:{abilityDamageMultiplier:1.12}});
+   assert.deepEqual(packets(html).map(p=>p.value),enabled?[44.8,22.4,112]:[112,112,112]);
+   assert.match(html,/Focused Will/);
+ }
+ const ordinary=render('<healing>{{ hit }} Health</healing><physicalDamage>{{ hit }} Attack Damage</physicalDamage><magicDamage>{{ ratio }}% AP</magicDamage>',{hit:100,ratio:60},{stats:{abilityDamageMultiplier:1.12}});
+ assert.match(ordinary,/100 Health/);assert.match(ordinary,/100 Attack Damage/);assert.match(ordinary,/60% AP/);
+});
+
+test('Focused Will scales percent-health coefficients and their target damage exactly once',()=>{
+ const template='<magicDamage>{{ percent }}% max Health magic damage</magicDamage>';
+ const html=render(template,{percent:10},{stats:{abilityDamageMultiplier:1.12}});
+ assert.match(html,/>11.2%<\/span>/);assert.deepEqual(packets(html).map(p=>p.value),[44.8]);
+ const off=render(template,{percent:10},{target:{enabled:false},stats:{abilityDamageMultiplier:1.12}});
+ assert.match(off,/>11.2%<\/span>/);assert.equal(packets(off).length,0);
+});
+
 test('typed physical damage uses armor even when its formula scales with AP',()=>{
  const html=render('<physicalDamage>{{ hit }} physical damage</physicalDamage>',{
    hit:{numeric:150,html:'150 (50 + 100% AP)'},

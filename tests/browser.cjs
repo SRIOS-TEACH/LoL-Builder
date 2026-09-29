@@ -76,7 +76,8 @@ const server=http.createServer((req,res)=>{
      const feast=Calculations.lookup(payload.calcLookup,'RDamage');
      if(Math.abs(feast.total-(650+.5*stats.ap+.1*stats.bonusHp))>.001)throw Error('Feast formula mismatch');
      const html=resolveItemDescriptionHtml(BUILDER.items['3040'],'3040').html;
-     if(!/20 Ability Power/.test(html)||!/[\d.]+ Shield/.test(html))throw Error('Seraph numeric values missing');
+     const text=html.replace(/<[^>]*>/g,'');
+     if(!/20 Ability Power/.test(text)||!/[\d.]+ Shield/.test(text))throw Error('Seraph numeric values missing: '+text);
      if(/AbilityResourceByCoefficientCalculationPart|\(0s\)|<scaleAP>\s*Ability Power/.test(html))throw Error('Seraph unresolved display');
      return {feast:feast.total,html,stats,abilityText:document.querySelector('#abilities')?.innerText};
    });
@@ -141,6 +142,9 @@ const server=http.createServer((req,res)=>{
  });
  console.log(`PASS ${builderItems} builder items: equip, stats, details; item haste fallback`);
  await page.goto(base+'/itemLookup.html');
+ const lookupPages=[];
+ if(await page.locator('#itemSearch').count()){
+ lookupPages.push(['itemLookup.html','#itemCount']);
  await page.waitForFunction(()=>document.querySelectorAll('#itemGrid button').length>0);
  if(process.env.ADVANCED_DATA){
    await page.evaluate(()=>showItem('3040'));
@@ -165,18 +169,30 @@ const server=http.createServer((req,res)=>{
  await page.locator('.map-checkbox:checked').uncheck();
  assert.equal(await page.locator('#itemCount').textContent(),'0 items');
  console.log(`PASS ${itemCount} item tooltips; empty search and map filters`);
+ }else{
+   assert.match(await page.locator('h1').innerText(),/Item Lookup is temporarily unavailable/);
+   assert.equal(await page.locator('a.btn').getAttribute('href'),'Builder.html');
+   console.log('PASS disabled Item Lookup directs users to Builder');
+ }
  await page.goto(base+'/champ.html');
+ if(await page.locator('#abilities').count()){
+ lookupPages.push(['champ.html','#champName']);
  await page.waitForFunction(()=>document.querySelectorAll('#abilities .ability-card').length===5);
  await page.evaluate(async()=>{await Promise.all([renderChampion('Ahri'),renderChampion('Garen')]);});
  assert.match(await page.locator('#champName').textContent(),/Garen/);
  for(const name of champions)await page.evaluate(name=>renderChampion(name),name);
  console.log(`PASS champion lookup: ${champions.length} champions and selection race`);
+ }else{
+   assert.match(await page.locator('h1').innerText(),/Champion Lookup is temporarily unavailable/);
+   assert.equal(await page.locator('a.btn').getAttribute('href'),'Builder.html');
+   console.log('PASS disabled Champion Lookup directs users to Builder');
+ }
  failCore=true;
- for(const [file,selector] of [['Builder.html','#builderStatus'],['itemLookup.html','#itemCount'],['champ.html','#champName']]){
+ for(const [file,selector] of [['Builder.html','#builderStatus'],...lookupPages]){
    await page.goto(base+'/'+file);
    await page.waitForFunction(selector=>/could not|failed/i.test(document.querySelector(selector).textContent),selector);
  }
  assert.deepEqual(errors,[]);
- console.log('PASS all three startup failure states; no uncaught browser errors');
+ console.log('PASS active-page startup failure states; no uncaught browser errors');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>server.close());

@@ -76,7 +76,54 @@ const server=http.createServer((req,res)=>{
      assert.doesNotMatch(await page.locator('[data-ability-slot="q"] .ability-dps-form').innerText(),/Alternate form data unavailable/);
    }
  }
+ if(process.env.ADVANCED_DATA){
+   for(const name of ['Ezreal','Smolder']){
+     await select(name);
+     const values=await page.evaluate(()=>{
+       BUILDER.itemSlots.fill(null);BUILDER.itemSlots[0]='3057';BUILDER.combatValues={'buff:{32bcea5d}':50};BUILDER.disabledItemPassives={};
+       BUILDER.target={enabled:false,maxHp:2000,currentHp:1000,armor:100,mr:300,damageReduction:0};
+       const sample=()=>{renderStats();renderAbilityCards();return Number(document.querySelector('[data-ability-slot="q"] .ability-dps tbody tr td:nth-child(2)').textContent);};
+       const off=sample(),s=computeDerivedBuildStats(),baseAd=s.base.attackdamage+s.base.attackdamageperlevel*BuildStats.growthFactor(BUILDER.level);
+       BUILDER.combatValues['attack:spellblade']=true;const on=sample();
+       BUILDER.disabledItemPassives['3057:spellblade']=true;const disabled=sample();
+       BUILDER.disabledItemPassives={};BUILDER.target.enabled=true;const mitigatedOn=sample();
+       BUILDER.combatValues['attack:spellblade']=false;const mitigatedOff=sample();
+       BUILDER.itemSlots.fill(null);BUILDER.combatValues={};BUILDER.target.enabled=false;
+       return {off,on,disabled,baseAd,mitigatedOn,mitigatedOff};
+     });
+     assert.ok(Number.isFinite(values.off),`${name} primary Q damage must resolve`);
+     assert.ok(Math.abs(values.on-values.off-values.baseAd)<0.15,`${name} Q includes one full Sheen proc: ${JSON.stringify(values)}`);
+     assert.equal(values.disabled,values.off,`${name} disabled Spellblade is removed`);
+     assert.ok(Math.abs(values.mitigatedOn-values.mitigatedOff-values.baseAd/2)<0.15,`${name} Sheen uses armor once`);
+   }
+ }
  const targetMode=process.env.TARGET_SETTINGS==='1';
+ if(process.env.ADVANCED_DATA){
+   for(const [name,slot]of [['MasterYi','e'],['KogMaw','w'],['Teemo','e']]){
+     await select(name);
+     const sample=await page.evaluate(slot=>{
+       BUILDER.target={enabled:true,maxHp:2000,currentHp:2000,armor:0,mr:0,damageReduction:0};
+       renderAbilityCards();
+       const spell=BUILDER.championData.spells[['q','w','e','r'].indexOf(slot)],rank=BUILDER.abilityRanks[slot],ctx=buildAbilityContext(spell,rank,slot);
+       const cooldown=AbilityDps.cooldown(spell,rank,ctx.stats,ctx.cdragonSpell);
+       const result=AbilityDps.profile({spell,rank,cooldown,payload:ctx.cdragonSpell,stats:ctx.stats,target:BUILDER.target,
+         tooltip:expandAbilityLocalization(spell.tooltip),resolve:key=>resolveAbilityToken(key,ctx)});
+       return {rows:result.rows,as:ctx.stats.attackSpeed,cooldown};
+     },slot);
+     const row=sample.rows.find(r=>r.onHitDps&&!r.onHitDps.dot);
+     assert.ok(row,`${name}: on-hit row is identified`);
+     assert.ok(Math.abs(row.onHitDps.activeDps-row.damage.value*sample.as)<.001,`${name}: current AS drives active DPS`);
+     if(name!=='Teemo'){
+       const t=row.onHitDps;
+       assert.ok(Number.isFinite(t.overallDps),`${name}: duration and cooldown resolve`);
+       assert.ok(Math.abs(t.overallDps-t.activeDps*t.duration/(t.duration+sample.cooldown))<.001);
+       assert.match(await get(slot),/active \/ overall/i);
+     }
+   }
+   await select('Warwick');
+   assert.ok(await page.locator('[data-ability-slot="p"] .ability-dps tbody tr').count()>0,'on-hit passive has its own DPS rows');
+   await page.evaluate(()=>{BUILDER.target.enabled=false;});
+ }
  if(targetMode)await page.evaluate(()=>{
    BUILDER.target={enabled:true,maxHp:2000,currentHp:1000,armor:100,mr:100,damageReduction:10};
    renderStats();renderAbilityCards();

@@ -22,7 +22,8 @@
     3504:{sanctify:'attack:ardent'},6699:{firmament:'attack:voltaic'},
     3179:{nightstalker:'attack:umbral'},3181:{skipper:null},
     3742:{shipwrecker:'attack:shipwrecker'},2512:{'opening-barrage':'attack:fiendhunter'},
-    6610:{'lightshield-strike':'attack:sundered'},3161:{'focused-will':null},
+    6610:{'lightshield-strike':'attack:sundered'},3161:{dragonforce:null,'focused-will':null},
+    3118:{scorn:null},3073:{hexcharged:null},
     2523:{magnification:null},3036:{'giant-slayer':null},4645:{cinderbloom:'attack:shadowflame'}
   };
   function model(state,items={}){
@@ -36,6 +37,18 @@
     const read=(p,key,r=1)=>C.dataValue(normalise(p?.dataValues??p?.mDataValues),key,r,level).value;
     const data=(slot,key)=>read(payload(slot),key,Math.max(1,rank(slot)));
     const itemData=(id,key)=>read(items[id],key);
+    function abilityModifiers(s={}) {
+      const value=(id,key)=>{const n=itemData(id,key);return finite(n)?n:0;};
+      const basicHaste=enabled(3161,'dragonforce')?value(3161,'AHBase'):0;
+      const ultimateHaste=(enabled(3118,'scorn')?value(3118,'UltimateHaste'):0)
+        +(enabled(3073,'hexcharged')?value(3073,'UltimateHaste'):0);
+      const rawStacks=Number(values['attack:shojinStacks']);
+      const stacks=clamp(Math.floor(finite(rawStacks)?rawStacks:0),0,value(3161,'StackCount'));
+      const ranged=s.ranged??s.base?.attackrange>300;
+      const abilityDamageMultiplier=enabled(3161,'focused-will')
+        ?1+stacks*value(3161,'SpellDamageIncrease')*(ranged?value(3161,'RangedMod'):1):1;
+      return {basicHaste,ultimateHaste,abilityDamageMultiplier};
+    }
     const context=(s)=>{
       const growth=scope.BuildStats.growthFactor(level),baseAd=s.base.attackdamage+s.base.attackdamageperlevel*growth;
       const targetStats=state.target&&scope.TargetDamage?scope.TargetDamage.targetStats(state.target):{};
@@ -135,7 +148,7 @@
       if(s.attackStatsMissing){base=null;warnings.push('Champion critical-strike data unavailable.');}
       if(speedBuff[name]&&name!=='Ashe'){const [slot,,label,,key]=speedBuff[name];toggle(slot,key||'speedBuff',label+' attack speed active');}
       const row=(label,value,type='magic',cadence=1,formula='',extra={})=>rows.push({label,value:finite(value)?value:null,type,cadence,formula,...extra});
-      const ability=(slot,key,label,type='magic',cadence=1,extra={})=>{const r=calc(slot,key,s);row(label,r.value,type,cadence,r.text,extra);};
+      const ability=(slot,key,label,type='magic',cadence=1,extra={})=>{const r=calc(slot,key,s);row(label,r.value,type,cadence,r.text,{sourceSlot:slot,sourceKey:key,...extra});};
       if(name==='Tryndamere')input('p','fury','Fury',{max:100});
       if(name==='Nasus')input('q','nasusStacks','Siphoning Strike stacks');
       if(name==='Ashe'){
@@ -147,19 +160,19 @@
         const missing=input('p','target:currentHp','Target current health'),max=input('p','target:hp','Target maximum health');
         const execute=calc('p','FourthShotExecutePercent',s).value;
         base=(3*base+s.ad*crit)/4;
-        row('Whisper fourth-shot execute',finite(max)&&finite(missing)&&finite(execute)?Math.max(0,max-missing)*execute:null,'physical',4,'Target missing HP × fourth-shot execute fraction', {onHit:false});
+        row('Whisper fourth-shot execute',finite(max)&&finite(missing)&&finite(execute)?Math.max(0,max-missing)*execute:null,'physical',4,'Target missing HP × fourth-shot execute fraction', {onHit:false,sourceSlot:'p'});
         const reload=data('p','ReloadTime');
         // Reload begins on the last shot; three inter-shot intervals per magazine.
         rate=finite(reload)?4/(3/s.asTotal+reload):null;
       }
       if(name==='Senna')ability('p','BonusOnHitDamage','Absolution','physical');
       if(name==='Corki'){
-        const r=calc('p','BasicAttackTOOLTIP',s);row('Hextech Munitions',finite(r.value)?averageCrit(r.value,chance,crit):null,'true',1,r.text,{onHit:false});
+        const r=calc('p','BasicAttackTOOLTIP',s);row('Hextech Munitions',finite(r.value)?averageCrit(r.value,chance,crit):null,'true',1,r.text,{onHit:false,sourceSlot:'p'});
       }
       if(name==='Orianna'){
         ability('p','TotalDamage','Clockwork Windup');
         const stacks=input('p','oriannaStacks','Consecutive-hit stacks',{max:2});
-        if(stacks>0){const r=calc('p','StackDamage',s);row('Clockwork stacks',finite(r.value)?r.value*clamp(stacks,0,2):null);}
+        if(stacks>0){const r=calc('p','StackDamage',s);row('Clockwork stacks',finite(r.value)?r.value*clamp(stacks,0,2):null,'magic',1,r.text,{sourceSlot:'p'});}
       }
       const permanent={Teemo:['e','ImpactCalculatedDamage','Toxic Shot'],Varus:['w','OnHitDamage','Blighted Quiver'],Kayle:['e','EPassiveTotalDamage','Starfire Spellblade'],Jax:['r','OnHitDamage','Grandmaster’s Might','magic',3],TwistedFate:['e','BonusDamage','Stacked Deck','magic',4],Vayne:['w','TotalDamage','Silver Bolts','true',3],
         Warwick:['p','OnHitDamage','Eternal Hunger'],TahmKench:['p','TotalDamage','An Acquired Taste'],Lulu:['p','CombinedDamage','Pix (all bolts hit)'],Kassadin:['w','OnHitDamage','Nether Blade'],Diana:['p','CleaveDamage','Moonsilver Blade','magic',3],Neeko:['w','PassiveBonusDamageCalc','Shapesplitter','magic',3],Kennen:['w','TotalDamagePassive','Electrical Surge','magic',5],XinZhao:['p','TotalDamage','Determination','physical',3],Sett:['p','RightPunchBonus','Right punch','physical',2],Vi:['w','TotalDamageTooltip','Denting Blows','physical',3],Blitzcrank:['r','PassiveDamage','Static Field']};
@@ -188,7 +201,7 @@
       }
       const percent=(slot,key,label,stat='hp',type='magic',extra={})=>{
         const hp=input('attack','target:'+stat,'Target '+(stat==='hp'?'maximum':'current')+' health'),r=calc(slot,key,s);
-        row(label,finite(hp)&&finite(r.value)?hp*r.value:null,type,1,r.text+' × target '+stat,extra);
+        row(label,finite(hp)&&finite(r.value)?hp*r.value:null,type,1,r.text+' × target '+stat,{sourceSlot:slot,sourceKey:key,...extra});
       };
       if(name==='Gwen')percent('p','PercentHealth1000Cuts','A Thousand Cuts');
       if(name==='Viego'&&rank('q'))percent('q','TotalPercentHealthOnHit','Blade of the Ruined King','currentHp','physical');
@@ -203,13 +216,13 @@
       }
       if(name==='Kaisa'){
         ability('p','PBaseDamage','Plasma base damage');
-        const stack=calc('p','PCurrentPerStackDamage',s);row('Plasma stacks (five-hit cycle)',finite(stack.value)?2*stack.value:null,'magic',1,stack.text+' × average 2 existing stacks');
+        const stack=calc('p','PCurrentPerStackDamage',s);row('Plasma stacks (five-hit cycle)',finite(stack.value)?2*stack.value:null,'magic',1,stack.text+' × average 2 existing stacks',{sourceSlot:'p'});
         const hp=input('attack','target:hp','Target maximum health'),current=input('attack','target:currentHp','Target current health'),r=calc('p','PExecutePercentage',s);
-        row('Caustic Wounds',finite(hp)&&finite(current)&&finite(r.value)?Math.max(0,hp-current)*r.value:null,'magic',5,r.text+' × target missing HP');
+        row('Caustic Wounds',finite(hp)&&finite(current)&&finite(r.value)?Math.max(0,hp-current)*r.value:null,'magic',5,r.text+' × target missing HP',{sourceSlot:'p'});
       }
       if(name==='Lucian'&&toggle('p','lightslinger','Lightslinger procs enabled')){
         const interval=input('p','lightslingerInterval','Seconds between Lightslinger procs',{min:0.01}),normal=calc('p','TotalDamage',s),critical=calc('p','CritDamage',s);
-        row('Lightslinger second shot',finite(normal.value)&&finite(critical.value)?normal.value*(1-chance)+critical.value*chance:null,'physical',1,normal.text+' (with average critical strikes)',{interval:finite(interval)&&interval>0?interval:null,onHit:false,extraHit:true});
+        row('Lightslinger second shot',finite(normal.value)&&finite(critical.value)?normal.value*(1-chance)+critical.value*chance:null,'physical',1,normal.text+' (with average critical strikes)',{interval:finite(interval)&&interval>0?interval:null,onHit:false,extraHit:true,sourceSlot:'p'});
       }
       if(name==='Teemo'&&rank('e')){const r=calc('e','TickCalculatedDamage',s);row('Toxic Shot poison (refreshes; does not stack)',r.value,'magic',1,r.text,{dot:true,duration:data('e','PoisonDuration')});}
       const active={
@@ -333,7 +346,8 @@
         }
       }
       if(enabled(3161,'focused-will')){
-        const stacks=input('attack','shojinStacks','Focused Will stacks',{max:itemData(3161,'StackCount')}),factor=1+(Number(stacks)||0)*itemData(3161,'SpellDamageIncrease')*(ctx.ranged?itemData(3161,'RangedMod'):1);
+        input('attack','shojinStacks','Focused Will stacks',{max:itemData(3161,'StackCount'),step:1});
+        const factor=abilityModifiers(s).abilityDamageMultiplier;
         amplify(factor,r=>r.source==='champion'&&!r.replacementDebit,'Focused Will');
       }
       if(enabled(2523,'magnification')){
@@ -400,7 +414,7 @@
       formula.push(...warnings);
       return {autoAttackDamage:damage,attackDps:dps,rawAutoAttackDamage:rawDamage,rawAttackDps:rawDps,attackRange:s.attackRange,rate,rows,controls:[...new Map(controls.map(c=>[c.key,c])).values()],warnings,partial:!!unsupported[name]&&!extended.covered,breakdown:formula.join('\n')};
     }
-    return {apply,profile};
+    return {apply,profile,abilityModifiers};
   }
   scope.AttackEffects={model,averageCrit,itemPassiveBindings};
 })(typeof window!=='undefined'?window:globalThis);

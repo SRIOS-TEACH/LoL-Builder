@@ -20,6 +20,11 @@
 
   function mitigated(a,target,stats) {
     const helper=scope.TargetDamage;
+    const amplification=finite(stats?.abilityDamageMultiplier)?stats.abilityDamageMultiplier:1;
+    if(amplification!==1){
+      a=multiply(a,amplification);
+      a.text+=' [Spear of Shojin: Focused Will]';
+    }
     const packets=a.components.filter(c=>c.value!==0).map(c=>{
       const result=helper?helper.apply(c.value,c.type,{target,stats}):{value:c.value,rawValue:c.value,type:c.type,multiplier:1,text:target?.enabled?'Target mitigation unavailable.':`Raw ${c.type || 'untyped'} damage: ${fmt(c.value)}`};
       return {...c,...result};
@@ -76,7 +81,7 @@
       } else if (/^\d+(?:\.\d+)?$/.test(skeleton)) value = Number(skeleton);
       else if(target?.enabled && !/\byour\b|\bown\b/i.test(skeleton)) {
         let index=0;
-        const parts=skeleton.split(/\s*\+\s*/).map(term=>{
+        const parts=skeleton.split(/\s*(?:\+|\bplus\b)\s*/i).map(term=>{
           const match=term.match(/^(#|\d+(?:\.\d+)?)(%)?\s*(?:(?:of\s+)?(?:the\s+)?(?:target(?:'s)?|enemy(?:'s)?|their|its)\s+)?(max(?:imum)?|current|missing)\s+(?:health|hp)$/i);
           const coefficient=term.includes('#')?resolved[index++]:null;
           if(!match)return term==='#'&&coefficient&&!coefficient.isPercent&&finite(coefficient.numeric)?coefficient.numeric:null;
@@ -131,6 +136,56 @@
       }
     }
     return types;
+  }
+
+  // Explicit attack effects from the corresponding game tooltip. These are
+  // damage per empowered attack, not a spell cast repeated at attack speed.
+  const onHitModels={
+    WujuStyle:{totaldamage:{duration:'duration'}},
+    KogMawBioArcaneBarrage:{totalhealthdamage:{duration:'duration'}},
+    GwenE:{onhitdamage:{duration:'buffduration'}},
+    Obduracy:{totalbonusdamage:{hits:1},thunderclapsplash:{duration:'thunderclapbuffduration'}},
+    FizzW:{dotdamage:{dotDuration:'bleedduration'},activedamage:{hits:1},onhitbuffdamage:{duration:'onhitbuffduration'}},
+    VorpalSpikes:{flatdamagecalc:{hits:3}},
+    ShenQ:{baseflatdamage:{hits:'numenhancedattacks'},basepercenthealth:{hits:'numenhancedattacks'},emppercenthealth:{hits:'numenhancedattacks'}},
+    NamiE:{totaldamage:{duration:'buffduration',hits:'hitcount'}},
+    XinZhaoQ:{bonusdamage:{hits:3}},
+    TeemoE:{impactcalculateddamage:{passive:true},totaldotdamage:{dotDuration:'poisonduration'}},
+    VarusW:{onhitdamage:{passive:true}},
+    KayleE:{epassivetotaldamage:{passive:true},activetotalexecutedamage:{hits:1}},
+    JaxW:{totaldamage:{hits:1}},
+    JaxR:{onhitdamage:{passive:true,cadence:3}},
+    VayneTumble:{adratiobonus:{hits:1}},
+    VayneSilveredBolts:{totaldamage:{passive:true,cadence:3}},
+    NetherBlade:{onhitdamage:{passive:true},activedamage:{hits:1}},
+    CardmasterStack:{bonusdamage:{passive:true,cadence:4}},
+    NeekoW:{passivebonusdamagecalc:{passive:true,cadence:3}},
+    KennenShurikenStorm:{totaldamagepassive:{passive:true,cadence:5}},
+    ViW:{totaldamagetooltip:{passive:true,cadence:3}},
+    StaticField:{passivedamage:{passive:true,condition:'While Static Field is ready'}},
+    QiyanaW:{onhitdamage:{passive:true,condition:'While holding an element'}},
+    LeonaShieldOfDaybreak:{totaldamagetooltip:{hits:1}},
+    EkkoE:{totaldamage:{hits:1}},
+    MonkeyKingDoubleAttack:{bonusdamagett:{hits:1}},
+    YorickQ:{bonusdamage:{hits:1}},
+    SonaQ:{totalonhitdamage:{hits:1}},
+  };
+
+  function onHitTiming(damage,rate,{cooldown:cd=null,duration=null,hits=null,cadence=1,passive=false,dotDuration=null}={}) {
+    const active=finite(rate)&&rate>=0&&finite(cadence)&&cadence>0?rate/cadence:null;
+    if(dotDuration!==null){
+      const multiplier=finite(active)&&finite(dotDuration)&&dotDuration>0?Math.min(active,1/dotDuration):null;
+      return {activeMultiplier:multiplier,overallMultiplier:multiplier,activeDps:finite(damage)&&finite(multiplier)?damage*multiplier:null,overallDps:null,passive:true,dot:true,rate,cadence,dotDuration};
+    }
+    if(passive)return {activeMultiplier:active,overallMultiplier:active,activeDps:finite(damage)&&finite(active)?damage*active:null,overallDps:null,passive:true,rate,cadence};
+    let uptime=duration;
+    if(hits!==null){
+      const hitTime=finite(hits)&&hits>=0&&finite(active)&&active>0?hits/active:null;
+      uptime=duration===null?hitTime:finite(hitTime)&&finite(duration)?Math.min(duration,hitTime):null;
+    }
+    const cycle=cycleTime(cd,[uptime]);
+    const multiplier=finite(active)&&finite(uptime)&&finite(cycle)?active*uptime/cycle:null;
+    return {activeMultiplier:active,overallMultiplier:multiplier,activeDps:finite(damage)&&finite(active)?damage*active:null,overallDps:finite(damage)&&finite(multiplier)?damage*multiplier:null,passive:false,rate,cadence,duration:uptime,cooldown:cd,cycle};
   }
 
   function profile({spell, rank, cooldown:cd, tooltip = '', resolve, payload, timing = {}, target, stats = {}}) {
@@ -281,7 +336,16 @@
       case 'Bushwhack':
         add('Full bleed duration',multiply(token('DamagePerSecond'),number('DotDuration')));break;
       default:
-        components(tooltip,resolve,{target}).forEach(row=>add(row.label,row.damage));
+        components(tooltip,resolve,{target}).forEach(row=>{
+          add(row.label,row.damage);
+          const keys=[...row.identity.matchAll(/\{\{\s*([^}]+?)\s*\}\}/g)].map(match=>tokenKey(match[1]));
+          const binding=Object.entries(onHitModels[spell.id]||{}).find(([key])=>keys.includes(key))?.[1];
+          if(binding){
+            const numeric=value=>typeof value==='string'?number(value):value;
+            rows.at(-1).onHitTiming={...binding,duration:numeric(binding.duration)??null,hits:numeric(binding.hits)??null,dotDuration:numeric(binding.dotDuration)??null,cooldown:cd};
+            if(binding.condition)rows.at(-1).label+=' ('+binding.condition+')';
+          }
+        });
     }
     if (!rows.length) {
       // Absence of a typed number does not prove there is no damaging mechanic.
@@ -291,6 +355,10 @@
     }
     if(rows.some(r=>r.sweet)&&!note.includes('Parentheses')&&!note.includes('parentheses'))note+=' Parentheses show the sweet-spot outcome.';
     rows.forEach(r=>{r.damage=mitigated(r.damage,target,stats);if(r.sweet)r.sweet=mitigated(r.sweet,target,stats);});
+    rows.forEach(r=>{
+      if(r.onHitTiming)r.onHitDps=onHitTiming(r.damage.value,stats.attackSpeed,r.onHitTiming);
+    });
+    if(rows.some(r=>r.onHitDps))note+=' On-hit damage is per empowered attack. DPS uses the current build’s attack speed and listed hit cadence. Active effects show active / overall DPS; overall averages attacks over active duration + adjusted cooldown, including attack-count limits. This comparison excludes cooldown refunds and resets.';
     if(target?.enabled) {
       note=note.replace(/before mitigation/gi,'after target mitigation');
       note+=' Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction.';
@@ -299,14 +367,34 @@
     return {rows,note:note+(rows.some(r=>r.damage.value===null)?' Target-dependent or unresolved damage stays symbolic.':'')};
   }
 
+  function passiveProfile(attack) {
+    const rows=(attack?.rows||[]).filter(r=>r.source==='champion'&&r.sourceSlot==='p').map(r=>({
+      label:r.label,
+      damage:{...amount(r.perHit,r.formula,r.type),rawValue:r.rawPerHit,
+        breakdownText:[r.formula,r.targetExplanation,`Average contribution per attack; ${r.cadence||1} attacks per proc${Object.hasOwn(r,'interval')?`, selected interval ${finite(r.interval)?r.interval:'unavailable'} seconds`:''}.`].filter(Boolean).join('\n')},
+      onHitDps:{activeDps:r.perSecond,passive:true,rate:attack.rate,cadence:r.cadence||1},
+    }));
+    return {rows,status:'No enabled passive attack damage',note:'Passive damage is the average bonus per attack. DPS uses the current attack speed and configured proc cadence, including refreshed damage over time. Conditional effects use the controls in this card; target mitigation matches the Attack calculation.'};
+  }
+
   function render(result) {
     if (!result.rows.length) return `<div class="ability-dps"><strong>Damage:</strong> ${escape(result.status)}</div>`;
     const damage=a=>finite(a.value)?fmt(a.value):a.text;
     const dps=(a,period)=>!finite(period)||period<=0?'Unavailable (no repeat cooldown)':finite(a.value)?fmt(a.value/period):`(${a.text}) ÷ ${period.toFixed(2)}s`;
     const explanation=r=>[r.damage.breakdownText,r.sweet?`Sweet spot:\n${r.sweet.breakdownText}`:''].filter(Boolean).join('\n');
-    return `<div class="ability-dps"><strong>Damage</strong><table class="ability-dps-table"><thead><tr><th>Part</th><th>Damage</th><th>DPS</th></tr></thead><tbody>${result.rows.map(r=>`<tr><td>${escape(r.label)}</td><td title="${escape(explanation(r))}">${escape(damage(r.damage))}${r.sweet?` (${escape(damage(r.sweet))})`:''}</td><td title="${escape(explanation(r)+(finite(r.period)?`\nDamage ÷ ${r.period.toFixed(2)}s cooldown/cycle`:'\nRepeat cooldown unavailable'))}">${r.timingMissing?'Enter recast timing':escape(dps(r.damage,r.period))}${r.sweet?` (${escape(dps(r.sweet,r.period))})`:''}</td></tr>`).join('')}</tbody></table><small>${escape(result.note)}</small></div>`;
+    const timingExplanation=r=>{
+      if(!r.onHitDps)return finite(r.period)?`\nDamage ÷ ${r.period.toFixed(2)}s cooldown/cycle`:'\nRepeat cooldown unavailable';
+      const t=r.onHitDps;
+      const active=`\nActive DPS: bonus damage × ${fmt(t.rate)} attacks/s ÷ ${t.cadence} attacks per proc.`;
+      if(t.dot)return `\nPoison refreshes without stacking: total poison damage × min(${fmt(t.rate)} attacks/s, 1 ÷ ${fmt(t.dotDuration)}s duration).`;
+      return active+(t.passive?'':`\nOverall DPS: active DPS × ${fmt(t.duration)}s active duration ÷ (${fmt(t.duration)}s active duration + ${fmt(t.cooldown)}s cooldown). Display order: active / overall.`);
+    };
+    const renderedDps=r=>r.onHitDps
+      ?`${finite(r.onHitDps.activeDps)?fmt(r.onHitDps.activeDps):'Unavailable (damage or attack speed)'}${r.onHitDps.passive?'':` / ${finite(r.onHitDps.overallDps)?fmt(r.onHitDps.overallDps):'Unavailable (damage or timing)'}`}`
+      :r.timingMissing?'Enter recast timing':dps(r.dpsAmount||r.damage,r.period);
+    return `<div class="ability-dps"><strong>Damage</strong><table class="ability-dps-table"><thead><tr><th>Part</th><th>Damage</th><th>DPS</th></tr></thead><tbody>${result.rows.map(r=>`<tr><td>${escape(r.label)}</td><td title="${escape(explanation(r))}">${escape(damage(r.damage))}${r.sweet?` (${escape(damage(r.sweet))})`:''}</td><td title="${escape(explanation(r)+timingExplanation(r))}">${escape(renderedDps(r))}${r.sweet?` (${escape(dps(r.sweetDpsAmount||r.sweet,r.period))})`:''}</td></tr>`).join('')}</tbody></table><small>${escape(result.note)}</small></div>`;
   }
-  const api={cooldown,cycleTime,components,profile,render,timingFields};
+  const api={cooldown,cycleTime,components,profile,render,timingFields,onHitTiming,passiveProfile};
   scope.AbilityDps=api;
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
