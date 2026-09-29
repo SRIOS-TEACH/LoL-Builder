@@ -257,6 +257,13 @@ async function initBuilder() {
 }
 
 function initTargetSettings() {
+  const modal = document.getElementById('targetModal');
+  document.getElementById('targetSettingsBtn').addEventListener('click', () => modal.showModal());
+  document.getElementById('closeTargetModal').addEventListener('click', () => modal.close());
+  modal.addEventListener('close', () => document.getElementById('targetSettingsBtn').focus());
+  let backdrop = false;
+  modal.addEventListener('pointerdown', event => { backdrop = event.target === modal && (event.offsetX < 0 || event.offsetY < 0 || event.offsetX > modal.clientWidth || event.offsetY > modal.clientHeight); });
+  modal.addEventListener('click', event => { if (backdrop && event.target === modal) modal.close(); backdrop = false; });
   const fields={targetMaxHp:'maxHp',targetCurrentHp:'currentHp',targetArmor:'armor',targetMr:'mr',targetDamageReduction:'damageReduction'};
   const sync=()=>{
     BUILDER.target=window.TargetDamage.normalize(BUILDER.target);
@@ -2327,6 +2334,7 @@ function renderAlternateAbilityDps(spell, rank, slot) {
 }
 
 function renderAbilityCards() {
+  window.ComboUI?.refresh();
   const root = document.getElementById("abilityCards");
   const openControls = new Set(root.dataset.champion === BUILDER.selectedChampion ? [...root.querySelectorAll("[data-controls-slot][open]")].map(el=>el.dataset.controlsSlot) : []);
   root.dataset.champion = BUILDER.selectedChampion || "";

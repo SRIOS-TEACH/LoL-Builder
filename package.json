@@ -10,7 +10,8 @@
     "test:dashboard": "node tests/dashboard-browser.cjs",
     "test:pickers": "node tests/picker-browser.cjs",
     "test:passives": "node tests/passives-browser.cjs",
-    "test:targets": "node tests/target-browser.cjs"
+    "test:targets": "node tests/target-browser.cjs",
+    "test:combos": "node tests/combo-browser.cjs"
   },
   "engines": {
     "node": ">=20"

@@ -26,6 +26,7 @@
           </div>
           <label class="champ-level-control toolbar-level">Level <select id="builderLevel" class="form-control"></select></label>
           <div class="toolbar-build"><div class="toolbar-items-label"><span class="dashboard-label">Items</span><span class="build-gold" aria-label="Total build cost: 0 gold" title="Total build cost"><img src="assets/shop/gold.png" alt="" aria-hidden="true"><span id="buildGoldCost">0</span></span></div><div id="itemSlots" class="item-slots item-slots-icons"></div></div>
+          <div class="toolbar-target"><button id="targetSettingsBtn" class="btn btn-sm" type="button">Target settings</button><button id="targetEnabled" class="btn btn-sm" type="button" aria-label="Apply target settings" aria-pressed="false">Off</button></div>
           <label class="toolbar-skin">Skin<select id="skinSelector" class="form-control" disabled><option>Original</option></select></label>
           <div class="toolbar-conditions"><button id="passiveToggleBtn" class="btn btn-sm" type="button">Passives</button><label class="game-time-control" for="gameTime">Game time <span><input id="gameTime" class="form-control" type="number" min="0" step="any" value="0" aria-label="Game time in minutes"> min</span></label></div>
           <p id="builderStatus" class="status-text" role="status"></p>
@@ -37,8 +38,24 @@
         <section class="dashboard-center"><div class="dashboard-heading"><h2>Abilities</h2><small id="abilityRuleHint" class="text-muted"></small></div><div id="abilityCards" class="ability-grid ability-layout"></div></section>
         <aside class="dashboard-right">
           <section id="attackSummary" aria-label="Attack results"></section>
-          <section class="section-card dashboard-panel target-panel">
-            <div class="target-heading"><h2>Target settings</h2><button id="targetEnabled" class="btn btn-sm" type="button" aria-label="Apply target settings" aria-pressed="false">Off</button></div>
+          <section id="comboPanel" class="section-card dashboard-panel combo-panel" aria-label="Combo Tester">
+            <div class="target-heading"><h2>Combo Tester</h2><button id="comboClear" class="btn btn-sm" type="button">Clear</button></div>
+            <p class="text-muted">Add actions in the order you want to use them.</p>
+            <div id="comboQuick" class="combo-quick"></div>
+            <label for="comboAction">Ability variant / item effect</label>
+            <select id="comboAction" class="form-control"></select>
+            <button id="comboAdd" class="btn btn-sm" type="button">Add action</button>
+            <div id="comboResult" class="combo-result" role="status" aria-live="polite"></div>
+            <ol id="comboSteps" class="combo-steps"></ol>
+            <details class="dashboard-detail"><summary>How this estimate works</summary><p>One target, all selected hits land, all actions initially ready. Timing is from the first action to the end of the last cast, including cooldown waits and attack windups. No travel time, movement, animation cancels, cooldown refunds or resource limits. Target health and combat conditions stay at their configured values.</p><p>AA uses the attack's base damage with average critical strikes. Add bonus effects explicitly; they are not automatically triggered by the sequence. Ability rows can describe one component, a full duration, or bonus damage: choose the outcome you intend. Recast prerequisites and known windows are checked; other proc conditions are assumed satisfied.</p><p>Missing values stay unavailable. Expand a step to enter scenario values in seconds or damage after target defences; overrides remain fixed when your build changes.</p></details>
+          </section>
+        </aside>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="targetModal" class="target-modal" aria-labelledby="targetModalTitle">
+    <div class="item-modal-header"><h3 id="targetModalTitle">Target settings</h3><button id="closeTargetModal" class="btn btn-sm" type="button" autofocus>Close ×</button></div>
             <div id="targetFields" class="target-fields">
               <label for="targetMaxHp">Max HP<input id="targetMaxHp" class="form-control" type="number" min="1" step="any" value="2000"></label>
               <label for="targetCurrentHp">Current HP<input id="targetCurrentHp" class="form-control" type="number" min="0" max="2000" step="any" value="2000"></label>
@@ -48,11 +65,7 @@
             </div>
             <p id="targetStatus" class="target-hint text-muted">Off: damage before target defences.</p>
             <h3 class="attack-settings-heading">Attack settings</h3><p class="target-hint attack-settings-hint text-muted">Select a champion to configure combat conditions.</p><div id="combatInputs" class="combat-inputs"></div><div id="attackSettings"></div>
-          </section>
-        </aside>
-      </main>
-    </div>
-  </div>
+  </dialog>
 
   <div id="itemModal" class="item-modal hidden shop-modal" role="dialog" aria-modal="true" aria-labelledby="itemModalTitle">
     <div class="item-modal-body item-modal-wide picker-shell">
@@ -125,6 +138,8 @@
   <script src="JS/shared/attackChampions.js"></script>
   <script src="JS/shared/itemData.js"></script>
   <script src="JS/shared/itemDescriptions.js"></script>
+  <script src="JS/shared/comboTester.js"></script>
   <script src="JS/builder.js"></script>
+  <script src="JS/comboUI.js"></script>
 </body>
 </html>

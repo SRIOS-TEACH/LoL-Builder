@@ -58,8 +58,11 @@ const server = http.createServer((request, response) => {
       await page.locator('#builderLevel').selectOption('18');
     };
     const edit = async (selector, value) => {
+      const needsDialog = await page.locator(selector).evaluate(el => !!el.closest('#targetModal') && !el.closest('#targetModal').open);
+      if (needsDialog) await page.locator('#targetSettingsBtn').click();
       await page.locator(selector).fill(String(value));
       await page.locator(selector).press('Tab');
+      if (needsDialog) await page.locator('#closeTargetModal').click();
     };
     const equip = ids => page.evaluate(ids => {
       BUILDER.itemSlots = Array.from({ length: 7 }, (_, index) => ids[index] || '');
@@ -70,8 +73,10 @@ const server = http.createServer((request, response) => {
       assert.equal(await page.locator('#targetEnabled').getAttribute('aria-pressed'), String(value));
     };
     const target = async values => {
+      await page.locator("#targetSettingsBtn").click();
       const controls = { maxHp: '#targetMaxHp', currentHp: '#targetCurrentHp', armor: '#targetArmor', mr: '#targetMr', damageReduction: '#targetDamageReduction' };
       for (const [key, value] of Object.entries(values)) await edit(controls[key], value);
+      await page.locator("#closeTargetModal").click();
     };
     const result = () => page.evaluate(() => {
       const stats = computeDerivedBuildStats();
@@ -210,7 +215,9 @@ const server = http.createServer((request, response) => {
     assert.equal(await kogToggle.getAttribute('aria-pressed'), 'false', 'Kog W starts inactive');
     // Edit a focused target, then click the ability immediately: blur must not
     // replace the button between pointerdown and pointerup and swallow its click.
+    await page.locator('#targetSettingsBtn').click();
     await page.locator('#targetCurrentHp').fill('1800');
+    await page.locator('#closeTargetModal').click();
     await kogToggle.click();
     assert.equal(await kogToggle.getAttribute('aria-pressed'), 'true', 'Kog W toggle activates the on-hit');
     assert.equal((await result()).target.currentHp, 1800, 'a direct target-edit-to-ability-click retains the edit');
@@ -342,7 +349,9 @@ const server = http.createServer((request, response) => {
 
     await select('Ezreal');
     await equip(['3100']);
+    await page.locator('#targetSettingsBtn').click();
     await page.locator('[data-attack-control="attack:spellblade"]').click();
+    await page.locator('#closeTargetModal').click();
     await page.locator('#passiveToggleBtn').click();
     const lichText = await page.locator('[data-passive-section="3100:spellblade"]').innerText();
     current = await result();
@@ -358,7 +367,9 @@ const server = http.createServer((request, response) => {
     await select('Ahri');
     await equip(['4645', '3100']);
     await target({ maxHp: 4000, currentHp: 1600, armor: 100, mr: 300, damageReduction: 20 });
+    await page.locator('#targetSettingsBtn').click();
     await page.locator('[data-attack-control="attack:spellblade"]').click();
+    await page.locator('#closeTargetModal').click();
     const shadowThreshold = { rows: await rows('q'), result: await result() };
     const thresholdLich = shadowThreshold.result.attack.rows.find(row => String(row.spellbladeId) === '3100');
     await page.locator('#passiveToggleBtn').click();
@@ -395,7 +406,9 @@ const server = http.createServer((request, response) => {
 
     await select('Ezreal');
     await equip(['3100']);
+    await page.locator('#targetSettingsBtn').click();
     await page.locator('[data-attack-control="attack:spellblade"]').click();
+    await page.locator('#closeTargetModal').click();
 
     await target({ maxHp: 1000, currentHp: 2000, damageReduction: 125 });
     assert.equal(await page.locator('#targetCurrentHp').inputValue(), '1000', 'current HP cannot exceed max HP');
