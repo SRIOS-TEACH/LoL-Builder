@@ -70,10 +70,10 @@
     const times=(slot,key,label)=>input(slot,key,label,{min:.01});
     const proc=(slot,id,label,value,type='magic',extra={})=>{
       const interval=times(slot,id+'Interval','Seconds between '+label+' hits');
-      row(label,value,type,1,extra.formula||label,{onHit:false,interval:finite(interval)&&interval>0?interval:null,...extra});
+      row(label,value,type,1,extra.formula||label,{onHit:false,interval:finite(interval)&&interval>0?interval:null,sourceSlot:slot,...extra});
     };
-    const damage=(slot,key,label,type='magic',cadence=1,extra={})=>{const r=calc(slot,key,s);row(label,r.value,type,cadence,r.text,extra);};
-    const dot=(slot,key,label,type,duration,stacks=1)=>{const total=v(slot,key);row(label,finite(total)&&finite(duration)&&duration>0?total*stacks/duration:null,type,1,`${key} × stacks / ${duration}s`,{dot:true,duration});};
+    const damage=(slot,key,label,type='magic',cadence=1,extra={})=>{const r=calc(slot,key,s);row(label,r.value,type,cadence,r.text,{sourceSlot:slot,sourceKey:key,...extra});};
+    const dot=(slot,key,label,type,duration,stacks=1)=>{const total=v(slot,key);row(label,finite(total)&&finite(duration)&&duration>0?total*stacks/duration:null,type,1,`${key} × stacks / ${duration}s`,{dot:true,duration,sourceSlot:slot,sourceKey:key});};
     const healthProc=(slot,id,label,key,type='magic',stat='hp')=>{
       if(toggle(slot,id,label+' procs enabled')){const health=stat==='missing'?missing():hp(stat),fraction=v(slot,key);proc(slot,id,label,finite(health)&&finite(fraction)?health*fraction:null,type,{formula:`${key} × target ${stat}`});}
     };
@@ -83,10 +83,10 @@
       if(toggle('w','trapHeadshot','Trap Headshots enabled'))proc('w','trapHeadshot','Yordle Snap Trap Headshot',v('w','HeadShotBonusDamage')+v('p','HeadShotBonusDamage'),'physical',{attackDamage:true});
     }
     if(name==='Yunara'){
-      const amp=v('p','Calc_Damage_Amp');row('Vow of the First Lands',finite(amp)?s.ad*crit*chance*amp:null,'magic',1,'AD × critical multiplier × critical chance × passive ratio',{onHit:false});
+      const amp=v('p','Calc_Damage_Amp');row('Vow of the First Lands',finite(amp)?s.ad*crit*chance*amp:null,'magic',1,'AD × critical multiplier × critical chance × passive ratio',{onHit:false,sourceSlot:'p'});
       if(rank('q'))damage('q',toggle('q','cultivation','Cultivation of Spirit active')?'Calc_Damage':'Calc_Passive_Damage','Cultivation of Spirit');
     }
-    if(name==='Samira'&&toggle('p','samiraMelee','Melee attacks')){const max=hp(),current=hp('currentHp'),d=v('p','BonusMeleeDamage');row('Daredevil Impulse',finite(max)&&max>0&&finite(current)&&finite(d)?d*(1+clamp(1-current/max,0,1)):null,'magic',1,'BonusMeleeDamage × (1 + target missing-health fraction)',{onHit:false});}
+    if(name==='Samira'&&toggle('p','samiraMelee','Melee attacks')){const max=hp(),current=hp('currentHp'),d=v('p','BonusMeleeDamage');row('Daredevil Impulse',finite(max)&&max>0&&finite(current)&&finite(d)?d*(1+clamp(1-current/max,0,1)):null,'magic',1,'BonusMeleeDamage × (1 + target missing-health fraction)',{onHit:false,sourceSlot:'p'});}
     if(name==='Darius'){
       toggle('p','noxianMight','Noxian Might active');
       const stacks=input('p','hemorrhage','Hemorrhage stacks',{max:data('p','MaxStacks')})??0;
@@ -147,15 +147,15 @@
     if(name==='Twitch'){
       toggle('r','spray','Spray and Pray active');
       const stacks=input('p','venomStacks','Deadly Venom stacks',{max:data('p','MaxStacks')})??0,d=v('p','DamagePerSecond');
-      row('Deadly Venom',finite(d)?d*stacks:null,'true',1,'DamagePerSecond × stacks',{dot:true,duration:data('p','Duration')});
+      row('Deadly Venom',finite(d)?d*stacks:null,'true',1,'DamagePerSecond × stacks',{dot:true,duration:data('p','Duration'),sourceSlot:'p'});
     }
     if(name==='Rumble'&&toggle('p','overheat','Overheat active')){
       const max=hp(),d=v('p','TotalBaseDamage'),fraction=data('p','OverheatPercBonusDamage');
-      row('Overheat',finite(d)&&finite(max)&&finite(fraction)?d+fraction*max:null,'magic',1,'TotalBaseDamage + OverheatPercBonusDamage × target HP');
+      row('Overheat',finite(d)&&finite(max)&&finite(fraction)?d+fraction*max:null,'magic',1,'TotalBaseDamage + OverheatPercBonusDamage × target HP',{sourceSlot:'p'});
     }
     if(name==='Sejuani')healthProc('p','icebreaker','Icebreaker','PercentHPDamage');
     if(name==='Skarner'){
-      if(toggle('p','quaking','Quaking sustained three-stack damage')){const max=hp(),fraction=v('p','PercentHealthDamage'),duration=data('p','Duration');row('Quaking',finite(max)&&finite(fraction)&&duration>0?max*fraction/duration:null,'magic',1,'target HP × PercentHealthDamage / duration',{dot:true,duration});}
+      if(toggle('p','quaking','Quaking sustained three-stack damage')){const max=hp(),fraction=v('p','PercentHealthDamage'),duration=data('p','Duration');row('Quaking',finite(max)&&finite(fraction)&&duration>0?max*fraction/duration:null,'magic',1,'target HP × PercentHealthDamage / duration',{dot:true,duration,sourceSlot:'p'});}
       if(toggle('q','rock','Shattered Earth active')){damage('q','AbilityDamage','Shattered Earth attacks','physical');const max=hp();row('Shattered Earth third attack',finite(max)?max*data('q','MaxHPPercent'):null,'physical',3,'MaxHPPercent × target HP',{onHit:false});}
     }
     if(name==='RekSai'&&toggle('q','queensWrath','Queen’s Wrath active'))damage('q','TotalDamageTooltip','Queen’s Wrath','physical');
@@ -242,7 +242,7 @@
     if(name==='Kalista'&&toggle('p','martialPoise','Martial Poise hopping')){const cycle=times('p','hopCycle','Seconds between attacks while hopping');rate=finite(cycle)?Math.min(rate,1/cycle):null;}
     if(name==='Akshan'){
       damage('p','PassiveProcDamage','Dirty Fighting three-hit damage','magic',3);
-      if(toggle('p','secondShot','Fire Dirty Fighting second shot')){const d=v('p','SecondAutoDamage'),interval=times('p','secondShotInterval','Seconds between double-shot pairs');row('Dirty Fighting second shot',avg(d),'physical',1,'SecondAutoDamage with average crit',{onHit:false,extraHit:1,interval:finite(interval)?interval:null});}
+      if(toggle('p','secondShot','Fire Dirty Fighting second shot')){const d=v('p','SecondAutoDamage'),interval=times('p','secondShotInterval','Seconds between double-shot pairs');row('Dirty Fighting second shot',avg(d),'physical',1,'SecondAutoDamage with average crit',{onHit:false,extraHit:1,interval:finite(interval)?interval:null,sourceSlot:'p'});}
     }
     if(name==='Aphelios'){
       input('p','apheliosAD','AD upgrade ranks',{max:6});input('p','apheliosAS','Attack-speed upgrade ranks',{max:6});
@@ -250,7 +250,7 @@
       const aliases=['{9501e989}','{c872c72d}','{b3ce4169}','{d29e7023}','{ad4cfba9}'];
       base=avg(v(aliases[weapon],'AttackDamage'));
       if(weapon===0&&toggle('q','calibrumMark','Consume Calibrum mark'))proc('q','calibrumMark','Calibrum mark bonus',v(aliases[0],'BonusDamagePerMark'),'physical');
-      if(weapon===4){const n=input('p','chakrams','Mirror chakrams',{max:20})??0,max=data(aliases[4],'MiniDamageRatioMax'),min=data(aliases[4],'MiniDamageRatioMin'),decrement=data(aliases[4],'MiniDamageRatioDecPer');let ratio=0;for(let i=0;i<n;i++)ratio+=Math.max(min,max-i*decrement);row('Crescendum mirror chakrams',avg(s.ad*ratio),'physical',1,'AD × sum of diminishing mirror ratios × average crit',{onHit:false,attackDamage:true});const cycle=times('p','chakramCycle','Seconds between Crescendum attacks (return flight included)');rate=finite(cycle)?1/cycle:null;}
+      if(weapon===4){const n=input('p','chakrams','Mirror chakrams',{max:20})??0,max=data(aliases[4],'MiniDamageRatioMax'),min=data(aliases[4],'MiniDamageRatioMin'),decrement=data(aliases[4],'MiniDamageRatioDecPer');let ratio=0;for(let i=0;i<n;i++)ratio+=Math.max(min,max-i*decrement);row('Crescendum mirror chakrams',avg(s.ad*ratio),'physical',1,'AD × sum of diminishing mirror ratios × average crit',{onHit:false,attackDamage:true,sourceSlot:'p'});const cycle=times('p','chakramCycle','Seconds between Crescendum attacks (return flight included)');rate=finite(cycle)?1/cycle:null;}
     }
     return {base,rate,onHitScale,baseType,notes,covered:covered.has(name)};
   }

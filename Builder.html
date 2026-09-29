@@ -27,12 +27,12 @@
           <label class="champ-level-control toolbar-level">Level <select id="builderLevel" class="form-control"></select></label>
           <div class="toolbar-build"><div class="toolbar-items-label"><span class="dashboard-label">Items</span><span class="build-gold" aria-label="Total build cost: 0 gold" title="Total build cost"><img src="assets/shop/gold.png" alt="" aria-hidden="true"><span id="buildGoldCost">0</span></span></div><div id="itemSlots" class="item-slots item-slots-icons"></div></div>
           <label class="toolbar-skin">Skin<select id="skinSelector" class="form-control" disabled><option>Original</option></select></label>
-          <button id="passiveToggleBtn" class="btn btn-sm" type="button">Passives</button>
+          <div class="toolbar-conditions"><button id="passiveToggleBtn" class="btn btn-sm" type="button">Passives</button><label class="game-time-control" for="gameTime">Game time <span><input id="gameTime" class="form-control" type="number" min="0" step="any" value="0" aria-label="Game time in minutes"> min</span></label></div>
           <p id="builderStatus" class="status-text" role="status"></p>
         </header>
         <aside class="dashboard-left">
           <section class="section-card dashboard-panel"><h2>Champion stats</h2><div id="statsTable" class="stats-table-wrap"></div></section>
-          <section id="runesCard" class="section-card dashboard-panel rune-panel"><h2>Selected runes</h2><div id="runePanel" class="rune-panel-grid"></div></section>
+          <section id="runesCard" class="section-card dashboard-panel rune-panel"><div class="rune-panel-heading"><h2>Selected runes</h2><button id="runeStacksBtn" class="btn btn-sm" type="button">Stacks</button></div><div id="runePanel" class="rune-panel-grid"></div></section>
         </aside>
         <section class="dashboard-center"><div class="dashboard-heading"><h2>Abilities</h2><small id="abilityRuleHint" class="text-muted"></small></div><div id="abilityCards" class="ability-grid ability-layout"></div></section>
         <aside class="dashboard-right">
@@ -91,6 +91,14 @@
     </div>
   </div>
 
+  <div id="runeStacksModal" class="item-modal hidden" role="dialog" aria-modal="true" aria-labelledby="runeStacksTitle">
+    <div class="item-modal-body rune-modal-body">
+      <div class="item-modal-header"><h3 id="runeStacksTitle">Rune stacks</h3><button id="closeRuneStacksBtn" class="btn btn-sm" type="button">Close</button></div>
+      <div id="runeStacksList" class="rune-stack-list"></div>
+    </div>
+  </div>
+  <div id="runeTooltip" class="rune-floating-tooltip" role="tooltip" hidden></div>
+
   <div id="passiveModal" class="item-modal hidden" role="dialog" aria-modal="true">
     <div class="item-modal-body rune-modal-body">
       <div class="item-modal-header">
@@ -107,7 +115,9 @@
   <script src="JS/shared/targetDamage.js"></script>
   <script src="JS/shared/damageText.js"></script>
   <script src="JS/shared/abilityDps.js"></script>
+  <script src="JS/shared/abilityOnHit.js"></script>
   <script src="JS/shared/buildStats.js"></script>
+  <script src="JS/shared/runeEffects.js"></script>
   <script src="JS/shared/calculations.js"></script>
   <script src="JS/shared/combatInputs.js"></script>
   <script src="JS/shared/championEffects.js"></script>

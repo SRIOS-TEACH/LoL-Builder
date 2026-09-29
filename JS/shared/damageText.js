@@ -4,7 +4,10 @@
   const plain=value=>String(value).replace(/<[^>]*>/g,'');
   const number=value=>Number.isFinite(value)?Number(value.toFixed(2)).toLocaleString('en-US'):'Value unavailable';
   const pattern=syntax=>syntax==='item'?/@([^@]+)@(%)?/g:/\{\{\s*([^}]+?)\s*\}\}(%)?/g;
+  const abilityMultiplier=context=>Number.isFinite(context?.stats?.abilityDamageMultiplier)?Math.max(0,context.stats.abilityDamageMultiplier):1;
   function damage(value,type,context,equation=''){
+    const multiplier=abilityMultiplier(context);
+    if(multiplier!==1){equation=[equation,`${number(value)} × ${number(multiplier)} Focused Will`].filter(Boolean).join('; ');value=Number.isFinite(value)?value*multiplier:value;}
     const row=scope.TargetDamage.apply(value,type,context);
     return `<span class="target-damage-number" tabindex="0" data-raw-damage="${value}" data-damage-type="${type}" title="${escape([equation,row.text].filter(Boolean).join('; '))}">${number(row.value)}</span>`;
   }
@@ -12,7 +15,7 @@
     const resolveOrdinary=(full,key,suffix='')=>{
       const row=resolve(key);return row?row.html+(suffix&&!row.isPercent?suffix:''):'<span class="ability-detail-missing">[value unavailable]</span>';
     };
-    const active=context.target?.enabled===true;
+    const active=context.target?.enabled===true||abilityMultiplier(context)!==1;
     let html=String(template||'').replace(/<(physicalDamage|magicDamage|trueDamage)>([\s\S]*?)<\/\1>/gi,(whole,tag,body)=>{
       const type=tag.toLowerCase().replace('damage','');
       const text=plain(body),statOnly=/attack damage|ability power|attack speed|damage reduction|damage (?:is )?reduced|damage amplification|resistance/i.test(text.replace(/\bmagic attack damage\b/gi,'magic damage'));
@@ -33,7 +36,8 @@
           const health=after.match(/^\s*(?:%\s*)?(?:of\s+)?(?:(?:the\s+)?(?:target(?:'s)?|enemy(?:'s)?|their|its)\s+)?(max(?:imum)?|current|missing)\s+(?:health|hp)\b/i);
           const t=scope.TargetDamage.targetStats(context.target);
           const healthValue=health?({max:t.hp,maximum:t.hp,current:t.currentHp,missing:t.missingHp})[health[1].toLowerCase()]:null;
-          const original=resolveOrdinary(full,key,suffix);
+          const multiplier=abilityMultiplier(context);
+          const original=multiplier===1||!health?resolveOrdinary(full,key,suffix):`<span title="${escape(`${number(row.numeric)}% × ${number(multiplier)} Focused Will`)}">${number(row.numeric*multiplier)}${row.isPercent||suffix?'%':''}</span>`;
           return Number.isFinite(healthValue)?`${original} (${damage(row.numeric/100*healthValue,type,context,`${number(row.numeric)}% × ${number(healthValue)} target ${health[1]} HP`)} damage)`:original;
         }
         return damage(row.numeric,type,context,plain(row.html));

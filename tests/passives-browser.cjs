@@ -236,8 +236,47 @@ const server = http.createServer((request, response) => {
     near(warmogOff.championBonuses.hp, warmogOn.championBonuses.hp, 'disabling Vitality retains Feast health');
     await vitality.click();
     near((await result()).stats.hp, warmogOn.hp, 'reenabling Vitality restores only its item-health bonus');
+    await page.locator('#closePassiveModalBtn').click();
+
+    await select('Ahri');
+    await equip(['3161','3118']);
+    const ability = slot => page.evaluate(slot => {
+      const spell=BUILDER.championData.spells[['q','w','e','r'].indexOf(slot)],rank=BUILDER.abilityRanks[slot];
+      const ctx=buildAbilityContext(spell,rank,slot),cooldown=AbilityDps.cooldown(spell,rank,ctx.stats,ctx.cdragonSpell);
+      const profile=AbilityDps.profile({spell,rank,cooldown,tooltip:expandAbilityLocalization(spell.tooltip),
+        resolve:token=>resolveAbilityToken(token,ctx),payload:ctx.cdragonSpell,target:BUILDER.target,stats:ctx.stats});
+      return {haste:ctx.stats.haste,cooldown,baseCooldown:spell.cooldown[rank-1],rows:profile.rows,
+        description:buildDetailedAbilityText(spell,rank,slot,ctx)};
+    },slot);
+    let ahri=(await result()).stats;
+    near(ahri.basicHaste,25,'Dragonforce supplies basic haste');near(ahri.ultimateHaste,20,'Scorn supplies ultimate haste');
+    assert.match(await page.locator('#statsTable').innerText(),/15 \(25\/20\)/,'AH includes the two additional haste pools');
+    const ahTitle=await page.locator('#statsTable .stats-value').evaluateAll(cells=>cells.find(c=>c.title.startsWith('Ability haste:')).title);
+    assert.match(ahTitle,/bonus basic \/ ultimate/);assert.match(ahTitle,/Q\/W\/E use 40/);assert.match(ahTitle,/R uses 35/);
+    let qStats=await ability('q'),rStats=await ability('r');
+    near(qStats.cooldown,qStats.baseCooldown/1.4,'basic cooldown includes Dragonforce');
+    near(rStats.cooldown,rStats.baseCooldown/1.35,'ultimate cooldown includes Scorn');
+    const unstackedQ=qStats.rows.map(r=>r.damage.value);
+    await edit('[data-attack-control="attack:shojinStacks"]',4);
+    qStats=await ability('q');
+    qStats.rows.forEach((row,i)=>near(row.damage.value,unstackedQ[i]*1.06,'ranged Focused Will affects magic and true damage'));
+    assert.match(qStats.description,/Focused Will/,'ability prose explains amplification');
+    await page.locator('#targetEnabled').click();
+    qStats=await ability('q');
+    near(qStats.rows[0].damage.value,unstackedQ[0]*1.06/2,'magic damage is amplified then mitigated once');
+    near(qStats.rows[1].damage.value,unstackedQ[1]*1.06,'amplified true damage bypasses resistance');
+    await page.locator('#targetEnabled').click();
+    await page.locator('#passiveToggleBtn').click();
+    await page.locator('[data-item-passive="3161:focused-will"]').click();
+    (await ability('q')).rows.forEach((row,i)=>near(row.damage.value,unstackedQ[i],'Focused Will switch restores original ability damage'));
+    near((await result()).stats.basicHaste,25,'Focused Will switch retains Dragonforce');
+    await page.locator('[data-item-passive="3161:dragonforce"]').click();
+    qStats=await ability('q');near(qStats.cooldown,qStats.baseCooldown/1.15,'Dragonforce switch removes only basic haste');
+    await page.locator('[data-item-passive="3118:scorn"]').click();
+    rStats=await ability('r');near(rStats.cooldown,rStats.baseCooldown/1.15,'Scorn switch removes only ultimate haste');
+    await page.locator('#closePassiveModalBtn').click();
     assert.deepEqual(errors, []);
-    console.log('Passive browser checks passed: AD growth, champion stacks and prose, item descriptions, Muramana splits and toggles, Spellblade cadence');
+    console.log('Passive browser checks passed: growth, stacks, descriptions, toggles, Spellblade cadence, basic/ultimate haste and Shojin ability damage');
   } finally {
     await browser.close();
     server.close();

@@ -2,6 +2,8 @@
 
 ## Unit regressions
 
+Rune, haste and on-hit follow-up tests include `rune-effects.test.cjs`, `ability-items.test.cjs`, `ability-onhit.test.cjs` and added cases in the existing damage/DPS tests. The dashboard browser suite checks game time, selected rune counters and floating tooltip positioning. The passive browser suite checks separate basic/ultimate haste and Shojin with target settings on/off. The DPS browser suite checks Ezreal/Smolder Spellblade, active on-hit DPS and a passive DPS table. The broad browser suite also recognizes the intentionally disabled standalone lookup pages and verifies their Builder links.
+
 Requires Node 20 or newer, no package installation:
 
 ```sh

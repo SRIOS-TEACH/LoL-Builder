@@ -158,3 +158,84 @@ test('Yorick Maiden Magic Attack Damage resolves as an actual magic damage outco
  assert.equal(result.rows[0].damage.value,20);assert.equal(result.rows[0].damage.rawValue,100);
  assert.equal(result.rows[0].damage.components[0].type,'magic');
 });
+
+test('active on-hit DPS uses attack speed and averages duration plus cooldown',()=>{
+ const input={tooltip:'Attacks deal <trueDamage>{{ totaldamage }} true damage</trueDamage> for {{ duration }} seconds.',stats:{attackSpeed:2}};
+ const result=profile('WujuStyle',{totaldamage:120,duration:5},input),row=result.rows[0];
+ assert.equal(row.damage.value,120);
+ assert.equal(row.onHitDps.activeDps,240);assert.equal(row.onHitDps.overallDps,80);
+ assert.equal(row.onHitDps.cycle,15);
+ assert.match(dps.render(result),/>240\.0 \/ 80\.0<\/td>/);
+ assert.match(dps.render(result),/Display order: active \/ overall/);
+ const faster=profile('WujuStyle',{totaldamage:120,duration:5},{...input,stats:{attackSpeed:3},cooldown:5}).rows[0];
+ assert.equal(faster.onHitDps.activeDps,360);assert.equal(faster.onHitDps.overallDps,180);
+});
+
+test('permanent learned on-hits use their attack cadence even with no spell cooldown',()=>{
+ const result=profile('CardmasterStack',{bonusdamage:120},{cooldown:null,stats:{attackSpeed:2},tooltip:'Every fourth attack deals <magicDamage>{{ bonusdamage }} magic damage</magicDamage>.'});
+ assert.equal(result.rows[0].onHitDps.activeDps,60);
+ assert.match(dps.render(result),/>60\.0<\/td>/);
+ assert.doesNotMatch(dps.render(result),/Repeat cooldown unavailable/);
+});
+
+test('attack-limited buffs finish when their empowered attacks are consumed',()=>{
+ const t=dps.onHitTiming(120,2,{cooldown:10,duration:5,hits:3});
+ assert.equal(t.duration,1.5);assert.equal(t.activeDps,240);near(t.overallDps,360/11.5);
+ const limited=dps.onHitTiming(120,.25,{cooldown:10,duration:5,hits:3});
+ assert.equal(limited.duration,5);assert.equal(limited.overallDps,10);
+});
+
+test('on-hit percent-health damage is resolved and mitigated before the DPS calculation',()=>{
+ const result=profile('KogMawBioArcaneBarrage',{totalhealthdamage:6,duration:5},{target,stats:{attackSpeed:2},
+   tooltip:'Attacks deal <magicDamage>{{ totalhealthdamage }}% max Health magic damage</magicDamage> for {{ duration }} seconds.'});
+ const row=result.rows[0];assert.equal(row.damage.value,24);assert.equal(row.onHitDps.activeDps,48);assert.equal(row.onHitDps.overallDps,16);
+ const spikes=profile('VorpalSpikes',{flatdamagecalc:50,maxhealthpercentcalc:6},{target,stats:{attackSpeed:2},
+   tooltip:'Attacks deal <magicDamage>{{ flatdamagecalc }} plus {{ maxhealthpercentcalc }}% of the target\'s max Health magic damage</magicDamage>.'});
+ assert.equal(spikes.rows[0].damage.value,34);assert.equal(spikes.rows[0].onHitDps.activeDps,68);
+});
+
+test('poison refreshes without multiplying a full damage-over-time application by attack speed',()=>{
+ const result=profile('TeemoE',{impactcalculateddamage:50,totaldotdamage:120,poisonduration:4},{cooldown:null,stats:{attackSpeed:2},
+   tooltip:'<magicDamage>{{ impactcalculateddamage }} magic damage</magicDamage> plus <magicDamage>{{ totaldotdamage }} magic damage</magicDamage> over {{ poisonduration }} seconds.'});
+ assert.equal(result.rows[0].onHitDps.activeDps,100);assert.equal(result.rows[1].onHitDps.activeDps,30);
+ assert.match(dps.render(result),/Poison refreshes without stacking/);
+});
+
+test('missing on-hit timing or attack speed stays explicit, and unlearned abilities stay disabled',()=>{
+ const tooltip='<trueDamage>{{ totaldamage }} true damage</trueDamage>';
+ for(const stats of [{},{attackSpeed:2}]){
+   const result=profile('WujuStyle',{totaldamage:120},{tooltip,stats});
+   assert.equal(result.rows[0].onHitDps.overallDps,null);
+   assert.doesNotMatch(dps.render(result),/NaN|Infinity|undefined/);
+ }
+ assert.equal(profile('WujuStyle',{totaldamage:120,duration:5},{rank:0,tooltip,stats:{attackSpeed:2}}).status,'Unlearned');
+});
+
+test('passive card uses the same attack contribution DPS and excludes items and active abilities',()=>{
+ const attack={rate:2,rows:[
+   {source:'champion',sourceSlot:'p',label:'Passive bonus',value:120,perHit:40,rawPerHit:80,perSecond:80,type:'magic',cadence:3,formula:'120 / 3',targetExplanation:'Magic resistance applied'},
+   {source:'champion',sourceSlot:'e',label:'Active',perHit:120,perSecond:240},
+   {source:'item',label:'Nashor',perHit:40,perSecond:80},
+ ]};
+ const result=dps.passiveProfile(attack);
+ assert.equal(result.rows.length,1);assert.equal(result.rows[0].damage.value,40);assert.equal(result.rows[0].onHitDps.activeDps,80);
+ assert.match(dps.render(result),/Magic resistance applied/);assert.match(dps.render(result),/>80\.0<\/td>/);
+ assert.equal(dps.passiveProfile(null).rows.length,0);
+});
+
+test('Shojin amplification applies once to every champion damage type, before defenses and DPS',()=>{
+ const input={tooltip:'<physicalDamage>{{ damage }} physical damage</physicalDamage>; <magicDamage>{{ damage }} magic damage</magicDamage>; <trueDamage>{{ damage }} true damage</trueDamage>',stats:{abilityDamageMultiplier:1.12}};
+ const raw=profile('Test',{damage:100},input).rows;
+ raw.forEach(row=>near(row.damage.value,112));
+ const defended=profile('Test',{damage:100},{...input,target}).rows;
+ near(defended[0].damage.value,44.8);near(defended[1].damage.value,22.4);near(defended[2].damage.value,112);
+ defended.forEach(row=>near(row.damage.rawValue,112));
+ const active=profile('WujuStyle',{totaldamage:120,duration:5},{tooltip:'<trueDamage>{{ totaldamage }} true damage</trueDamage>',stats:{attackSpeed:2,abilityDamageMultiplier:1.12}}).rows[0];
+ near(active.onHitDps.activeDps,268.8);near(active.onHitDps.overallDps,89.6);
+});
+
+test('full proc damage can use a separate cooldown-limited amount in the DPS cell',()=>{
+ const result=profile('Test',{damage:120},{cooldown:1,tooltip:'<magicDamage>{{ damage }} magic damage</magicDamage>'});
+ result.rows[0].damage.value=220;result.rows[0].dpsAmount={value:120+100/1.5,text:'Cooldown-limited proc'};
+ assert.match(dps.render(result),/>220\.0<\/td>/);assert.match(dps.render(result),/>186\.7<\/td>/);
+});

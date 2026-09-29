@@ -19,6 +19,18 @@ The display explains the combined cycle. Individual cast rows always use damage 
 
 ## Sources and limits
 
+### On-hit delivery and sustained bonus damage
+
+Ezreal Q and Smolder Q now include the enabled on-hit effects from the Attack model. Explicit spell bindings also cover Gangplank, Irelia, Fizz, Miss Fortune, Senna and Warwick Q, Warwick R, Yasuo/Yone Q, Katarina E/R, Master Yi Q and Viego R. Smolder's primary physical hit and Dragon Practice magic damage are combined before procs are added. Splash targets are excluded. Spellblade contributes a full ready proc to damage; repeat DPS respects the configured proc interval. Damage types and target defenses are applied separately to each packet, with outgoing bonuses applied once. Attack-only effects and refreshed poison are not treated as independent instantaneous on-hit packets.
+
+Registered bonus on-hit abilities use damage per empowered attack multiplied by current attack speed, adjusted for their proc cadence. Permanent effects display sustained DPS. Active effects display **active / overall DPS**. Overall DPS uses `active DPS × duration / (duration + adjusted cooldown)`; attack-count limits can shorten the active duration. Thus 120 bonus damage at 2 attacks/s for 5 seconds with a 10-second cooldown shows **240 / 80**. This is the requested comparison convention; it does not simulate overlapping cooldowns, cooldown refunds, resets or missed attacks. Poison refreshes without stacking a full duration on each hit. Passive-card rows reuse the corresponding champion contributions from the Attack calculation.
+
+### Specialized haste and Shojin
+
+Champion AH shows `general (bonus basic/bonus ultimate)`. Applicable cooldown haste is general haste plus the relevant bonus; attack-speed-scaled and haste-exempt spells keep their own rules. Dragonforce, Scorn, Hexcharged and selected rune stacks feed the separate haste pools. Each item passive switch controls only its own effect.
+
+Focused Will uses the loaded item data's stack cap, per-stack damage increase and ranged modifier. Its current stacks amplify champion ability/passive damage, including true damage, before target defenses, both with target settings on and off. Item procs are excluded from this ability amplification. The [item source](https://raw.communitydragon.org/latest/game/items.cdtb.bin.json) provides the coefficients; [Focused Will mechanics](https://leagueoflegends.fandom.com/wiki/Spear_of_Shojin) describe its damage-type coverage.
+
 Damage coefficients, available delays and alternate tooltips use the project's existing live Data Dragon and Community Dragon sources. Test fixtures were captured at Data Dragon 16.18.1 on 2026-09-11. Examples:
 
 - [Aatrox data](https://raw.communitydragon.org/latest/game/data/characters/aatrox/aatrox.bin.json): QDamage, QEdgeDamage, QRampBonus. The 1-second static recast interval is script-level behavior documented in the [Aatrox ability reference](https://leagueoflegends.fandom.com/wiki/Aatrox/LoL).

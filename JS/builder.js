@@ -43,6 +43,8 @@ const BUILDER = {
   championModalRequestId: 0,
   championRequestId: 0,
   runeModalTarget: null,
+  runeStacks: {},
+  gameTimeMinutes: 0,
   runeSelections: {
     primaryPath: "",
     secondaryPath: "",
@@ -292,6 +294,7 @@ function initTargetSettings() {
 }
 
 function wireBuilderUiEvents() {
+  initRuneControls();
   document.getElementById("championPickerBtn").addEventListener("click", openChampionModal);
   document.getElementById("passiveToggleBtn").addEventListener("click", togglePassivePanel);
   document.getElementById("resetItemFilters").addEventListener("click", clearModalFilters);
@@ -341,6 +344,88 @@ function wireBuilderUiEvents() {
     if (!btn || btn.disabled) return;
     selectRuneOption(btn.dataset.runeOptionId);
   });
+}
+
+function initRuneControls() {
+  const time = document.getElementById('gameTime');
+  const updateBuild = () => { renderStats(); renderAbilityCards(); };
+  time.value = BUILDER.gameTimeMinutes;
+  time.addEventListener('input', () => {
+    if (!time.value.trim()) return;
+    BUILDER.gameTimeMinutes = window.RuneEffects.minutes(time.value);
+    updateBuild();
+  });
+  time.addEventListener('change', () => { BUILDER.gameTimeMinutes = window.RuneEffects.minutes(time.value); time.value = BUILDER.gameTimeMinutes; updateBuild(); });
+
+  const modal = document.getElementById('runeStacksModal');
+  const close = () => { modal.classList.add('hidden'); document.getElementById('runeStacksBtn').focus(); };
+  document.getElementById('runeStacksBtn').addEventListener('click', () => {
+    hideRuneTooltip(); renderRuneStacks(); modal.classList.remove('hidden');
+    (modal.querySelector('input') || document.getElementById('closeRuneStacksBtn')).focus();
+  });
+  document.getElementById('closeRuneStacksBtn').addEventListener('click', close);
+  let backdropPressed = false;
+  modal.addEventListener('pointerdown', event => { backdropPressed = event.target === modal; });
+  modal.addEventListener('click', event => { if (backdropPressed && event.target === modal) close(); backdropPressed = false; });
+  modal.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { event.preventDefault(); close(); }
+    if (event.key !== 'Tab') return;
+    const controls = [...modal.querySelectorAll('button, input')], first = controls[0], last = controls.at(-1);
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
+  const updateStack = (event, commit) => {
+    const input = event.target.closest('[data-rune-stack]');
+    if (!input || (!commit && !input.value.trim())) return;
+    const id = input.dataset.runeStack, field = window.RuneEffects.fields(BUILDER, RUNE_DATA.runeLookup).find(field => field.id === id);
+    if (!field) return;
+    BUILDER.runeStacks[id] = window.RuneEffects.normalize(input.value, field);
+    if (commit) input.value = BUILDER.runeStacks[id];
+    updateBuild();
+    const note = document.getElementById(`rune-stack-note-${id}`);
+    if (note) note.textContent = getStackRuneEffects().notes[id] || '';
+  };
+  document.getElementById('runeStacksList').addEventListener('input', event => updateStack(event, false));
+  document.getElementById('runeStacksList').addEventListener('change', event => updateStack(event, true));
+
+  const panel = document.getElementById('runePanel');
+  for (const type of ['mouseover', 'focusin']) panel.addEventListener(type, event => {
+    const button = event.target.closest('[data-desc]');
+    if (button) showRuneTooltip(button);
+  });
+  panel.addEventListener('mouseout', event => { if (!event.target.closest('[data-desc]')?.contains(event.relatedTarget)) hideRuneTooltip(); });
+  panel.addEventListener('focusout', hideRuneTooltip);
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') hideRuneTooltip(); });
+  window.addEventListener('resize', hideRuneTooltip);
+  document.addEventListener('scroll', hideRuneTooltip, true);
+}
+
+function getStackRuneEffects() {
+  return window.RuneEffects.calculate(BUILDER, RUNE_DATA.runeLookup, {adaptiveAp: isApAdaptiveChampion(), ranged: (BUILDER.championData?.stats.attackrange || 0) > 300});
+}
+
+function renderRuneStacks() {
+  const fields = window.RuneEffects.fields(BUILDER, RUNE_DATA.runeLookup), notes = getStackRuneEffects().notes;
+  const escape = window.ItemDescriptions.escape;
+  document.getElementById('runeStacksList').innerHTML = fields.length ? fields.map(field => `<div class="rune-stack-row"><label for="rune-stack-${field.id}"><strong>${escape(field.name)}</strong><span>${escape(field.label)}</span></label><input id="rune-stack-${field.id}" class="form-control" type="number" min="0" ${field.max === undefined ? '' : `max="${field.max}"`} step="1" data-rune-stack="${field.id}" value="${window.RuneEffects.normalize(BUILDER.runeStacks[field.id], field)}" aria-describedby="rune-stack-note-${field.id}"><small id="rune-stack-note-${field.id}" class="text-muted">${escape(notes[field.id] || '')}</small></div>`).join('') : '<p class="text-muted">Your selected runes have no stack counters.</p>';
+}
+
+function hideRuneTooltip() {
+  document.getElementById('runeTooltip').hidden = true;
+  document.querySelectorAll('[aria-describedby="runeTooltip"]').forEach(button => button.removeAttribute('aria-describedby'));
+}
+
+function showRuneTooltip(button) {
+  const tooltip = document.getElementById('runeTooltip');
+  hideRuneTooltip();
+  if (!button.dataset.desc) return;
+  tooltip.textContent = button.dataset.desc;
+  tooltip.hidden = false;
+  button.setAttribute('aria-describedby', 'runeTooltip');
+  const box = button.getBoundingClientRect(), gap = 10, width = tooltip.offsetWidth, height = tooltip.offsetHeight;
+  const right = box.right + gap, left = right + width <= innerWidth - gap ? right : box.left - width - gap;
+  tooltip.style.left = `${Math.max(gap, Math.min(innerWidth - width - gap, left))}px`;
+  tooltip.style.top = `${Math.max(gap, Math.min(innerHeight - height - gap, box.top))}px`;
 }
 
 function wireLevelOptions() {
@@ -1451,6 +1536,9 @@ function computeDerivedBuildStats() {
   const mr = (base.spellblock + base.spellblockperlevel * window.BuildStats.growthFactor(L) + item.mr + rune.mr);
   const asTotal = window.BuildStats.attackSpeed(base.attackspeed, base.attackspeedperlevel, base.attackspeedratio, L, item.asPct + rune.asPct);
   const abilityHaste = item.haste + rune.haste;
+  const abilityModifiers = window.AttackEffects.model(BUILDER, window.ItemLookupShared.getState().cdragonById).abilityModifiers({base});
+  const basicHaste = abilityModifiers.basicHaste + (rune.basicHaste || 0);
+  const ultimateHaste = abilityModifiers.ultimateHaste + (rune.ultimateHaste || 0);
   const critChance = Math.min(100, (base.crit + base.critperlevel * window.BuildStats.growthFactor(L)) * 100 + item.critChance + rune.critChance);
   const critDamage = (base.critdamage ? base.critdamage * 100 : 200) + item.critDamage + rune.critDamage;
   const attackRange = (base.attackrange || 0) + item.attackRange + rune.attackRange + getChampionPassiveRangeBonus();
@@ -1471,6 +1559,8 @@ function computeDerivedBuildStats() {
     mr,
     asTotal,
     abilityHaste,
+    basicHaste,
+    ultimateHaste,
     critChance,
     critDamage,
     attackRange,
@@ -1478,6 +1568,10 @@ function computeDerivedBuildStats() {
     passiveLedger: ledger,
   };
   const applied = window.AttackEffects.model(BUILDER, window.ItemLookupShared.getState().cdragonById).apply(window.ChampionEffects.model(BUILDER).apply(computed));
+  // Rune percentage bonuses include health/resistances earned from champion stacks.
+  applied.hp *= 1 + (rune.hpPct || 0) / 100;
+  applied.armor *= 1 + (rune.armorPct || 0) / 100;
+  applied.mr *= 1 + (rune.mrPct || 0) / 100;
   // Deathcap also amplifies AP gained from champion stacks.
   if (['Veigar','Thresh'].includes(BUILDER.selectedChampion))applied.ap += (applied.ap - computed.ap) * (ledger.apMultiplier - 1);
   if(applied.championBonuses.ap)applied.championBonuses.ap=applied.ap-computed.ap;
@@ -1625,8 +1719,10 @@ function getComputedChampionStatsForTooltips() {
     critChance: computed.critChance / 100, bonusCritChance: (item.critChance + rune.critChance) / 100,
     critDamage: computed.critDamage / 100, bonusCritDamage: (item.critDamage + rune.critDamage) / 100,
     haste: computed.abilityHaste,
+    basicHaste: computed.basicHaste,
+    ultimateHaste: computed.ultimateHaste,
     cooldownReduction: computed.abilityHaste / (100 + computed.abilityHaste),
-    lifeSteal: (item.physicalVamp + (computed.championLifeSteal||0)) / 100, physicalVamp: (item.physicalVamp + (computed.championLifeSteal||0)) / 100, omniVamp: item.omniVamp / 100,
+    lifeSteal: (item.physicalVamp + rune.physicalVamp + (computed.championLifeSteal||0)) / 100, physicalVamp: (item.physicalVamp + rune.physicalVamp + (computed.championLifeSteal||0)) / 100, omniVamp: item.omniVamp / 100,
     magicPenFlat: computed.magicPenFlat, magicPenPct:computed.magicPenPct,
     lethality: computed.armorPenFlat, armorPenFlat:computed.armorPenFlat, armorPenPct:computed.armorPenPct, tenacity: item.tenacity / 100,
     attackRange: computed.attackRange, baseAttackRange: base.attackrange,
@@ -2091,6 +2187,11 @@ function expandAbilityLocalization(text) {
 function buildAbilityContext(spell, rank, spellKey) {
   const safeRank = Math.max(1, Number(rank) || 1);
   const stats = getComputedChampionStatsForTooltips();
+  if (stats) stats.abilityDamageMultiplier = window.AttackEffects.model(BUILDER, window.ItemLookupShared.getState().cdragonById).abilityModifiers(stats).abilityDamageMultiplier;
+  if (stats && spellKey !== 'p') {
+    stats.haste += spellKey === 'r' ? stats.ultimateHaste : stats.basicHaste;
+    stats.cooldownReduction = stats.haste / (100 + stats.haste);
+  }
   const vars = Object.fromEntries((spell.vars || []).map((v) => [String(v.key || "").toLowerCase(), v]));
   
   const cdragonSpell = BUILDER.cdragonAbilityData?.[spellKey] || null;
@@ -2207,7 +2308,7 @@ function renderAlternateAbilityDps(spell, rank, slot) {
   const alternate={...spell,id:form[0],tooltip:raw,cooldown:payload.spellData.cooldownTime?.slice(1)};
   const context=buildAbilityContext(alternate,formRank,slot);
   Object.assign(context,buildResolvedSpellPayload(payload,formRank,context.stats));
-  const result=window.AbilityDps.profile({spell:alternate,rank:formRank,payload,
+  const result=window.AbilityDps.profile({spell:alternate,rank:formRank,payload,champion:BUILDER.selectedChampion,slot,
     tooltip:expandAbilityLocalization(raw),resolve:token=>resolveAbilityToken(token,context),
     cooldown:window.AbilityDps.cooldown(alternate,formRank,context.stats,payload),target:BUILDER.target,stats:context.stats});
   return `<div class="ability-dps-form"><strong>${form[1]}</strong>${window.AbilityDps.render(result)}</div>`;
@@ -2229,8 +2330,9 @@ function renderAbilityCards() {
   const computed = computeDerivedBuildStats();
   const attack = computed ? computeAutoAttackProfile(computed) : null;
   const passiveText = buildDetailedPassiveText();
+  const passiveDps = window.AbilityDps.passiveProfile(attack);
   const description = (slot,simple,detailed,values='') => `<div class="ability-description" data-description-slot="${slot}"><div class="simple-description">${BUILDER.target.enabled?window.DamageText.render(simple,token=>({html:'{{'+token+'}}',numeric:null}),{target:BUILDER.target,stats:getComputedChampionStatsForTooltips()}):simple||''}</div><div class="detailed-description" hidden>${detailed}${values}</div><button type="button" class="btn btn-sm detail-toggle" aria-expanded="false">Detailed view</button></div>`;
-  const passive = `<div class="ability-card ability-passive-card" data-ability-slot="p"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div>${description("p",champ.passive.description,passiveText)}<div class="ability-inputs"></div></div>`;
+  const passive = `<div class="ability-card ability-passive-card" data-ability-slot="p"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div>${description("p",champ.passive.description,passiveText,passiveDps.rows.length?window.AbilityDps.render(passiveDps):'')}<div class="ability-inputs"></div></div>`;
   const escapeAttack = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const attackNumber = (value, key) => `<span class="attack-result" data-attack-result="${key}" tabindex="0" title="${escapeAttack(attack.breakdown)}">${Number.isFinite(value) ? value.toFixed(1) + (attack.partial ? ' (partial)' : '') : 'Unavailable — see calculation'}</span>`;
   const attackCard = `<div class="ability-card ability-attack-card" data-ability-slot="attack"><div class="ability-head"><strong>Attack</strong></div>
@@ -2255,10 +2357,11 @@ function renderAbilityCards() {
     const cost = parseByRank(spell.costBurn, rank);
     const range = parseByRank(spell.rangeBurn, rank);
     const detail = buildDetailedAbilityText(spell, rank, key, context);
-    let dps = window.AbilityDps.render(window.AbilityDps.profile({spell, rank, cooldown:cdNumeric,
+    const dpsOptions={spell, rank, cooldown:cdNumeric,champion:BUILDER.selectedChampion,slot:key,
       tooltip:expandAbilityLocalization(spell.tooltip || spell.description || ''),
       resolve:token=>resolveAbilityToken(token, context), payload:context?.cdragonSpell,target:BUILDER.target,stats:context?.stats,
-      timing:{delay:BUILDER.combatValues[`dps:${key}:delay`],overlap:BUILDER.combatValues[`dps:${key}:overlap`]}}));
+      timing:{delay:BUILDER.combatValues[`dps:${key}:delay`],overlap:BUILDER.combatValues[`dps:${key}:overlap`]}};
+    let dps = window.AbilityDps.render(window.AbilityOnHit.apply(window.AbilityDps.profile(dpsOptions),{...dpsOptions,attack}));
     dps += renderAlternateAbilityDps(spell,rank,key);
     const parsed = document.createElement('div'); parsed.innerHTML=dps;
     const damageNumbers=[...parsed.querySelectorAll('tbody tr')].map(row=>row.children[1]?.innerHTML.trim()).filter(Boolean);
@@ -2414,6 +2517,7 @@ function getRuneStats() {
     }
   });
 
+  for (const [stat, value] of Object.entries(getStackRuneEffects().totals)) totals[stat] = (totals[stat] || 0) + value;
   return totals;
 }
 
@@ -2471,7 +2575,7 @@ function renderStats() {
     { name: "AD", icon: STAT_ICONS["AD"], value: ad, eq: `${base.attackdamage.toFixed(1)} + ${base.attackdamageperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.ad.toFixed(1)} + ${rune.ad.toFixed(1)} + passive(${passiveLedger.statMods.ad.toFixed(1)})` },
     { name: "AP", icon: STAT_ICONS["AP"], value: ap, eq: `0 + ${item.ap.toFixed(1)} + ${rune.ap.toFixed(1)} + passive(${passiveLedger.statMods.ap.toFixed(1)})` },
     { name: "Range", icon: STAT_ICONS["Range"], value: attackRange, eq: `${(base.attackrange || 0).toFixed(1)} + ${item.attackRange.toFixed(1)} + ${rune.attackRange.toFixed(1)} + passive(${getChampionPassiveRangeBonus().toFixed(1)})` },
-    { name: "AH", icon: STAT_ICONS["AH"], value: abilityHaste, eq: `0 + ${item.haste.toFixed(1)} + ${rune.haste.toFixed(1)}` },
+    { name: "AH", icon: STAT_ICONS["AH"], value: abilityHaste, eq: `Ability haste: ${item.haste.toFixed(1)} from items + ${rune.haste.toFixed(1)} from runes. Brackets show bonus basic / ultimate ability haste. Add each bonus to the general value: Q/W/E use ${(abilityHaste+computed.basicHaste).toFixed(1)} AH; R uses ${(abilityHaste+computed.ultimateHaste).toFixed(1)} AH. Cooldown = base cooldown / (1 + applicable AH / 100). Abilities with special cooldown rules keep those rules.` },
     { name: "Arm", icon: STAT_ICONS["Arm"], value: armor, eq: `${base.armor.toFixed(1)} + ${base.armorperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.armor.toFixed(1)} + ${rune.armor.toFixed(1)}` },
     { name: "MR", icon: STAT_ICONS["MR"], value: mr, eq: `${base.spellblock.toFixed(1)} + ${base.spellblockperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.mr.toFixed(1)} + ${rune.mr.toFixed(1)}` },
     { name: "AS", icon: STAT_ICONS["AS"], value: asTotal, eq: `${base.attackspeed.toFixed(3)} + ${(base.attackspeedratio || base.attackspeed).toFixed(3)} * (growth ${window.BuildStats.growthFactor(L).toFixed(3)} * ${base.attackspeedperlevel}% + ${(item.asPct + rune.asPct).toFixed(1)}%)` },
@@ -2480,16 +2584,18 @@ function renderStats() {
     { name: "Crit Dmg", icon: STAT_ICONS["Crit Dmg"], value: critDamage, eq: `${(base.critdamage ? base.critdamage * 100 : 200).toFixed(1)} + ${item.critDamage.toFixed(1)} + ${rune.critDamage.toFixed(1)}; champion modifier included in displayed value` },
     { name: "ARPen", icon: STAT_ICONS["ARPen"], value: 0, eq: `Flat: items ${item.arPenFlat.toFixed(1)} + runes ${rune.arPenFlat.toFixed(1)} + passive ${(computed.championPenetration?.armorPenFlat||0).toFixed(1)}; percent: 100 × (1 − (1 − ${item.arPenPct.toFixed(1)}%) × (1 − ${rune.arPenPct.toFixed(1)}%) × (1 − ${(computed.championPenetration?.armorPenPct||0).toFixed(1)}%))` },
     { name: "MRPen", icon: STAT_ICONS["MRPen"], value: 0, eq: `Flat: items ${item.mrPenFlat.toFixed(1)} + runes ${rune.mrPenFlat.toFixed(1)}; percent: 100 × (1 − (1 − ${item.mrPenPct.toFixed(1)}%) × (1 − ${rune.mrPenPct.toFixed(1)}%) × (1 − ${(computed.championPenetration?.magicPenPct||0).toFixed(1)}%))` },
-    { name: "Lifesteal", icon: STAT_ICONS["Lifesteal"], value: 0, eq: `${item.physicalVamp.toFixed(1)}% / ${item.omniVamp.toFixed(1)}%` },
+    { name: "Lifesteal", icon: STAT_ICONS["Lifesteal"], value: 0, eq: `Lifesteal: ${item.physicalVamp.toFixed(1)}% items + ${rune.physicalVamp.toFixed(1)}% runes + ${(computed.championLifeSteal||0).toFixed(1)}% champion; Omnivamp: ${item.omniVamp.toFixed(1)}%` },
     { name: "Tenacity", icon: STAT_ICONS["Tenacity"], value: 0, eq: `${(100 * (1 - (1 - item.tenacity / 100) * (1 - rune.tenacity / 100))).toFixed(1)}%` },
   ];
 
   const bonusKeys={HP:"hp",AD:"ad",AP:"ap",Arm:"armor",MR:"mr",AS:"asTotal",Range:"attackRange","Crit %":"critChance"};
   for(const row of rows){const bonus=computed.championBonuses?.[bonusKeys[row.name]];if(bonus)row.eq+=` + champion abilities (${bonus.toFixed(2)})`;}
+  for(const row of rows){const percent=rune[{HP:'hpPct',Arm:'armorPct',MR:'mrPct'}[row.name]];if(percent)row.eq=`(${row.eq}) × (1 + ${percent}% from runes)`;}
   const tableHtml = renderPairedRows(rows.map((row) => {
+    if (row.name === "AH") return { ...row, displayValue: `${window.ItemDescriptions.number(abilityHaste)} (${window.ItemDescriptions.number(computed.basicHaste)}/${window.ItemDescriptions.number(computed.ultimateHaste)})` };
     if (row.name === "ARPen") return { ...row, displayValue: `${computed.armorPenFlat.toFixed(1)}/${computed.armorPenPct.toFixed(1)}%` };
     if (row.name === "MRPen") return { ...row, displayValue: `${computed.magicPenFlat.toFixed(1)}/${computed.magicPenPct.toFixed(1)}%` };
-    if (row.name === "Lifesteal") return { ...row, displayValue: `${(item.physicalVamp+(computed.championLifeSteal||0)).toFixed(1)}%/${item.omniVamp.toFixed(1)}%` };
+    if (row.name === "Lifesteal") return { ...row, displayValue: `${(item.physicalVamp+rune.physicalVamp+(computed.championLifeSteal||0)).toFixed(1)}%/${item.omniVamp.toFixed(1)}%` };
     if (row.name === "Tenacity") return { ...row, displayValue: `${(100 * (1 - (1 - item.tenacity / 100) * (1 - rune.tenacity / 100))).toFixed(1)}%` };
     return {
       ...row,
@@ -2502,6 +2608,7 @@ function renderStats() {
 }
 
 function renderRunePanel() {
+  hideRuneTooltip();
   const root = document.getElementById("runePanel");
   const pathIds = Object.keys(RUNE_DATA.paths);
   const fallbackPrimaryPathId = pathIds[0] || "";
@@ -2574,7 +2681,7 @@ function renderRunePanel() {
     <div class="rune-column-block">
       <div class="rune-column-title"><button class='btn btn-sm rune-path-btn' data-rune-target="secondaryPath_0"><img src="${secondaryPath.icon}" alt="${secondaryPath.name}"><span>${secondaryPath.name}</span></button></div>
       ${renderSecondaryRuneGrid()}
-      <div class="rune-subpanel-grid rune-shard-icon-row">${[0,1,2].map(i=>getRuneOptions(`shard_${i}`).map(rune=>`<button type="button" class="rune-grid-btn ${BUILDER.runeSelections.shards[i]===rune.id?'is-active':''}" data-rune-choice-target="shard_${i}" data-rune-choice-id="${rune.id}" aria-label="${escapeAttr(rune.name)}" title="${escapeAttr(rune.name)}">${runeImgTag(rune)}</button>`).join('')).join('')}</div>
+      <div class="rune-subpanel-grid rune-shard-icon-row">${[0,1,2].map(i=>getRuneOptions(`shard_${i}`).map(rune=>`<button type="button" class="rune-grid-btn ${BUILDER.runeSelections.shards[i]===rune.id?'is-active':''}" data-rune-choice-target="shard_${i}" data-rune-choice-id="${rune.id}" aria-label="${escapeAttr(rune.name)}" data-desc="${escapeAttr(`${rune.name}: ${rune.desc}`)}">${runeImgTag(rune)}</button>`).join('')).join('')}</div>
     </div>
   `;
 }
