@@ -56,10 +56,14 @@ const server=http.createServer((req,res)=>{
    await select('Ahri');await equip(['3115','3091','3302']);x=await result();assert.equal(x.p.rows.length,3);assert.ok(x.p.rows.every(r=>r.value>0));
    await equip(['3153']);x=await result();assert.equal(x.p.autoAttackDamage,null);
    await page.locator('#targetEnabled').click();
+   await page.locator('#targetSettingsBtn').click();
    for(const [selector,value]of [['#targetMaxHp','2000'],['#targetCurrentHp','2000'],['#targetArmor','0'],['#targetMr','0'],['#targetDamageReduction','0']]){await page.locator(selector).fill(value);await page.locator(selector).dispatchEvent('change');}
+   await page.locator('#closeTargetModal').click();
    x=await result();near(x.p.rows[0].value,120,'ranged BORK');
    await select('KogMaw');await equip([]);const initial=(await result()).p.autoAttackDamage;
+   await page.locator('#targetSettingsBtn').click();
    await page.locator('#targetMaxHp').fill('2000');await page.locator('#targetMaxHp').dispatchEvent('change');
+   await page.locator('#closeTargetModal').click();
    await page.locator('[data-ability-slot="w"] [data-attack-control="attack:championOnHit"]').click();x=await result();near(x.p.autoAttackDamage-initial,2000*(0.06+x.s.ap*0.00015),'Kog W health onhit');
    await page.locator('[data-attack-control="attack:championOnHit"]').click();near((await result()).p.autoAttackDamage,initial,'toggle off');
    await select('Teemo');x=await result();assert.ok(x.p.rows.find(r=>r.dot));
@@ -91,7 +95,9 @@ const server=http.createServer((req,res)=>{
    await page.locator('[data-attack-control="attack:chakramCycle"]').fill('0.5');await page.locator('[data-attack-control="attack:chakramCycle"]').dispatchEvent('change');
    assert.ok(Number.isFinite((await result()).p.attackDps));
    await select('Elise');await equip(['3153']);
+   await page.locator('#targetSettingsBtn').click();
    await page.locator('#targetCurrentHp').fill('1000');await page.locator('#targetCurrentHp').dispatchEvent('change');
+   await page.locator('#closeTargetModal').click();
    near((await result()).p.rows.find(r=>r.label==='Blade of the Ruined King').value,60,'human BORK');
    await page.locator('[data-attack-control="attack:spider"]').click();near((await result()).p.rows.find(r=>r.label==='Blade of the Ruined King').value,90,'spider BORK');
  }

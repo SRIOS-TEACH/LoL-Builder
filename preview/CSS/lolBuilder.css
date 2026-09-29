@@ -1293,3 +1293,38 @@ body.compact-dashboard { background-image:linear-gradient(90deg,rgba(5,11,22,.65
 .target-inactive { opacity:.7; }
 .attack-settings-heading { font-size:14px;margin:14px 0 4px;padding-top:10px;border-top:1px solid #34445a; }
 .target-damage-number { font-variant-numeric:tabular-nums;cursor:help; }
+
+/* Combo editor and toolbar target dialog. */
+.toolbar-target { display:flex; align-items:center; gap:5px; margin-left:auto; }
+.toolbar-target button { white-space:nowrap; }
+.toolbar-target + .toolbar-skin { margin-left:0; }
+#targetEnabled[aria-pressed="true"] { border-color:#c6a667; color:#e8cc8b; background:#3c3424; }
+.target-modal { color:#e6edf5; background:#151d2b; border:1px solid #53617a; border-radius:12px; padding:20px; width:min(560px,calc(100vw - 28px)); max-height:85vh; overflow:auto; }
+.target-modal::backdrop { background:rgba(0,0,0,.7); }
+.target-modal .target-fields { margin-top:16px; grid-template-columns:1fr 1fr; }
+.combo-panel { overflow:auto; min-height:180px; }
+.combo-panel > p,.combo-panel > label { font-size:12px; }
+.combo-panel > select { font-size:12px; margin:5px 0 8px; width:100%; }
+.combo-quick { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px; }
+.combo-quick button { flex:1; color:#e8cc8b; }
+.combo-steps { list-style:none; padding:0; margin:14px 0; counter-reset:combo; }
+.combo-steps > li { padding:9px; margin:8px 0; border:1px solid #39465a; border-radius:7px; background:#121a27; font-size:12px; }
+.combo-step-heading { display:flex; justify-content:space-between; gap:6px; align-items:start; }
+.combo-step-heading strong { overflow-wrap:anywhere; }
+.combo-step-heading strong::before { counter-increment:combo; content:counter(combo) ". "; color:#c6a667; }
+.combo-step-tools { display:flex; gap:4px; margin:6px 0; }
+.combo-fields { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+.combo-fields input { width:100%; font-size:12px; padding:4px; }
+.combo-steps details p { font-size:11px; color:#abb8ca; margin:8px 0; }
+.combo-warning { color:#f0c982; font-size:11px; margin:6px 0; }
+.combo-result { border-top:1px solid #44516a; padding-top:12px; }
+.combo-result > div { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px; margin-bottom:8px; font-size:12px; }
+.combo-result strong { color:#e8cc8b; font-size:16px; }
+.combo-result small { color:#abb8ca; }
+.combo-panel .dashboard-detail { font-size:11px; margin-top:12px; }
+@media(max-width:640px) { .toolbar-target { margin-left:0; } }
+
+@media(min-width:1051px) and (min-height:721px) {
+  .compact-dashboard .builder-dashboard { grid-template-columns:minmax(300px,1fr) minmax(380px,2fr) minmax(280px,.9fr); }
+}
+.combo-result { margin-top:12px; }

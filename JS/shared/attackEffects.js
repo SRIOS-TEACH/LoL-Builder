@@ -412,7 +412,7 @@
       formula.push(`DPS = average on-attack damage × effective attacks per second. ${state.target?.enabled?'After target mitigation':'Before mitigation'}; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included.`);
       if(phantom!==1)warnings.push('Rageblade assumes fully stacked, uninterrupted attacks.');
       formula.push(...warnings);
-      return {autoAttackDamage:damage,attackDps:dps,rawAutoAttackDamage:rawDamage,rawAttackDps:rawDps,attackRange:s.attackRange,rate,rows,controls:[...new Map(controls.map(c=>[c.key,c])).values()],warnings,partial:!!unsupported[name]&&!extended.covered,breakdown:formula.join('\n')};
+      return {baseAttackDamage:base,autoAttackDamage:damage,attackDps:dps,rawAutoAttackDamage:rawDamage,rawAttackDps:rawDps,attackRange:s.attackRange,rate,rows,controls:[...new Map(controls.map(c=>[c.key,c])).values()],warnings,partial:!!unsupported[name]&&!extended.covered,breakdown:formula.join('\n')};
     }
     return {apply,profile,abilityModifiers};
   }
