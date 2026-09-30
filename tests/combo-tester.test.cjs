@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {simulate} = require('../JS/shared/comboTester.js');
+const {simulate,attackWindup,damageParts} = require('../JS/shared/comboTester.js');
 const action = (id,damage,castTime,cooldown,extra={}) => ({id,group:id,damage,castTime,cooldown,...extra});
 test('attacks respect reciprocal attack speed and include the final windup', () => {
   const aa = action('aa',100,0.2,0.5);
@@ -21,19 +21,23 @@ test('recasts use lockouts, enforce their order, and restart cooldown at the las
   const q = action('q',100,0.6,6), q2 = {...q,stage:1,recastDelay:1,recastWindow:4,cooldownStarts:'last'};
   const q3 = {...q2,stage:2};
   assert.equal(simulate([q,q2,q3,q]).duration,8.6);
-  assert.equal(simulate([q2]).total,null);
-  assert.equal(simulate([q,q3]).duration,null);
-  assert.equal(simulate([q,q2,q2]).duration,null);
-  assert.equal(simulate([q,action('r',10,5,20),q2]).duration,null);
+  assert.equal(simulate([q2]).total,100);
+  assert.match(simulate([q2]).timeWarnings.join(' '),/preceding cast/);
+  assert.ok(simulate([q,q3]).timeWarnings.length);
+  assert.ok(simulate([q,q2,q2]).timeWarnings.length);
+  assert.match(simulate([q,action('r',10,5,20),q2]).timeWarnings.join(' '),/expired/);
 });
 test('missing values are explicit while genuine zero damage and instant casts work', () => {
-  assert.equal(simulate([action('q',null,0.2,4)]).total,null);
-  assert.equal(simulate([action('q',100,null,4)]).duration,null);
+  assert.equal(simulate([action('q',null,0.2,4)]).total,0);
+  assert.equal(simulate([action('q',null,0.2,4)]).damageWarnings.length,1);
+  assert.equal(simulate([action('q',100,null,4)]).duration,0);
+  assert.equal(simulate([action('q',100,null,4)]).timeWarnings.length,1);
   const unknown = action('item',100,0,null);
   assert.equal(simulate([unknown]).duration,0);
-  assert.equal(simulate([unknown,unknown]).duration,null);
+  assert.equal(simulate([unknown,unknown]).duration,0);
+  assert.match(simulate([unknown,unknown]).timeWarnings.join(' '),/cooldown/);
   assert.equal(simulate([action('utility',0,0,0)]).total,0);
-  assert.equal(simulate([action('gone',100,0,0,{unavailable:true})]).total,null);
+  assert.equal(simulate([action('gone',100,0,0,{unavailable:true})]).total,0);
 });
 test('different variants share the same cooldown group and explicit procs count once', () => {
   const q = action('q:edge',200,0.5,5,{group:'q'});
@@ -50,4 +54,23 @@ test('abandoning a last-cast cooldown chain waits for the recast window to expir
   const q2 = {...q,stage:1,recastDelay:1}, q3 = {...q2,stage:2};
   assert.equal(simulate([q,q2,q]).timeline[2].start,11);
   assert.equal(simulate([q,q2,q3,q]).timeline[3].start,8);
+});
+
+test('mixed damage retains typed contributions and scales explicit overrides', () => {
+  const a={damage:150,components:[{type:'physical',value:90},{type:'magic',value:40},{type:'true',value:20}]};
+  assert.deepEqual(damageParts(a),{physical:90,magic:40,true:20,untyped:0});
+  assert.deepEqual(damageParts({...a,damage:300}),{physical:180,magic:80,true:40,untyped:0});
+  assert.equal(simulate([{...a,castTime:0,cooldown:0}]).total,150);
+  const partial={damage:null,components:[{type:'magic',value:50},{type:'true',value:null}],castTime:0};
+  assert.equal(simulate([partial]).total,50);
+  assert.equal(simulate([partial]).damageWarnings.length,1);
+});
+test('windup resolves both champion data formats, modifiers, and explicit overrides', () => {
+  const near=(a,b)=>assert.ok(Math.abs(a-b)<1e-7,`${a} != ${b}`);
+  near(attackWindup({basicAttack:{mAttackCastTime:.3,mAttackTotalTime:1.5}},1,.6666666667),.2);
+  near(attackWindup({basicAttack:{mAttackDelayCastOffsetPercent:-.1}},1,.625),.2);
+  near(attackWindup({basicAttack:{mAttackDelayCastOffsetPercent:-.1,mAttackDelayCastOffsetPercentAttackSpeedRatio:.5}},1.25,.625),.24);
+  near(attackWindup({basicAttack:{mAttackDelayCastOffsetPercent:-.1}},.625,.625,.4),.4);
+  assert.equal(attackWindup(null,1,.625),null);
+  assert.equal(attackWindup({basicAttack:{}},1,.625),null);
 });

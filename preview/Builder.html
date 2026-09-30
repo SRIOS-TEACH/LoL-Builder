@@ -42,17 +42,27 @@
             <div class="target-heading"><h2>Combo Tester</h2><button id="comboClear" class="btn btn-sm" type="button">Clear</button></div>
             <p class="text-muted">Add actions in the order you want to use them.</p>
             <div id="comboQuick" class="combo-quick"></div>
-            <label for="comboAction">Ability variant / item effect</label>
-            <select id="comboAction" class="form-control"></select>
-            <button id="comboAdd" class="btn btn-sm" type="button">Add action</button>
+            <p id="comboSequence" class="combo-sequence" aria-label="Combo sequence" aria-live="polite">Build your combo</p>
             <div id="comboResult" class="combo-result" role="status" aria-live="polite"></div>
             <ol id="comboSteps" class="combo-steps"></ol>
-            <details class="dashboard-detail"><summary>How this estimate works</summary><p>One target, all selected hits land, all actions initially ready. Timing is from the first action to the end of the last cast, including cooldown waits and attack windups. No travel time, movement, animation cancels, cooldown refunds or resource limits. Target health and combat conditions stay at their configured values.</p><p>AA uses the attack's base damage with average critical strikes. Add bonus effects explicitly; they are not automatically triggered by the sequence. Ability rows can describe one component, a full duration, or bonus damage: choose the outcome you intend. Recast prerequisites and known windows are checked; other proc conditions are assumed satisfied.</p><p>Missing values stay unavailable. Expand a step to enter scenario values in seconds or damage after target defences; overrides remain fixed when your build changes.</p></details>
+            <details class="dashboard-detail"><summary>How this estimate works</summary><p>One target, all selected hits land, all actions initially ready. Timing is from the first action to the end of the last cast, including cooldown waits and attack windups. No travel time, movement, animation cancels, cooldown refunds or resource limits. Target health and combat conditions stay at their configured values.</p><p>AA adds a non-critical attack; choose AA crit in Custom Action for a critical strike. Add bonus effects explicitly; they are not automatically triggered by the sequence. Ability rows can describe one component, a full duration, or bonus damage: choose the outcome you intend. Recast prerequisites and known windows are checked; other proc conditions are assumed satisfied.</p><p>Missing damage and timing values count as 0 and show a red warning. Click an action to edit its values in seconds or damage after target defences; overrides remain fixed when your build changes. Hover or focus a damage number for its physical, magical and true damage breakdown.</p></details>
           </section>
         </aside>
       </main>
     </div>
   </div>
+
+  <dialog id="comboActionModal" class="combo-dialog" aria-labelledby="comboActionsTitle">
+    <div class="item-modal-header"><h3 id="comboActionsTitle">Choose an action</h3><button id="closeComboActions" class="btn" type="button" autofocus>Close ×</button></div>
+    <p>Choose an ability variant, attack or damage effect.</p>
+    <div id="comboActionList"></div>
+  </dialog>
+  <dialog id="comboEditModal" class="combo-dialog" aria-labelledby="comboEditTitle">
+    <div class="item-modal-header"><h3 id="comboEditTitle">Edit action</h3><button id="closeComboEdit" class="btn" type="button">Done</button></div>
+    <div id="comboEditFields"></div>
+    <button id="comboResetStep" class="btn" type="button">Use build values</button>
+  </dialog>
+  <div id="comboDamageTooltip" class="combo-damage-tooltip" role="tooltip" hidden></div>
 
   <dialog id="targetModal" class="target-modal" aria-labelledby="targetModalTitle">
     <div class="item-modal-header"><h3 id="targetModalTitle">Target settings</h3><button id="closeTargetModal" class="btn btn-sm" type="button" autofocus>Close ×</button></div>

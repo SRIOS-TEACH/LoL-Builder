@@ -86,4 +86,4 @@ Validation: 183 unit tests; advanced Builder browser checks across 173 champions
 
 ## Combo estimate coverage
 
-The Combo Tester reuses existing damage models with ordered cooldown/cast scheduling. It requires explicit values for missing formulas/timing and assumes fixed target health and combat conditions; proc prerequisites and champion-specific resets/reloads are not universally simulated. See [COMBOS.md](COMBOS.md) for supported behavior, limitations and verification.
+The Combo Tester reuses existing damage models with ordered cooldown/cast scheduling. Missing damage/timing contributes zero with visible warnings, and target health and combat conditions stay fixed; proc prerequisites and champion-specific resets/reloads are not universally simulated. See [COMBOS.md](COMBOS.md) for supported behavior, limitations and verification.
