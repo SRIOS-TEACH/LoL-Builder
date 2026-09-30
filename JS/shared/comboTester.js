@@ -25,11 +25,15 @@
     const modifier = valid(basic.mAttackDelayCastOffsetPercentAttackSpeedRatio) ? basic.mAttackDelayCastOffsetPercentAttackSpeedRatio : 1;
     return Math.max(0, fraction / baseAttackSpeed + (fraction / attackSpeed - fraction / baseAttackSpeed) * modifier);
   }
-  function simulate(actions) {
+  function simulate(actions, {target, resolveAction} = {}) {
+    const targeted = target?.enabled === true;
+    let remainingHp = targeted ? Math.max(0, Math.min(target.maxHp, target.currentHp)) : null;
     let cursor = 0, total = 0;
     const ready = new Map(), chains = new Map(), timeline = [], issues = [], damageWarnings = [], timeWarnings = [];
     const breakdown = Object.fromEntries(types.map(type => [type,0]));
-    for (const [index,action] of actions.entries()) {
+    for (const [index,original] of actions.entries()) {
+      const hpBefore = remainingHp;
+      const action = targeted && resolveAction ? resolveAction(original, {...target,currentHp:remainingHp}, index) : original;
       const errors = [], group = action.group || action.id;
       const warn = (list,message) => { const text = `Step ${index+1}: ${message}`; list.push(text); errors.push(message); issues.push(text); };
       let start = cursor;
@@ -63,10 +67,11 @@
         ready.set(group,{time:start + (valid(expiry) ? expiry : 0) + (valid(action.cooldown) ? action.cooldown : 0),missing:!valid(expiry) || !valid(action.cooldown)});
       }
       if (!action.unavailable) chains.set(group,{stage:action.stage || 0,start});
-      timeline.push({start,end,wait:start-cursor,errors,action,damage,breakdown:parts});
+      if (targeted) remainingHp = Math.max(0, remainingHp - damage);
+      timeline.push({start,end,wait:start-cursor,errors,action,damage,breakdown:parts,...(targeted ? {hpBefore,hpAfter:remainingHp} : {})});
       cursor = end;
     }
-    return {timeline,total,duration:cursor,breakdown,issues,damageWarnings,timeWarnings};
+    return {timeline,total,duration:cursor,breakdown,issues,damageWarnings,timeWarnings,...(targeted ? {remainingHp} : {})};
   }
   scope.ComboTester = {simulate,damageParts,attackWindup};
   if (typeof module !== 'undefined') module.exports = scope.ComboTester;

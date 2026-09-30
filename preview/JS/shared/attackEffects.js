@@ -272,7 +272,7 @@
       }
       if(enabled(3153,'mist-s-edge')){
         const hp=input('attack','target:currentHp','Target current health'),ratio=itemData(3153,ctx.ranged?'RangedValue':'MeleeValue');
-        row('Blade of the Ruined King',finite(hp)&&finite(ratio)?hp*ratio:null,'physical',1,`${finite(ratio)?(ratio*100).toFixed(1)+'%':'ratio unavailable'} × target current HP`);
+        row('Blade of the Ruined King',finite(hp)&&finite(ratio)?hp*ratio:null,'physical',1,`${finite(ratio)?(ratio*100).toFixed(1)+'%':'ratio unavailable'} × target current HP`,{itemId:3153,passiveKey:'mist-s-edge'});
       }
       if(enabled(6672,'bring-it-down')){
         const maxAmp=(itemData(6672,'MaxAmpNumber')??1)-1;
@@ -282,7 +282,7 @@
         const amp=state.target?.enabled?ctx.targetStats.missingHealthPercent*maxAmp*100:
           input('attack','krakenAmp','Kraken missing-health amplification (%)',{max:maxAmp*100});
         const explanation=state.target?.enabled?` × (1 + ${(maxAmp*100).toFixed(2)}% × ${(ctx.targetStats.missingHealthPercent*100).toFixed(2)}% target missing health)`:' × selected amplification';
-        const r=evaluate(items[6672],'DamageAmount',s);row('Kraken Slayer (every third hit)',finite(r.value)?r.value*(1+(Number(amp)||0)/100):null,'physical',itemData(6672,'AttackCount')||3,r.text+explanation,{onHit:false});
+        const r=evaluate(items[6672],'DamageAmount',s);row('Kraken Slayer (every third hit)',finite(r.value)?r.value*(1+(Number(amp)||0)/100):null,'physical',itemData(6672,'AttackCount')||3,r.text+explanation,{onHit:false,itemId:6672,passiveKey:'bring-it-down'});
       }
       const spellblade=[3057,3078,3100,6662,3508,3877,2510].filter(id=>enabled(id,'spellblade'));
       if(spellblade.length){
@@ -306,7 +306,7 @@
       if(enabled(3504,'sanctify')&&toggle('attack','ardent','Ardent Censer buff active'))row('Sanctify',itemData(3504,'OnHitMin'));
       if(enabled(6699,'firmament')&&toggle('attack','voltaic','Voltaic Cyclosword procs enabled')){
         const hp=input('attack','target:currentHp','Target current health'),interval=input('attack','voltaicInterval','Seconds between Firmament procs',{min:0.01}),fraction=itemData(6699,ctx.ranged?'PercentCurrentHPRanged':'PercentCurrentHPMelee');
-        row('Firmament',finite(hp)&&finite(fraction)?hp*fraction/100:null,'physical',1,'Current target HP × Firmament percentage',{interval:finite(interval)&&interval>0?interval:null,onHit:false});
+        row('Firmament',finite(hp)&&finite(fraction)?hp*fraction/100:null,'physical',1,'Current target HP × Firmament percentage',{itemId:6699,passiveKey:'firmament',interval:finite(interval)&&interval>0?interval:null,onHit:false});
       }
       if(enabled(3179,'nightstalker')&&toggle('attack','umbral','Umbral Glaive unseen procs enabled')){
         const interval=input('attack','umbralInterval','Seconds between unseen attacks',{min:0.01}),r=evaluate(items[3179],'ProcDamage',s);

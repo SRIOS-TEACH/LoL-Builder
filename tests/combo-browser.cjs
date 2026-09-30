@@ -120,6 +120,41 @@ const server = http.createServer((request, response) => {
     await openPicker();const passive=await page.locator('[data-action-id^="item:3115:"]').first().getAttribute('data-action-id');await page.locator(`[data-action-id="${passive}"]`).click();assert.ok(await total()>amount);
     await page.evaluate(()=>{BUILDER.itemSlots=Array(7).fill('');renderStats();renderAbilityCards();});
     assert.ok(await page.locator('[data-damage-note]').count());assert.ok(Number.isFinite(await total()));
+    // Passive discovery does not require toggling sustained attack conditions.
+    await select('Aatrox');
+    await page.evaluate(()=>{BUILDER.target={enabled:true,maxHp:2000,currentHp:2000,armor:0,mr:0,damageReduction:0};BUILDER.combatValues={};renderStats();renderAbilityCards();});
+    const originalState=await page.evaluate(()=>JSON.stringify({target:BUILDER.target,values:BUILDER.combatValues}));
+    await add('p:Deathbringer Stance');assert.ok(await total()>0);
+    assert.equal(await page.locator('#comboSequence').innerText(),'P');
+    assert.match(await page.locator('#comboSteps img').getAttribute('src'),/img\/passive\//);
+    assert.equal(await page.evaluate(()=>JSON.stringify({target:BUILDER.target,values:BUILDER.combatValues})),originalState);
+    await select('Aurora');await add('p:passive');assert.ok(await total()>0,'Aurora passive proc damage');
+    // Veigar R resolves actual missing-health scaling at its place in the combo.
+    await select('Veigar');await add('p:passive');near(await total(),0,'utility passive');await clear();
+    await add('r:0');const fullHealthR=await total();await clear();
+    await add('q:0');const qDamage=await total();await add('r:0');
+    near(await total(),qDamage+fullHealthR*(1+1.5*qDamage/2000),'sequential Veigar R');
+    near(Number(await page.locator('[data-combo-hp]').first().getAttribute('data-combo-hp')),2000-qDamage,'HP after Q');
+    near(Number(await page.locator('[data-combo-remaining]').innerText()),2000-await total(),'final HP');
+    await page.locator('#comboSteps [data-op="up"]').nth(1).click();
+    near(await total(),fullHealthR+qDamage,'reordering updates health scaling');
+    await edit(0);await fill('Damage','5000');await done();
+    assert.equal(Number(await page.locator('[data-combo-remaining]').innerText()),0);
+    await page.evaluate(()=>{BUILDER.target.enabled=false;renderAbilityCards();});
+    assert.equal(await page.locator('[data-combo-hp]').count(),0);assert.equal(await page.locator('[data-combo-remaining]').count(),0);
+    // Shadowflame crosses its live health threshold only after the first hit.
+    await clear();
+    await page.evaluate(()=>{BUILDER.itemSlots=['4645','','','','','',''];BUILDER.target={enabled:true,maxHp:2000,currentHp:800,armor:0,mr:0,damageReduction:0};renderStats();renderAbilityCards();});
+    await add('q:0');const firstQ=await total();await add('q:0');
+    const amp=await page.evaluate(()=>{const saved=BUILDER.target;try{BUILDER.target={...saved,currentHp:1};return getComputedChampionStatsForTooltips().magicDamageMultiplier;}finally{BUILDER.target=saved;}});
+    assert.ok(amp>1);near(await total(),firstQ*(1+amp),'Shadowflame threshold crossing');
+    assert.equal(await page.evaluate(()=>BUILDER.target.currentHp),800,'simulation preserves configured HP');
+    await clear();
+    await page.evaluate(()=>{BUILDER.itemSlots=['3153','','','','','',''];BUILDER.target.currentHp=2000;renderStats();renderAbilityCards();});
+    await openPicker();const bork=await page.locator('[data-action-id^="item:3153:"]').first().getAttribute('data-action-id');
+    await page.locator(`[data-action-id="${bork}"]`).click();const firstBork=await total();assert.ok(firstBork>0);
+    await add(bork);near(await total(),firstBork+firstBork*(2000-firstBork)/2000,'current-health item follows remaining HP');
+    await page.evaluate(()=>{BUILDER.itemSlots=Array(7).fill('');BUILDER.target.currentHp=2000;renderStats();renderAbilityCards();});
     await select('Aatrox');await add('q:0');await add('q:1');await add('aa:no-crit');await add('e:0');await add('r:0');
     await page.evaluate(()=>document.getElementById('comboPanel').scrollTop=0);
     await page.screenshot({path:path.join(screenshotDir,'combo-icons-desktop.png'),fullPage:true});
