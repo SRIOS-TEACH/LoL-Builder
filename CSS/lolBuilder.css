@@ -1382,3 +1382,5 @@ body.compact-dashboard { background-image:linear-gradient(90deg,rgba(5,11,22,.65
   .combo-dialog { padding:16px; }
   .combo-dialog .item-modal-header { top:-16px; }
 }
+
+.combo-step-hp { display:block; font-size:12px; font-weight:400; color:var(--muted, #aab8c5); line-height:1.4; }

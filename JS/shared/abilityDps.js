@@ -225,6 +225,13 @@
       }
       note='Combined damage includes both casts. Enter the cast interval and whether cooldown overlaps it to calculate the full cycle. Before mitigation; excludes resets and extra procs.';
     } else switch(spell.id) {
+      case 'VeigarR': {
+        const health = target?.enabled ? scope.TargetDamage.targetStats(target) : null;
+        if (health) add('Primordial Burst',multiply(token('MinDamage'),Math.min(2,1+1.5*health.missingHealthPercent)));
+        else { add('Minimum',token('MinDamage')); add('Maximum',token('MaxDamage')); }
+        note='Primordial Burst scales with target missing health, up to twice its base damage. Before mitigation.';
+        break;
+      }
       case 'AatroxQ': {
         const base=token('QDamage'),edge=token('QEdgeDamage'),ramp=number('QRampBonus');
         const hits=[0,1,2].map(i=>multiply(base,finite(ramp)?1+i*ramp:null));

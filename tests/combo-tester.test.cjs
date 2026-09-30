@@ -74,3 +74,22 @@ test('windup resolves both champion data formats, modifiers, and explicit overri
   assert.equal(attackWindup(null,1,.625),null);
   assert.equal(attackWindup({basicAttack:{}},1,.625),null);
 });
+
+test('target health advances per action, including threshold effects and overkill', () => {
+  const target={enabled:true,maxHp:1000,currentHp:1000};
+  const hit=action('q',350,.25,1,{damageType:'magic'});
+  const result=simulate([hit,hit,hit,hit],{target,resolveAction:(a,t)=>({...a,damage:a.damage*(t.currentHp/t.maxHp<.4?1.2:1)})});
+  assert.deepEqual(result.timeline.map(r=>r.hpBefore),[1000,650,300,0]);
+  assert.deepEqual(result.timeline.map(r=>r.hpAfter),[650,300,0,0]);
+  assert.equal(result.total,1540);
+  assert.equal(result.remainingHp,0);
+  assert.equal(target.currentHp,1000);
+  assert.equal(result.duration,3.25);
+});
+test('disabled targets retain static damage and missing damage leaves HP unchanged', () => {
+  const missing=action('x',null,null,null);
+  const on=simulate([missing],{target:{enabled:true,maxHp:1000,currentHp:600}});
+  assert.equal(on.remainingHp,600);assert.equal(on.damageWarnings.length,1);
+  const off=simulate([action('q',100,0,0)],{target:{enabled:false},resolveAction:()=>{throw Error('must not resolve');}});
+  assert.equal(off.total,100);assert.equal(off.remainingHp,undefined);assert.equal(off.timeline[0].hpAfter,undefined);
+});

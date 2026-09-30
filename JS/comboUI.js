@@ -67,6 +67,32 @@
           note:'Enter this recast’s damage, cast time and minimum interval. Cooldown starts at the initial cast; override if needed. Champion-specific recast conditions are not modeled.'});
       }
     }
+    // A passive is an explicit proc, independent of sustained-attack toggles.
+    const passive = BUILDER.championData.passive;
+    if (passive) {
+      const rows = new Map();
+      const collect = profile => profile.rows.filter(r => r.source === 'champion' && r.sourceSlot === 'p' && !r.replacementDebit && ['physical','magic','true'].includes(r.type))
+        .forEach(r => { if (!rows.has(r.label)) rows.set(r.label,r); });
+      collect(attack);
+      for (const control of attack.controls.filter(c => c.slot === 'p' && c.type === 'toggle' && !c.disabled)) {
+        collect(window.AttackEffects.model({...BUILDER,combatValues:{...BUILDER.combatValues,[control.key]:true}},source).profile(computed));
+      }
+      const base = {group:'p',shortcut:'P',icon:passive.image?.full,iconGroup:'passive',castTime:0,cooldown:null};
+      for (const [label,row] of rows) result.push({...base,id:`p:${label}`,label:`P — ${label}`,
+        damage:finite(row.value) && row.dot ? row.value * row.duration : row.value,damageType:row.type,
+        cooldown:row.cooldown ?? null,note:'One explicit passive trigger; satisfy its trigger conditions before this step. Damage over time is counted in full at this step. '+(row.formula || '')});
+      if (!rows.size) {
+        const spell = {id:'passive',effectBurn:[],vars:[],description:passive.description,tooltip:gameTooltip(BUILDER.cdragonAbilityData?.p,passive.description)};
+        const context = buildAbilityContext(spell,1,'p');
+        const profile = window.AbilityDps.profile({spell,rank:1,slot:'p',champion:BUILDER.selectedChampion,tooltip:expandAbilityLocalization(spell.tooltip),
+          resolve:token => resolveAbilityToken(token,context),payload:context.cdragonSpell,target:BUILDER.target,stats:context.stats});
+        const summary = window.ChampionEffects.model(BUILDER).passiveSummary(context.stats);
+        const damage = summary?.type === 'aurora' ? window.TargetDamage.apply(BUILDER.target.enabled ? summary.healthFraction * BUILDER.target.maxHp : null,'magic',{target:BUILDER.target,stats:context.stats}) : profile.rows[0]?.damage;
+        result.push({...base,id:'p:passive',label:`P — ${passive.name}`,damage:damage?.value ?? (profile.status === 'No direct damage' ? 0 : null),
+          components:damage?.components,damageType:summary?.type === 'aurora' ? 'magic' : undefined,
+          note:'One explicit passive trigger. Utility and stat effects use the configured build; this action does not grant stacks automatically. '+(profile.note || profile.status || '')});
+      }
+    }
     // Expose each equipped active/passive, including effects the attack model cannot resolve.
     for (const id of [...new Set(BUILDER.itemSlots.filter(Boolean))]) {
       const item = BUILDER.items[id];
@@ -90,7 +116,7 @@
       }
     }
     for (const [index,row] of attack.rows.entries()) {
-      if (row.source !== 'champion' || row.replacementDebit || !['physical','magic','true'].includes(row.type)) continue;
+      if (row.source !== 'champion' || row.sourceSlot === 'p' || row.replacementDebit || !['physical','magic','true'].includes(row.type)) continue;
       result.push({id:`bonus:${index}:${row.label}`,group:`bonus:${row.label}`,label:`Champion bonus — ${row.label}`,
         damage:row.value,damageType:row.type,shortcut:'?',castTime:0,cooldown:row.cooldown ?? null,note:'One explicit bonus trigger, not included in AA. '+row.formula});
     }
@@ -102,31 +128,42 @@
   const leagueMark = '<svg class="combo-league-mark" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" stroke-width="3"/><path fill="currentColor" d="M16 9h11l-3 4v21h10l5-4-3 10H13l3-5z"/></svg>';
   const copyMark = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>';
   function icon(action) {
-    const url = action.icon ? `https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/spell/${action.icon}`
+    const url = action.icon ? `https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/${action.iconGroup || 'spell'}/${action.icon}`
       : action.itemId ? `https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${action.itemId}.png` : null;
     return `<span class="combo-action-icon" aria-hidden="true">${action.group === 'aa'
       ? `<span class="combo-ad-symbol">${STAT_ICONS.AD}</span>`
       : `${url ? `<img src="${escape(url)}" alt="">` : leagueMark}<span class="combo-key">${escape(action.shortcut || '?')}</span>`}</span>`;
   }
-  function selectedActions() {
+  function selectedActions(entries = catalog) {
     return steps.map(step => {
-      const entry = step.custom ? {...customBase,id:step.actionId,group:step.actionId} : catalog.find(a => a.id === step.actionId);
+      const entry = step.custom ? {...customBase,id:step.actionId,group:step.actionId} : entries.find(a => a.id === step.actionId);
       const action = {...(entry || {...step.snapshot,unavailable:true}),...step.overrides};
       if (step.overrides.damageType) action.components = null;
       return action;
     });
   }
+  function simulate() {
+    const target = window.TargetDamage.normalize(BUILDER.target), cache = new Map();
+    return window.ComboTester.simulate(selectedActions(), {target,resolveAction:(original,current,index) => {
+      if (!cache.has(current.currentHp)) {
+        const saved = BUILDER.target;
+        try { BUILDER.target = current; cache.set(current.currentHp,selectedActions(actions())); }
+        finally { BUILDER.target = saved; }
+      }
+      return cache.get(current.currentHp)[index];
+    }});
+  }
   const breakdownAttribute = parts => `data-combo-breakdown="${escape(JSON.stringify(parts))}" aria-describedby="comboDamageTooltip"`;
   const warning = text => `<span class="combo-alert" aria-label="${escape(text)}" title="${escape(text)}">!</span>`;
   function render() {
     hideDamageTooltip();
-    const selected = selectedActions(), result = window.ComboTester.simulate(selected);
+    const result = simulate(), selected = result.timeline.map(row => row.action);
     document.getElementById('comboSequence').textContent = selected.length ? selected.map(a => a.shortcut || '?').join(' → ') : 'Build your combo';
     document.getElementById('comboSteps').innerHTML = selected.map((action,index) => {
       const step = steps[index], row = result.timeline[index];
       return `<li data-step="${step.id}"><div class="combo-step-box">
         <button type="button" class="combo-step-edit" data-op="edit" aria-label="Edit step ${index+1}: ${escape(action.label)}" title="${escape(action.label)} · ${row.start.toFixed(2)}s" ${breakdownAttribute(row.breakdown)}>
-          ${icon(action)}<span class="combo-step-damage">${Number(row.damage.toFixed(1))}${row.errors.length ? warning(row.errors.join(' ')) : ''}</span>
+          ${icon(action)}<span class="combo-step-damage">${Number(row.damage.toFixed(1))}${row.errors.length ? warning(row.errors.join(' ')) : ''}${BUILDER.target.enabled ? `<small class="combo-step-hp" data-combo-hp="${row.hpAfter}">${row.hpAfter.toFixed(1)} HP left</small>` : ''}</span>
         </button><button type="button" class="combo-icon-button" data-op="copy" aria-label="Copy step ${index+1}" title="Copy action">${copyMark}</button><button type="button" class="combo-icon-button" data-op="remove" aria-label="Remove step ${index+1}" title="Remove action">×</button>
         </div><div class="combo-step-move"><button type="button" data-op="up" aria-label="Move step ${index+1} up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" data-op="down" aria-label="Move step ${index+1} down" ${index === steps.length-1 ? 'disabled' : ''}>↓</button></div></li>`;
     }).join('');
@@ -135,11 +172,12 @@
       ${damageWarning ? '<small class="combo-result-note" data-damage-note>Missing damage counts as 0; unknown damage types are flagged.</small>' : ''}
       <div><span>Minimum time</span><strong><span data-combo-duration>${result.duration.toFixed(2)} s</span>${timeWarning ? warning(result.timeWarnings.join('\n')) : ''}</strong></div>
       ${timeWarning ? '<small class="combo-result-note" data-time-note>Missing timing counts as 0. Check flagged steps for timing or order.</small>' : ''}
+      ${BUILDER.target.enabled ? `<div><span>Target HP remaining</span><strong data-combo-remaining>${result.remainingHp.toFixed(1)}</strong></div><small>Health effects update per action. Damage includes overkill.</small>` : ''}
       <small>${BUILDER.target.enabled ? 'Against target' : 'Before target defences'} · ${steps.length} actions · estimate</small>`;
     document.getElementById('comboClear').disabled = !steps.length;
   }
   function renderPicker() {
-    const groups = [ ['Attacks', a => a.group === 'aa'], ['Abilities & recasts', a => ['q','w','e','r'].includes(a.group)], ['Item & champion damage', a => a.group !== 'aa' && !['q','w','e','r'].includes(a.group)] ];
+    const groups = [ ['Attacks', a => a.group === 'aa'], ['Abilities & recasts', a => ['q','w','e','r'].includes(a.group)], ['Champion passive', a => a.group === 'p'], ['Item & champion damage', a => a.group !== 'p' && a.group !== 'aa' && !['q','w','e','r'].includes(a.group)] ];
     document.getElementById('comboActionList').innerHTML = groups.map(([title,filter]) => {
       const entries = catalog.filter(filter);
       return entries.length ? `<section><h4>${title}</h4>${entries.map(action => `<button type="button" class="combo-picker-action" data-action-id="${escape(action.id)}" ${action.unavailable ? 'disabled' : ''}>${icon(action)}<span><strong>${escape(action.label)}</strong><small>${finite(action.damage) ? number(action.damage) : '0 (damage missing)'} damage${action.unavailable ? ' · disabled in build' : ''}</small></span></button>`).join('')}</section>` : '';
@@ -168,7 +206,7 @@
   }
   function edit(id) {
     editingId = id;
-    const index = steps.findIndex(s => s.id === id), step = steps[index], action = selectedActions()[index];
+    const index = steps.findIndex(s => s.id === id), step = steps[index], action = simulate().timeline[index]?.action;
     if (!action) return;
     const field = (key,label) => `<label>${label}<input class="form-control" type="number" min="0" step="any" data-field="${key}" value="${number(step.overrides[key])}" placeholder="${finite(action[key]) ? number(action[key]) : '0 (missing)'}"></label>`;
     document.getElementById('comboEditTitle').textContent = step.custom ? 'Custom Action' : action.label;
@@ -177,7 +215,7 @@
       <div class="combo-fields">${field('damage','Damage')}<label>Damage type<select class="form-control" data-field="damageType" aria-label="Damage type"><option value="">${step.custom ? 'Physical (default)' : 'Use ability / item damage type'}</option>${[['physical','Physical'],['magic','Magical'],['true','True']].map(([value,label]) => `<option value="${value}" ${step.overrides.damageType === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
       ${field('castTime','Cast / attack windup (s)')}${field('cooldown','Repeat cooldown (s)')}${action.stage ? field('recastDelay','Recast interval (s)')+field('recastWindow','Recast window (s)') : ''}</div>
       ${action.stage ? `<label>Cooldown starts<select class="form-control" data-field="cooldownStarts" aria-label="Cooldown starts"><option value="first" ${action.cooldownStarts !== 'last' ? 'selected' : ''}>First cast</option><option value="last" ${action.cooldownStarts === 'last' ? 'selected' : ''}>Last recast</option></select></label>` : ''}
-      <p class="combo-edit-warnings">${escape(window.ComboTester.simulate(selectedActions()).timeline[index].errors.join(' '))}</p>`;
+      <p class="combo-edit-warnings">${escape(simulate().timeline[index].errors.join(' '))}</p>`;
     const modal = document.getElementById('comboEditModal');
     if (!modal.open) modal.showModal();
     (modal.querySelector('input') || document.getElementById('closeComboEdit')).focus();
@@ -240,7 +278,7 @@
       else if (input.validity.valid && finite(Number(input.value))) step.overrides[key] = Number(input.value);
       render();
       const index = steps.findIndex(s=>s.id === editingId);
-      document.querySelector('.combo-edit-warnings').textContent = window.ComboTester.simulate(selectedActions()).timeline[index].errors.join(' ');
+      document.querySelector('.combo-edit-warnings').textContent = simulate().timeline[index].errors.join(' ');
     });
     document.getElementById('comboResetStep').onclick = () => {
       const step = steps.find(s=>s.id === editingId); if (!step) return;

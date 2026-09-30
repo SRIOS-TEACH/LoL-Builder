@@ -239,3 +239,13 @@ test('full proc damage can use a separate cooldown-limited amount in the DPS cel
  result.rows[0].damage.value=220;result.rows[0].dpsAmount={value:120+100/1.5,text:'Cooldown-limited proc'};
  assert.match(dps.render(result),/>220\.0<\/td>/);assert.match(dps.render(result),/>186\.7<\/td>/);
 });
+
+test('Veigar R uses current missing health, caps its execute scaling and mitigates once',()=>{
+ const target={enabled:true,maxHp:1000,currentHp:1000,armor:0,mr:100,damageReduction:0};
+ const values={MinDamage:200,MaxDamage:400};
+ const opts={target,tooltip:'<magicDamage>{{ MinDamage }} and {{ MaxDamage }} magic damage</magicDamage>'};
+ assert.equal(profile('VeigarR',values,opts).rows[0].damage.value,100);
+ assert.equal(profile('VeigarR',values,{...opts,target:{...target,currentHp:500}}).rows[0].damage.value,175);
+ assert.equal(profile('VeigarR',values,{...opts,target:{...target,currentHp:100}}).rows[0].damage.value,200);
+ assert.deepEqual(profile('VeigarR',values,{...opts,target:{...target,enabled:false}}).rows.map(r=>r.damage.value),[200,400]);
+});
