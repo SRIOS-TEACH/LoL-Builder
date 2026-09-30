@@ -130,5 +130,65 @@
     }
     return {totals, notes};
   }
-  scope.RuneEffects = {selected, fields, definition, normalize, minutes, calculate};
+  // Explicit proc actions, using the selected patch's descriptions rather than balance constants.
+  function damageActions(state, lookup = {}, stats = {}, options = {}) {
+    const fraction=(Math.min(18,Math.max(1,Number(state.level)||1))-1)/17;
+    const adaptive=stats.ap===stats.bonusAd ? (options.adaptiveAp?'magic':'physical') : stats.ap>stats.bonusAd?'magic':'physical';
+    const actions=[];
+    for (const id of selected(state)) {
+      const meta=lookup[id] || {}, text=clean(meta.longDesc || meta.desc).replace(/[–−]/g,'-');
+      const read=pattern=>number(text,pattern);
+      const interpolate=pattern=>{const m=text.match(pattern);return m ? Number(m[1])+(Number(m[2] ?? m[1])-Number(m[1]))*fraction : null;};
+      const cooldown=interpolate(/Cooldown:\s*([\d.]+)(?:\s*-\s*([\d.]+))?s/i);
+      const ratios=base=>{
+        const ad=read(/\+\s*([\d.]+) bonus AD/i),ap=read(/\+\s*([\d.]+) AP/i);
+        return base===null || ad===null || ap===null ? null : base+ad*(stats.bonusAd||0)+ap*(stats.ap||0);
+      };
+      let raw=null,type=adaptive,known=true,note='',cd=cooldown;
+      switch(id) {
+        case 'scorch': raw=interpolate(/dealing ([\d.]+)\s*-\s*([\d.]+) bonus magic damage/i);type='magic';break;
+        case 'sudden-impact': raw=interpolate(/bonus ([\d.]+)\s*-\s*([\d.]+) True Damage/i);type='true';break;
+        case 'electrocute': raw=ratios(interpolate(/Damage:\s*([\d.]+)\s*-\s*([\d.]+)/i));break;
+        case 'arcane-comet': raw=ratios(interpolate(/Adaptive Damage\s*:\s*([\d.]+)\s*-\s*([\d.]+)/i));note='Base impact at minimum distance. The maximum-distance outcome is listed separately. Cooldown refunds are not simulated.';break;
+        case 'summon-aery': raw=ratios(interpolate(/dealing ([\d.]+)\s*-\s*([\d.]+) based on level/i));note='Enemy damage only. Return travel time varies; override the repeat interval when needed.';break;
+        case 'press-the-attack': raw=interpolate(/deals ([\d.]+)\s*-\s*([\d.]+) bonus adaptive damage/i);note='Third-hit proc only. The subsequent damage amplification is not automatically applied.';break;
+        case 'dark-harvest': {
+          const base=read(/Dark Harvest damage:\s*([\d.]+)/i),per=read(/\+([\d.]+) damage per soul/i),threshold=read(/below ([\d.]+)% health/i);
+          raw=base!==null && per!==null ? ratios(base+per*normalize(state.runeStacks?.[id],definition(id,meta))) : null;
+          if(state.target?.enabled) raw=threshold===null ? null : state.target.currentHp/state.target.maxHp>=threshold/100 ? 0 : raw;
+          note='Uses the configured soul count and target HP at this step. No soul gain or takedown reset is applied.';break;
+        }
+        case 'lethal-tempo': {
+          const base=interpolate(stats.ranged ? /\|\| ([\d.]+)\s*-\s*([\d.]+) Ranged/i : /deal \[([\d.]+)\s*-\s*([\d.]+) Melee/i);
+          const per=read(/increased by ([\d.]+)% per 1% Bonus Attack Speed/i);
+          raw=base!==null && per!==null ? base*(1+per*(stats.bonusAttackSpeed||0)) : null;
+          note='One on-attack proc at maximum stacks, using configured bonus attack speed. Set Active stacks to maximum in Rune Stacks to include the rune’s attack speed.';cd=stats.attackSpeed>0?1/stats.attackSpeed:null;break;
+        }
+        case 'grasp-of-the-undying': {
+          const ratio=read(/magic damage equal to ([\d.]+)% of your max health/i),ranged=read(/health gained are ([\d.]+)% effective/i);
+          raw=ratio!==null && (!stats.ranged || ranged!==null) ? stats.hp*ratio/100*(stats.ranged?ranged/100:1) : null;type='magic';cd=read(/Every ([\d.]+)s/i);note='Damage only. Healing and permanent health gains are not applied to this sequence.';break;
+        }
+        case 'aftershock': {
+          const base=interpolate(/Damage:\s*([\d.]+)\s*-\s*([\d.]+)/i),ratio=read(/\+([\d.]+)% of your bonus health/i);
+          raw=base!==null && ratio!==null ? base+ratio/100*(stats.bonusHp||0) : null;type='magic';note='Explosion damage only; add this action where the explosion lands.';break;
+        }
+        case 'first-strike': type='true';note='Damage depends on damage dealt during its active window. Enter that bonus damage as an override; it is not automatically summed from earlier actions.';break;
+        default:known=false;
+      }
+      if(!known)continue;
+      const make=(suffix,label,value)=>{
+        const hit=scope.TargetDamage.apply(value,type,{target:state.target,stats});
+        actions.push({id:`rune:${id}${suffix}`,group:`rune:${id}`,runeId:id,label:`Rune · ${meta.name || id}${label}`,shortcut:'?',iconUrl:meta.icon,
+          damage:hit.value,damageType:type,castTime:0,cooldown:cd,
+          note:text+' '+note+' One explicit proc; add it at the point it triggers. Trigger prerequisites, impact delays and stacks are not automatically simulated.'});
+      };
+      make('','',raw);
+      if(id==='arcane-comet') {
+        const max=read(/scales up to ([\d.]+)% at/i),range=read(/% at ([\d.]+) range/i);
+        if(max!==null && range!==null)make(':maximum',` — Maximum distance (${range} range)`,raw===null?null:raw*(1+max/100));
+      }
+    }
+    return actions;
+  }
+  scope.RuneEffects = {selected, fields, definition, normalize, minutes, calculate, damageActions};
 })(typeof window !== 'undefined' ? window : globalThis);

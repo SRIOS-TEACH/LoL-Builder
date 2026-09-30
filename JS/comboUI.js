@@ -102,17 +102,18 @@
         const state = {...BUILDER,combatValues:{...BUILDER.combatValues,...(binding ? {[binding]:true} : {})}};
         const profile = binding ? window.AttackEffects.model(state,source).profile(computed) : attack;
         const row = profile.rows.find(r => String(r.itemId) === String(id) && r.passiveKey === section.key);
-        // The description resolver already applies target mitigation. Only a single
-        // unambiguous typed scalar is safe to adopt; alternatives remain unresolved.
-        const packets = window.AbilityDps.components(section.html.replace(/(\d),(?=\d{3}\b)/g,'$1'),()=>null);
-        const describedDamage = packets.length === 1 && packets[0].damage.components.length === 1 ? packets[0].damage.value : null;
-        if (!section.active && !row && !packets.length) continue;
-        const activeCooldown = section.active ? getItemLookupShared().inferActiveCooldownSeconds?.(id) : null;
-        result.push({id:`item:${id}:${section.key}`,group:row?.spellbladeId ? 'spellblade' : `item:${id}:${section.key}`,
-          label:`${section.active ? 'Active' : 'Passive'} · ${item.name} — ${section.label}`,shortcut:'?',itemId:id,
-          damage:row?.value ?? describedDamage,damageType:row?.type ?? packets[0]?.damage.components[0]?.type,castTime:section.active ? null : 0,cooldown:row?.cooldown ?? activeCooldown ?? (row && !Object.hasOwn(row,'interval') ? 0 : null),
-          unavailable:!section.active && !itemPassiveEnabled(id,section.key),
-          note:section.html.replace(/<[^>]*>/g,' ') + ' One explicit trigger; satisfy its conditions before this step. Unmodeled values require an override.'});
+        const options = row ? [{value:row.value,components:[{value:row.value,type:row.type}]}] : section.damageOptions || [];
+        if (!section.active && !options.length) continue;
+        // Some tooltips split the ACTIVE cooldown header from its named effect.
+        if (section.active && section.key === 'active' && !options.length) continue;
+        const cooldown = row?.cooldown ?? section.cooldown ?? (section.active ? getItemLookupShared().inferActiveCooldownSeconds?.(id) : null) ?? (row && !Object.hasOwn(row,'interval') ? 0 : null);
+        for (const [index,option] of (options.length ? options : [{value:null}]).entries()) {
+          result.push({id:`item:${id}:${section.key}`+(index ? `:damage:${index}` : ''),group:row?.spellbladeId ? 'spellblade' : `item:${id}:${section.key}`,
+            label:`${section.active ? 'Active' : 'Passive'} · ${item.name} — ${section.label}`+(option.label ? ` — ${option.label}` : ''),shortcut:'?',itemId:id,
+            damage:option.value,components:option.components,damageType:option.components?.[0]?.type,castTime:section.active ? null : 0,cooldown,
+            unavailable:!section.active && !itemPassiveEnabled(id,section.key),
+            note:section.html.replace(/<[^>]*>/g,' ') + ' One explicit trigger; satisfy its conditions before this step. Select one outcome, or add distinct damage components separately. Unmodeled values require an override.'});
+        }
       }
     }
     for (const [index,row] of attack.rows.entries()) {
@@ -120,6 +121,7 @@
       result.push({id:`bonus:${index}:${row.label}`,group:`bonus:${row.label}`,label:`Champion bonus — ${row.label}`,
         damage:row.value,damageType:row.type,shortcut:'?',castTime:0,cooldown:row.cooldown ?? null,note:'One explicit bonus trigger, not included in AA. '+row.formula});
     }
+    result.push(...window.RuneEffects.damageActions(BUILDER,RUNE_DATA.runeLookup,getComputedChampionStatsForTooltips(),{adaptiveAp:isApAdaptiveChampion()}));
     return result;
   }
 
@@ -128,8 +130,8 @@
   const leagueMark = '<svg class="combo-league-mark" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" stroke-width="3"/><path fill="currentColor" d="M16 9h11l-3 4v21h10l5-4-3 10H13l3-5z"/></svg>';
   const copyMark = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>';
   function icon(action) {
-    const url = action.icon ? `https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/${action.iconGroup || 'spell'}/${action.icon}`
-      : action.itemId ? `https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${action.itemId}.png` : null;
+    const url = action.iconUrl || (action.icon ? `https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/${action.iconGroup || 'spell'}/${action.icon}`
+      : action.itemId ? `https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${action.itemId}.png` : null);
     return `<span class="combo-action-icon" aria-hidden="true">${action.group === 'aa'
       ? `<span class="combo-ad-symbol">${STAT_ICONS.AD}</span>`
       : `${url ? `<img src="${escape(url)}" alt="">` : leagueMark}<span class="combo-key">${escape(action.shortcut || '?')}</span>`}</span>`;
@@ -177,7 +179,7 @@
     document.getElementById('comboClear').disabled = !steps.length;
   }
   function renderPicker() {
-    const groups = [ ['Attacks', a => a.group === 'aa'], ['Abilities & recasts', a => ['q','w','e','r'].includes(a.group)], ['Champion passive', a => a.group === 'p'], ['Item & champion damage', a => a.group !== 'p' && a.group !== 'aa' && !['q','w','e','r'].includes(a.group)] ];
+    const groups = [ ['Attacks', a => a.group === 'aa'], ['Abilities & recasts', a => ['q','w','e','r'].includes(a.group)], ['Champion passive', a => a.group === 'p'], ['Rune damage', a => !!a.runeId], ['Item & champion damage', a => !a.runeId && a.group !== 'p' && a.group !== 'aa' && !['q','w','e','r'].includes(a.group)] ];
     document.getElementById('comboActionList').innerHTML = groups.map(([title,filter]) => {
       const entries = catalog.filter(filter);
       return entries.length ? `<section><h4>${title}</h4>${entries.map(action => `<button type="button" class="combo-picker-action" data-action-id="${escape(action.id)}" ${action.unavailable ? 'disabled' : ''}>${icon(action)}<span><strong>${escape(action.label)}</strong><small>${finite(action.damage) ? number(action.damage) : '0 (damage missing)'} damage${action.unavailable ? ' · disabled in build' : ''}</small></span></button>`).join('')}</section>` : '';

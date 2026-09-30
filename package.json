@@ -11,7 +11,8 @@
     "test:pickers": "node tests/picker-browser.cjs",
     "test:passives": "node tests/passives-browser.cjs",
     "test:targets": "node tests/target-browser.cjs",
-    "test:combos": "node tests/combo-browser.cjs"
+    "test:combos": "node tests/combo-browser.cjs",
+    "test:combo-effects": "node tests/combo-effects-browser.cjs"
   },
   "engines": {
     "node": ">=20"

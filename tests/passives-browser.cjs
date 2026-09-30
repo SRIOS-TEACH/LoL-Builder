@@ -161,6 +161,7 @@ const server = http.createServer((request, response) => {
 
     await select('Ezreal');
     await equip(['3100']);
+    await page.locator('#targetSettingsBtn').click();
     const spellbladeToggle = page.locator('[data-attack-control="attack:spellblade"]');
     if (await spellbladeToggle.getAttribute('aria-pressed') !== 'true') await spellbladeToggle.click();
     const interval = page.locator('[data-attack-control="attack:spellbladeInterval"]');
@@ -174,6 +175,7 @@ const server = http.createServer((request, response) => {
     lich = await result();
     proc = lich.attack.rows.find(row => String(row.spellbladeId) === '3100');
     assert.ok(proc.interval >= 1.5, 'an interval below cooldown cannot inflate Spellblade DPS');
+    await page.locator('#closeTargetModal').click();
 
     await page.locator('#passiveToggleBtn').click();
     const lichSection = page.locator('[data-passive-section="3100:spellblade"]');
@@ -190,7 +192,9 @@ const server = http.createServer((request, response) => {
     assert.equal(await interval.inputValue(), '1.5', 'Passives On retains the minimum interval');
     near((await result()).attack.rows.find(row => String(row.spellbladeId) === '3100').value, proc.value, 'Passives On restores Spellblade damage');
     await page.locator('#closePassiveModalBtn').click();
+    await page.locator('#targetSettingsBtn').click();
     await spellbladeToggle.click();
+    await page.locator('#closeTargetModal').click();
     assert.equal((await result()).attack.rows.filter(row => String(row.spellbladeId) === '3100').length, 0, 'Attack control Off removes Spellblade damage');
     await page.locator('#passiveToggleBtn').click();
     assert.equal(await lichPassiveToggle.getAttribute('aria-pressed'), 'false', 'Passives reflects the disabled attack control');
@@ -257,7 +261,9 @@ const server = http.createServer((request, response) => {
     near(qStats.cooldown,qStats.baseCooldown/1.4,'basic cooldown includes Dragonforce');
     near(rStats.cooldown,rStats.baseCooldown/1.35,'ultimate cooldown includes Scorn');
     const unstackedQ=qStats.rows.map(r=>r.damage.value);
+    await page.locator('#targetSettingsBtn').click();
     await edit('[data-attack-control="attack:shojinStacks"]',4);
+    await page.locator('#closeTargetModal').click();
     qStats=await ability('q');
     qStats.rows.forEach((row,i)=>near(row.damage.value,unstackedQ[i]*1.06,'ranged Focused Will affects magic and true damage'));
     assert.match(qStats.description,/Focused Will/,'ability prose explains amplification');
