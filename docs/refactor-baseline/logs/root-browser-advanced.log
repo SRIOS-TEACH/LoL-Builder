@@ -1,0 +1,8 @@
+PASS builder UI: champion, level, abilities, item add/remove, rune, request race
+PASS live-data Feast and Seraph integration: Feast 719.5000000745058
+PASS shared Smolder stacks, per-ability controls and formula-only target scaling
+PASS 173 champions at levels 1, 6, 11, 18 (advanced data: true)
+PASS 236 builder items: equip, stats, details; item haste fallback
+PASS disabled Item Lookup directs users to Builder
+PASS disabled Champion Lookup directs users to Builder
+PASS active-page startup failure states; no uncaught browser errors

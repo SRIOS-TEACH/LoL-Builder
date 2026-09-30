@@ -1,0 +1,1825 @@
+{
+  "kind": "captured-current-behavior",
+  "advanced": true,
+  "sourceRoot": "C:\\Users\\Shannon\\My Drive\\WORK\\LOL Optimised\\Codex Project\\test-results\\refactor-baseline-2026-09-30\\snapshot",
+  "cases": [
+    {
+      "id": "ashe-basic",
+      "inputs": {
+        "champion": "Ashe",
+        "level": 18,
+        "ranks": {
+          "q": 5,
+          "w": 5,
+          "e": 5,
+          "r": 3
+        },
+        "items": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "runes": {
+          "primaryPath": "precision",
+          "secondaryPath": "sorcery",
+          "primary": [],
+          "secondary": [],
+          "shards": []
+        },
+        "target": {
+          "enabled": false,
+          "maxHp": 2000,
+          "currentHp": 2000,
+          "armor": 100,
+          "mr": 100,
+          "damageReduction": 0
+        },
+        "combatValues": {},
+        "runeStacks": {},
+        "gameTimeMinutes": 20,
+        "disabledItemPassives": {}
+      },
+      "stats": {
+        "base": {
+          "hp": 610,
+          "hpperlevel": 101,
+          "mp": 280,
+          "mpperlevel": 35,
+          "hpregen": 3.5,
+          "hpregenperlevel": 0.55,
+          "mpregen": 7,
+          "mpregenperlevel": 0.65,
+          "attackdamage": 59,
+          "attackdamageperlevel": 3.5,
+          "attackspeed": 0.658,
+          "attackspeedperlevel": 3,
+          "armor": 26,
+          "armorperlevel": 4.6,
+          "spellblock": 33,
+          "spellblockperlevel": 1.1,
+          "movespeed": 325,
+          "attackrange": 600,
+          "crit": 0,
+          "critperlevel": 0,
+          "critdamage": 1,
+          "attackspeedratio": 0.6579999923706055
+        },
+        "item": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0
+        },
+        "rune": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0,
+          "basicHaste": 0,
+          "ultimateHaste": 0,
+          "hpPct": 0,
+          "armorPct": 0,
+          "mrPct": 0
+        },
+        "level": 18,
+        "hp": 2327,
+        "hp5": 12.850000000000001,
+        "mp": 875,
+        "mp5": 18.05,
+        "ad": 118.5,
+        "ap": 0,
+        "armor": 104.19999999999999,
+        "mr": 51.7,
+        "asTotal": 0.9935799961090088,
+        "abilityHaste": 0,
+        "basicHaste": 0,
+        "ultimateHaste": 0,
+        "critChance": 0,
+        "critDamage": 100,
+        "attackRange": 600,
+        "moveSpeed": 325,
+        "passiveLedger": {
+          "passiveEffects": [
+            {
+              "source": "Champion",
+              "owner": "Ashe",
+              "label": "Frost Shot",
+              "impact": "Champion passive identified"
+            }
+          ],
+          "statMods": {
+            "ad": 0,
+            "ap": 0,
+            "hp": 0
+          },
+          "apMultiplier": 1
+        },
+        "armorPenPct": 0,
+        "magicPenPct": 0,
+        "armorPenFlat": 0,
+        "magicPenFlat": 0,
+        "championBonuses": {},
+        "championPenetration": {},
+        "bonusAttackSpeedFromChampion": 0
+      },
+      "attack": {
+        "baseAttackDamage": 118.5,
+        "baseAttackType": "physical",
+        "autoAttackDamage": 118.5,
+        "attackDps": 117.73922953891754,
+        "rawAutoAttackDamage": 118.5,
+        "rawAttackDps": 117.73922953891754,
+        "attackRange": 600,
+        "rate": 0.9935799961090088,
+        "rows": [],
+        "controls": [
+          {
+            "slot": "p",
+            "key": "attack:frost",
+            "label": "Target affected by Frost Shot",
+            "type": "toggle",
+            "disabled": false
+          },
+          {
+            "slot": "q",
+            "key": "attack:asheQ",
+            "label": "Ranger’s Focus active",
+            "type": "toggle",
+            "disabled": false
+          }
+        ],
+        "warnings": [],
+        "partial": false,
+        "breakdown": "Average attack = 118.50 AD × (1 + 0.00% × (1.000 − 1))\nAttack rate = 0.994 attacks/s\nStats: 118.50 base AD + 0.00 bonus AD; 0.00 AP; 2327.00 own HP; 875.00 own mana.\nFrost Shot replaces the ordinary critical-strike formula. Only frosted targets receive its damage bonus; Ranger’s Focus multiplies that attack when enabled.\nAttack contribution after champion rules = 118.50\nDPS = average on-attack damage × effective attacks per second. Before mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included."
+      },
+      "abilities": [
+        {
+          "slot": "q",
+          "spellId": "AsheQ",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "empowered damage",
+                "damage": {
+                  "value": 154.04999434947968,
+                  "text": "154.0 damage",
+                  "components": [
+                    {
+                      "value": 154.04999434947968,
+                      "type": "physical",
+                      "text": "Target settings off: damage before mitigation.",
+                      "rawValue": 154.04999434947968,
+                      "multiplier": 1
+                    }
+                  ],
+                  "rawValue": 154.04999434947968,
+                  "breakdownText": "154.0 damage\nTarget settings off: damage before mitigation."
+                },
+                "sweet": null,
+                "period": null
+              }
+            ],
+            "note": "Damage ÷ cooldown; before mitigation. Separate outcomes are not added together."
+          }
+        },
+        {
+          "slot": "w",
+          "spellId": "Volley",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "total damage",
+                "damage": {
+                  "value": 200,
+                  "text": "200.0 physical damage",
+                  "components": [
+                    {
+                      "value": 200,
+                      "type": "physical",
+                      "text": "Target settings off: damage before mitigation.",
+                      "rawValue": 200,
+                      "multiplier": 1
+                    }
+                  ],
+                  "rawValue": 200,
+                  "breakdownText": "200.0 physical damage\nTarget settings off: damage before mitigation."
+                },
+                "sweet": null,
+                "period": 4
+              }
+            ],
+            "note": "Damage ÷ cooldown; before mitigation. Separate outcomes are not added together."
+          }
+        },
+        {
+          "slot": "e",
+          "spellId": "AsheSpiritOfTheHawk",
+          "rank": 5,
+          "result": {
+            "status": "No direct damage",
+            "rows": []
+          }
+        },
+        {
+          "slot": "r",
+          "spellId": "EnchantedCrystalArrow",
+          "rank": 3,
+          "result": {
+            "rows": [
+              {
+                "label": "rmain damage",
+                "damage": {
+                  "value": 600,
+                  "text": "600.0 magic damage",
+                  "components": [
+                    {
+                      "value": 600,
+                      "type": "magic",
+                      "text": "Target settings off: damage before mitigation.",
+                      "rawValue": 600,
+                      "multiplier": 1
+                    }
+                  ],
+                  "rawValue": 600,
+                  "breakdownText": "600.0 magic damage\nTarget settings off: damage before mitigation."
+                },
+                "sweet": null,
+                "period": 60
+              }
+            ],
+            "note": "Damage ÷ cooldown; before mitigation. Separate outcomes are not added together."
+          }
+        }
+      ],
+      "status": "",
+      "requestedSequence": [
+        "aa",
+        "q",
+        "w"
+      ],
+      "unavailableSequenceActions": [],
+      "comboDisplay": "Total damage\n472.5\nMinimum time\n0.72 s\nBefore target defences · 3 actions · estimate",
+      "comboSteps": "🗡️\n118.5\n×\n↑\n↓\nQ\n154\n×\n↑\n↓\nW\n200\n×\n↑\n↓",
+      "targetAfter": {
+        "enabled": false,
+        "maxHp": 2000,
+        "currentHp": 2000,
+        "armor": 100,
+        "mr": 100,
+        "damageReduction": 0
+      }
+    },
+    {
+      "id": "ezreal-items",
+      "inputs": {
+        "champion": "Ezreal",
+        "level": 18,
+        "ranks": {
+          "q": 5,
+          "w": 5,
+          "e": 5,
+          "r": 3
+        },
+        "items": [
+          "3078",
+          "3042",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "runes": {
+          "primaryPath": "precision",
+          "secondaryPath": "sorcery",
+          "primary": [],
+          "secondary": [],
+          "shards": []
+        },
+        "target": {
+          "enabled": true,
+          "maxHp": 2000,
+          "currentHp": 2000,
+          "armor": 100,
+          "mr": 100,
+          "damageReduction": 0
+        },
+        "combatValues": {},
+        "runeStacks": {},
+        "gameTimeMinutes": 20,
+        "disabledItemPassives": {}
+      },
+      "stats": {
+        "base": {
+          "hp": 600,
+          "hpperlevel": 102,
+          "mp": 375,
+          "mpperlevel": 70,
+          "hpregen": 4,
+          "hpregenperlevel": 0.65,
+          "mpregen": 8.5,
+          "mpregenperlevel": 1,
+          "attackdamage": 60,
+          "attackdamageperlevel": 3.75,
+          "attackspeed": 0.625,
+          "attackspeedperlevel": 2.5,
+          "armor": 24,
+          "armorperlevel": 4.2,
+          "spellblock": 33,
+          "spellblockperlevel": 1.1,
+          "movespeed": 325,
+          "attackrange": 550,
+          "crit": 0,
+          "critperlevel": 0,
+          "critdamage": 2,
+          "attackspeedratio": 0.625
+        },
+        "item": {
+          "hp": 333,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 1000,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 71,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 30,
+          "asPct": 30.000001192092896,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0
+        },
+        "rune": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0,
+          "basicHaste": 0,
+          "ultimateHaste": 0,
+          "hpPct": 0,
+          "armorPct": 0,
+          "mrPct": 0
+        },
+        "level": 18,
+        "hp": 2667,
+        "hp5": 15.05,
+        "mp": 2565,
+        "mp5": 25.5,
+        "ad": 246.04999885335565,
+        "ap": 0,
+        "armor": 95.4,
+        "mr": 51.7,
+        "asTotal": 1.0781250074505806,
+        "abilityHaste": 30,
+        "basicHaste": 0,
+        "ultimateHaste": 0,
+        "critChance": 0,
+        "critDamage": 200,
+        "attackRange": 550,
+        "moveSpeed": 325,
+        "passiveLedger": {
+          "passiveEffects": [
+            {
+              "source": "Item",
+              "owner": "Trinity Force",
+              "label": "Spellblade",
+              "impact": "After using an Ability, your next Attack deals bonus physical damage"
+            },
+            {
+              "source": "Item",
+              "owner": "Trinity Force",
+              "label": "On-Hit",
+              "impact": "."
+            },
+            {
+              "source": "Item",
+              "owner": "Trinity Force",
+              "label": "Quicken",
+              "impact": "Attacking grants 20 Move Speed for 2 seconds."
+            },
+            {
+              "source": "Item",
+              "owner": "Muramana",
+              "label": "Awe",
+              "impact": "Gain 2% max Mana as bonus Attack Damage ."
+            },
+            {
+              "source": "Item",
+              "owner": "Muramana",
+              "label": "Shock",
+              "impact": "Attacks against champions deal 1.2% max Mana as bonus physical damage"
+            },
+            {
+              "source": "Item",
+              "owner": "Muramana",
+              "label": "On-Hit",
+              "impact": ". Damaging Abilities against champions deal 3% - 4% max Mana as bonus physical damage ."
+            },
+            {
+              "source": "Item",
+              "owner": "Muramana",
+              "label": "Awe",
+              "impact": "+51.3 AD ((2% Mana))"
+            },
+            {
+              "source": "Champion",
+              "owner": "Ezreal",
+              "label": "Rising Spell Force",
+              "impact": "Champion passive identified"
+            }
+          ],
+          "statMods": {
+            "ad": 51.299998853355646,
+            "ap": 0,
+            "hp": 0
+          },
+          "apMultiplier": 1
+        },
+        "armorPenPct": 0,
+        "magicPenPct": 0,
+        "armorPenFlat": 0,
+        "magicPenFlat": 0,
+        "championBonuses": {
+          "asTotal": 0
+        },
+        "championPenetration": {},
+        "bonusAttackSpeedFromChampion": 0
+      },
+      "attack": {
+        "baseAttackDamage": 123.02499942667782,
+        "baseAttackType": "physical",
+        "autoAttackDamage": 138.414999560453,
+        "attackDps": 149.22867243238548,
+        "rawAutoAttackDamage": 276.829999120906,
+        "rawAttackDps": 298.45734486477096,
+        "attackRange": 550,
+        "rate": 1.0781250074505806,
+        "rows": [
+          {
+            "label": "Muramana",
+            "value": 15.390000133775175,
+            "type": "physical",
+            "cadence": 1,
+            "formula": "(1.2% Mana)",
+            "itemId": 3042,
+            "passiveKey": "shock-on-hit",
+            "source": "item",
+            "rawValue": 30.78000026755035,
+            "targetMultiplier": 0.5,
+            "targetExplanation": "30.78 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 15.39.",
+            "rawPerHit": 30.78000026755035,
+            "rawPerSecond": 33.184688017781596,
+            "perHit": 15.390000133775175,
+            "perSecond": 16.592344008890798
+          }
+        ],
+        "controls": [
+          {
+            "slot": "attack",
+            "key": "attack:spellblade",
+            "label": "Spellblade procs enabled",
+            "type": "toggle",
+            "disabled": false
+          }
+        ],
+        "warnings": [],
+        "partial": false,
+        "breakdown": "Average attack = 246.05 AD × (1 + 0.00% × (2.000 − 1))\nAttack rate = 1.078 attacks/s\nStats: 123.75 base AD + 122.30 bonus AD; 0.00 AP; 2667.00 own HP; 2565.00 own mana.\nTarget: hp = 2000, currentHp = 2000, armor = 100, mr = 100, healthPercent = 1, missingHp = 0, missingHealthPercent = 0\nAttack contribution after champion rules = 246.05\nAttack target calculation: 246.05 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 123.025.\nMuramana: (1.2% Mana) → 15.39 physical per attack\n  30.78 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 15.39.\nDPS = average on-attack damage × effective attacks per second. After target mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included."
+      },
+      "abilities": [
+        {
+          "slot": "q",
+          "spellId": "EzrealQ",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": 219.93249338839206,
+                  "text": "439.9 physical damage",
+                  "components": [
+                    {
+                      "value": 219.93249338839206,
+                      "type": "physical",
+                      "text": "439.865 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 219.9325.",
+                      "rawValue": 439.8649867767841,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 439.8649867767841,
+                  "breakdownText": "439.9 physical damage\n439.865 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 219.9325."
+                },
+                "sweet": null,
+                "period": 3.4615384615384612
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction."
+          }
+        },
+        {
+          "slot": "w",
+          "spellId": "EzrealW",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": 211.14999942667782,
+                  "text": "422.3 magic damage",
+                  "components": [
+                    {
+                      "value": 211.14999942667782,
+                      "type": "magic",
+                      "text": "422.3 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 211.15.",
+                      "rawValue": 422.29999885335565,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 422.29999885335565,
+                  "breakdownText": "422.3 magic damage\n422.3 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 211.15."
+                },
+                "sweet": null,
+                "period": 6.153846153846153
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction."
+          }
+        },
+        {
+          "slot": "e",
+          "spellId": "EzrealE",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": 176.6900011139363,
+                  "text": "353.4 magic damage",
+                  "components": [
+                    {
+                      "value": 176.6900011139363,
+                      "type": "magic",
+                      "text": "353.38 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 176.69.",
+                      "rawValue": 353.3800022278726,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 353.3800022278726,
+                  "breakdownText": "353.4 magic damage\n353.38 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 176.69."
+                },
+                "sweet": null,
+                "period": 10.769230769230768
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction."
+          }
+        },
+        {
+          "slot": "r",
+          "spellId": "EzrealR",
+          "rank": 3,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": 436.1499994266778,
+                  "text": "872.3 magic damage",
+                  "components": [
+                    {
+                      "value": 436.1499994266778,
+                      "type": "magic",
+                      "text": "872.3 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 436.15.",
+                      "rawValue": 872.2999988533556,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 872.2999988533556,
+                  "breakdownText": "872.3 magic damage\n872.3 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 436.15."
+                },
+                "sweet": null,
+                "period": 69.23076923076923
+              },
+              {
+                "label": "damage minionmonster",
+                "damage": {
+                  "value": 211.14999942667782,
+                  "text": "422.3 magic damage",
+                  "components": [
+                    {
+                      "value": 211.14999942667782,
+                      "type": "magic",
+                      "text": "422.3 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 211.15.",
+                      "rawValue": 422.29999885335565,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 422.29999885335565,
+                  "breakdownText": "422.3 magic damage\n422.3 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 211.15."
+                },
+                "sweet": null,
+                "period": 69.23076923076923
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction."
+          }
+        }
+      ],
+      "status": "",
+      "requestedSequence": [
+        "q",
+        "aa",
+        "w"
+      ],
+      "unavailableSequenceActions": [],
+      "comboDisplay": "Total damage\n554.1\nMinimum time\n0.67 s\nTarget HP remaining\n1445.9\nHealth effects update per action. Damage includes overkill. Against target · 3 actions · estimate",
+      "comboSteps": "Q\n219.9\n1780.1 HP left\n×\n↑\n↓\n🗡️\n123\n1657.0 HP left\n×\n↑\n↓\nW\n211.1\n1445.9 HP left\n×\n↑\n↓",
+      "targetAfter": {
+        "enabled": true,
+        "maxHp": 2000,
+        "currentHp": 2000,
+        "armor": 100,
+        "mr": 100,
+        "damageReduction": 0
+      }
+    },
+    {
+      "id": "veigar-health-sequence",
+      "inputs": {
+        "champion": "Veigar",
+        "level": 18,
+        "ranks": {
+          "q": 5,
+          "w": 5,
+          "e": 5,
+          "r": 3
+        },
+        "items": [
+          "3089",
+          "4645",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "runes": {
+          "primaryPath": "precision",
+          "secondaryPath": "sorcery",
+          "primary": [],
+          "secondary": [],
+          "shards": []
+        },
+        "target": {
+          "enabled": true,
+          "maxHp": 2000,
+          "currentHp": 2000,
+          "armor": 100,
+          "mr": 100,
+          "damageReduction": 0
+        },
+        "combatValues": {},
+        "runeStacks": {},
+        "gameTimeMinutes": 20,
+        "disabledItemPassives": {}
+      },
+      "stats": {
+        "base": {
+          "hp": 580,
+          "hpperlevel": 108,
+          "mp": 490,
+          "mpperlevel": 26,
+          "hpregen": 6.5,
+          "hpregenperlevel": 0.6,
+          "mpregen": 8,
+          "mpregenperlevel": 0.8,
+          "attackdamage": 52,
+          "attackdamageperlevel": 2.700000047683716,
+          "attackspeed": 0.625,
+          "attackspeedperlevel": 2.24,
+          "armor": 18,
+          "armorperlevel": 5.2,
+          "spellblock": 32,
+          "spellblockperlevel": 1.3,
+          "movespeed": 340,
+          "attackrange": 550,
+          "crit": 0,
+          "critperlevel": 0,
+          "critdamage": 2,
+          "attackspeedratio": 0.625
+        },
+        "item": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 240,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 15,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0
+        },
+        "rune": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0,
+          "basicHaste": 0,
+          "ultimateHaste": 0,
+          "hpPct": 0,
+          "armorPct": 0,
+          "mrPct": 0
+        },
+        "level": 18,
+        "hp": 2416,
+        "hp5": 16.7,
+        "mp": 932,
+        "mp5": 21.6,
+        "ad": 97.90000081062317,
+        "ap": 312.00000286102295,
+        "armor": 106.4,
+        "mr": 54.1,
+        "asTotal": 0.863,
+        "abilityHaste": 0,
+        "basicHaste": 0,
+        "ultimateHaste": 0,
+        "critChance": 0,
+        "critDamage": 200,
+        "attackRange": 550,
+        "moveSpeed": 340,
+        "passiveLedger": {
+          "passiveEffects": [
+            {
+              "source": "Item",
+              "owner": "Rabadon's Deathcap",
+              "label": "Magical Opus",
+              "impact": "Increases your total Ability Power by 30% ."
+            },
+            {
+              "source": "Item",
+              "owner": "Shadowflame",
+              "label": "Cinderbloom",
+              "impact": "Magic and true damage Critically Strike enemies below 40% Health, dealing 20% increased damage."
+            },
+            {
+              "source": "Champion",
+              "owner": "Veigar",
+              "label": "Phenomenal Evil Power",
+              "impact": "Champion passive identified"
+            },
+            {
+              "source": "Item",
+              "owner": "Rabadon's Deathcap",
+              "label": "Magical Opus",
+              "impact": "+72.0 AP (multipliers applied last)"
+            }
+          ],
+          "statMods": {
+            "ad": 0,
+            "ap": 72.00000286102295,
+            "hp": 0
+          },
+          "apMultiplier": 1.300000011920929
+        },
+        "armorPenPct": 0,
+        "magicPenPct": 0,
+        "armorPenFlat": 0,
+        "magicPenFlat": 15,
+        "championBonuses": {
+          "ap": 0
+        },
+        "championPenetration": {},
+        "bonusAttackSpeedFromChampion": 0
+      },
+      "attack": {
+        "baseAttackDamage": 48.950000405311584,
+        "baseAttackType": "physical",
+        "autoAttackDamage": 48.950000405311584,
+        "attackDps": 42.2438503497839,
+        "rawAutoAttackDamage": 97.90000081062317,
+        "rawAttackDps": 84.4877006995678,
+        "attackRange": 550,
+        "rate": 0.863,
+        "rows": [],
+        "controls": [],
+        "warnings": [],
+        "partial": false,
+        "breakdown": "Average attack = 97.90 AD × (1 + 0.00% × (2.000 − 1))\nAttack rate = 0.863 attacks/s\nStats: 97.90 base AD + 0.00 bonus AD; 312.00 AP; 2416.00 own HP; 932.00 own mana.\nTarget: hp = 2000, currentHp = 2000, armor = 100, mr = 100, healthPercent = 1, missingHp = 0, missingHealthPercent = 0\nAttack contribution after champion rules = 97.90\nAttack target calculation: 97.9 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 48.95.\nDPS = average on-attack damage × effective attacks per second. After target mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included."
+      },
+      "abilities": [
+        {
+          "slot": "q",
+          "spellId": "VeigarBalefulStrike",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "total damage",
+                "damage": {
+                  "value": 247.78378285588445,
+                  "text": "458.4 magic damage",
+                  "components": [
+                    {
+                      "value": 247.78378285588445,
+                      "type": "magic",
+                      "text": "458.4 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 15 flat penetration = 85 effective magic resistance (minimum 0); damage × 0.5405 × (1 − 0% damage reduction) = 247.7838.",
+                      "rawValue": 458.3999982833862,
+                      "multiplier": 0.5405405405405406
+                    }
+                  ],
+                  "rawValue": 458.3999982833862,
+                  "breakdownText": "458.4 magic damage\n458.4 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 15 flat penetration = 85 effective magic resistance (minimum 0); damage × 0.5405 × (1 − 0% damage reduction) = 247.7838."
+                },
+                "sweet": null,
+                "period": 4
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction."
+          }
+        },
+        {
+          "slot": "w",
+          "spellId": "VeigarDarkMatter",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "total damage",
+                "damage": {
+                  "value": 350.37838410042434,
+                  "text": "648.2 magic damage",
+                  "components": [
+                    {
+                      "value": 350.37838410042434,
+                      "type": "magic",
+                      "text": "648.2 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 15 flat penetration = 85 effective magic resistance (minimum 0); damage × 0.5405 × (1 − 0% damage reduction) = 350.3784.",
+                      "rawValue": 648.200010585785,
+                      "multiplier": 0.5405405405405406
+                    }
+                  ],
+                  "rawValue": 648.200010585785,
+                  "breakdownText": "648.2 magic damage\n648.2 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 15 flat penetration = 85 effective magic resistance (minimum 0); damage × 0.5405 × (1 − 0% damage reduction) = 350.3784."
+                },
+                "sweet": null,
+                "period": null
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction."
+          }
+        },
+        {
+          "slot": "e",
+          "spellId": "VeigarEventHorizon",
+          "rank": 5,
+          "result": {
+            "status": "No direct damage",
+            "rows": []
+          }
+        },
+        {
+          "slot": "r",
+          "spellId": "VeigarR",
+          "rank": 3,
+          "result": {
+            "rows": [
+              {
+                "label": "Primordial Burst",
+                "damage": {
+                  "value": 302.16216332203635,
+                  "text": "1.0 × (559.0 ((325) + (75% Ability Power)))",
+                  "components": [
+                    {
+                      "value": 302.16216332203635,
+                      "type": "magic",
+                      "text": "559 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 15 flat penetration = 85 effective magic resistance (minimum 0); damage × 0.5405 × (1 − 0% damage reduction) = 302.1622.",
+                      "rawValue": 559.0000021457672,
+                      "multiplier": 0.5405405405405406
+                    }
+                  ],
+                  "rawValue": 559.0000021457672,
+                  "breakdownText": "1.0 × (559.0 ((325) + (75% Ability Power)))\n559 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 15 flat penetration = 85 effective magic resistance (minimum 0); damage × 0.5405 × (1 − 0% damage reduction) = 302.1622."
+                },
+                "sweet": null,
+                "period": 60
+              }
+            ],
+            "note": "Primordial Burst scales with target missing health, up to twice its base damage. after target mitigation. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction."
+          }
+        }
+      ],
+      "status": "",
+      "requestedSequence": [
+        "q",
+        "r"
+      ],
+      "unavailableSequenceActions": [],
+      "comboDisplay": "Total damage\n606.1\nMinimum time\n0.50 s\nTarget HP remaining\n1393.9\nHealth effects update per action. Damage includes overkill. Against target · 2 actions · estimate",
+      "comboSteps": "Q\n247.8\n1752.2 HP left\n×\n↑\n↓\nR\n358.3\n1393.9 HP left\n×\n↑\n↓",
+      "targetAfter": {
+        "enabled": true,
+        "maxHp": 2000,
+        "currentHp": 2000,
+        "armor": 100,
+        "mr": 100,
+        "damageReduction": 0
+      }
+    },
+    {
+      "id": "aatrox-recasts",
+      "inputs": {
+        "champion": "Aatrox",
+        "level": 18,
+        "ranks": {
+          "q": 5,
+          "w": 5,
+          "e": 5,
+          "r": 3
+        },
+        "items": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "runes": {
+          "primaryPath": "precision",
+          "secondaryPath": "sorcery",
+          "primary": [],
+          "secondary": [],
+          "shards": []
+        },
+        "target": {
+          "enabled": true,
+          "maxHp": 2000,
+          "currentHp": 2000,
+          "armor": 100,
+          "mr": 100,
+          "damageReduction": 0
+        },
+        "combatValues": {},
+        "runeStacks": {},
+        "gameTimeMinutes": 20,
+        "disabledItemPassives": {}
+      },
+      "stats": {
+        "base": {
+          "hp": 650,
+          "hpperlevel": 114,
+          "mp": 0,
+          "mpperlevel": 0,
+          "hpregen": 3,
+          "hpregenperlevel": 0.5,
+          "mpregen": 0,
+          "mpregenperlevel": 0,
+          "attackdamage": 60,
+          "attackdamageperlevel": 5,
+          "attackspeed": 0.651,
+          "attackspeedperlevel": 2.5,
+          "armor": 38,
+          "armorperlevel": 4.8,
+          "spellblock": 32,
+          "spellblockperlevel": 2.05,
+          "movespeed": 345,
+          "attackrange": 175,
+          "crit": 0,
+          "critperlevel": 0,
+          "critdamage": 2,
+          "attackspeedratio": 0.6510000228881836
+        },
+        "item": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0
+        },
+        "rune": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0,
+          "basicHaste": 0,
+          "ultimateHaste": 0,
+          "hpPct": 0,
+          "armorPct": 0,
+          "mrPct": 0
+        },
+        "level": 18,
+        "hp": 2588,
+        "hp5": 11.5,
+        "mp": 0,
+        "mp5": 0,
+        "ad": 145,
+        "ap": 0,
+        "armor": 119.6,
+        "mr": 66.85,
+        "asTotal": 0.9276750097274781,
+        "abilityHaste": 0,
+        "basicHaste": 0,
+        "ultimateHaste": 0,
+        "critChance": 0,
+        "critDamage": 200,
+        "attackRange": 175,
+        "moveSpeed": 345,
+        "passiveLedger": {
+          "passiveEffects": [
+            {
+              "source": "Champion",
+              "owner": "Aatrox",
+              "label": "Deathbringer Stance",
+              "impact": "Champion passive identified"
+            }
+          ],
+          "statMods": {
+            "ad": 0,
+            "ap": 0,
+            "hp": 0
+          },
+          "apMultiplier": 1
+        },
+        "armorPenPct": 0,
+        "magicPenPct": 0,
+        "armorPenFlat": 0,
+        "magicPenFlat": 0,
+        "championBonuses": {},
+        "championPenetration": {},
+        "bonusAttackSpeedFromChampion": 0
+      },
+      "attack": {
+        "baseAttackDamage": 72.5,
+        "baseAttackType": "physical",
+        "autoAttackDamage": 72.5,
+        "attackDps": 67.25643820524216,
+        "rawAutoAttackDamage": 145,
+        "rawAttackDps": 134.51287641048432,
+        "attackRange": 175,
+        "rate": 0.9276750097274781,
+        "rows": [],
+        "controls": [
+          {
+            "slot": "p",
+            "key": "attack:deathbringer",
+            "label": "Deathbringer Stance procs enabled",
+            "type": "toggle",
+            "disabled": false
+          }
+        ],
+        "warnings": [],
+        "partial": false,
+        "breakdown": "Average attack = 145.00 AD × (1 + 0.00% × (2.000 − 1))\nAttack rate = 0.928 attacks/s\nStats: 145.00 base AD + 0.00 bonus AD; 0.00 AP; 2588.00 own HP; 0.00 own mana.\nTarget: hp = 2000, currentHp = 2000, armor = 100, mr = 100, healthPercent = 1, missingHp = 0, missingHealthPercent = 0\nAttack contribution after champion rules = 145.00\nAttack target calculation: 145 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 72.5.\nDPS = average on-attack damage × effective attacks per second. After target mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included."
+      },
+      "abilities": [
+        {
+          "slot": "q",
+          "spellId": "AatroxQ",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "Q1 / minimum",
+                "damage": {
+                  "value": 100.2499982714653,
+                  "text": "1.0 × (200.5 ((70) + (90% Attack Damage)))",
+                  "components": [
+                    {
+                      "value": 100.2499982714653,
+                      "type": "physical",
+                      "text": "200.5 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 100.25.",
+                      "rawValue": 200.4999965429306,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 200.4999965429306,
+                  "breakdownText": "1.0 × (200.5 ((70) + (90% Attack Damage)))\n200.5 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 100.25."
+                },
+                "sweet": {
+                  "value": 175.43749697506428,
+                  "text": "1.0 × (350.9 (((70) + (90% Attack Damage)) × ((1) + (0.75))))",
+                  "components": [
+                    {
+                      "value": 175.43749697506428,
+                      "type": "physical",
+                      "text": "350.875 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 175.4375.",
+                      "rawValue": 350.87499395012856,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 350.87499395012856,
+                  "breakdownText": "1.0 × (350.9 (((70) + (90% Attack Damage)) × ((1) + (0.75))))\n350.875 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 175.4375."
+                },
+                "period": 6
+              },
+              {
+                "label": "Q2",
+                "damage": {
+                  "value": 125.31249783933163,
+                  "text": "1.3 × (200.5 ((70) + (90% Attack Damage)))",
+                  "components": [
+                    {
+                      "value": 125.31249783933163,
+                      "type": "physical",
+                      "text": "250.625 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 125.3125.",
+                      "rawValue": 250.62499567866325,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 250.62499567866325,
+                  "breakdownText": "1.3 × (200.5 ((70) + (90% Attack Damage)))\n250.625 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 125.3125."
+                },
+                "sweet": {
+                  "value": 219.29687121883035,
+                  "text": "1.3 × (350.9 (((70) + (90% Attack Damage)) × ((1) + (0.75))))",
+                  "components": [
+                    {
+                      "value": 219.29687121883035,
+                      "type": "physical",
+                      "text": "438.5937 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 219.2969.",
+                      "rawValue": 438.5937424376607,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 438.5937424376607,
+                  "breakdownText": "1.3 × (350.9 (((70) + (90% Attack Damage)) × ((1) + (0.75))))\n438.5937 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 219.2969."
+                },
+                "period": 6
+              },
+              {
+                "label": "Q3",
+                "damage": {
+                  "value": 150.37499740719795,
+                  "text": "1.5 × (200.5 ((70) + (90% Attack Damage)))",
+                  "components": [
+                    {
+                      "value": 150.37499740719795,
+                      "type": "physical",
+                      "text": "300.75 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 150.375.",
+                      "rawValue": 300.7499948143959,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 300.7499948143959,
+                  "breakdownText": "1.5 × (200.5 ((70) + (90% Attack Damage)))\n300.75 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 150.375."
+                },
+                "sweet": {
+                  "value": 263.1562454625964,
+                  "text": "1.5 × (350.9 (((70) + (90% Attack Damage)) × ((1) + (0.75))))",
+                  "components": [
+                    {
+                      "value": 263.1562454625964,
+                      "type": "physical",
+                      "text": "526.3125 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 263.1562.",
+                      "rawValue": 526.3124909251928,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 526.3124909251928,
+                  "breakdownText": "1.5 × (350.9 (((70) + (90% Attack Damage)) × ((1) + (0.75))))\n526.3125 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 263.1562."
+                },
+                "period": 6
+              },
+              {
+                "label": "Combined total",
+                "damage": {
+                  "value": 375.9374935179949,
+                  "text": "(1.0 × (200.5 ((70) + (90% Attack Damage)))) + (1.3 × (200.5 ((70) + (90% Attack Damage)))) + (1.5 × (200.5 ((70) + (90% Attack Damage))))",
+                  "components": [
+                    {
+                      "value": 100.2499982714653,
+                      "type": "physical",
+                      "text": "200.5 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 100.25.",
+                      "rawValue": 200.4999965429306,
+                      "multiplier": 0.5
+                    },
+                    {
+                      "value": 125.31249783933163,
+                      "type": "physical",
+                      "text": "250.625 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 125.3125.",
+                      "rawValue": 250.62499567866325,
+                      "multiplier": 0.5
+                    },
+                    {
+                      "value": 150.37499740719795,
+                      "type": "physical",
+                      "text": "300.75 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 150.375.",
+                      "rawValue": 300.7499948143959,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 751.8749870359898,
+                  "breakdownText": "(1.0 × (200.5 ((70) + (90% Attack Damage)))) + (1.3 × (200.5 ((70) + (90% Attack Damage)))) + (1.5 × (200.5 ((70) + (90% Attack Damage))))\n200.5 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 100.25.\n250.625 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 125.3125.\n300.75 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 150.375."
+                },
+                "sweet": {
+                  "value": 657.890613656491,
+                  "text": "(1.0 × (350.9 (((70) + (90% Attack Damage)) × ((1) + (0.75))))) + (1.3 × (350.9 (((70) + (90% Attack Damage)) × ((1) + (0.75))))) + (1.5 × (350.9 (((70) + (90% Attack Damage)) × ((1) + (0.75)))))",
+                  "components": [
+                    {
+                      "value": 175.43749697506428,
+                      "type": "physical",
+                      "text": "350.875 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 175.4375.",
+                      "rawValue": 350.87499395012856,
+                      "multiplier": 0.5
+                    },
+                    {
+                      "value": 219.29687121883035,
+                      "type": "physical",
+                      "text": "438.5937 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 219.2969.",
+                      "rawValue": 438.5937424376607,
+                      "multiplier": 0.5
+                    },
+                    {
+                      "value": 263.1562454625964,
+                      "type": "physical",
+                      "text": "526.3125 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 263.1562.",
+                      "rawValue": 526.3124909251928,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 1315.781227312982,
+                  "breakdownText": "(1.0 × (350.9 (((70) + (90% Attack Damage)) × ((1) + (0.75))))) + (1.3 × (350.9 (((70) + (90% Attack Damage)) × ((1) + (0.75))))) + (1.5 × (350.9 (((70) + (90% Attack Damage)) × ((1) + (0.75)))))\n350.875 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 175.4375.\n438.5937 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 219.2969.\n526.3125 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 263.1562."
+                },
+                "period": 8
+              }
+            ],
+            "note": "Combined cycle: 6.00s cooldown + 1.00 + 1.00s between casts. after target mitigation. Parentheses: sweet spot. Q2/Q3 use 1 + 1/2 × the live ramp bonus. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction."
+          }
+        },
+        {
+          "slot": "w",
+          "spellId": "AatroxW",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "Initial hit / minimum",
+                "damage": {
+                  "value": 64.00000043213367,
+                  "text": "128.0 ((70) + (40% Attack Damage))",
+                  "components": [
+                    {
+                      "value": 64.00000043213367,
+                      "type": "physical",
+                      "text": "128 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 64.",
+                      "rawValue": 128.00000086426735,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 128.00000086426735,
+                  "breakdownText": "128.0 ((70) + (40% Attack Damage))\n128 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 64."
+                },
+                "sweet": null,
+                "period": 12
+              },
+              {
+                "label": "Hit + pull",
+                "damage": {
+                  "value": 128.00000086426735,
+                  "text": "2.0 × (128.0 ((70) + (40% Attack Damage)))",
+                  "components": [
+                    {
+                      "value": 128.00000086426735,
+                      "type": "physical",
+                      "text": "256 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 128.",
+                      "rawValue": 256.0000017285347,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 256.0000017285347,
+                  "breakdownText": "2.0 × (128.0 ((70) + (40% Attack Damage)))\n256 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 128."
+                },
+                "sweet": null,
+                "period": 12
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction."
+          }
+        },
+        {
+          "slot": "e",
+          "spellId": "AatroxE",
+          "rank": 5,
+          "result": {
+            "status": "No direct damage",
+            "rows": []
+          }
+        },
+        {
+          "slot": "r",
+          "spellId": "AatroxR",
+          "rank": 3,
+          "result": {
+            "status": "No direct damage",
+            "rows": []
+          }
+        }
+      ],
+      "status": "",
+      "requestedSequence": [
+        "q",
+        "q:1",
+        "q:2"
+      ],
+      "unavailableSequenceActions": [],
+      "comboDisplay": "Total damage\n375.9\nMinimum time\n2.60 s\nTarget HP remaining\n1624.1\nHealth effects update per action. Damage includes overkill. Against target · 3 actions · estimate",
+      "comboSteps": "Q\n100.2\n1899.8 HP left\n×\n↑\n↓\nQ2\n125.3\n1774.4 HP left\n×\n↑\n↓\nQ3\n150.4\n1624.1 HP left\n×\n↑\n↓",
+      "targetAfter": {
+        "enabled": true,
+        "maxHp": 2000,
+        "currentHp": 2000,
+        "armor": 100,
+        "mr": 100,
+        "damageReduction": 0
+      }
+    },
+    {
+      "id": "aurora-magic",
+      "inputs": {
+        "champion": "Aurora",
+        "level": 18,
+        "ranks": {
+          "q": 5,
+          "w": 5,
+          "e": 5,
+          "r": 3
+        },
+        "items": [
+          "6655",
+          "6653",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "runes": {
+          "primaryPath": "precision",
+          "secondaryPath": "sorcery",
+          "primary": [],
+          "secondary": [],
+          "shards": []
+        },
+        "target": {
+          "enabled": true,
+          "maxHp": 2000,
+          "currentHp": 2000,
+          "armor": 100,
+          "mr": 100,
+          "damageReduction": 0
+        },
+        "combatValues": {},
+        "runeStacks": {},
+        "gameTimeMinutes": 20,
+        "disabledItemPassives": {}
+      },
+      "stats": {
+        "base": {
+          "hp": 607,
+          "hpperlevel": 110,
+          "mp": 475,
+          "mpperlevel": 30,
+          "hpregen": 6,
+          "hpregenperlevel": 0.55,
+          "mpregen": 8,
+          "mpregenperlevel": 0.8,
+          "attackdamage": 53,
+          "attackdamageperlevel": 3,
+          "attackspeed": 0.668,
+          "attackspeedperlevel": 2,
+          "armor": 23,
+          "armorperlevel": 4.5,
+          "spellblock": 32,
+          "spellblockperlevel": 1.3,
+          "movespeed": 335,
+          "attackrange": 550,
+          "crit": 0,
+          "critperlevel": 0,
+          "critdamage": 2,
+          "attackspeedratio": 0.6679999828338623
+        },
+        "item": {
+          "hp": 300,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 600,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 160,
+          "armor": 0,
+          "mr": 0,
+          "haste": 10,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0
+        },
+        "rune": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0,
+          "basicHaste": 0,
+          "ultimateHaste": 0,
+          "hpPct": 0,
+          "armorPct": 0,
+          "mrPct": 0
+        },
+        "level": 18,
+        "hp": 2777,
+        "hp5": 15.350000000000001,
+        "mp": 1585,
+        "mp5": 21.6,
+        "ad": 104,
+        "ap": 160,
+        "armor": 99.5,
+        "mr": 54.1,
+        "asTotal": 0.8951199941635133,
+        "abilityHaste": 10,
+        "basicHaste": 0,
+        "ultimateHaste": 0,
+        "critChance": 0,
+        "critDamage": 200,
+        "attackRange": 550,
+        "moveSpeed": 335,
+        "passiveLedger": {
+          "passiveEffects": [
+            {
+              "source": "Item",
+              "owner": "Luden's Echo",
+              "label": "Echo",
+              "impact": "Damaging Abilities fire 6 Echoes that deal bonus magic damage to the target and nearby enemies. Remaining Echoes fire on the primary target, dealing 20% damage."
+            },
+            {
+              "source": "Item",
+              "owner": "Liandry's Torment",
+              "label": "Torment",
+              "impact": "Damaging Abilities burn enemies for 2% max Health magic damage per second for 3 seconds."
+            },
+            {
+              "source": "Item",
+              "owner": "Liandry's Torment",
+              "label": "Suffering",
+              "impact": "For each second in combat with enemy champions, deal 2% bonus damage, up to 6%."
+            },
+            {
+              "source": "Champion",
+              "owner": "Aurora",
+              "label": "Spirit Abjuration",
+              "impact": "Champion passive identified"
+            }
+          ],
+          "statMods": {
+            "ad": 0,
+            "ap": 0,
+            "hp": 0
+          },
+          "apMultiplier": 1
+        },
+        "armorPenPct": 0,
+        "magicPenPct": 0,
+        "armorPenFlat": 0,
+        "magicPenFlat": 0,
+        "championBonuses": {},
+        "championPenetration": {},
+        "bonusAttackSpeedFromChampion": 0
+      },
+      "attack": {
+        "baseAttackDamage": 52,
+        "baseAttackType": "physical",
+        "autoAttackDamage": 52,
+        "attackDps": 46.54623969650269,
+        "rawAutoAttackDamage": 104,
+        "rawAttackDps": 93.09247939300538,
+        "attackRange": 550,
+        "rate": 0.8951199941635133,
+        "rows": [],
+        "controls": [],
+        "warnings": [],
+        "partial": false,
+        "breakdown": "Average attack = 104.00 AD × (1 + 0.00% × (2.000 − 1))\nAttack rate = 0.895 attacks/s\nStats: 104.00 base AD + 0.00 bonus AD; 160.00 AP; 2777.00 own HP; 1585.00 own mana.\nTarget: hp = 2000, currentHp = 2000, armor = 100, mr = 100, healthPercent = 1, missingHp = 0, missingHealthPercent = 0\nAttack contribution after champion rules = 104.00\nAttack target calculation: 104 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 52.\nDPS = average on-attack damage × effective attacks per second. After target mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included."
+      },
+      "abilities": [
+        {
+          "slot": "q",
+          "spellId": "AuroraQ",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": 104.50000047683716,
+                  "text": "209.0 magic damage",
+                  "components": [
+                    {
+                      "value": 104.50000047683716,
+                      "type": "magic",
+                      "text": "209 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 104.5.",
+                      "rawValue": 209.00000095367432,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 209.00000095367432,
+                  "breakdownText": "209.0 magic damage\n209 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 104.5."
+                },
+                "sweet": null,
+                "period": 6.363636363636363
+              },
+              {
+                "label": "q2 damage max",
+                "damage": {
+                  "value": 104.50000047683716,
+                  "text": "209.0 magic damage",
+                  "components": [
+                    {
+                      "value": 104.50000047683716,
+                      "type": "magic",
+                      "text": "209 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 104.5.",
+                      "rawValue": 209.00000095367432,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 209.00000095367432,
+                  "breakdownText": "209.0 magic damage\n209 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 104.5."
+                },
+                "sweet": null,
+                "period": 6.363636363636363
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction."
+          }
+        },
+        {
+          "slot": "w",
+          "spellId": "AuroraW",
+          "rank": 5,
+          "result": {
+            "status": "No direct damage",
+            "rows": []
+          }
+        },
+        {
+          "slot": "e",
+          "spellId": "AuroraE",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": 170.99999904632568,
+                  "text": "342.0 magic damage",
+                  "components": [
+                    {
+                      "value": 170.99999904632568,
+                      "type": "magic",
+                      "text": "342 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 171.",
+                      "rawValue": 341.99999809265137,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 341.99999809265137,
+                  "breakdownText": "342.0 magic damage\n342 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 171."
+                },
+                "sweet": null,
+                "period": 10
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction."
+          }
+        },
+        {
+          "slot": "r",
+          "spellId": "AuroraR",
+          "rank": 3,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": 243.49999904632568,
+                  "text": "487.0 magic damage",
+                  "components": [
+                    {
+                      "value": 243.49999904632568,
+                      "type": "magic",
+                      "text": "487 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 243.5.",
+                      "rawValue": 486.99999809265137,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": 486.99999809265137,
+                  "breakdownText": "487.0 magic damage\n487 raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 243.5."
+                },
+                "sweet": null,
+                "period": 90.9090909090909
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction."
+          }
+        }
+      ],
+      "status": "",
+      "requestedSequence": [
+        "q",
+        "r"
+      ],
+      "unavailableSequenceActions": [],
+      "comboDisplay": "Total damage\n348.0\nMinimum time\n0.25 s\nTarget HP remaining\n1652.0\nHealth effects update per action. Damage includes overkill. Against target · 2 actions · estimate",
+      "comboSteps": "Q\n104.5\n1895.5 HP left\n×\n↑\n↓\nR\n243.5\n1652.0 HP left\n×\n↑\n↓",
+      "targetAfter": {
+        "enabled": true,
+        "maxHp": 2000,
+        "currentHp": 2000,
+        "armor": 100,
+        "mr": 100,
+        "damageReduction": 0
+      }
+    }
+  ]
+}

@@ -53,6 +53,8 @@ Read the [reliability audit](docs/AUDIT.md) for fixed defects, test coverage and
 - `JS/builder.js` — champion/item/level setup logic, item modal UX, ability rank validation, and stat rendering.
 
 ### Additional docs
+
+- `docs/ROADMAP.md` — milestones for saved profiles, targets, combos, build imports and a controlled v1.0 release.
 - `docs/ARCHITECTURE.md` — high-level ownership and module boundaries.
 - `docs/CONTRIBUTING.md` — coding conventions and contributor workflow.
 - `docs/DATA_SOURCES.md` — external payload inventory and purpose.
