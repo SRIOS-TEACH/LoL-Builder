@@ -5,6 +5,7 @@ const path=require('node:path');
 require('../JS/shared/calculations.js');
 require('../JS/shared/targetDamage.js');
 require('../JS/shared/damageText.js');
+require('../JS/shared/abilityDps.js');
 const ItemDescriptions=require('../JS/shared/itemDescriptions.js');
 const ItemPolicy=require('../JS/shared/itemPolicy.js');
 const excerpts=require('./attack-excerpts.json');
@@ -36,6 +37,8 @@ test('Muramana prose combines coefficients and values for separate Awe, attack a
   assert.match(text,/1\.2% \(27\.48\) max Mana/);
   assert.match(text,/3% \(68\.7\) max Mana/);
   assert.match(text,/Ranged champion scaling/);
+  assert.ok(Math.abs(ranged.sections[1].damageOptions[0].value-27.48)<.001);
+  assert.ok(Math.abs(ranged.sections[2].damageOptions[0].value-68.7)<.001);
   const melee=plain(describe(false).html);
   assert.match(melee,/4% \(91\.6\) max Mana/);
   assert.match(melee,/1\.2% \(27\.48\) max Mana/);
@@ -155,3 +158,23 @@ if(process.env.AUDIT_ITEM_DESCRIPTIONS){
   }
   console.log('ITEM DESCRIPTION AUDIT '+JSON.stringify({ranged,total:items.length,localized,complete,incomplete:report.length,activeCount,missingActives,report},null,2));
 }
+
+test('structured item damage preserves single-hit and maximum alternatives without adding them',()=>{
+ const source={mDataValues:[{mName:'Damage',mValue:100},{mName:'Maximum',mValue:200},{mName:'Cooldown',mValue:12}]};
+ const item={description:'<passive>Echo</passive><br>Deal <magicDamage>@Damage@ bonus magic damage</magicDamage>. (Maximum: <magicDamage>@Maximum@</magicDamage>)'};
+ const target={enabled:true,maxHp:2000,currentHp:2000,armor:0,mr:100,damageReduction:0};
+ const result=ItemDescriptions.describe({id:'x',item,source,context:{target,stats:{}}});
+ assert.deepEqual(result.sections[0].damageOptions.map(o=>o.value),[50,100]);
+ assert.match(result.sections[0].damageOptions[1].label,/Maximum/);
+ assert.equal(result.sections[0].cooldown,12);
+});
+test('untagged active damage and full duration percent-health burns reach combo data',()=>{
+ const source={mDataValues:[{mName:'Damage',mValue:300},{mName:'Burn',mValue:.02},{mName:'Duration',mValue:3}]};
+ const context={target:{enabled:true,maxHp:2000,currentHp:2000,mr:100,armor:0,damageReduction:0},stats:{}};
+ const item={description:'%i:activeEffect% <active>Bolt</active><br>Deal @Damage@ magic damage and slow by 25%.<br><passive>Burn</passive><br><magicDamage>@Burn*100@% max Health magic damage</magicDamage> per second for @Duration@ seconds.'};
+ const result=ItemDescriptions.describe({id:'x',item,source,context});
+ assert.equal(result.sections[0].damageOptions[0].value,150);
+ assert.equal(result.sections[1].damageOptions[0].value,60);
+ assert.match(result.html,/data-damage-type="magic"/);
+ assert.match(result.html,/slow by 25%/);
+});
