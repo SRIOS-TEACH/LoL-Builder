@@ -102,3 +102,15 @@ test('Teemo poison refreshes instead of contributing its full duration per attac
   const p=AttackEffects.model(state('Teemo'),{}).profile(s),dot=p.rows.find(r=>r.dot);
   near(dot.perSecond,40);near(dot.perHit,20);
 });
+
+test('combo critical outcomes are discrete without changing the build or default averages',()=>{
+  const s=stats(),model=AttackEffects.model(state());
+  near(model.profile(s,{critOutcome:'no-crit'}).baseAttackDamage,100);
+  near(model.profile(s,{critOutcome:'crit'}).baseAttackDamage,230);
+  near(model.profile(s).baseAttackDamage,132.5);
+  assert.equal(s.critChance,25);
+  const jhin=AttackEffects.model(state('Jhin',[],{'attack:target:hp':2000,'attack:target:currentHp':1000}),fixtures.items);
+  const out=jhin.apply(stats());
+  near(jhin.profile(out,{critOutcome:'no-crit'}).baseAttackDamage,out.ad);
+  near(jhin.profile(out,{critOutcome:'crit'}).baseAttackDamage,out.ad*out.critDamage/100);
+});

@@ -1,46 +1,73 @@
-/** Ordered, single-target combo scheduling. Missing data never becomes zero. */
+/** Ordered single-target scheduling. Missing values contribute zero with explicit warnings. */
 (function(scope) {
   const valid = value => Number.isFinite(value) && value >= 0;
+  const types = ['physical','magic','true','untyped'];
+  function damageParts(action) {
+    const parts = Object.fromEntries(types.map(type => [type,0]));
+    if (action.unavailable) return parts;
+    const packets = action.components || [];
+    const sum = packets.reduce((n,p) => n + (valid(p.value) ? p.value : 0),0);
+    if (sum > 0) for (const packet of packets) {
+      if (valid(packet.value)) parts[types.includes(packet.type) ? packet.type : 'untyped'] += packet.value * (valid(action.damage) ? action.damage / sum : 1);
+    } else if (valid(action.damage)) parts[types.includes(action.damageType) ? action.damageType : 'untyped'] = action.damage;
+    return parts;
+  }
+  // Both current BIN representations: explicit times or an offset from the
+  // global 30% attack-delay cast fraction. Never apply a default without a record.
+  function attackWindup(record, attackSpeed, baseAttackSpeed, overrideCastTime) {
+    const basic = record?.basicAttack;
+    if (!basic || !(attackSpeed > 0) || !(baseAttackSpeed > 0)) return null;
+    let fraction = valid(basic.mAttackCastTime) && basic.mAttackTotalTime > 0
+      ? basic.mAttackCastTime / basic.mAttackTotalTime
+      : Number.isFinite(basic.mAttackDelayCastOffsetPercent) ? Math.max(0,0.3 + basic.mAttackDelayCastOffsetPercent) : null;
+    if (valid(overrideCastTime)) fraction = overrideCastTime * baseAttackSpeed;
+    if (fraction === null) return null;
+    const modifier = valid(basic.mAttackDelayCastOffsetPercentAttackSpeedRatio) ? basic.mAttackDelayCastOffsetPercentAttackSpeedRatio : 1;
+    return Math.max(0, fraction / baseAttackSpeed + (fraction / attackSpeed - fraction / baseAttackSpeed) * modifier);
+  }
   function simulate(actions) {
-    let cursor = 0, total = 0, damageKnown = true, timingKnown = true;
-    const ready = new Map(), chains = new Map(), timeline = [], issues = [];
-    for (const [index, action] of actions.entries()) {
+    let cursor = 0, total = 0;
+    const ready = new Map(), chains = new Map(), timeline = [], issues = [], damageWarnings = [], timeWarnings = [];
+    const breakdown = Object.fromEntries(types.map(type => [type,0]));
+    for (const [index,action] of actions.entries()) {
       const errors = [], group = action.group || action.id;
+      const warn = (list,message) => { const text = `Step ${index+1}: ${message}`; list.push(text); errors.push(message); issues.push(text); };
       let start = cursor;
-      if (action.unavailable) errors.push('Action is unavailable for this build.');
-      if (action.stage > 0) {
+      if (action.unavailable) {
+        warn(damageWarnings,'Action unavailable; damage assumed 0.');
+        warn(timeWarnings,'Action unavailable; timing assumed 0.');
+      } else if (action.stage > 0) {
         const previous = chains.get(group);
-        if (!previous || previous.stage !== action.stage - 1) errors.push('Add the preceding cast before this recast.');
-        if (!valid(action.recastDelay)) { errors.push('Enter the recast interval.'); timingKnown = false; }
+        if (!previous || previous.stage !== action.stage - 1) warn(timeWarnings,'Recast is missing its preceding cast; check order.');
+        if (!valid(action.recastDelay)) warn(timeWarnings,'Recast interval missing; assumed 0.');
         if (previous) {
-          start = Math.max(start, previous.start + (valid(action.recastDelay) ? action.recastDelay : 0));
-          if (valid(action.recastWindow) && start > previous.start + action.recastWindow + 1e-8) errors.push('The recast window has expired.');
+          start = Math.max(start,previous.start + (valid(action.recastDelay) ? action.recastDelay : 0));
+          if (valid(action.recastWindow) && start > previous.start + action.recastWindow + 1e-8) warn(timeWarnings,'Recast window expired; check order.');
         }
       } else {
         const available = ready.get(group);
-        if (available === null) { errors.push('Enter a repeat cooldown.'); timingKnown = false; }
-        else start = Math.max(start, available || 0);
+        if (available?.missing) warn(timeWarnings,'Repeat cooldown or recast window missing; assumed 0.');
+        start = Math.max(start,available?.time || 0);
       }
-      if (!valid(action.castTime)) { errors.push('Enter cast time / attack windup.'); timingKnown = false; }
-      const end = start + (valid(action.castTime) ? action.castTime : 0);
-      if (!valid(action.damage)) { errors.push('Damage is unavailable; enter a damage value.'); damageKnown = false; }
-      else total += action.damage;
-      if (!action.stage || action.cooldownStarts === 'last') {
-        // If a chain is abandoned, a cooldown beginning after the last recast
-        // starts only when the outstanding recast opportunity expires.
+      if (!action.unavailable && !valid(action.castTime)) warn(timeWarnings,'Cast time / attack windup missing; assumed 0.');
+      if (!action.unavailable && !valid(action.damage)) warn(damageWarnings,'Damage missing; assumed 0.');
+      const end = start + (!action.unavailable && valid(action.castTime) ? action.castTime : 0);
+      const parts = damageParts(action);
+      for (const type of types) breakdown[type] += parts[type];
+      const damage = Object.values(parts).reduce((n,v) => n+v,0);
+      total += damage;
+      if (parts.untyped > 0) warn(damageWarnings,'Damage type unknown; shown as untyped.');
+      if (!action.unavailable && (!action.stage || action.cooldownStarts === 'last')) {
         const pending = action.cooldownStarts === 'last' && (action.stage || 0) < (action.lastStage || 0);
         const expiry = pending ? action.recastWindow : 0;
-        ready.set(group, valid(action.cooldown) && valid(expiry) ? start + expiry + action.cooldown : null);
+        ready.set(group,{time:start + (valid(expiry) ? expiry : 0) + (valid(action.cooldown) ? action.cooldown : 0),missing:!valid(expiry) || !valid(action.cooldown)});
       }
-      chains.set(group, {stage: action.stage || 0, start});
+      if (!action.unavailable) chains.set(group,{stage:action.stage || 0,start});
+      timeline.push({start,end,wait:start-cursor,errors,action,damage,breakdown:parts});
       cursor = end;
-      timeline.push({start, end, wait: start - (timeline.at(-1)?.end || 0), errors, action});
-      issues.push(...errors.map(message => `Step ${index + 1}: ${message}`));
     }
-    const invalid = actions.some(a => a.unavailable) || issues.some(s => /preceding cast|window has expired/.test(s));
-    return {timeline, total: damageKnown && !invalid ? total : null, knownDamage: total,
-      duration: timingKnown && !invalid ? cursor : null, lowerBound: cursor, issues};
+    return {timeline,total,duration:cursor,breakdown,issues,damageWarnings,timeWarnings};
   }
-  scope.ComboTester = {simulate};
+  scope.ComboTester = {simulate,damageParts,attackWindup};
   if (typeof module !== 'undefined') module.exports = scope.ComboTester;
 })(typeof window !== 'undefined' ? window : globalThis);

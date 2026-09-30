@@ -141,9 +141,9 @@
       for(const stat of ['ad','critChance','critDamage','asTotal'])if(out[stat]!==s[stat])out.championBonuses[stat]=(out.championBonuses[stat]||0)+out[stat]-s[stat];
       return out;
     }
-    function profile(s){
+    function profile(s,{critOutcome=null}={}){
       controls.length=0;
-      const ctx=context(s),chance=clamp(s.critChance/100,0,1),crit=s.critDamage/100,rows=[],warnings=[];
+      const ctx=context(s),chance=critOutcome==='crit'?1:critOutcome==='no-crit'?0:clamp(s.critChance/100,0,1),crit=s.critDamage/100,rows=[],warnings=[];
       let base=averageCrit(s.ad,chance,crit),rate=s.asTotal;
       if(s.attackStatsMissing){base=null;warnings.push('Champion critical-strike data unavailable.');}
       if(speedBuff[name]&&name!=='Ashe'){const [slot,,label,,key]=speedBuff[name];toggle(slot,key||'speedBuff',label+' attack speed active');}
@@ -159,7 +159,7 @@
       if(name==='Jhin'){
         const missing=input('p','target:currentHp','Target current health'),max=input('p','target:hp','Target maximum health');
         const execute=calc('p','FourthShotExecutePercent',s).value;
-        base=(3*base+s.ad*crit)/4;
+        if(critOutcome===null)base=(3*base+s.ad*crit)/4;
         row('Whisper fourth-shot execute',finite(max)&&finite(missing)&&finite(execute)?Math.max(0,max-missing)*execute:null,'physical',4,'Target missing HP × fourth-shot execute fraction', {onHit:false,sourceSlot:'p'});
         const reload=data('p','ReloadTime');
         // Reload begins on the last shot; three inter-shot intervals per magazine.
@@ -256,7 +256,7 @@
       if(name==='MasterYi'&&toggle('p','doubleStrike','Repeated attacks: Double Strike'))ability('p','TotalDamage','Double Strike','physical',data('p','AttackCount'),{onHit:false,extraHit:1});
       if(name==='Kayle'&&level>=11&&toggle('p','kayleWaves','Exalted: waves active'))ability('p','PassiveWaveDamage','Divine Ascent waves','magic',1,{onHit:false});
       if(['Vayne','KogMaw'].includes(name))input('attack','target:hp','Target maximum health');
-      const extended=scope.AttackChampions?.profile({name,s,data,calc,rank,toggle,input,choice,row,values,rows,base,rate})||{base,rate,onHitScale:1,baseType:'physical',notes:[]};
+      const extended=scope.AttackChampions?.profile({name,s,data,calc,rank,toggle,input,choice,row,values,rows,base,rate,attackCritChance:chance})||{base,rate,onHitScale:1,baseType:'physical',notes:[]};
       base=extended.base;rate=extended.rate;warnings.push(...extended.notes);
       const championRows=rows.length;
       let phantom=1;
@@ -412,7 +412,7 @@
       formula.push(`DPS = average on-attack damage × effective attacks per second. ${state.target?.enabled?'After target mitigation':'Before mitigation'}; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included.`);
       if(phantom!==1)warnings.push('Rageblade assumes fully stacked, uninterrupted attacks.');
       formula.push(...warnings);
-      return {baseAttackDamage:base,autoAttackDamage:damage,attackDps:dps,rawAutoAttackDamage:rawDamage,rawAttackDps:rawDps,attackRange:s.attackRange,rate,rows,controls:[...new Map(controls.map(c=>[c.key,c])).values()],warnings,partial:!!unsupported[name]&&!extended.covered,breakdown:formula.join('\n')};
+      return {baseAttackDamage:base,baseAttackType:extended.baseType||'physical',autoAttackDamage:damage,attackDps:dps,rawAutoAttackDamage:rawDamage,rawAttackDps:rawDps,attackRange:s.attackRange,rate,rows,controls:[...new Map(controls.map(c=>[c.key,c])).values()],warnings,partial:!!unsupported[name]&&!extended.covered,breakdown:formula.join('\n')};
     }
     return {apply,profile,abilityModifiers};
   }

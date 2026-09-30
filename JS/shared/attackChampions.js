@@ -62,7 +62,7 @@
   function profile(a){
     const {name,s,data,calc,rank,toggle,input,row,values,rows}=a;
     let {base,rate}=a,onHitScale=1,baseType='physical';
-    const notes=[],chance=s.critChance/100,crit=s.critDamage/100;
+    const notes=[],chance=a.attackCritChance??s.critChance/100,crit=s.critDamage/100;
     const avg=v=>finite(v)?scope.AttackEffects.averageCrit(v,chance,crit):null;
     const v=(slot,key,r)=>calc(slot,key,s,r).value;
     const hp=(key='hp')=>input('attack','target:'+key,'Target '+({hp:'maximum health',currentHp:'current health',bonusHp:'bonus health'}[key]||key));
