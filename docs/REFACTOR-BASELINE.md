@@ -10,7 +10,7 @@ Completed 1 October 2026. Test execution took place on 30 September 2026 (UTC ti
 - Existing local README edits and untracked roadmap/refactoring-plan documents were preserved in the local snapshot.
 - Source and fixtures were copied before execution into `test-results/refactor-baseline-2026-09-30/`. Tests ran against that source copy, using separate fixture folders for root and preview runs. The original fixtures were not redownloaded or changed.
 - Before/after integrity checks found **zero changed original source files and zero changed original fixture files**. All 38 tracked preview files matched their root counterparts by SHA-256.
-- This is a Phase 1 evidence capture. Phase 0's Git snapshot/tag, independent backup, remote checkpoint and managed refactoring worktree remain outstanding. The local source copy is not a replacement for those protections. Complete Phase 0 before runtime changes.
+- This is the original Phase 1 evidence capture. Phase 0 was performed subsequently: see [the protection/recovery record](REFACTOR-PROTECTION.md) for the checkpoint, backup, managed worktree and publication status. This historical local source copy is not a replacement for those protections.
 
 The [manifest](refactor-baseline/manifest.json) records every captured source/fixture hash, initial working-tree status, runtime versions and absolute capture locations. The [integrity result](refactor-baseline/integrity.json) applies to the test run before this report and the plan status were updated.
 
@@ -183,4 +183,4 @@ Full raw audit reports, screenshots, original source and two fixture copies rema
 
 ## Phase 1 exit decision
 
-The behavior inventory, dependency/state map, extraction contracts, fixture/source checksums, executed test matrix and known failures are now recorded. **Phase 1 is complete with documented exceptions B1–B8.** No baseline failure was hidden or converted into a passing assertion. Phase 0 protection still precedes runtime changes. Before extracting the ability resolver, repair the audit harness and explicitly account for its passive findings. The next structural work should prove reusable item/champion catalog behavior before broadly moving files.
+The behavior inventory, dependency/state map, extraction contracts, fixture/source checksums, executed test matrix and known failures are now recorded. **Phase 1 is complete with documented exceptions B1–B8.** No baseline failure was hidden or converted into a passing assertion. See the subsequent Phase 0 record before runtime changes. Before extracting the ability resolver, repair the audit harness and explicitly account for its passive findings. The next structural work should prove reusable item/champion catalog behavior before broadly moving files.

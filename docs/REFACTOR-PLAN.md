@@ -2,7 +2,7 @@
 
 Status: revised proposal for review, 30 September 2026. Reviewed against future item/champion explorers and build comparison. No runtime code has been changed by either planning pass.
 
-Progress update, 1 October 2026: **Phase 1 completed with documented exceptions.** See [the baseline report](REFACTOR-BASELINE.md) for the capability/state inventory, extraction contracts, source/fixture checksums, representative outputs and verification results. Phase 0's Git checkpoint/backup/worktree remains outstanding and must precede runtime changes. No runtime refactoring has begun.
+Progress update, 1 October 2026: **Phase 1 completed with documented exceptions; Phase 0 local protection established.** See [the baseline report](REFACTOR-BASELINE.md) for the inventory and verification, and [Phase 0 protection/recovery instructions](REFACTOR-PROTECTION.md) for the checkpoint, independent backup and managed refactoring checkout. Public GitHub publication requires approval; its final state is recorded in the external protection manifest. No runtime refactoring has begun.
 
 ## Outcome and scope
 
@@ -44,7 +44,7 @@ Before any runtime edits:
 
 If a separate GitHub repository is selected, retain full Git history, explicitly transfer the snapshot and tag, verify its contents, and leave publishing disabled until its deployment target is intentionally configured. A remote fork alone does not capture local uncommitted files or ignored fixtures.
 
-No branch, tag, worktree or remote fork has been created in this planning pass. The protection procedure above is the first implementation milestone.
+The baseline branch/worktree and backup procedure are now implemented locally; see [the Phase 0 record](REFACTOR-PROTECTION.md). No separate remote repository is required. Public publication is a distinct final step and does not change the live site.
 
 ## Proposed boundaries
 
@@ -160,6 +160,8 @@ Before consolidating superficially similar helpers, compare their unknown-value 
 ## Delivery phases and completion gates
 
 ### Phase 0 — Baseline and isolated workspace
+
+Local protection and restored-app verification are recorded in [REFACTOR-PROTECTION.md](REFACTOR-PROTECTION.md). GitHub publication was rejected by automatic approval review and remains subject to explicit approval of the public payload; see the external protection manifest for the latest publication state.
 
 Carry out the preservation and isolation steps above. Record the snapshot, preserved local material, test environment and restoration instructions. Phase 1 then records the verification status of this exact snapshot.
 
