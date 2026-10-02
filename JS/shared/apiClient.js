@@ -2,6 +2,7 @@
  * Shared API client helpers for Data Dragon / Community Dragon fetches.
  */
 (function initApiClient(globalScope) {
+  const records=globalScope.RecordValues || (typeof require==='function'?require('../core/records.js'):null);
   const requests = new Map();
   function fetchJson(url) {
     if (requests.has(url)) return requests.get(url);
@@ -14,7 +15,7 @@
         const immutable = /^https:\/\/ddragon\.leagueoflegends\.com\/cdn\/\d+\.\d+\.\d+\//.test(url);
         const response = await fetch(url, { signal: controller.signal, cache: immutable ? 'force-cache' : 'default' });
         if (!response.ok) throw new Error(`Request failed (${response.status}): ${url}`);
-        return await response.json();
+        return records.deepFreeze(await response.json());
       } finally {
         clearTimeout(timer);
       }

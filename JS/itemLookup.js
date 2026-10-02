@@ -1,4 +1,5 @@
 /** Item Lookup page state and DOM rendering. Shared parsing lives in shared/itemData.js. */
+const itemLookupRepository=window.SourceRepositories.createRepository();
 const ITEM_STATE = {
   combatValues:{},
   version: '', items: {}, filteredIds: [], tags: new Set(),
@@ -22,13 +23,14 @@ async function initItemLookup() {
   document.getElementById("itemCount").textContent = "Loading items...";
   try {
   ITEM_STATE.version = await window.ApiClient.fetchLatestVersion();
-  const itemJson = await window.ApiClient.fetchItemIndex(ITEM_STATE.version);
-  ITEM_STATE.items = Object.fromEntries(Object.entries(itemJson.data || {}).filter(([id, item]) => isPurchasableItem(id, item)));
+  const catalog = await itemLookupRepository.loadItemCatalog(ITEM_STATE.version);
+  ITEM_STATE.items = catalog.records;
+  ITEM_STATE.source=catalog.source;
 
   await loadCommunityDragonCalcs();
 
   ITEM_STATE.tags = new Set();
-  Object.values(ITEM_STATE.items).forEach((item) => (item.tags || []).forEach((tag) => ITEM_STATE.tags.add(tag)));
+  Object.entries(ITEM_STATE.items).filter(([id,item])=>isPurchasableItem(id,item)).map(([,item])=>item).forEach((item) => (item.tags || []).forEach((tag) => ITEM_STATE.tags.add(tag)));
 
   document.getElementById("itemSearch").addEventListener("input", applyItemFilters);
   document.getElementById("itemGrid").addEventListener("click", (event) => {
@@ -94,17 +96,8 @@ function applyItemFilters() {
   ITEM_STATE.selectedMaps = getSelectedMaps();
   const searchText = String(document.getElementById("itemSearch").value || "").trim().toLowerCase();
 
-  const filteredEntries = Object.entries(ITEM_STATE.items)
-    .filter(([, item]) => itemMatchesSelectedMaps(item))
-    .filter(([, item]) => {
-      const nameOk = !searchText || item.name.toLowerCase().includes(searchText);
-      const tagsOk = !ITEM_STATE.selectedTags.size || Array.from(ITEM_STATE.selectedTags).every((tag) => item.tags?.includes(tag));
-      return nameOk && tagsOk;
-    });
+  ITEM_STATE.filteredIds=window.CatalogQueries.queryItems(ITEM_STATE.items,{search:searchText,tags:ITEM_STATE.selectedTags,maps:ITEM_STATE.selectedMaps,purchasable:true,dedupe:true});
 
-  ITEM_STATE.filteredIds = dedupeByNameWithMapPriority(filteredEntries)
-    .sort((a, b) => a[1].name.localeCompare(b[1].name))
-    .map(([id]) => id);
 
   renderItemGrid();
   const stillSelected = ITEM_STATE.selectedId && ITEM_STATE.filteredIds.includes(ITEM_STATE.selectedId);

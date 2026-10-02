@@ -1,6 +1,6 @@
 # Refactoring action list
 
-Updated: 2 October 2026. Phases 0–2 are complete with the documented baseline exceptions. Phase 3 is next; runtime calculations remain unchanged.
+Updated: 2 October 2026. Phases 0–3 are complete with the documented baseline exceptions. Phase 4 is next; calculation algorithms remain unchanged.
 
 This is the working checklist for [the refactoring plan](REFACTOR-PLAN.md). Check an action only after its work and verification are complete. Record the completion date and supporting test results or commit beside completed future actions. A phase is complete only when its gate passes. Keep the protected baseline fixed; make new changes on `codex/modular-refactor`.
 
@@ -46,16 +46,18 @@ P2.1–P2.6 completed 2 October 2026; see [delivery and deletion evidence](REFAC
 
 ## Phase 3 — Reusable catalogs, inputs and data preparation
 
-- [ ] P3.1 Extract source loading, parsing and normalization into explicit champion and item data capabilities.
-- [ ] P3.2 Extract catalog queries and recommendations; keep the full catalog separate from Builder eligibility filters.
-- [ ] P3.3 Extract canonical build/scenario inputs and inventory, ability-rank and rune rules.
-- [ ] P3.4 Separate explorer query/inspection state from build state.
-- [ ] P3.5 Preserve read-only caches, retries, advanced-data fallbacks and latest-request handling independently for each consumer.
-- [ ] P3.6 Carry source metadata across boundaries without changing data patches or calculation inputs.
-- [ ] P3.7 Extract general-purpose helpers with real shared consumers and consistent semantics.
-- [ ] P3.8 Demonstrate champion/item browsing and detail lookup without mounting Builder.
-- [ ] P3.9 Verify two independent build-input instances and two query instances; confirm Builder selection parity and no catalog mutation.
-- [ ] P3 gate: reusable data and inputs work independently, retain the full catalog, and preserve existing behavior.
+- [x] P3.1 Extract source loading, parsing and normalization into explicit champion and item data capabilities.
+- [x] P3.2 Extract catalog queries and recommendations; keep the full catalog separate from Builder eligibility filters.
+- [x] P3.3 Extract canonical build/scenario inputs and inventory, ability-rank and rune rules.
+- [x] P3.4 Separate explorer query/inspection state from build state.
+- [x] P3.5 Preserve read-only caches, retries, advanced-data fallbacks and latest-request handling independently for each consumer.
+- [x] P3.6 Carry source metadata across boundaries without changing data patches or calculation inputs.
+- [x] P3.7 Extract general-purpose helpers with real shared consumers and consistent semantics.
+- [x] P3.8 Demonstrate champion/item browsing and detail lookup without mounting Builder.
+- [x] P3.9 Verify two independent build-input instances and two query instances; confirm Builder selection parity and no catalog mutation.
+- [x] P3 gate: reusable data and inputs work independently, retain the full catalog, and preserve existing behavior.
+
+P3.1–P3.8 implemented and checked 2 October 2026. The headless fixture harness browses 173 champions and all 868 item records, with 236 retained by Builder policy. Ten isolation/rule tests pass; the complete unit suite passes 213 tests. P3.9 passed all 28 browser runs and 20 exact representative-case comparisons, plus six follow-up browser checks after the final scenario boundary extraction. The phase gate passed: a clean saved-source archive also passed 213 unit tests, the build and the headless reuse harness. See [capability contracts](REFACTOR-PHASE3.md).
 
 ## Phase 4 — Explicit calculation pipeline
 

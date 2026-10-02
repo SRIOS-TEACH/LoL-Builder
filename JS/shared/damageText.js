@@ -1,6 +1,7 @@
 /** Resolve typed damage prose without changing scaling ratios, healing or utility values. */
 (function(scope){
-  const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const text=scope.TextValues || (typeof require==='function'?require('../core/text.js'):null);
+  const escape=text.escapeHtml;
   const plain=value=>String(value).replace(/<[^>]*>/g,'');
   const number=value=>Number.isFinite(value)?Number(value.toFixed(2)).toLocaleString('en-US'):'Value unavailable';
   const pattern=syntax=>syntax==='item'?/@([^@]+)@(%)?/g:/\{\{\s*([^}]+?)\s*\}\}(%)?/g;

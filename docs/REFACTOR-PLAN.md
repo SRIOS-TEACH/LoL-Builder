@@ -2,7 +2,7 @@
 
 Status: revised proposal for review, 30 September 2026. Reviewed against future item/champion explorers and build comparison. No runtime code has been changed by either planning pass.
 
-Progress update, 2 October 2026: **Phases 0–2 are complete with documented baseline exceptions.** Both branches and the protected baseline tag were published to GitHub and their saved commits verified on 1 October. See [the action checklist](REFACTOR-ACTIONS.md) for completion tracking, [the baseline report](REFACTOR-BASELINE.md) for verification, and [protection/recovery instructions](REFACTOR-PROTECTION.md) for restoration. Phase 2 delivery cleanup is complete; [its ledger](REFACTOR-PHASE2.md) records generated preview parity, retained capabilities and passing checks. Phase 3 is next. Runtime calculations remain unchanged.
+Progress update, 2 October 2026: **Phases 0–3 are complete with documented baseline exceptions.** Both branches and the protected baseline tag were published to GitHub and their saved commits verified on 1 October. See [the action checklist](REFACTOR-ACTIONS.md) for completion tracking, [the baseline report](REFACTOR-BASELINE.md) for verification, and [protection/recovery instructions](REFACTOR-PROTECTION.md) for restoration. Phase 2 delivery cleanup is complete; [its ledger](REFACTOR-PHASE2.md) records generated preview parity, retained capabilities and passing checks. Phase 3 is complete; [its contracts and evidence](REFACTOR-PHASE3.md) cover reusable sources, queries and independent input records. Phase 4 is next. Calculation algorithms remain unchanged.
 
 ## Outcome and scope
 
@@ -188,6 +188,8 @@ For each deletion, record what it does, its callers and why it is unnecessary. S
 **Gate:** reduced duplicate maintenance, retained public routes, unchanged supported interactions, and evidence for each removed feature path or helper.
 
 ### Phase 3 — Extract reusable catalogs, input rules and data preparation
+
+**Completed 2 October 2026:** [contracts and verification](REFACTOR-PHASE3.md). Headless browsing retains all 868 items and 173 champions, while Builder policy retains 236 items. Independent query/build/scenario instances, source metadata and existing rules are verified. All 213 unit tests and 28 browser runs passed, with exact baseline scenarios and a clean-source reproduction.
 
 Extract source parsing and normalization from Builder and the lookup controllers, then catalog queries/recommendations, canonical input models and inventory/rank/rune rules. Separate inspection/query state from build state. Preserve read-only API caches, retry behavior, optional advanced-data fallbacks and latest-request-wins selection per consumer. Pull out small general-purpose helpers alongside their first real shared consumers rather than designing a utility library in advance.
 

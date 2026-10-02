@@ -15,3 +15,7 @@ Data Dragon is authoritative for the selected patch's base champion stats. Commu
 Champion selection commits its result only if it is still the latest request. Lookup and preview use the same request-counter pattern. A failed selection keeps the existing build and reports the failure.
 
 The app is a stat sandbox, not a combat simulator. Described passives are not necessarily applied. Unsupported calculations stay unavailable instead of being coerced to zero.
+
+## Extracted reusable capabilities
+
+JS/data owns source loading, provenance and champion/item/rune normalization. JS/domain owns catalog queries, recommendations and build/rune/scenario inputs. JS/application/catalogSession.js provides independent browsing sessions. JS/core contains the shared record/text operations used by these consumers. Inputs and queries are separate from read-only source catalogs. The Builder and dormant lookup controllers call these capabilities through compatibility adapters; calculation and UI extraction are still planned. See [contracts, composition and current limits](REFACTOR-PHASE3.md).

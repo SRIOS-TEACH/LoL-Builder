@@ -11,6 +11,7 @@
  * 2) The champion dropdown is rendered and wired to change events.
  * 3) `renderChampion` fetches full champion details and paints the UI.
  */
+const championLookupRepository=window.SourceRepositories.createRepository();
 const CHAMP_STATE = { version: "", champions: {}, selected: "", requestId: 0 };
 
 /**
@@ -19,12 +20,12 @@ const CHAMP_STATE = { version: "", champions: {}, selected: "", requestId: 0 };
 async function initChampionLookup() {
   try {
   CHAMP_STATE.version = await window.ApiClient.fetchLatestVersion();
-  const championJson = await window.ApiClient.fetchChampionIndex(CHAMP_STATE.version);
-  CHAMP_STATE.champions = championJson.data;
+  const catalog = await championLookupRepository.loadChampionCatalog(CHAMP_STATE.version);
+  CHAMP_STATE.champions = catalog.records;
+  CHAMP_STATE.source=catalog.source;
 
   const select = document.getElementById("champSelect");
-  select.innerHTML = Object.keys(CHAMP_STATE.champions)
-    .sort((a, b) => a.localeCompare(b))
+  select.innerHTML = window.CatalogQueries.queryChampions(CHAMP_STATE.champions)
     .map((name) => `<option value="${name}">${CHAMP_STATE.champions[name].name}</option>`)
     .join("");
 
@@ -44,9 +45,9 @@ async function renderChampion(name) {
   const requestId = ++CHAMP_STATE.requestId;
   try {
   CHAMP_STATE.selected = name;
-  const details = await window.ApiClient.fetchChampionDetails(CHAMP_STATE.version, name);
+  const details = await championLookupRepository.loadChampionDetails(CHAMP_STATE.version,name);
   if (requestId !== CHAMP_STATE.requestId) return;
-  const champ = details.data[name];
+  const champ = details.record;
 
   document.getElementById("champSelect").value = name;
   document.getElementById("champHeroCard").style.setProperty("--champ-splash-url", `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`);

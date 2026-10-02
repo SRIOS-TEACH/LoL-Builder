@@ -60,6 +60,13 @@ Read the [reliability audit](docs/AUDIT.md) for fixed defects, test coverage and
 - `JS/itemLookup.js` — controls item search, filters and selection, using shared data/formatting helpers.
 - `JS/builder.js` — champion/item/level setup logic, item modal UX, ability rank validation, and stat rendering.
 
+- JS/data/ — read-only source repositories and champion/item/rune adapters with provenance.
+- JS/domain/ — catalog queries, recommendations and independent build/rune/scenario rules.
+- JS/application/catalogSession.js — isolated browsing sessions for future explorers.
+- JS/core/ — shared plain-record and text operations with explicit semantics.
+
+The Builder delegates these responsibilities to reusable capabilities. See [Phase 3 contracts](docs/REFACTOR-PHASE3.md) for reuse examples and remaining calculation/UI work.
+
 ### Additional docs
 
 - `docs/ROADMAP.md` — milestones for saved profiles, targets, combos, build imports and a controlled v1.0 release.

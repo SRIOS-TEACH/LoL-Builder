@@ -1,7 +1,8 @@
 /** Resolve game-authored item prose with the same calculations as the builder. */
 (function(scope){
   const C=scope.Calculations;
-  const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const text=scope.TextValues || (typeof require==='function'?require('../core/text.js'):null);
+  const escape=text.escapeHtml;
   const slug=text=>String(text).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   const number=value=>Number.isFinite(value)?Number(value.toFixed(2)).toLocaleString('en-US'):'value unavailable';
   const percent=value=>number(Number.isFinite(value)?value*100:NaN);

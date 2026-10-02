@@ -8,8 +8,8 @@ const root = process.env.APP_ROOT || path.join(__dirname, '..');
 function app(fetchImpl) {
   const context = vm.createContext({ fetch: fetchImpl, AbortController, setTimeout, clearTimeout, console: { warn() {} } });
   context.window = context;
-  for (const file of ['apiClient', 'itemPolicy', 'itemData']) {
-    vm.runInContext(fs.readFileSync(path.join(root, 'JS/shared', file + '.js'), 'utf8'), context);
+  for (const file of ['core/records','core/text','shared/apiClient','shared/itemPolicy','data/itemSource','data/championSource','data/sourceRepositories','domain/recommendations','shared/itemData']) {
+    vm.runInContext(fs.readFileSync(path.join(root, 'JS', file + '.js'), 'utf8'), context);
   }
   return context;
 }

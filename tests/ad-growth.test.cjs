@@ -8,7 +8,7 @@ const root = process.env.APP_ROOT || path.join(__dirname, '..');
 function app() {
   const context = vm.createContext({ document: { addEventListener() {} } });
   context.window = context;
-  for (const file of ['shared/buildStats', 'builder']) {
+  for (const file of ['core/records','core/text','shared/buildStats','shared/abilityRules','domain/scenarioInputs','shared/targetDamage','data/championSource','data/itemSource','data/runeSource','data/sourceRepositories','domain/buildInputs','builder']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'JS', file + '.js'), 'utf8'), context);
   }
   return context;

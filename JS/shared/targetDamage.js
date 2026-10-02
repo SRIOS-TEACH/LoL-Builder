@@ -3,13 +3,9 @@
  */
 (function(scope){
   const finite=Number.isFinite,clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
-  const numeric=(value,fallback)=>value!==null&&value!==''&&finite(Number(value))?Number(value):fallback;
   const format=value=>finite(value)?Number(value.toFixed(4)).toString():'unavailable';
-  function normalize(target={}){
-    const maxHp=Math.max(1,numeric(target?.maxHp,2000));
-    return {enabled:target?.enabled===true,maxHp,currentHp:clamp(numeric(target?.currentHp,maxHp),0,maxHp),
-      armor:numeric(target?.armor,100),mr:numeric(target?.mr,100),damageReduction:clamp(numeric(target?.damageReduction,0),0,100)};
-  }
+  const scenario=scope.ScenarioInputs || (typeof require==='function'?require('../domain/scenarioInputs.js'):null);
+  const normalize=scenario.normalizeTarget;
   function targetStats(target){
     const t=normalize(target);if(!t.enabled)return {};
     return {hp:t.maxHp,currentHp:t.currentHp,armor:t.armor,mr:t.mr,healthPercent:t.currentHp/t.maxHp,

@@ -20,15 +20,14 @@ const STAT_ICONS = {
   "Tenacity": "🦶"
 };
 
+const builderRepository=window.SourceRepositories.createRepository();
 const BUILDER = {
+  ...window.BuildInputs.createBuildInputs(),
+  ...window.ScenarioInputs.createScenarioInputs(),
   version: "",
   champions: {},
   items: {},
-  selectedChampion: "",
   championData: null,
-  level: 1,
-  abilityRanks: { q: 0, w: 0, e: 0, r: 0 },
-  itemSlots: Array(7).fill(""),
   activeSlot: null,
   itemTags: new Set(),
   champTags: new Set(),
@@ -36,22 +35,10 @@ const BUILDER = {
   modalChampFiltered: [],
   championDetailCache: {},
   cdragonAbilityData: null,
-  combatValues: {},
-  target: { enabled:false, maxHp:2000, currentHp:2000, armor:100, mr:100, damageReduction:0 },
-  disabledItemPassives: {},
   inspectedItemId: null,
   championModalRequestId: 0,
   championRequestId: 0,
   runeModalTarget: null,
-  runeStacks: {},
-  gameTimeMinutes: 0,
-  runeSelections: {
-    primaryPath: "",
-    secondaryPath: "",
-    primary: [],
-    secondary: [],
-    shards: ["adaptive-force", "adaptive-force", "scaling-health"],
-  },
 };
 
 const RUNE_DATA = {
@@ -69,116 +56,13 @@ const RUNE_DATA = {
   shardOptions: ["adaptive-force", "attack-speed", "ability-haste", "move-speed", "scaling-health", "health", "tenacity-slow-resist"],
 };
 
-const RUNE_PATH_ID_TO_KEY = {
-  8100: "domination",
-  8000: "precision",
-  8200: "sorcery",
-  8300: "inspiration",
-  8400: "resolve",
-  // Legacy fallback ids kept for compatibility with older/static payloads.
-  7200: "domination",
-  7201: "precision",
-  7202: "sorcery",
-  7203: "inspiration",
-  7204: "resolve",
-};
-
-const CDRAGON_STAT_HASH_TO_NAME = {
-  "{18956a21}": "armorPerLevel",
-  "{4af40dc3}": "baseDamage",
-  "{4d37af28}": "hpPerLevel",
-  "{836cc82a}": "attackSpeed",
-  "{7bd4b298}": "attackRange",
-  "{4f89c991}": "attackSpeedRatio",
-  "{8662cf12}": "baseHP",
-  "{913157bb}": "hpRegenPerLevel",
-  "{9eedebad}": "baseStaticHPRegen",
-  "{b9f2b365}": "attackSpeedPerLevel",
-  "{e2b5d80d}": "damagePerLevel",
-  "{e62d9d92}": "baseMoveSpeed",
-  "{ea6100d5}": "baseArmor",
-};
-
-const CDRAGON_TO_DDRAGON_STAT_KEY = {
-  baseDamage: "attackdamage",
-  damagePerLevel: "attackdamageperlevel",
-  baseHP: "hp",
-  hpPerLevel: "hpperlevel",
-  baseArmor: "armor",
-  armorPerLevel: "armorperlevel",
-  attackRange: "attackrange",
-  attackSpeed: "attackspeed",
-  attackSpeedPerLevel: "attackspeedperlevel",
-  baseMoveSpeed: "movespeed",
-  baseStaticHPRegen: "hpregen",
-  hpRegenPerLevel: "hpregenperlevel",
-  baseMP: "mp",
-  mpPerLevel: "mpperlevel",
-  baseStaticMPRegen: "mpregen",
-  mpRegenPerLevel: "mpregenperlevel",
-  baseSpellBlock: "spellblock",
-  spellBlockPerLevel: "spellblockperlevel",
-  baseCrit: "crit",
-  critPerLevel: "critperlevel",
-  baseCritDamage: "critdamage",
-};
-
-const DEFAULT_CHAMPION_BASE_STATS = {
-  hp: 0,
-  hpperlevel: 0,
-  mp: 0,
-  mpperlevel: 0,
-  hpregen: 0,
-  hpregenperlevel: 0,
-  mpregen: 0,
-  mpregenperlevel: 0,
-  attackdamage: 0,
-  attackdamageperlevel: 0,
-  attackspeed: 0,
-  attackspeedperlevel: 0,
-  armor: 0,
-  armorperlevel: 0,
-  spellblock: 0,
-  spellblockperlevel: 0,
-  movespeed: 0,
-  attackrange: 0,
-  crit: 0,
-  critperlevel: 0,
-  critdamage: 0,
-};
-
-function slugifyRuneName(name) {
-  return String(name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-}
-
-function toDdragonPerkIcon(version, iconPath) {
-  if (!iconPath) return "";
-  return `https://ddragon.leagueoflegends.com/cdn/img/${String(iconPath).replace(/^\/+/, "")}`;
-}
-
-// Shared format/strip helpers are centralized here to avoid redeclaration drift.
-function stripHtml(text) {
-  return String(text || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
-}
-
-function buildPathDefaults(paths) {
-  return Object.fromEntries(
-    Object.entries(paths).map(([id, path]) => [
-      id,
-      (path.primaryRows || []).map((row) => row[0]).filter(Boolean).slice(0, 4),
-    ]),
-  );
-}
+function slugifyRuneName(...args) { return window.RuneSource.slugifyRuneName(...args); }
+function toDdragonPerkIcon(...args) { return window.RuneSource.toDdragonPerkIcon(...args); }
+function stripHtml(...args) { return window.TextValues.stripHtml(...args); }
+function buildPathDefaults(...args) { return window.RuneSource.buildPathDefaults(...args); }
 
 function initializeRuneSelections() {
-  const pathIds = Object.keys(RUNE_DATA.paths);
-  const primaryPath = pathIds[0] || "";
-  const secondaryPath = pathIds.find((id) => id !== primaryPath) || primaryPath;
-
-  BUILDER.runeSelections.primaryPath = primaryPath;
-  BUILDER.runeSelections.secondaryPath = secondaryPath;
-  BUILDER.runeSelections.primary = getPathPrimaryDefaults(primaryPath);
-  BUILDER.runeSelections.secondary = getPathSecondaryDefaults(secondaryPath);
+ BUILDER.runeSelections=window.RuneInputRules.createRules(RUNE_DATA).initialize(BUILDER.runeSelections);
 }
 
 function isApAdaptiveChampion() {
@@ -189,39 +73,10 @@ function isApAdaptiveChampion() {
 }
 
 async function hydrateRunesFromDdragon(version) {
-  const runes = await window.ApiClient.fetchRunesReforged(version).catch(() => null);
+  const runes = await builderRepository.loadRunes(version).then(result=>{BUILDER.runeSource=result.source;return result.records;}).catch(() => null);
   if (!Array.isArray(runes) || !runes.length) return;
 
-  const nextPaths = { ...RUNE_DATA.paths };
-  const nextLookup = { ...RUNE_DATA.runeLookup };
-
-  runes.forEach((path) => {
-    const key = RUNE_PATH_ID_TO_KEY[path.id];
-    if (!key) return;
-
-    const pathIcon = toDdragonPerkIcon(version, path.icon);
-    const primaryRows = (path.slots || []).map((slot) => (slot.runes || []).map((rune) => {
-      const slug = slugifyRuneName(rune.name);
-      nextLookup[slug] = {
-        name: rune.name,
-        desc: stripHtml(rune.longDesc || rune.shortDesc || ""),
-        icon: toDdragonPerkIcon(version, rune.icon),
-      };
-      return slug;
-    }));
-
-    nextPaths[key] = {
-      ...nextPaths[key],
-      name: path.name,
-      icon: pathIcon || nextPaths[key]?.icon || "",
-      splash: `url(${pathIcon || nextPaths[key]?.icon || ""})`,
-      primaryRows: primaryRows.length ? primaryRows : (nextPaths[key]?.primaryRows || []),
-    };
-  });
-
-  RUNE_DATA.paths = nextPaths;
-  RUNE_DATA.runeLookup = nextLookup;
-  RUNE_DATA.pathDefaults = buildPathDefaults(nextPaths);
+  Object.assign(RUNE_DATA, window.RuneSource.normalizeRunes(runes,RUNE_DATA.paths,RUNE_DATA.runeLookup));
   initializeRuneSelections();
 }
 
@@ -359,10 +214,10 @@ function initRuneControls() {
   time.value = BUILDER.gameTimeMinutes;
   time.addEventListener('input', () => {
     if (!time.value.trim()) return;
-    BUILDER.gameTimeMinutes = window.RuneEffects.minutes(time.value);
+    BUILDER.gameTimeMinutes = window.ScenarioInputs.normalizeGameTime(time.value);
     updateBuild();
   });
-  time.addEventListener('change', () => { BUILDER.gameTimeMinutes = window.RuneEffects.minutes(time.value); time.value = BUILDER.gameTimeMinutes; updateBuild(); });
+  time.addEventListener('change', () => { BUILDER.gameTimeMinutes = window.ScenarioInputs.normalizeGameTime(time.value); time.value = BUILDER.gameTimeMinutes; updateBuild(); });
 
   const modal = document.getElementById('runeStacksModal');
   const close = () => { modal.classList.add('hidden'); document.getElementById('runeStacksBtn').focus(); };
@@ -455,25 +310,15 @@ async function loadBuilderData() {
   BUILDER.version = await window.ApiClient.fetchLatestVersion();
   BUILDER.runesLoading=true;
   const runeData = hydrateRunesFromDdragon(BUILDER.version).catch(()=>null).finally(()=>{BUILDER.runesLoading=false;});
-  const [champions, items] = await Promise.all([
-    window.ApiClient.fetchChampionIndex(BUILDER.version),
-    window.ApiClient.fetchItemIndex(BUILDER.version),
-  ]);
-  const advancedItems = window.ItemLookupShared.loadCommunityDragonCalcs().catch(()=>null);
-  BUILDER.champions = champions.data;
-  const entries = window.ItemPolicy.dedupeByNameWithMapPriority(
-    Object.entries(items.data).filter(([id, item]) =>
-      window.ItemPolicy.isPurchasableItem(id, item) && item.maps?.[11]),
-    new Set([11]),
-  );
-  const questEntries = Object.entries(items.data).filter(([id]) => /^120[0-4]$/.test(id));
-  const midBoots = Object.entries(items.data).filter(([id])=>["3170","3171","3172","3173","3174","3175","3176"].includes(id));
-  BUILDER.midBootIds = new Set(midBoots.map(([id])=>id));
-  for(const entry of midBoots) if(!entries.some(([id])=>id===entry[0])) entries.push(entry);
-  BUILDER.questItemIds = new Set(questEntries.map(([id])=>id));
-  for(const entry of questEntries) if(!entries.some(([id])=>id===entry[0])) entries.push(entry);
+  const catalog=await builderRepository.loadCatalogs(BUILDER.version);
+  BUILDER.catalogSources={champions:catalog.champions.source,items:catalog.items.source};
+  const advancedItems=window.ItemLookupShared.loadCommunityDragonCalcs().catch(()=>null);
+  BUILDER.champions=catalog.champions.records;
+  const shop=window.CatalogQueries.builderCatalog(catalog.items.records);
+  BUILDER.midBootIds=new Set(shop.midBootIds);BUILDER.questItemIds=new Set(shop.questItemIds);
+  const entries=Object.entries(shop.items);
   const updateItemStats = () => { const state=window.ItemLookupShared.getState();
-    BUILDER.items = Object.fromEntries(entries.map(([id,item])=>[id,{...item,stats:buildMergedItemStats(window.BuildStats.itemStatsFromDescription(item.description,item.stats),state.cdragonById[id])}]));
+    BUILDER.items = window.ItemSource.prepareItems(Object.fromEntries(entries),state.cdragonById,window.BuildStats);
   };
   updateItemStats();
   advancedItems.then(()=>{
@@ -489,66 +334,8 @@ async function loadBuilderData() {
   BUILDER.itemTags = new Set(Object.values(BUILDER.items).flatMap(item => item.tags || []));
 }
 
-function readNumericStat(entry, base, aliases) {
-  const entryValues = aliases
-    .map((key) => entry?.[key])
-    .filter((v) => v !== undefined && v !== null && v !== "")
-    .map((v) => Number(v) || 0);
-  const baseValues = aliases
-    .map((key) => base?.[key])
-    .filter((v) => v !== undefined && v !== null && v !== "")
-    .map((v) => Number(v) || 0);
-
-  const nonZeroEntry = entryValues.find((v) => v !== 0);
-  if (nonZeroEntry !== undefined) return nonZeroEntry;
-  const nonZeroBase = baseValues.find((v) => v !== 0);
-  if (nonZeroBase !== undefined) return nonZeroBase;
-
-  if (entryValues.length) return entryValues[0];
-  if (baseValues.length) return baseValues[0];
-  return 0;
-}
-
-function buildMergedItemStats(ddragonStats, cdtbEntry) {
-  const base = { ...(ddragonStats || {}) };
-  if (!cdtbEntry) return base;
-
-  const cdtbStats = {
-    FlatHPPoolMod: readNumericStat(cdtbEntry, base, ["mFlatHPPoolMod", "flatHPPoolMod", "FlatHPPoolMod"]),
-    FlatMPPoolMod: readNumericStat(cdtbEntry, base, ["mFlatMPPoolMod", "flatMPPoolMod", "FlatMPPoolMod"]),
-    FlatPhysicalDamageMod: readNumericStat(cdtbEntry, base, ["mFlatPhysicalDamageMod", "flatPhysicalDamageMod", "FlatPhysicalDamageMod"]),
-    FlatMagicDamageMod: readNumericStat(cdtbEntry, base, ["mFlatMagicDamageMod", "flatMagicDamageMod", "FlatMagicDamageMod"]),
-    FlatArmorMod: readNumericStat(cdtbEntry, base, ["mFlatArmorMod", "flatArmorMod", "FlatArmorMod"]),
-    FlatSpellBlockMod: readNumericStat(cdtbEntry, base, ["mFlatSpellBlockMod", "flatSpellBlockMod", "FlatSpellBlockMod"]),
-    PercentAttackSpeedMod: readNumericStat(cdtbEntry, base, ["mPercentAttackSpeedMod", "percentAttackSpeedMod", "PercentAttackSpeedMod"]),
-    FlatMovementSpeedMod: readNumericStat(cdtbEntry, base, ["mFlatMovementSpeedMod", "flatMovementSpeedMod", "FlatMovementSpeedMod"]),
-    PercentMovementSpeedMod: readNumericStat(cdtbEntry, base, ["mPercentMovementSpeedMod", "percentMovementSpeedMod", "PercentMovementSpeedMod"]),
-    FlatHPRegenMod: readNumericStat(cdtbEntry, base, ["mFlatHPRegenMod", "flatHPRegenMod", "FlatHPRegenMod"]),
-    FlatMPRegenMod: readNumericStat(cdtbEntry, base, ["mFlatMPRegenMod", "flatMPRegenMod", "FlatMPRegenMod"]),
-    PercentBaseHPRegenMod: readNumericStat(cdtbEntry, base, ["mPercentBaseHPRegenMod", "percentBaseHPRegenMod", "mPercentHPRegenMod", "percentHPRegenMod", "PercentBaseHPRegenMod", "PercentHPRegenMod"]),
-    PercentBaseMPRegenMod: readNumericStat(cdtbEntry, base, ["mPercentBaseMPRegenMod", "percentBaseMPRegenMod", "mPercentMPRegenMod", "percentMPRegenMod", "PercentBaseMPRegenMod", "PercentMPRegenMod"]),
-    FlatCritChanceMod: readNumericStat(cdtbEntry, base, ["mFlatCritChanceMod", "flatCritChanceMod", "FlatCritChanceMod"]),
-    PercentCritChanceMod: readNumericStat(cdtbEntry, base, ["mPercentCritChanceMod", "percentCritChanceMod", "PercentCritChanceMod"]),
-    FlatCritDamageMod: readNumericStat(cdtbEntry, base, ["mFlatCritDamageMod", "flatCritDamageMod", "FlatCritDamageMod"]),
-    PercentCritDamageMod: readNumericStat(cdtbEntry, base, ["mPercentCritDamageMod", "percentCritDamageMod", "PercentCritDamageMod"]),
-    FlatAttackRangeMod: readNumericStat(cdtbEntry, base, ["mFlatAttackRangeMod", "flatAttackRangeMod", "FlatAttackRangeMod"]),
-    FlatLethalityMod: readNumericStat(cdtbEntry, base, ["mFlatLethalityMod", "flatLethalityMod", "FlatLethalityMod"]),
-    PercentArmorPenetrationMod: readNumericStat(cdtbEntry, base, ["mPercentArmorPenetrationMod", "percentArmorPenetrationMod", "PercentArmorPenetrationMod"]),
-    FlatMagicPenetrationMod: readNumericStat(cdtbEntry, base, ["mFlatMagicPenetrationMod", "flatMagicPenetrationMod", "FlatMagicPenetrationMod"]),
-    PercentMagicPenetrationMod: readNumericStat(cdtbEntry, base, ["mPercentMagicPenetrationMod", "percentMagicPenetrationMod", "PercentMagicPenetrationMod"]),
-    PercentLifeStealMod: readNumericStat(cdtbEntry, base, ["mPercentLifeStealMod", "percentLifeStealMod", "PercentLifeStealMod"]),
-    PercentOmnivampMod: readNumericStat(cdtbEntry, base, ["mPercentOmnivampMod", "percentOmnivampMod", "PercentOmnivampMod"]),
-    PercentPhysicalVampMod: readNumericStat(cdtbEntry, base, ["mPercentPhysicalVampMod", "percentPhysicalVampMod", "PercentPhysicalVampMod"]),
-    PercentTenacityMod: readNumericStat(cdtbEntry, base, ["mPercentTenacityMod", "percentTenacityMod", "PercentTenacityMod"]),
-  };
-
-  const haste = readNumericStat(cdtbEntry, base, ["mAbilityHasteMod", "mFlatHasteMod", "flatHasteMod", "FlatHasteMod", "FlatAbilityHasteMod", "AbilityHaste"]);
-  cdtbStats.FlatHasteMod = haste;
-  cdtbStats.FlatAbilityHasteMod = haste;
-  cdtbStats.AbilityHaste = haste;
-
-  return { ...base, ...cdtbStats };
-}
+function readNumericStat(...args) { return window.ItemSource.readNumericStat(...args); }
+function buildMergedItemStats(...args) { return window.ItemSource.buildMergedItemStats(...args); }
 
 function renderChampionSelect() {
   Object.keys(BUILDER.champions).forEach((name) => {
@@ -593,12 +380,7 @@ function closeChampionModal() {
 function renderChampionModalGrid() {
   const text = document.getElementById("modalChampSearch").value.trim().toLowerCase();
   const tags = new Set(Array.from(document.querySelectorAll(".champ-tag:checked")).map((cb) => cb.value));
-  BUILDER.modalChampFiltered = Object.keys(BUILDER.champions)
-    .filter((name) => {
-      const c = BUILDER.champions[name];
-      return (!text || name.toLowerCase().includes(text)) && (!tags.size || Array.from(tags).every((t) => c.tags?.includes(t)));
-    })
-    .sort((a, b) => a.localeCompare(b));
+  BUILDER.modalChampFiltered=window.CatalogQueries.queryChampions(BUILDER.champions,{search:text,tags});
 
   document.getElementById("modalChampResults").textContent = `${BUILDER.modalChampFiltered.length} champions`;
   document.getElementById("modalChampGrid").innerHTML = BUILDER.modalChampFiltered
@@ -621,8 +403,8 @@ async function renderChampionModalDetail(name) {
   root.innerHTML = `<h3>${name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/champion/${c.image.full}' alt='${name}'><p><strong>Tags:</strong> ${(c.tags || []).join(", ")}</p><p>${c.blurb}</p><div class='champ-ability-strip'><span class='text-muted'>Loading abilities...</span></div>`;
 
   if (!BUILDER.championDetailCache[name]) {
-    const data = await window.ApiClient.fetchChampionDetails(BUILDER.version, name).catch(() => null);
-    BUILDER.championDetailCache[name] = data?.data?.[name] || null;
+    const data = await builderRepository.loadChampionDetails(BUILDER.version,name).catch(()=>null);
+    BUILDER.championDetailCache[name] = data?.record || null;
   }
   if (reqId !== BUILDER.championModalRequestId) return;
 
@@ -646,416 +428,22 @@ function runeImgTag(meta, className = "") {
   return `<img class="${className}" src="${meta.icon || fallback}" alt="${meta.name}" data-fallback="${fallback}" onerror="this.onerror=null;this.src=this.dataset.fallback">`;
 }
 
-function normalizeCdragonChampionPath(name) {
-  return String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
-function normalizeCdragonRecordPath(path) {
-  return String(path || "").replace(/\\/g, "/").replace(/^\/+/, "").toLowerCase();
-}
-
-function resolveCdragonRecord(raw, index, path) {
-  if (!path) return null;
-  const key = index.get(normalizeCdragonRecordPath(path));
-  return key ? raw[key] : null;
-}
-
-function extractCdragonSpell(spellRecord) {
-  const spellCandidates = [
-    spellRecord?.mSpell,
-    spellRecord?.mClientData?.mSpell,
-    spellRecord?.mSpellData,
-    spellRecord,
-  ].filter(Boolean);
-  if (!spellCandidates.length) return null;
-
-  const normalizeDataValues = (rawDataValues) => {
-    if (Array.isArray(rawDataValues)) return rawDataValues;
-    if (!rawDataValues || typeof rawDataValues !== "object") return [];
-    return Object.entries(rawDataValues).map(([name, entry]) => {
-      if (entry && typeof entry === "object") {
-        return {
-          mName: entry.mName || entry.name || entry.mDataValue || name,
-          mValues: entry.mValues || entry.values || entry.mValue || entry.value || [],
-        };
-      }
-      return { mName: name, mValues: [entry] };
-    });
-  };
-
-  const normalizeCalculations = (rawCalculations) => {
-    if (!rawCalculations || typeof rawCalculations !== "object") return {};
-    return rawCalculations;
-  };
-
-  const parsedCandidate = spellCandidates
-    .map((candidate) => ({
-      spellData: candidate,
-      effects: candidate?.mEffectAmount || [],
-      dataValues: normalizeDataValues(
-        candidate?.mDataValues
-        || candidate?.DataValues
-        || candidate?.dataValues
-        || candidate?.mDataValuesMap
-        || {},
-      ),
-      calculations: normalizeCalculations(
-        candidate?.mSpellCalculations
-        || candidate?.SpellCalculations
-        || candidate?.spellCalculations
-        || candidate?.mCalculations
-        || {},
-      ),
-    }))
-    .sort((a, b) => ((Object.keys(b.calculations || {}).length * 4) + (b.dataValues?.length || 0))
-      - ((Object.keys(a.calculations || {}).length * 4) + (a.dataValues?.length || 0)))[0];
-
-  if (!parsedCandidate) return null;
-  return {
-    spellData: parsedCandidate.spellData,
-    effects: parsedCandidate.effects || [],
-    dataValues: parsedCandidate.dataValues || [],
-    calculations: parsedCandidate.calculations || {},
-  };
-}
-
-function normalizeSpellRecordName(name) {
-  return String(name || "").replace(/[^a-z0-9]/gi, "").toLowerCase();
-}
-
-const DEBUG_CDRAGON_CHILD_SELECTION = false;
-
-function extractTooltipTokens(tooltip) {
-  const tokens = new Set();
-  const rawTooltip = String(tooltip || "");
-  const re = /\{\{\s*([a-z0-9_]+)\s*\}\}/gi;
-  let match = re.exec(rawTooltip);
-  while (match) {
-    const token = normalizeSpellRecordName(match[1]);
-    if (token) tokens.add(token);
-    match = re.exec(rawTooltip);
-  }
-  return tokens;
-}
-
-function spellDataValueName(entry) {
-  return entry?.mName || entry?.mId || entry?.mDataValue || entry?.name || entry?.mKey || entry?.key || "";
-}
-
-function scoreSpellChildCandidate(parsed, tooltipTokens) {
-  if (!parsed) return null;
-
-  const calcKeys = Object.keys(parsed.calculations || {});
-  const calcKeySet = new Set(calcKeys.map((key) => normalizeSpellRecordName(key)).filter(Boolean));
-  const dataValues = Array.isArray(parsed.dataValues) ? parsed.dataValues : [];
-  const dataValueNames = dataValues
-    .map((entry) => normalizeSpellRecordName(spellDataValueName(entry)))
-    .filter(Boolean);
-  const dataValueSet = new Set(dataValueNames);
-
-  let overlapCount = 0;
-  (tooltipTokens || new Set()).forEach((token) => {
-    if (calcKeySet.has(token) || dataValueSet.has(token)) overlapCount += 1;
-  });
-
-  const calculationCount = calcKeys.length;
-  const dataValueCount = dataValues.length;
-  const score = (calculationCount * 4) + (dataValueCount * 2) + (overlapCount * 6);
-
-  return {
-    score,
-    overlapCount,
-    calculationCount,
-    dataValueCount,
-  };
-}
-
-function chooseBestSpellChild(raw, pathIndex, childSpellPaths, ddSpell, slot = "") {
-  const tooltipTokens = extractTooltipTokens(ddSpell?.tooltip);
-
-  const candidates = childSpellPaths
-    .map((path, index) => {
-      const record = resolveCdragonRecord(raw, pathIndex, path);
-      const parsed = extractCdragonSpell(record);
-      if (!parsed) return null;
-      const scoreMeta = scoreSpellChildCandidate(parsed, tooltipTokens);
-      return {
-        path,
-        index,
-        record: resolveCdragonRecord(raw, pathIndex, path),
-        parsed,
-        score: scoreMeta?.score || 0,
-        overlapCount: scoreMeta?.overlapCount || 0,
-        calculationCount: scoreMeta?.calculationCount || 0,
-        dataValueCount: scoreMeta?.dataValueCount || 0,
-      };
-    })
-    .filter(Boolean);
-
-  if (!candidates.length) return null;
-
-  const best = candidates
-    .slice()
-    .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      if (b.overlapCount !== a.overlapCount) return b.overlapCount - a.overlapCount;
-      if (b.calculationCount !== a.calculationCount) return b.calculationCount - a.calculationCount;
-      if (b.dataValueCount !== a.dataValueCount) return b.dataValueCount - a.dataValueCount;
-      return a.index - b.index;
-    })[0];
-
-  if (DEBUG_CDRAGON_CHILD_SELECTION) {
-    console.debug("[CDragon child selection]", {
-      slot,
-      ddSpell: ddSpell?.id || ddSpell?.name || "",
-      tooltipTokens: Array.from(tooltipTokens),
-      selected: { path: best.path, score: best.score, overlapCount: best.overlapCount, calculationCount: best.calculationCount, dataValueCount: best.dataValueCount },
-      candidates: candidates.map((candidate) => ({
-        path: candidate.path,
-        score: candidate.score,
-        overlapCount: candidate.overlapCount,
-        calculationCount: candidate.calculationCount,
-        dataValueCount: candidate.dataValueCount,
-      })),
-    });
-  }
-
-  return {
-    parsed: best.parsed,
-    path: best.path,
-    record: best.record,
-  };
-}
-
-function addSpellPayloadAlias(lookup, payload, aliasRaw) {
-  const normalized = normalizeSpellRecordName(aliasRaw);
-  const canonical = canonicalizeToken(normalized);
-  if (!canonical || lookup[canonical]) return;
-  lookup[canonical] = payload;
-}
-
-function buildSpellPayloadLookupEntry(lookup, payload, aliases = []) {
-  aliases.forEach((alias) => addSpellPayloadAlias(lookup, payload, alias));
-}
-
-function getObjectPathTail(value) {
-  const path = String(value || "").trim();
-  if (!path) return "";
-  const segments = path.split("/").filter(Boolean);
-  return segments[segments.length - 1] || "";
-}
-
-function buildSpellAliasMetadata({ slot, spell = null, selectedChild = null, abilityRecord = null, nameCandidates = [] }) {
-  return {
-    slot,
-    scriptName: selectedChild?.record?.mScriptName || abilityRecord?.mScriptName || "",
-    objectPathTail: getObjectPathTail(
-      selectedChild?.record?.mObjectPath
-      || selectedChild?.path
-      || abilityRecord?.mObjectPath
-      || "",
-    ),
-    spellIdCandidate: String(spell?.id || ""),
-    spellNameCandidate: String(spell?.name || ""),
-    matchCandidates: nameCandidates.map((candidate) => String(candidate || "")).filter(Boolean),
-  };
-}
-
-function registerSpellPayloadAliases(byAlias, payload, metadata, aliases = []) {
-  aliases.forEach((aliasRaw) => {
-    const normalized = normalizeSpellRecordName(aliasRaw);
-    const canonical = canonicalizeToken(normalized);
-    if (!canonical || byAlias[canonical]) return;
-    byAlias[canonical] = {
-      payload,
-      metadata,
-      alias: normalized,
-      canonicalAlias: canonical,
-    };
-  });
-}
-
-function extractAbilityDataFromRoot(raw, championName, pathName, ddSpells = []) {
-  const pathIndex = new Map(Object.keys(raw || {}).map((key) => [normalizeCdragonRecordPath(key), key]));
-  const rootCandidates = [
-    `Characters/${championName}/CharacterRecords/Root`,
-    `Characters/${pathName}/CharacterRecords/Root`,
-  ];
-  const rootPath = rootCandidates
-    .map((candidate) => pathIndex.get(normalizeCdragonRecordPath(candidate)))
-    .find(Boolean)
-    || null;
-
-  const root = rootPath ? raw[rootPath] : null;
-  const abilities = Array.isArray(root?.mAbilities) ? root.mAbilities : [];
-  if (!abilities.length) return null;
-
-  const abilityByName = new Map();
-
-  abilities.forEach((abilityPath) => {
-    const abilityRecord = resolveCdragonRecord(raw, pathIndex, abilityPath);
-    if (!abilityRecord) return;
-    const thisName = normalizeSpellRecordName(abilityRecord?.mScriptName || abilityRecord?.mObjectPath || abilityRecord?.mName);
-    if (thisName) abilityByName.set(thisName, abilityRecord);
-  });
-
-  const bySlot = {};
-  const byRef = {};
-  const byAlias = {};
-
-  ddSpells.forEach((spell, idx) => {
-    const slot = ["q", "w", "e", "r"][idx];
-    if (!slot) return;
-
-    const nameCandidates = [
-      `Characters/${championName}/Spells/${spell?.name}Ability`,
-      `Characters/${pathName}/Spells/${spell?.name}Ability`,
-      `Characters/${championName}/Spells/${spell?.id}Ability`,
-      `Characters/${pathName}/Spells/${spell?.id}Ability`,
-      spell?.name,
-      spell?.id,
-    ].filter(Boolean);
-
-    let abilityRecord = nameCandidates
-      .map((candidate) => resolveCdragonRecord(raw, pathIndex, candidate))
-      .find(Boolean)
-      || null;
-
-    if (!abilityRecord) {
-      const normalizedCandidates = nameCandidates.map((candidate) => normalizeSpellRecordName(candidate));
-      abilityRecord = normalizedCandidates
-        .map((candidate) => abilityByName.get(candidate))
-        .find(Boolean)
-        || null;
-    }
-
-    const childSpells = [...new Set([abilityRecord?.mRootSpell,...(abilityRecord?.mChildSpells||[])].filter(Boolean))];
-    if (!childSpells.length) return;
-    const rootRecord=resolveCdragonRecord(raw,pathIndex,abilityRecord?.mRootSpell);
-    const rootParsed=extractCdragonSpell(rootRecord);
-    let selectedChild = rootParsed ? {path:abilityRecord.mRootSpell,record:rootRecord,parsed:rootParsed} : chooseBestSpellChild(raw, pathIndex, childSpells, spell, slot);
-    if (!selectedChild?.parsed) {
-      const fallbackChild = childSpells
-        .map((path) => ({ path, record: resolveCdragonRecord(raw, pathIndex, path) }))
-        .map((entry) => ({ ...entry, parsed: extractCdragonSpell(entry.record) }))
-        .find((entry) => entry.parsed);
-      selectedChild = fallbackChild || null;
-    }
-
-    const parsed = selectedChild?.parsed || null;
-    if (!parsed) return;
-    bySlot[slot] = parsed;
-
-    const metadata = buildSpellAliasMetadata({
-      slot,
-      spell,
-      selectedChild,
-      abilityRecord,
-      nameCandidates,
-    });
-
-    const aliases = [
-      slot,
-      spell?.name,
-      spell?.id,
-      ...nameCandidates,
-      abilityRecord?.mScriptName,
-      abilityRecord?.mObjectPath,
-      getObjectPathTail(abilityRecord?.mObjectPath),
-      abilityRecord?.mName,
-      selectedChild?.record?.mScriptName,
-      selectedChild?.record?.mObjectPath,
-      getObjectPathTail(selectedChild?.record?.mObjectPath),
-      selectedChild?.record?.mName,
-      selectedChild?.path,
-      getObjectPathTail(selectedChild?.path),
-    ];
-    buildSpellPayloadLookupEntry(byRef, parsed, aliases);
-    registerSpellPayloadAliases(byAlias, parsed, metadata, aliases);
-  });
-
-  const passivePathCandidates = [
-    root?.mCharacterPassiveSpell,
-    `Characters/${championName}/Spells/${championName}PassiveAbility`,
-    `Characters/${pathName}/Spells/${pathName}PassiveAbility`,
-  ];
-  const passiveRecord = passivePathCandidates
-    .map((candidate) => resolveCdragonRecord(raw, pathIndex, candidate))
-    .find(Boolean)
-    || null;
-  if (passiveRecord) {
-    const childSpells = Array.isArray(passiveRecord?.mChildSpells) ? passiveRecord.mChildSpells : [];
-    const directRecord=passiveRecord.mSpell?passiveRecord:resolveCdragonRecord(raw,pathIndex,passiveRecord.mRootSpell);
-    const directParsed=extractCdragonSpell(directRecord);
-    let selectedChild = directParsed?{record:directRecord,parsed:directParsed,path:root?.mCharacterPassiveSpell||passiveRecord.mRootSpell}:chooseBestSpellChild(raw, pathIndex, childSpells, null, "p");
-    if (!selectedChild?.parsed) {
-      const primaryChild = resolveCdragonRecord(raw, pathIndex, childSpells[0]);
-      selectedChild = { parsed: extractCdragonSpell(primaryChild), path: childSpells[0], record: primaryChild };
-    }
-    const parsed = selectedChild?.parsed || null;
-    if (parsed) bySlot.p = parsed;
-
-    if (parsed) {
-      const metadata = buildSpellAliasMetadata({
-        slot: "p",
-        spell: { id: `${championName}Passive`, name: "Passive" },
-        selectedChild,
-        abilityRecord: passiveRecord,
-        nameCandidates: passivePathCandidates,
-      });
-      const aliases = [
-        "p",
-        "passive",
-        `${championName}passive`,
-        `${pathName}passive`,
-        ...passivePathCandidates,
-        passiveRecord?.mScriptName,
-        passiveRecord?.mObjectPath,
-        getObjectPathTail(passiveRecord?.mObjectPath),
-        passiveRecord?.mName,
-        selectedChild?.record?.mScriptName,
-        selectedChild?.record?.mObjectPath,
-        getObjectPathTail(selectedChild?.record?.mObjectPath),
-        selectedChild?.record?.mName,
-        selectedChild?.path,
-        getObjectPathTail(selectedChild?.path),
-      ];
-      buildSpellPayloadLookupEntry(byRef, parsed, aliases);
-      registerSpellPayloadAliases(byAlias, parsed, metadata, aliases);
-    }
-  }
-
-  // Qualified tooltip references can point to auxiliary or hashed passive records.
-  // Register exact source names; do not choose a similarly named damage formula.
-  for(const [path,record] of Object.entries(raw||{})){
-    if(!record?.mSpell)continue;
-    const payload=extractCdragonSpell(record);
-    const aliases=[record.ObjectName,record.mScriptName,record.objectPath,path,getObjectPathTail(path)].filter(Boolean);
-    buildSpellPayloadLookupEntry(byRef,payload,aliases);
-    registerSpellPayloadAliases(byAlias,payload,{slot:null},aliases);
-  }
-  if (!Object.keys(bySlot).length) return null;
-  bySlot.byRef = byRef;
-  bySlot.byAlias = byAlias;
-  return bySlot;
-}
-
-// Read only present, finite values. Missing fields are not zero-valued stats.
-function extractChampionStatsFromBinRoot(raw, championName, pathName) {
-  const rootPath = `characters/${championName || pathName}/characterrecords/root`.toLowerCase();
-  const root = Object.entries(raw || {}).find(([key]) => key.toLowerCase() === rootPath)?.[1];
-  if (!root) return {};
-  const stats = {};
-  const mapping = { ...CDRAGON_TO_DDRAGON_STAT_KEY, attackSpeedRatio: 'attackspeedratio' };
-  for (const [source, target] of Object.entries(mapping)) {
-    const hash = Object.keys(CDRAGON_STAT_HASH_TO_NAME).find(key => CDRAGON_STAT_HASH_TO_NAME[key] === source);
-    const rawValue = root[source + 'Modifiable'] ?? root[source] ?? root[hash];
-    const value = typeof rawValue === 'object' && rawValue !== null ? rawValue.baseValue : rawValue;
-    if (typeof value === 'number' && Number.isFinite(value)) stats[target] = value;
-  }
-  return stats;
-}
-
+function normalizeCdragonChampionPath(...args) { return window.ChampionSource.normalizeCdragonChampionPath(...args); }
+function normalizeCdragonRecordPath(...args) { return window.ChampionSource.normalizeCdragonRecordPath(...args); }
+function resolveCdragonRecord(...args) { return window.ChampionSource.resolveCdragonRecord(...args); }
+function extractCdragonSpell(...args) { return window.ChampionSource.extractCdragonSpell(...args); }
+function normalizeSpellRecordName(...args) { return window.ChampionSource.normalizeSpellRecordName(...args); }
+function extractTooltipTokens(...args) { return window.ChampionSource.extractTooltipTokens(...args); }
+function spellDataValueName(...args) { return window.ChampionSource.spellDataValueName(...args); }
+function scoreSpellChildCandidate(...args) { return window.ChampionSource.scoreSpellChildCandidate(...args); }
+function chooseBestSpellChild(...args) { return window.ChampionSource.chooseBestSpellChild(...args); }
+function addSpellPayloadAlias(...args) { return window.ChampionSource.addSpellPayloadAlias(...args); }
+function buildSpellPayloadLookupEntry(...args) { return window.ChampionSource.buildSpellPayloadLookupEntry(...args); }
+function getObjectPathTail(...args) { return window.ChampionSource.getObjectPathTail(...args); }
+function buildSpellAliasMetadata(...args) { return window.ChampionSource.buildSpellAliasMetadata(...args); }
+function registerSpellPayloadAliases(...args) { return window.ChampionSource.registerSpellPayloadAliases(...args); }
+function extractAbilityDataFromRoot(...args) { return window.ChampionSource.extractAbilityDataFromRoot(...args); }
+function extractChampionStatsFromBinRoot(...args) { return window.ChampionSource.extractChampionStatsFromBinRoot(...args); }
 
 const verifiedSplashes = new Set();
 function splashAvailable(url) {
@@ -1089,8 +477,8 @@ function ensureGameText() {
   if(BUILDER.stringsReady) return Promise.resolve(BUILDER.strings);
   if(gameTextRequest) return gameTextRequest;
   BUILDER.stringsLoading=true;
-  gameTextRequest=window.ApiClient.fetchJson('https://raw.communitydragon.org/latest/game/en_us/data/menu/en_us/lol.stringtable.json')
-    .then(data=>{if(!data?.entries)throw new Error('Game descriptions unavailable');BUILDER.strings=data.entries;BUILDER.stringsReady=true;return BUILDER.strings;})
+  gameTextRequest=builderRepository.loadLocalization()
+    .then(data=>{BUILDER.localizationSource=data.source;if(data.status!=='ready')throw new Error('Game descriptions unavailable');BUILDER.strings=data.entries;BUILDER.stringsReady=true;return BUILDER.strings;})
     .catch(()=>null).finally(()=>{
       gameTextRequest=null;BUILDER.stringsLoading=false;
       if(BUILDER.uiReady){renderStats();renderAbilityCards();if(BUILDER.activeSlot!==null)renderModalItemDetail(BUILDER.inspectedItemId);}
@@ -1107,25 +495,16 @@ async function setChampion(name) {
   setStatus(`Loading ${name}...`);
   try {
     ensureGameText();
-    const [details, raw] = await Promise.all([
-      window.ApiClient.fetchChampionDetails(BUILDER.version, name),
-      window.ApiClient.fetchCommunityDragonChampion(name).catch(() => null),
-    ]);
+    const prepared=await builderRepository.loadChampion(BUILDER.version,name);
     if (requestId !== BUILDER.championRequestId) return;
-    const champion = details.data?.[name];
-    if (!champion?.stats || !champion.spells) throw new Error('Champion data is incomplete');
-    const extraStats = extractChampionStatsFromBinRoot(raw, name, name.toLowerCase());
-    const stats = window.BuildStats.mergeChampionStats({ ...DEFAULT_CHAMPION_BASE_STATS, ...champion.stats },extraStats);
-    const characterRoot = raw?.[`Characters/${name}/CharacterRecords/Root`];
-    if (Number.isFinite(characterRoot?.critDamageMultiplier)) stats.critdamage = characterRoot.critDamageMultiplier;
-    const abilityData = raw ? extractAbilityDataFromRoot(raw, name, normalizeCdragonChampionPath(name), champion.spells) : null;
-    BUILDER.selectedChampion = name;
-    BUILDER.championData = { ...champion, stats };
-    BUILDER.cdragonAbilityData = abilityData;
-    BUILDER.cdragonRaw = raw;
-    BUILDER.combatValues = {};
-    BUILDER.abilityRanks = { q: 0, w: 0, e: 0, r: 0 };
-    BUILDER.level = Number(document.getElementById('builderLevel').value) || 1;
+    const {champion,raw,abilities}=prepared;
+    BUILDER.selectedChampion=name;
+    BUILDER.championData=champion;
+    BUILDER.cdragonAbilityData=abilities;
+    BUILDER.cdragonRaw=raw;
+    BUILDER.championSources=prepared.sources;
+    const nextInputs=window.BuildInputs.transitionChampion(BUILDER,name,Number(document.getElementById('builderLevel').value)||1);
+    BUILDER.combatValues=nextInputs.combatValues;BUILDER.abilityRanks=nextInputs.abilityRanks;BUILDER.level=nextInputs.level;
     document.getElementById('dashboardChampionName').textContent = champion.name;
     document.getElementById('dashboardChampionTitle').textContent = champion.title;
     populateSkinSelector(name, champion.skins || [{num:0,name:'Original'}], requestId);
@@ -1196,11 +575,7 @@ const SHOP_FILTER_GROUPS = [
   ['Utility', [['AbilityHaste','Ability Haste','AH'],['NonbootsMovement','Move Speed','MS'],['LifeSteal','Lifesteal & Omnivamp','Lifesteal']]],
 ];
 const SHOP_ROLES = [['Fighter',1],['Marksman',2],['Assassin',4],['Mage',16],['Tank',8],['Support',32]];
-function matchesShopStat(id, item, tag) {
-  const aliases={AbilityHaste:['AbilityHaste','CooldownReduction'],Mana:['Mana','ManaRegen'],Health:['Health','HealthRegen'],SpellBlock:['SpellBlock','MagicResist'],LifeSteal:['LifeSteal','SpellVamp'],NonbootsMovement:['NonbootsMovement','Boots']};
-  if(tag==='LifeSteal' && ['PercentLifeStealMod','PercentPhysicalVampMod','PercentOmnivampMod'].some(key=>Number(item.stats?.[key])>0)) return true;
-  return (aliases[tag]||[tag]).some(value=>item.tags?.includes(value)) || (tag==='NonbootsMovement' && isBoot(id));
-}
+function matchesShopStat(id,item,tag) { return window.CatalogQueries.matchesShopStat(id,item,tag,[...BUILDER.midBootIds]); }
 function renderBuilderTagFilters() {
   const root=document.getElementById('modalItemFilters');
   root.innerHTML=SHOP_FILTER_GROUPS.map(([name, filters])=>`<div class="shop-filter-group" role="group" aria-label="${name}">${filters.map(([tag,label,stat])=>`<button type="button" class="shop-filter" data-item-filter="${tag}" aria-label="${label}" title="${label}" aria-pressed="false"><span class="stat-icon" aria-hidden="true">${STAT_ICONS[stat]}</span></button>`).join('')}</div>`).join('');
@@ -1212,15 +587,7 @@ function renderBuilderTagFilters() {
     renderModalItemGrid();
   });
 }
-function recommendedItemIds() {
-  const source=window.ItemLookupShared.getRecommendedItems?.(BUILDER.cdragonRaw,{mapId:11,mode:'CLASSIC',items:BUILDER.items});
-  const ids=new Set([...(source?.starting||[]),...(source?.core||[])]);
-  for(const set of BUILDER.championData?.recommended||[]) {
-    if(set.map && !['SR','11'].includes(String(set.map))) continue;
-    for(const block of set.blocks||[])for(const item of block.items||[])if(BUILDER.items[String(item.id)]) ids.add(String(item.id));
-  }
-  return ids;
-}
+function recommendedItemIds() { return window.Recommendations.recommendedItemIds(BUILDER.cdragonRaw,BUILDER.championData,BUILDER.items); }
 
 function openItemModal(slot) {
   ensureGameText();
@@ -1252,12 +619,9 @@ function renderModalItemGrid() {
   if(!recommendations.size)BUILDER.recommendedOnly=false;
   document.getElementById('allItemsTab').setAttribute('aria-pressed',String(!BUILDER.recommendedOnly && !BUILDER.itemRole));
   document.getElementById('recommendedItemsTab').setAttribute('aria-pressed',String(!!BUILDER.recommendedOnly));
-  BUILDER.modalItemFiltered = Object.entries(BUILDER.items)
-    .filter(([id]) => roleItemAllowed(id, BUILDER.activeSlot) && (!BUILDER.recommendedOnly || recommendations.has(id)))
-    .filter(([id]) => !roleValue || itemData.cdragonById[id]?.mItemAttributes?.includes(roleValue))
-    .filter(([id, item]) => (!text || item.name.toLowerCase().includes(text)) && Array.from(tags).every(tag=>matchesShopStat(id,item,tag)))
-    .sort((a,b)=>(a[1].gold?.total||0)-(b[1].gold?.total||0)||a[1].name.localeCompare(b[1].name))
-    .map(([id]) => id);
+  BUILDER.modalItemFiltered=window.CatalogQueries.queryItems(BUILDER.items,{search:text,tags,sort:'price',
+    eligible:id=>roleItemAllowed(id,BUILDER.activeSlot),recommended:BUILDER.recommendedOnly?recommendations:null,
+    roleValue,advanced:itemData.cdragonById,shopTags:true,midBootIds:[...BUILDER.midBootIds]});
   const ids = BUILDER.modalItemFiltered;
   document.getElementById("modalResultsCount").textContent = `${ids.length} ${BUILDER.recommendedOnly?'recommended items':'items shown'}`;
   document.getElementById("modalItemGrid").innerHTML = ids
@@ -1337,36 +701,17 @@ function renderModalItemDetail(id) {
 
 }
 
-function roleLevelCap() { return BUILDER.itemSlots[6] === '1200' ? 20 : 18; }
-function isBoot(id) { return !!BUILDER.items[id]?.tags?.includes('Boots') || !!BUILDER.midBootIds?.has(id); }
-function roleItemAllowed(id, slot) {
-  if(slot===6) return BUILDER.questItemIds.has(id);
-  if(BUILDER.questItemIds.has(id)) return false;
-  if(BUILDER.midBootIds.has(id) && BUILDER.itemSlots[6]!=='1201') return false;
-  if(slot===7) return BUILDER.itemSlots[6]==='1202' && isBoot(id);
-  return !(BUILDER.itemSlots[6]==='1202' && isBoot(id));
-}
+function inventoryData() { return {items:BUILDER.items,midBootIds:BUILDER.midBootIds,questItemIds:BUILDER.questItemIds}; }
+function roleLevelCap() { return window.BuildInputs.roleLevelCap(BUILDER); }
+function isBoot(id) { return window.BuildInputs.isBoot(id,inventoryData()); }
+function roleItemAllowed(id,slot) { return window.BuildInputs.eligibility(BUILDER,id,slot,inventoryData()).allowed; }
 function setSlotItem(itemId) {
-  const slot=BUILDER.activeSlot;
-  if (!Number.isInteger(slot) || slot < 0 || slot >= BUILDER.itemSlots.length) return;
-  if (itemId && (!BUILDER.items[itemId] || !roleItemAllowed(itemId,slot))) return;
-  if(slot===6) {
-    // Preserve the extra-slot item when leaving Bot; never silently discard an item.
-    if(BUILDER.itemSlots[7] && itemId!=='1202') {
-      const free=BUILDER.itemSlots.slice(0,6).findIndex(id=>!id);
-      if(free<0) { setStatus('Free a regular item slot before changing the Bot quest.',true); return; }
-      BUILDER.itemSlots[free]=BUILDER.itemSlots[7];
-    }
-    BUILDER.itemSlots[6]=itemId;
-    if(itemId==='1202') {
-      BUILDER.itemSlots[7]=BUILDER.itemSlots[7] || '';
-      const boot=BUILDER.itemSlots.slice(0,6).findIndex(isBoot);
-      if(boot>=0 && !BUILDER.itemSlots[7]) { BUILDER.itemSlots[7]=BUILDER.itemSlots[boot];BUILDER.itemSlots[boot]=''; }
-    } else BUILDER.itemSlots.length=7;
-    if(itemId!=='1201') BUILDER.itemSlots=BUILDER.itemSlots.map(id=>BUILDER.midBootIds.has(id)?(BUILDER.items[id].from?.find(isBoot)||''):id);
-    BUILDER.level=Math.min(BUILDER.level,roleLevelCap()); wireLevelOptions(); enforceAbilityRules();
-  } else BUILDER.itemSlots[slot]=itemId;
-  renderItemSlots(); renderStats(); renderAbilityCards(); closeItemModal();setStatus('');
+ const slot=BUILDER.activeSlot;
+ const result=window.BuildInputs.transitionInventory(BUILDER,slot,itemId,inventoryData());
+ if(!result.accepted){if(result.reasonCode==='inventory-full')setStatus(result.reason,true);return;}
+ BUILDER.itemSlots=result.inputs.itemSlots;BUILDER.level=result.inputs.level;BUILDER.abilityRanks=result.inputs.abilityRanks;
+ if(slot===6){wireLevelOptions();enforceAbilityRules();}
+ renderItemSlots();renderStats();renderAbilityCards();closeItemModal();setStatus('');
 }
 
 function abilityMaxByLevel(level, spellKey) {
@@ -2706,94 +2051,19 @@ function renderRunePanel() {
   `;
 }
 
-function getSecondaryRows(pathId) {
-  return (RUNE_DATA.paths[pathId]?.primaryRows || []).slice(1);
-}
-
-function getSecondaryRowIndex(pathId, runeId) {
-  const rows = getSecondaryRows(pathId);
-  return rows.findIndex((row) => row.includes(runeId));
-}
-
-function getPathPrimaryDefaults(pathId) {
-  return (RUNE_DATA.pathDefaults[pathId] || []).slice(0, 4);
-}
-
-function getPathSecondaryDefaults(pathId) {
-  const rows = getSecondaryRows(pathId);
-  const first = rows[0]?.[0] || "";
-  const second = rows[1]?.[0] || rows[0]?.[1] || first;
-  return [first, second];
-}
-
-function ensureSecondarySelectionsValid() {
-  const pathId = BUILDER.runeSelections.secondaryPath;
-  const rows = getSecondaryRows(pathId);
-  const [first, second] = BUILDER.runeSelections.secondary;
-  const firstRow = getSecondaryRowIndex(pathId, first);
-  const secondRow = getSecondaryRowIndex(pathId, second);
-
-  if (firstRow < 0) BUILDER.runeSelections.secondary[0] = rows[0]?.[0] || first;
-  if (secondRow < 0) BUILDER.runeSelections.secondary[1] = rows[1]?.[0] || rows[0]?.[1] || second;
-
-  const nextFirstRow = getSecondaryRowIndex(pathId, BUILDER.runeSelections.secondary[0]);
-  const nextSecondRow = getSecondaryRowIndex(pathId, BUILDER.runeSelections.secondary[1]);
-  if (nextFirstRow >= 0 && nextFirstRow === nextSecondRow) {
-    const fallback = rows.find((_row, idx) => idx !== nextFirstRow)?.[0];
-    BUILDER.runeSelections.secondary[1] = fallback || BUILDER.runeSelections.secondary[1];
-  }
-}
-
-function applySecondaryRuneSelection(runeId) {
-  const pathId = BUILDER.runeSelections.secondaryPath;
-  const selectedRows = BUILDER.runeSelections.secondary.map((id) => getSecondaryRowIndex(pathId, id));
-  const targetRow = getSecondaryRowIndex(pathId, runeId);
-  if (targetRow < 0) return;
-
-  if (selectedRows[0] === targetRow) {
-    BUILDER.runeSelections.secondary[0] = runeId;
-    return;
-  }
-  if (selectedRows[1] === targetRow) {
-    BUILDER.runeSelections.secondary[1] = runeId;
-    return;
-  }
-
-  // FIFO: slot 0 is oldest branch, slot 1 is newest branch.
-  BUILDER.runeSelections.secondary = [BUILDER.runeSelections.secondary[1], runeId];
-}
+function getSecondaryRows(pathId) { return window.RuneInputRules.createRules(RUNE_DATA).getSecondaryRows(pathId); }
+function getSecondaryRowIndex(pathId,id) { return window.RuneInputRules.createRules(RUNE_DATA).getSecondaryRowIndex(pathId,id); }
+function getPathPrimaryDefaults(pathId) { return window.RuneInputRules.createRules(RUNE_DATA).getPathPrimaryDefaults(pathId); }
+function getPathSecondaryDefaults(pathId) { return window.RuneInputRules.createRules(RUNE_DATA).getPathSecondaryDefaults(pathId); }
+function ensureSecondarySelectionsValid() { BUILDER.runeSelections=window.RuneInputRules.createRules(RUNE_DATA).ensureSecondarySelectionsValid(BUILDER.runeSelections); }
+function applySecondaryRuneSelection(id) { BUILDER.runeSelections=window.RuneInputRules.createRules(RUNE_DATA).applySecondaryRuneSelection(BUILDER.runeSelections,id); }
 
 function getRuneOptions(target) {
-  if (target.startsWith("primaryPath")) return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({ id, name: p.name, desc: `Set ${p.name} as primary path`, icon: p.icon }));
-  if (target.startsWith("secondaryPath")) {
-    return Object.entries(RUNE_DATA.paths).map(([id, p]) => ({
-      id,
-      name: p.name,
-      desc: id === BUILDER.runeSelections.primaryPath ? "Secondary path cannot match primary path" : `Set ${p.name} as secondary path`,
-      icon: p.icon,
-      disabled: id === BUILDER.runeSelections.primaryPath,
-    }));
-  }
-  if (target.startsWith("primary")) {
-    const rowIndex = Number(target.split("_")[1]);
-    const rows = RUNE_DATA.paths[BUILDER.runeSelections.primaryPath]?.primaryRows || [];
-    return (rows[rowIndex] || []).map((id) => ({ id, ...getRuneMeta(id) }));
-  }
-  if (/^secondary_\d+$/.test(target)) {
-    const rows = getSecondaryRows(BUILDER.runeSelections.secondaryPath);
-    return rows.flatMap((row, rowIndex) => row.map((id) => ({
-      id,
-      rowIndex,
-      ...getRuneMeta(id),
-    })));
-  }
-  const shardRow = Number(target.split("_")[1]);
-  const perRow = [
-    ["adaptive-force", "attack-speed", "ability-haste"],
-    ["adaptive-force", "move-speed", "scaling-health"],
-    ["health", "tenacity-slow-resist", "scaling-health"],
-  ];
-  return (perRow[shardRow] || RUNE_DATA.shardOptions).map((id) => ({ id, ...getRuneMeta(id) }));
+ return window.RuneInputRules.createRules(RUNE_DATA).choices(BUILDER.runeSelections,target).map(option=>{
+  if(target.startsWith('primaryPath')){const path=RUNE_DATA.paths[option.id];return {...option,name:path.name,desc:'Set '+path.name+' as primary path',icon:path.icon};}
+  if(target.startsWith('secondaryPath')){const path=RUNE_DATA.paths[option.id];return {...option,name:path.name,desc:option.disabled?'Secondary path cannot match primary path':'Set '+path.name+' as secondary path',icon:path.icon};}
+  return {...option,...getRuneMeta(option.id)};
+ });
 }
 
 function openRuneModal(target) {
@@ -2830,29 +2100,7 @@ function closeRuneModal() {
 function selectRuneOption(id) {
   if (!BUILDER.runeModalTarget) return;
   if (!getRuneOptions(BUILDER.runeModalTarget).some(option => option.id === id && !option.disabled)) return;
-  const [group, index] = BUILDER.runeModalTarget.split("_");
-  if (group === "primary") BUILDER.runeSelections.primary[Number(index)] = id;
-  if (group === "secondary") {
-    applySecondaryRuneSelection(id);
-    ensureSecondarySelectionsValid();
-  }
-  if (group === "shard") BUILDER.runeSelections.shards[Number(index)] = id;
-  if (group === "primaryPath") {
-    BUILDER.runeSelections.primaryPath = id;
-    BUILDER.runeSelections.primary = getPathPrimaryDefaults(id);
-    if (BUILDER.runeSelections.secondaryPath === id) {
-      const fallbackSecondary = Object.keys(RUNE_DATA.paths).find((pathId) => pathId !== id) || id;
-      BUILDER.runeSelections.secondaryPath = fallbackSecondary;
-      BUILDER.runeSelections.secondary = getPathSecondaryDefaults(fallbackSecondary);
-    }
-  }
-  if (group === "secondaryPath") {
-    if (id !== BUILDER.runeSelections.primaryPath) {
-      BUILDER.runeSelections.secondaryPath = id;
-      BUILDER.runeSelections.secondary = getPathSecondaryDefaults(id);
-    }
-    ensureSecondarySelectionsValid();
-  }
+  BUILDER.runeSelections=window.RuneInputRules.createRules(RUNE_DATA).selectOption(BUILDER.runeSelections,BUILDER.runeModalTarget,id);
   renderRunePanel();
   renderStats();
   renderAbilityCards();
