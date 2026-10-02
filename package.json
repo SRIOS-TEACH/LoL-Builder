@@ -12,7 +12,9 @@
     "test:passives": "node tests/passives-browser.cjs",
     "test:targets": "node tests/target-browser.cjs",
     "test:combos": "node tests/combo-browser.cjs",
-    "test:combo-effects": "node tests/combo-effects-browser.cjs"
+    "test:combo-effects": "node tests/combo-effects-browser.cjs",
+    "build": "node scripts/build-site.cjs",
+    "build:preview": "node scripts/build-site.cjs --preview"
   },
   "engines": {
     "node": ">=20"

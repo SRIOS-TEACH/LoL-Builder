@@ -1,6 +1,6 @@
 # Architecture
 
-This is a static HTML/CSS/JavaScript app. No production dependencies or build step are required.
+This is a static HTML/CSS/JavaScript app with no production dependencies. Root pages and their JS, CSS and assets can be served directly. A dependency-free copy step generates preview and deployment output from that single source; see [delivery](REFACTOR-PHASE2.md).
 
 - `JS/shared/apiClient.js`: page-lifetime request cache, concurrent request deduplication, HTTP errors and a 15-second timeout. Failed requests leave the cache so selection can retry.
 - `JS/shared/itemPolicy.js`: item eligibility and deterministic map/name deduplication.

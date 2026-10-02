@@ -1,6 +1,6 @@
 # Refactoring action list
 
-Updated: 2 October 2026. Phases 0 and 1 are complete with the documented baseline exceptions. Phase 2 is next; runtime refactoring has not begun.
+Updated: 2 October 2026. Phases 0–2 are complete with the documented baseline exceptions. Phase 3 is next; runtime calculations remain unchanged.
 
 This is the working checklist for [the refactoring plan](REFACTOR-PLAN.md). Check an action only after its work and verification are complete. Record the completion date and supporting test results or commit beside completed future actions. A phase is complete only when its gate passes. Keep the protected baseline fixed; make new changes on `codex/modular-refactor`.
 
@@ -34,13 +34,15 @@ Completed 1 October 2026. All 201 unit tests and 28 browser runs passed, as did 
 
 ## Phase 2 — Remove duplicate maintenance carefully
 
-- [ ] P2.1 Confirm the authoritative runtime source and choose the smallest preview/deployment generation mechanism.
-- [ ] P2.2 Generate preview or deployment output from that source while preserving public routes and relative assets.
-- [ ] P2.3 Verify generated output parity before removing tracked duplicate files.
-- [ ] P2.4 Create a deletion ledger with each candidate's purpose, callers, runtime references and supporting checks.
-- [ ] P2.5 Remove only proven redundant code; retain reusable lookup behavior, fallbacks, attribution and unsupported-result reporting.
-- [ ] P2.6 Consolidate equivalent helpers only after comparing units, rounding, unknown values and caller semantics.
-- [ ] P2 gate: one source reduces maintenance, public routes and supported interactions are retained, and every deletion has evidence.
+- [x] P2.1 Confirm the authoritative runtime source and choose the smallest preview/deployment generation mechanism.
+- [x] P2.2 Generate preview or deployment output from that source while preserving public routes and relative assets.
+- [x] P2.3 Verify generated output parity before removing tracked duplicate files.
+- [x] P2.4 Create a deletion ledger with each candidate's purpose, callers, runtime references and supporting checks.
+- [x] P2.5 Remove only proven redundant code; retain reusable lookup behavior, fallbacks, attribution and unsupported-result reporting.
+- [x] P2.6 Review equivalent helpers and consolidate only where justified after comparing units, rounding, unknown values and caller semantics.
+- [x] P2 gate: one source reduces maintenance, public routes and supported interactions are retained, and every deletion has evidence.
+
+P2.1–P2.6 completed 2 October 2026; see [delivery and deletion evidence](REFACTOR-PHASE2.md). Generated-file parity passed before removal. Helper review identified extraction candidates without merging different contracts. The phase gate passed: 203 unit tests and 28 browser runs passed; 20 representative-case comparisons matched the baseline exactly. Artwork attribution remains in generated output.
 
 ## Phase 3 — Reusable catalogs, inputs and data preparation
 

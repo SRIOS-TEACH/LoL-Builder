@@ -23,6 +23,8 @@ const sourceManifest = sourceFiles.sort().map(name => {
   fs.mkdirSync(path.dirname(dest), {recursive:true}); fs.copyFileSync(file,dest);
   return {path:name, bytes:fs.statSync(file).size, sha256:hash(file)};
 });
+const {buildSite, runtimeFiles} = require(path.join(snapshot, 'scripts/build-site.cjs'));
+buildSite({sourceRoot:snapshot, previewOnly:true});
 const fixtureManifest = fs.readdirSync(fixtureSource).filter(name=>name.endsWith('.json')).sort().map(name => {
   const file = path.join(fixtureSource,name);
   return {path:name, bytes:fs.statSync(file).size, sha256:hash(file)};
@@ -35,8 +37,8 @@ for (const tree of ['root','preview']) {
 }
 const versions = JSON.parse(fs.readFileSync(path.join(fixtureSource,'versions.json')));
 const champions = JSON.parse(fs.readFileSync(path.join(fixtureSource,'champions.json')));
-const parity = sourceManifest.filter(item=>item.path.startsWith('preview/')).map(item=>({
-  path:item.path, matches:sourceManifest.find(original=>original.path===item.path.slice(8))?.sha256===item.sha256
+const parity = runtimeFiles(snapshot).map(name=>({
+  path:'preview/'+name, matches:hash(path.join(snapshot,'preview',name))===hash(path.join(snapshot,name))
 }));
 const metadata = {
   startedAt:new Date().toISOString(), sourceRoot:root, snapshot, output,

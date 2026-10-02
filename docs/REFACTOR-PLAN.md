@@ -2,7 +2,7 @@
 
 Status: revised proposal for review, 30 September 2026. Reviewed against future item/champion explorers and build comparison. No runtime code has been changed by either planning pass.
 
-Progress update, 2 October 2026: **Phases 0 and 1 are complete with documented baseline exceptions.** Both branches and the protected baseline tag were published to GitHub and their saved commits verified on 1 October. See [the action checklist](REFACTOR-ACTIONS.md) for completion tracking, [the baseline report](REFACTOR-BASELINE.md) for verification, and [protection/recovery instructions](REFACTOR-PROTECTION.md) for restoration. Phase 2 is next. No runtime refactoring has begun.
+Progress update, 2 October 2026: **Phases 0–2 are complete with documented baseline exceptions.** Both branches and the protected baseline tag were published to GitHub and their saved commits verified on 1 October. See [the action checklist](REFACTOR-ACTIONS.md) for completion tracking, [the baseline report](REFACTOR-BASELINE.md) for verification, and [protection/recovery instructions](REFACTOR-PROTECTION.md) for restoration. Phase 2 delivery cleanup is complete; [its ledger](REFACTOR-PHASE2.md) records generated preview parity, retained capabilities and passing checks. Phase 3 is next. Runtime calculations remain unchanged.
 
 ## Outcome and scope
 
@@ -178,6 +178,8 @@ Run the existing unit suite and applicable browser suites against the current ro
 **Gate:** reproducible baseline results and known failures are recorded, along with a capability/dependency map and representative contracts. Existing inaccuracies remain explicitly identified; matching old behavior does not establish game accuracy.
 
 ### Phase 2 — Duplicate delivery cleanup and deletion triage
+
+**Completed 2 October 2026:** [delivery ledger and verification](REFACTOR-PHASE2.md). Preview is generated from root source, all 38 tracked duplicate files were removed after byte parity checks, and Pages uploads a verified generated artifact. The 203 unit tests and 28 browser runs passed; representative cases matched the baseline in both modes and both routes.
 
 Establish one authoritative runtime source. Generate the preview copy or a deploy artifact from that source, preserving existing routes and asset resolution. Choose the smallest mechanism that meets the current hosting needs; verify output parity before removing tracked duplicates.
 

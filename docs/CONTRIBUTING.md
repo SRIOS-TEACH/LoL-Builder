@@ -7,3 +7,5 @@
 5. Record unsupported game mechanics in `docs/AUDIT.md` and include verification evidence in a pull request.
 
 Do not bundle UI redesign or new simulation features into reliability fixes. The application needs no npm install to run or to execute its unit tests. Browser testing uses a separately installed Playwright package and browser.
+
+Edit the root runtime files only. Run `npm run build:preview` to refresh local preview pages, or `npm run build` to generate the deployment artifact. Do not commit or edit generated preview/ or dist/ files. See [delivery and deletion evidence](REFACTOR-PHASE2.md).

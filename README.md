@@ -25,6 +25,12 @@ Open pages directly:
 - `http://127.0.0.1:8000/Builder.html`
 
 
+### Generated preview and deployment
+
+Root HTML, JS, CSS and assets are the only runtime source. Run `npm run build:preview` to generate local `/preview/` pages before serving the repository. Run it again after source changes. Do not edit generated files.
+
+Run `npm run build` to create `dist/` with both the main site and the same preview routes. The Pages workflow verifies and uploads that artifact. Generated output is ignored by Git. See [delivery and deletion evidence](docs/REFACTOR-PHASE2.md).
+
 ### Tests and current limits
 
 Run `npm test` with Node 20+ for dependency-free regression tests. See [Testing](docs/TESTING.md) for the browser suite and fixture downloads.
