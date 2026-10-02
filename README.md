@@ -29,7 +29,9 @@ Open pages directly:
 
 Root HTML, JS, CSS and assets are the only runtime source. Run `npm run build:preview` to generate local `/preview/` pages before serving the repository. Run it again after source changes. Do not edit generated files.
 
-Run `npm run build` to create `dist/` with both the main site and the same preview routes. The Pages workflow verifies and uploads that artifact. Generated output is ignored by Git. See [delivery and deletion evidence](docs/REFACTOR-PHASE2.md).
+Run `npm run build` to create `dist/` with both the main site and the same preview routes. The Pages workflow verifies that artifact and publishes it under /modular-refactor/ alongside unchanged production files from main. Generated output is ignored by Git. See [delivery and deletion evidence](docs/REFACTOR-PHASE2.md).
+
+[Open the modular refactor preview](https://srios-teach.github.io/LoL-Builder/modular-refactor/Builder.html). Pushes to the refactoring branch update it automatically after checks pass; see [Pages setup](docs/REFACTOR-PAGES.md).
 
 ### Tests and current limits
 

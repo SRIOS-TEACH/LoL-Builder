@@ -95,3 +95,11 @@ P2.1–P2.6 completed 2 October 2026; see [delivery and deletion evidence](REFAC
 - [ ] P6 gate: one source, reproducible checks, documented ownership, no unexplained changes and verified recovery.
 
 Complete explorer pages, the build comparison product, new mechanics and fixes to baseline calculation behavior remain separate feature work unless explicitly added to scope.
+
+## Refactor preview deployment — additional request
+
+- [x] Configure a separate /modular-refactor/ Pages route while preserving production.
+- [x] Publish deployment workflows and allow the refactor branch in the Pages environment.
+- [x] Confirm successful deployments and verify both live versions.
+
+Completed 2 October 2026. See [Pages setup and verification](REFACTOR-PAGES.md). This preview is separate from the final Phase 6 release.
