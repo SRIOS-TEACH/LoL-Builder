@@ -1,50 +1,59 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy static content to Pages
+name: Deploy production and refactor preview to Pages
 
 on:
-  # Runs on pushes targeting the default branch
   push:
-    branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
+    branches: ["main", "codex/modular-refactor"]
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Both branches publish one combined artifact, so neither replaces the other site.
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout production
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref == 'refs/heads/main' && github.sha || 'main' }}
+          path: _production
+      - name: Checkout modular refactor
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref == 'refs/heads/codex/modular-refactor' && github.sha || 'codex/modular-refactor' }}
+          path: _refactor
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Verify and generate site
+      - name: Verify and generate refactor site
+        working-directory: _refactor
         run: |
           npm test
           npm run build
+      - name: Compose production and refactor preview
+        shell: bash
+        run: |
+          mkdir _site
+          git -C _production archive HEAD | tar -x -C _site
+          mkdir _site/modular-refactor
+          cp -R _refactor/dist/. _site/modular-refactor/
+          node _refactor/scripts/verify-pages.cjs _production _refactor/dist _site
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Upload artifact
+      - name: Upload combined artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload generated runtime with preserved preview routes
-          path: 'dist'
+          path: _site
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
