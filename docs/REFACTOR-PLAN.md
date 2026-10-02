@@ -2,7 +2,7 @@
 
 Status: revised proposal for review, 30 September 2026. Reviewed against future item/champion explorers and build comparison. No runtime code has been changed by either planning pass.
 
-Progress update, 1 October 2026: **Phase 1 completed with documented exceptions; Phase 0 local protection established.** See [the baseline report](REFACTOR-BASELINE.md) for the inventory and verification, and [Phase 0 protection/recovery instructions](REFACTOR-PROTECTION.md) for the checkpoint, independent backup and managed refactoring checkout. Public GitHub publication requires approval; its final state is recorded in the external protection manifest. No runtime refactoring has begun.
+Progress update, 2 October 2026: **Phases 0 and 1 are complete with documented baseline exceptions.** Both branches and the protected baseline tag were published to GitHub and their saved commits verified on 1 October. See [the action checklist](REFACTOR-ACTIONS.md) for completion tracking, [the baseline report](REFACTOR-BASELINE.md) for verification, and [protection/recovery instructions](REFACTOR-PROTECTION.md) for restoration. Phase 2 is next. No runtime refactoring has begun.
 
 ## Outcome and scope
 
@@ -161,7 +161,7 @@ Before consolidating superficially similar helpers, compare their unknown-value 
 
 ### Phase 0 — Baseline and isolated workspace
 
-Local protection and restored-app verification are recorded in [REFACTOR-PROTECTION.md](REFACTOR-PROTECTION.md). GitHub publication was rejected by automatic approval review and remains subject to explicit approval of the public payload; see the external protection manifest for the latest publication state.
+Completed 1 October 2026. Local protection and restored-app verification are recorded in [REFACTOR-PROTECTION.md](REFACTOR-PROTECTION.md). Following explicit user approval and browser sign-in, both branches and the fixed baseline tag were published atomically to GitHub and verified against the saved checkpoint. The external protection manifest records the verified references; main was unchanged.
 
 Carry out the preservation and isolation steps above. Record the snapshot, preserved local material, test environment and restoration instructions. Phase 1 then records the verification status of this exact snapshot.
 
