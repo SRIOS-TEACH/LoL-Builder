@@ -39,16 +39,8 @@ test('localization expands nested names and all Aphelios weapon outcomes',()=>{
  const text=c.expandAbilityLocalization('{{ Spell_ApheliosR_WeaponMod_{{ f1 }} }}');
  assert.equal((text.match(/Spell_ApheliosR_WeaponMod_/g)||[]).length,5);
 });
-function app(fetchImpl = async () => ({ok:true,json:async()=>({})})) {
-  const context = vm.createContext({console, fetch:fetchImpl, AbortController, setTimeout, clearTimeout,
-    document:{addEventListener(){}}, module:{exports:{}}});
-  context.window = context;
-  for (const file of ['core/records','core/text','shared/apiClient','shared/itemPolicy','shared/abilityRules','domain/scenarioInputs','shared/targetDamage','shared/damageText','shared/abilityDps','shared/buildStats','shared/calculations','engine/combatContext','shared/combatInputs','shared/championEffects','data/championSource','data/itemSource','data/runeSource','data/sourceRepositories','domain/catalogQueries','domain/recommendations','domain/buildInputs','domain/runeInputs','shared/itemData','engine/calculationContext','engine/buildEvaluation','engine/abilityResolution','presentation/abilityPresentation','engine/itemEvaluation','engine/calculationPipeline','engine/comboEvaluation','builder']) {
-    vm.runInContext(fs.readFileSync(path.join(root, 'JS',file+'.js'),'utf8'),context);
-  }
-  context.run = code => vm.runInContext(code,context);
-  return context;
-}
+const {createTestContext}=require('./helpers/native-runtime.cjs');
+function app(fetchImpl) { return createTestContext({root,fetchImpl}); }
 test('rune requests use the selected patch',async()=>{
  const urls=[];const c=app(async url=>{urls.push(url);return {ok:true,json:async()=>[]}});
  await c.ApiClient.fetchRunesReforged('99.2.1');assert.match(urls[0],/99\.2\.1/);
@@ -111,7 +103,7 @@ test('conditional formulas require a condition rather than choosing the first br
 });
 
 const captured=require('./calculation-excerpts.json');
-const C=require('../JS/shared/calculations.js');
+const C=require('../JS/shared/calculations.js').default;
 test('live Feast formulas include rank, AP and bonus health',()=>{
  const spell=captured.feast, context={rank:3,level:18,stats:{ap:200,bonusHp:1000},dataValues:spell.DataValues,calculations:spell.mSpellCalculations};
  assert.ok(Math.abs(C.evaluate(spell.mSpellCalculations.RDamage,context).value-850)<.001);
@@ -146,7 +138,7 @@ test('products, clamping, rank overrides and scalar item effects preserve arithm
  assert.equal(C.evaluate({__type:'GameCalculationModified',mModifiedGameCalculation:'base',mOverrideSpellLevel:2},{rank:1,calculations,dataValues:[{name:'damage',values:[0,10,20,30,40,50,60]}]}).value,20);
 });
 
-const Combat=require('../JS/shared/combatInputs');
+const Combat=require('../JS/shared/combatInputs').default;
 test('health inputs derive current, missing and percentage values without a full-health default',()=>{
  const base={stats:{hp:3000},targetStats:{}};
  assert.equal(Combat.apply(base,{}).stats.currentHp,undefined);

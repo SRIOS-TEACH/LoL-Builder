@@ -1,7 +1,6 @@
 const {test}=require('node:test');
-const assert=require('node:assert/strict');
-require('../JS/shared/targetDamage.js');
-const dps=require('../JS/shared/abilityDps.js');
+const assert=require('node:assert/strict');const TargetDamage=require('../JS/shared/targetDamage.js').default;
+const dps=require('../JS/shared/abilityDps.js').default;
 const resolve=values=>name=>Object.hasOwn(values,name)?{numeric:values[name],html:String(values[name])}:null;
 const profile=(id,values,extra={})=>dps.profile({spell:{id},rank:1,cooldown:10,resolve:resolve(values),...extra});
 test('damage / haste-adjusted cooldown, rank changes and unlearned or zero cooldown',()=>{

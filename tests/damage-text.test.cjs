@@ -1,7 +1,6 @@
 const {test}=require('node:test');
-const assert=require('node:assert/strict');
-require('../JS/shared/targetDamage.js');
-const DamageText=require('../JS/shared/damageText.js');
+const assert=require('node:assert/strict');const TargetDamage=require('../JS/shared/targetDamage.js').default;
+const DamageText=require('../JS/shared/damageText.js').default;
 
 const target={enabled:true,maxHp:2000,currentHp:500,armor:100,mr:300,damageReduction:20};
 const resolve=values=>key=>typeof values[key]==='number'?{numeric:values[key],html:String(values[key])}:values[key]||null;

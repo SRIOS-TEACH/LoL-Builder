@@ -1,5 +1,6 @@
+
 /** Reusable capability; no page initialization or DOM dependency. */
-(function(scope){
+
 const CDRAGON_STAT_HASH_TO_NAME = {
   "{18956a21}": "armorPerLevel",
   "{4af40dc3}": "baseDamage",
@@ -487,6 +488,6 @@ function prepareChampion(champion, raw, id, statsAdapter) {
 }
 
 const api = {normalizeCdragonChampionPath, normalizeCdragonRecordPath, resolveCdragonRecord, extractCdragonSpell, normalizeSpellRecordName, extractTooltipTokens, spellDataValueName, scoreSpellChildCandidate, chooseBestSpellChild, addSpellPayloadAlias, buildSpellPayloadLookupEntry, getObjectPathTail, buildSpellAliasMetadata, registerSpellPayloadAliases, extractAbilityDataFromRoot, extractChampionStatsFromBinRoot, prepareChampion};
-scope.ChampionSource = api;
-if (typeof module !== "undefined" && module.exports) module.exports = api;
-})(typeof window !== "undefined" ? window : globalThis);
+const exportedApi = api;
+
+export default exportedApi;

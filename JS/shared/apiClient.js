@@ -1,8 +1,10 @@
+import RecordValues from '../core/records.js';
+export function createApiClient(fetchImpl = globalThis.fetch) {
 /**
  * Shared API client helpers for Data Dragon / Community Dragon fetches.
  */
-(function initApiClient(globalScope) {
-  const records=globalScope.RecordValues || (typeof require==='function'?require('../core/records.js'):null);
+
+  const records=RecordValues;
   const requests = new Map();
   function fetchJson(url) {
     if (requests.has(url)) return requests.get(url);
@@ -13,7 +15,7 @@
         // Versioned Data Dragon files are immutable. Reuse the browser's disk
         // cache on repeat visits, while version discovery and /latest stay fresh.
         const immutable = /^https:\/\/ddragon\.leagueoflegends\.com\/cdn\/\d+\.\d+\.\d+\//.test(url);
-        const response = await fetch(url, { signal: controller.signal, cache: immutable ? 'force-cache' : 'default' });
+        const response = await fetchImpl(url, { signal: controller.signal, cache: immutable ? 'force-cache' : 'default' });
         if (!response.ok) throw new Error(`Request failed (${response.status}): ${url}`);
         return records.deepFreeze(await response.json());
       } finally {
@@ -69,5 +71,8 @@
     fetchRunesReforged,
   };
 
-  globalScope.ApiClient = api;
-})(typeof window !== "undefined" ? window : globalThis);
+  const exportedApi = api;
+
+return exportedApi;
+}
+export default createApiClient();

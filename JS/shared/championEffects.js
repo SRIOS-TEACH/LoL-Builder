@@ -1,6 +1,8 @@
+import BuildStats from './buildStats.js';
+import Calculations from './calculations.js';
 /** Script-to-data bindings. Balance values are read from the loaded champion data. */
-(function(scope){
-  const C=scope.Calculations;
+
+  const C=Calculations;
   const finiteOrZero=value=>Number.isFinite(value)?value:0;
   const percentCombined=(...values)=>100*(1-values.reduce((remaining,value)=>remaining*(1-Math.min(100,Math.max(0,Number.isFinite(value)?value:0))/100),1));
   const penetrationStats=s=>({...s,
@@ -65,7 +67,7 @@
         const n=count('buff:{e88568f8}'),milestones=Math.floor(n/data('p','StacksForBonus'));
         add('ad',n*data('p','ADPerStack'));add('attackRange',milestones*data('p','BonusRange'));
         add('critChance',milestones*data('p','BonusCritChance'));
-        const beforeCap=s.item?s.item.critChance+s.rune.critChance+(s.base.crit+s.base.critperlevel*scope.BuildStats.growthFactor(state.level))*100: s.critChance;
+        const beforeCap=s.item?s.item.critChance+s.rune.critChance+(s.base.crit+s.base.critperlevel*BuildStats.growthFactor(state.level))*100: s.critChance;
         out.championLifeSteal=Math.max(0,beforeCap+milestones*data('p','BonusCritChance')-100)*(data('p','CritToLifestealConversionPercent')||0);
         out.critChance=Math.min(100,out.critChance);
       }
@@ -99,7 +101,7 @@
         const armor=computed.armor-(computed.championBonuses?.armor||0);
         return armor*data('w','BonusArmorPassive')*(key==='f2'?data('w','BonusArmorPassiveMultiplier'):1);
       }
-      const growth=scope.BuildStats.growthFactor(state.level),base=state.championData.stats;
+      const growth=BuildStats.growthFactor(state.level),base=state.championData.stats;
       const permanentAS=(base.attackspeedperlevel*growth+computed.item.asPct)/100;
       if(id==='GarenE'&&key==='f1')return data(slot,'NumTicks')+Math.floor((permanentAS+1e-8)/data(slot,'ASPerTick'));
       if(id==='BelvethQ'&&key==='f1')return data(slot,'PerSideCooldown')/(1+stats.bonusAttackSpeed*data(slot,'PerSideCDAttackSpeedMultiplier'));
@@ -128,5 +130,6 @@
     }
     return {fields,data,calc,apply,token,passiveSummary};
   }
-  scope.ChampionEffects={model};
-})(typeof window!=='undefined'?window:globalThis);
+  const exportedApi = {model};
+
+export default exportedApi;

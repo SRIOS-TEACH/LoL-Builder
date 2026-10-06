@@ -1,7 +1,9 @@
+import AttackEffects from './attackEffects.js';
+import TargetDamage from './targetDamage.js';
 /** On-hit delivery by spells. Bindings describe one target, not splash targets.
  * Reuse the attack model's raw effect packets, never its averaged attack total.
  */
-(function(scope){
+
   const finite=Number.isFinite, fmt=n=>finite(n)?n.toFixed(2):'unavailable';
   const simple=new Set(['EzrealQ','GangplankQWrapper','IreliaQ','KatarinaEWrapper','SennaQ','WarwickQ','ViegoR']);
   const alternatives=new Set(['YasuoQ1Wrapper','YoneQ','MissFortuneRicochetShot']);
@@ -55,7 +57,7 @@
         // AttackEffects raw packets already include outgoing item/champion
         // amplification. Apply only the target defenses here, once.
         const packetStats={...stats,physicalDamageMultiplier:1,magicDamageMultiplier:1,trueDamageMultiplier:1};
-        const out=scope.TargetDamage?scope.TargetDamage.apply(value,effect.type,{target,stats:packetStats}):{value,rawValue:value};
+        const out=TargetDamage?TargetDamage.apply(value,effect.type,{target,stats:packetStats}):{value,rawValue:value};
         const text=`${effect.label}: ${fmt(effect.rawValue)} ${effect.type} × ${fmt(events)} on-hit applications${cadence>1?' ÷ '+cadence+' hit cadence':''}${effect.spellbladeId?' (enabled Spellblade proc)':''}`;
         return {...out,text,components:[{...out,type:effect.type,source:effect.source,label:effect.label}],breakdownText:text+(out.text?'\n'+out.text:'')};
       };
@@ -78,6 +80,6 @@
     return {...result,rows:result.rows.flatMap((row,i)=>consumed.has(i)?[]:[replacements.get(i)||row]),
       note:(result.note||'')+' On-hit totals apply to the primary target (the first target for piercing attacks). Registered enabled on-hit effects use their own damage type; repeated-hit passives use their hit cadence. Spellblade adds its full proc to damage and is limited by its selected interval in DPS. On-attack-only effects and splash procs are excluded.'};
   }
-  const api={apply};scope.AbilityOnHit=api;
-  if(typeof module!=='undefined'&&module.exports)module.exports=api;
-})(typeof window!=='undefined'?window:globalThis);
+  const api={apply};const exportedApi = api;
+
+export default exportedApi;

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {simulate,attackWindup,damageParts} = require('../JS/shared/comboTester.js');
+const {simulate,attackWindup,damageParts} = require('../JS/shared/comboTester.js').default;
 const action = (id,damage,castTime,cooldown,extra={}) => ({id,group:id,damage,castTime,cooldown,...extra});
 test('attacks respect reciprocal attack speed and include the final windup', () => {
   const aa = action('aa',100,0.2,0.5);

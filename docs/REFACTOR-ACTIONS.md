@@ -1,6 +1,6 @@
 # Refactoring action list
 
-Updated: 6 October 2026. Phases 0–4 are complete with the documented baseline exceptions. Phase 5 is next; calculation algorithms remain unchanged.
+Updated: 7 October 2026. Phases 0–5 are complete with the documented baseline exceptions; calculation algorithms remain unchanged.
 
 This is the working checklist for [the refactoring plan](REFACTOR-PLAN.md). Check an action only after its work and verification are complete. Record the completion date and supporting test results or commit beside completed future actions. A phase is complete only when its gate passes. Keep the protected baseline fixed; make new changes on `codex/modular-refactor`.
 
@@ -76,15 +76,17 @@ P4.1–P4.7 implemented and checked 6 October 2026. The repaired 173-champion au
 
 ## Phase 5 — Reusable UI and page composition
 
-- [ ] P5.1 Extract champion/item lists and details as components with scoped containers and explicit callbacks.
-- [ ] P5.2 Extract inventory, rune, target, ability and combo controls while keeping page workflows separate.
-- [ ] P5.3 Define component update/disposal behavior and remove reliance on global page IDs or Builder state.
-- [ ] P5.4 Preserve focus, keyboard access, dialogs, tooltips and responsive interactions.
-- [ ] P5.5 Demonstrate two independent sets of controls/details without Builder; verify updates and disposal do not interfere.
-- [ ] P5.6 Verify fallback browsing and all page/script/asset paths.
-- [ ] P5.7 Migrate entry points and test loaders together to native modules after consumers are ready.
-- [ ] P5.8 Remove migrated global wrappers and obsolete page wiring; remove CSS only with mapped usage evidence.
-- [ ] P5 gate: reusable components compose independently and current application interactions remain equivalent.
+- [x] P5.1 Extract champion/item lists and details as components with scoped containers and explicit callbacks.
+- [x] P5.2 Extract inventory, rune, target, ability and combo controls while keeping page workflows separate.
+- [x] P5.3 Define component update/disposal behavior and remove reliance on global page IDs or Builder state.
+- [x] P5.4 Preserve focus, keyboard access, dialogs, tooltips and responsive interactions.
+- [x] P5.5 Demonstrate two independent sets of controls/details without Builder; verify updates and disposal do not interfere.
+- [x] P5.6 Verify fallback browsing and all page/script/asset paths.
+- [x] P5.7 Migrate entry points and test loaders together to native modules after consumers are ready.
+- [x] P5.8 Remove migrated global wrappers and obsolete page wiring; remove CSS only with mapped usage evidence.
+Completed and verified 7 October 2026: 225 unit tests, 32 browser checks across both generated routes, thirteen targeted follow-up browser checks, 20 exact final advanced/fallback case comparisons, ten headless cases, and standalone component/data reuse. A clean saved-source archive passes units, build, headless cases, independent UI and the real native entry. Source audits retain the classified baseline limitations. See [component contracts and removal evidence](REFACTOR-PHASE5.md) and [verification report](phase5-verification.json). Publication uses the existing separate refactor preview workflow.
+
+- [x] P5 gate: reusable components compose independently and current application interactions remain equivalent.
 
 ## Phase 6 — Verify and hand over
 

@@ -1,14 +1,14 @@
 // Demonstrate explorer browsing and independent build inputs with captured data, without a page.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
-const {createRepository}=require('../JS/data/sourceRepositories.js');
-const {createCatalogSession}=require('../JS/application/catalogSession.js');
-const queries=require('../JS/domain/catalogQueries.js');
-const builds=require('../JS/domain/buildInputs.js');
-const scenarios=require('../JS/domain/scenarioInputs.js');
-const runeSource=require('../JS/data/runeSource.js');
-const runeInputs=require('../JS/domain/runeInputs.js');
-const stats=require('../JS/shared/buildStats.js');
-const {deepFreeze}=require('../JS/core/records.js');
+const {createRepository}=require('../JS/data/sourceRepositories.js').default;
+const {createCatalogSession}=require('../JS/application/catalogSession.js').default;
+const queries=require('../JS/domain/catalogQueries.js').default;
+const builds=require('../JS/domain/buildInputs.js').default;
+const scenarios=require('../JS/domain/scenarioInputs.js').default;
+const runeSource=require('../JS/data/runeSource.js').default;
+const runeInputs=require('../JS/domain/runeInputs.js').default;
+const stats=require('../JS/shared/buildStats.js').default;
+const {deepFreeze}=require('../JS/core/records.js').default;
 const fixtures=path.resolve(process.env.FIXTURES_DIR || path.join(__dirname,'../tests/fixtures'));
 const output=path.resolve(process.env.REUSE_OUTPUT || path.join(__dirname,'../test-results/phase3/reuse.json'));
 const used=new Map();
@@ -59,7 +59,7 @@ const api={
  const prepared=await repository.loadChampion(version,'Ashe');
  assert.ok(prepared.abilities.q);assert.ok(Object.isFrozen(prepared.raw));
  const advanced=await repository.loadAdvancedItems();assert.equal(advanced.status,'ready');
- const enriched=require('../JS/data/itemSource.js').prepareItems(shop.items,advanced.records,stats);
+ const enriched=require('../JS/data/itemSource.js').default.prepareItems(shop.items,advanced.records,stats);
  assert.ok(enriched['3006'].stats);assert.equal(Object.keys(catalog.items.records).length,allItems.length);
  for(const [name,hash] of used)assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(fixtures,name))).digest('hex'),hash,name+' fixture changed');
  const report={version,champions:allChampions.length,fullItems:allItems.length,builderItems:Object.keys(shop.items).length,

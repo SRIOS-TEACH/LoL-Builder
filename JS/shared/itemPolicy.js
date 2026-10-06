@@ -1,7 +1,8 @@
+
 /**
  * Shared item rules used by Item Lookup and Builder.
  */
-(function initItemPolicy(globalScope) {
+
   const FORCE_INCLUDE_ITEM_IDS = new Set(["3040", "3042", "3121"]);
 
   const MAP_OPTIONS = [
@@ -59,6 +60,6 @@
     dedupeByNameWithMapPriority,
   };
 
-  globalScope.ItemPolicy = api;
-  if (typeof module !== "undefined" && module.exports) module.exports = api;
-})(typeof window !== "undefined" ? window : globalThis);
+  const exportedApi = api;
+
+export default exportedApi;

@@ -1,8 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const TargetDamage=require('../JS/shared/targetDamage.js');
-require('../JS/shared/calculations.js');require('../JS/shared/buildStats.js');
-require('../JS/shared/attackEffects.js');
-require('../JS/shared/attackChampions.js');
+const TargetDamage=require('../JS/shared/targetDamage.js').default;const Calculations=require('../JS/shared/calculations.js').default;const BuildStats=require('../JS/shared/buildStats.js').default;const AttackEffects=require('../JS/shared/attackEffects.js').default;const AttackChampions=require('../JS/shared/attackChampions.js').default;
 const fixture=require('./attack-excerpts.json');
 const interactions=require('./attack-interactions.json');
 const near=(actual,expected)=>assert.ok(Number.isFinite(actual)&&Math.abs(actual-expected)<.001,`${actual} != ${expected}`);

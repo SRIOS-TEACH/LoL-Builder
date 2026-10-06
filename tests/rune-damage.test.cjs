@@ -1,6 +1,5 @@
 const test=require('node:test');
-const assert=require('node:assert/strict');
-require('../JS/shared/targetDamage.js');require('../JS/shared/runeEffects.js');
+const assert=require('node:assert/strict');const TargetDamage=require('../JS/shared/targetDamage.js').default;const RuneEffects=require('../JS/shared/runeEffects.js').default;
 const {runes}=require('./rune-excerpts.json');
 const stats={ap:200,bonusAd:50,hp:3000,bonusHp:1000,bonusAttackSpeed:.5,attackSpeed:1.5,ranged:false};
 const state=(ids,extra={})=>({level:18,runeSelections:{primary:ids,secondary:[]},runeStacks:{},...extra});

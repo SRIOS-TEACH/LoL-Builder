@@ -1,6 +1,4 @@
-const test=require('node:test'),assert=require('node:assert/strict');
-require('../JS/shared/calculations.js');require('../JS/shared/buildStats.js');
-require('../JS/shared/attackEffects.js');require('../JS/shared/attackChampions.js');
+const test=require('node:test'),assert=require('node:assert/strict');const Calculations=require('../JS/shared/calculations.js').default;const BuildStats=require('../JS/shared/buildStats.js').default;const AttackEffects=require('../JS/shared/attackEffects.js').default;const AttackChampions=require('../JS/shared/attackChampions.js').default;
 const fixture=require('./attack-interactions.json'),prior=require('./attack-excerpts.json');
 const items={...prior.items,...fixture.items};
 const near=(a,b)=>assert.ok(Number.isFinite(a)&&Math.abs(a-b)<.015,`${a} != ${b}`);

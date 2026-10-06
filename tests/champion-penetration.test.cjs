@@ -1,6 +1,5 @@
-const test=require('node:test'),assert=require('node:assert/strict');
-require('../JS/shared/calculations.js');require('../JS/shared/championEffects.js');
-const TargetDamage=require('../JS/shared/targetDamage.js');
+const test=require('node:test'),assert=require('node:assert/strict');const Calculations=require('../JS/shared/calculations.js').default;const ChampionEffects=require('../JS/shared/championEffects.js').default;
+const TargetDamage=require('../JS/shared/targetDamage.js').default;
 const fixture=require('./champion-penetration-excerpts.json');
 const near=(actual,expected)=>assert.ok(Number.isFinite(actual)&&Math.abs(actual-expected)<.00001,`${actual} != ${expected}`);
 const stats=()=>({critChance:50,item:{arPenPct:30,arPenFlat:18,mrPenPct:40,mrPenFlat:15},rune:{arPenPct:10,arPenFlat:6,mrPenPct:10,mrPenFlat:3}});

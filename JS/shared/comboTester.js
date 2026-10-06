@@ -1,5 +1,6 @@
+
 /** Ordered single-target scheduling. Missing values contribute zero with explicit warnings. */
-(function(scope) {
+
   const valid = value => Number.isFinite(value) && value >= 0;
   const types = ['physical','magic','true','untyped'];
   function damageParts(action) {
@@ -73,6 +74,6 @@
     }
     return {timeline,total,duration:cursor,breakdown,issues,damageWarnings,timeWarnings,...(targeted ? {remainingHp} : {})};
   }
-  scope.ComboTester = {simulate,damageParts,attackWindup};
-  if (typeof module !== 'undefined') module.exports = scope.ComboTester;
-})(typeof window !== 'undefined' ? window : globalThis);
+  const exportedApi = {simulate,damageParts,attackWindup};
+
+export default exportedApi;

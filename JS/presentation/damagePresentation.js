@@ -1,8 +1,9 @@
+import TextValues from '../core/text.js';
 /** Formatting of already evaluated damage packets; never used as numeric input. */
-(function(scope){
+
  const finite=value=>typeof value==='number' && Number.isFinite(value);
  const fmt=value=>finite(value)?(Math.round(value*10)/10).toFixed(1):'Value unavailable';
- const text=scope.TextValues || (typeof require==='function'?require('../core/text.js'):null);
+ const text=TextValues;
  const escape=value=>text.escapeHtml(String(value));
   function render(result) {
     if (!result.rows.length) return `<div class="ability-dps"><strong>Damage:</strong> ${escape(result.status)}</div>`;
@@ -21,6 +22,6 @@
       :r.timingMissing?'Enter recast timing':dps(r.dpsAmount||r.damage,r.period);
     return `<div class="ability-dps"><strong>Damage</strong><table class="ability-dps-table"><thead><tr><th>Part</th><th>Damage</th><th>DPS</th></tr></thead><tbody>${result.rows.map(r=>`<tr><td>${escape(r.label)}</td><td title="${escape(explanation(r))}">${escape(damage(r.damage))}${r.sweet?` (${escape(damage(r.sweet))})`:''}</td><td title="${escape(explanation(r)+timingExplanation(r))}">${escape(renderedDps(r))}${r.sweet?` (${escape(dps(r.sweetDpsAmount||r.sweet,r.period))})`:''}</td></tr>`).join('')}</tbody></table><small>${escape(result.note)}</small></div>`;
   }
- const DamagePresentation={render};scope.DamagePresentation=DamagePresentation;
- if(typeof module!=='undefined')module.exports=DamagePresentation;
-})(typeof window!=='undefined'?window:globalThis);
+ const DamagePresentation={render};const exportedApi = DamagePresentation;
+
+export default exportedApi;

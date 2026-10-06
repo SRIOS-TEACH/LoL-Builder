@@ -6,7 +6,7 @@ Combo scheduling and browser coverage are described in [COMBOS.md](COMBOS.md). R
 
 Rune, haste and on-hit follow-up tests include `rune-effects.test.cjs`, `ability-items.test.cjs`, `ability-onhit.test.cjs` and added cases in the existing damage/DPS tests. The dashboard browser suite checks game time, selected rune counters and floating tooltip positioning. The passive browser suite checks separate basic/ultimate haste and Shojin with target settings on/off. The DPS browser suite checks Ezreal/Smolder Spellblade, active on-hit DPS and a passive DPS table. The broad browser suite also recognizes the intentionally disabled standalone lookup pages and verifies their Builder links.
 
-Requires Node 20 or newer, no package installation:
+Requires Node 22.13 or newer, no package installation:
 
 ```sh
 npm test
@@ -92,3 +92,9 @@ Run node scripts/verify-reuse.cjs with the captured fixtures above to demonstrat
 ## Independent calculation pipeline
 
 Run node scripts/verify-calculations.cjs with FIXTURES_DIR to compare ten protected advanced/fallback cases headlessly, including stats, attacks, abilities, combo warning states and sequential health. CALCULATION_OUTPUT selects the report. Ten fixture-free cases in tests/calculation-pipeline.test.cjs run under npm test and cover precision, aliases/forms/child selection, localization, unsupported values and A/B/A/input isolation. The ability audit now starts with the current ready seven-slot inventory and retains the 30 classified baseline calls; do not reuse the historical zero-unavailable claim. See [Phase 4 contracts](REFACTOR-PHASE4.md).
+
+## Native modules and reusable UI
+
+The unit runners load native runtime exports; production has one module entry and no compatibility globals. Older browser characterization names are provided only by the test adapter, never shipped. Local test servers serve both `.js` and `.mjs` with a JavaScript MIME type.
+
+With the fixture/browser environment above, run `npm run test:reuse-ui` for two independent sets of controls/details without Builder. Run `node tests/native-entry-browser.cjs` for the actual Builder entry without test aliases. Both checks should pass against the generated root and nested preview artifact. `native-modules.test.cjs` verifies relative import paths and two independent page controllers.

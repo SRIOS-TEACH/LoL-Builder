@@ -1,14 +1,14 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const {deepFreeze}=require('../JS/core/records.js');
-const text=require('../JS/core/text.js');
-const queries=require('../JS/domain/catalogQueries.js');
-const builds=require('../JS/domain/buildInputs.js');
-const scenarios=require('../JS/domain/scenarioInputs.js');
-const runes=require('../JS/domain/runeInputs.js');
-const runeSource=require('../JS/data/runeSource.js');
-const {createCatalogSession}=require('../JS/application/catalogSession.js');
-const {createRepository}=require('../JS/data/sourceRepositories.js');
-const stats=require('../JS/shared/buildStats.js');
+const {deepFreeze}=require('../JS/core/records.js').default;
+const text=require('../JS/core/text.js').default;
+const queries=require('../JS/domain/catalogQueries.js').default;
+const builds=require('../JS/domain/buildInputs.js').default;
+const scenarios=require('../JS/domain/scenarioInputs.js').default;
+const runes=require('../JS/domain/runeInputs.js').default;
+const runeSource=require('../JS/data/runeSource.js').default;
+const {createCatalogSession}=require('../JS/application/catalogSession.js').default;
+const {createRepository}=require('../JS/data/sourceRepositories.js').default;
+const stats=require('../JS/shared/buildStats.js').default;
 
 const item=(name,maps={11:true},extra={})=>({name,maps,tags:[],gold:{purchasable:true,total:100},...extra});
 const full=deepFreeze({

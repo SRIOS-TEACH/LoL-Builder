@@ -1,6 +1,7 @@
+import RecordValues from '../core/records.js';
 /** Pure rules with explicit data and input records. */
-(function(scope){
-const values=scope.RecordValues || (typeof require==='function'?require('../core/records.js'):null);
+
+const values=RecordValues;
 function createRules(data) {
 function getSecondaryRows(pathId) {
   return (data.paths[pathId]?.primaryRows || []).slice(1);
@@ -109,6 +110,6 @@ return {getSecondaryRows,getSecondaryRowIndex,getPathPrimaryDefaults,getPathSeco
 
 }
 
-const api={createRules};scope.RuneInputRules=api;
-if(typeof module!=="undefined"&&module.exports)module.exports=api;
-})(typeof window!=="undefined"?window:globalThis);
+const api={createRules};const exportedApi = api;
+
+export default exportedApi;

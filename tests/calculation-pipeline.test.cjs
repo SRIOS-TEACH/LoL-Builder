@@ -1,6 +1,8 @@
+const ChampionSource=require('../JS/data/championSource.js').default;
+const RecordValues=require('../JS/core/records.js').default;
 const {test}=require('node:test'),assert=require('node:assert/strict');
 const {pipeline,combo,items,builds}=require('./helpers/calculation-runtime.cjs');
-const freeze=globalThis.RecordValues.deepFreeze;
+const freeze=RecordValues.deepFreeze;
 const base={hp:600,hpperlevel:100,hpregen:5,hpregenperlevel:1,mp:300,mpperlevel:40,mpregen:7,mpregenperlevel:.5,
  attackdamage:60,attackdamageperlevel:3,armor:30,armorperlevel:4,spellblock:30,spellblockperlevel:1,
  attackspeed:.7,attackspeedratio:.7,attackspeedperlevel:3,attackrange:550,movespeed:330,crit:0,critperlevel:0,critdamage:2};
@@ -72,7 +74,7 @@ test('combo health state is per run, changes health-dependent damage and never m
 });
 
 test('source roots take precedence over richer children; missing roots select the scored child and aliases retain first collision',()=>{
- const source=globalThis.ChampionSource;
+ const source=ChampionSource;
  const root='Characters/Test/CharacterRecords/Root',ability='Characters/Test/Spells/TestQAbility';
  const child1='Characters/Test/Spells/RootSpell',child2='Characters/Test/Spells/AlternateForm';
  const raw={[root]:{mAbilities:[ability]},[ability]:{mRootSpell:child1,mChildSpells:[child2],mScriptName:'TestQ'},

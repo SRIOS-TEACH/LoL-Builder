@@ -1,10 +1,12 @@
+const BuildStats=require('../JS/shared/buildStats.js').default;
+const RecordValues=require('../JS/core/records.js').default;
 // Repeatable headless characterization against the protected fixture records.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const {pipeline,combo,items,builds,source}=require('../tests/helpers/calculation-runtime.cjs');
-const queries=require('../JS/domain/catalogQueries.js'),itemSource=require('../JS/data/itemSource.js'),runeSource=require('../JS/data/runeSource.js');
+const queries=require('../JS/domain/catalogQueries.js').default,itemSource=require('../JS/data/itemSource.js').default,runeSource=require('../JS/data/runeSource.js').default;
 const root=path.resolve(__dirname,'..'),fixtures=path.resolve(process.env.FIXTURES_DIR || path.join(root,'tests/fixtures'));
 const output=path.resolve(process.env.CALCULATION_OUTPUT || path.join(root,'test-results/phase4/headless.json'));
-const used=new Map(),cache=new Map(),freeze=globalThis.RecordValues.deepFreeze;
+const used=new Map(),cache=new Map(),freeze=RecordValues.deepFreeze;
 function read(name){
  const actual=fs.readdirSync(fixtures).find(file=>file.toLowerCase()===name.toLowerCase());
  if(!cache.has(actual)){
@@ -34,8 +36,8 @@ const strings=read('lol.stringtable.json').entries;
 const runes=runeSource.normalizeRunes(read('runes.json')).runeLookup;
 function prepare(record,mode){
  const input=record.inputs,champion=read(input.champion+'.json').data[input.champion];
- const prepared=source.prepareChampion(champion,mode==='advanced'?read(input.champion+'.bin.json'):null,input.champion,globalThis.BuildStats);
- const catalog=mode==='advanced'?itemSource.prepareItems(shop.items,advanced,globalThis.BuildStats):itemSource.prepareItems(shop.items,{},globalThis.BuildStats);
+ const prepared=source.prepareChampion(champion,mode==='advanced'?read(input.champion+'.bin.json'):null,input.champion,BuildStats);
+ const catalog=mode==='advanced'?itemSource.prepareItems(shop.items,advanced,BuildStats):itemSource.prepareItems(shop.items,{},BuildStats);
  return freeze({build:builds.readBuildInputs({selectedChampion:input.champion,level:input.level,abilityRanks:input.ranks,itemSlots:input.items,
   runeSelections:input.runes,combatValues:input.combatValues,runeStacks:input.runeStacks,disabledItemPassives:input.disabledItemPassives}),
   scenario:{target:input.target,gameTimeMinutes:input.gameTimeMinutes},data:{champion:prepared.champion,championRaw:prepared.raw,abilities:prepared.abilities,
@@ -82,7 +84,7 @@ const explorer=pipeline.create({build:builds.readBuildInputs(a.build),scenario:j
 assert.deepEqual(json(explorer.stats.computeDerivedBuildStats()),first.stats,'Equivalent explorer context');
 const forms=[];
 for(const id of ['Jayce','Elise','Nidalee','Aphelios']){
- const prepared=source.prepareChampion(read(id+'.json').data[id],read(id+'.bin.json'),id,globalThis.BuildStats);
+ const prepared=source.prepareChampion(read(id+'.json').data[id],read(id+'.bin.json'),id,BuildStats);
  if(id==='Aphelios')assert.equal(prepared.abilities.q,undefined,'Baseline has no primary Aphelios Q payload');else assert.ok(prepared.abilities.q);
  assert.ok(Object.keys(prepared.abilities.byAlias).length>4);
  forms.push({champion:id,aliases:Object.keys(prepared.abilities.byAlias).length,selectedQ:prepared.abilities.q?.spellData.mScriptName || prepared.abilities.q?.spellData.mClientData?.mTooltipData?.mLocKeys?.keyName || null});

@@ -1,3 +1,5 @@
+import RecordValues from '../core/records.js';
+import AbilityRules from '../shared/abilityRules.js';
 /**
  * Saveable build inputs and immutable inventory/champion transitions.
  * @typedef {Object} BuildInputsRecord
@@ -10,9 +12,9 @@
  * @property {Object<string, boolean>} disabledItemPassives
  * @property {Object<string, unknown>} runeStacks
  */
-(function(scope){
-const values=scope.RecordValues || (typeof require==='function'?require('../core/records.js'):null);
-const ranks=scope.AbilityRules || (typeof require==='function'?require('../shared/abilityRules.js'):null);
+
+const values=RecordValues;
+const ranks=AbilityRules;
 const defaults=()=>({selectedChampion:'',level:1,abilityRanks:{q:0,w:0,e:0,r:0},itemSlots:Array(7).fill(''),runeSelections:{primaryPath:'',secondaryPath:'',primary:[],secondary:[],shards:['adaptive-force','adaptive-force','scaling-health']},combatValues:{},disabledItemPassives:{},runeStacks:{}});
 function readBuildInputs(state={}) {
  const next=defaults();
@@ -64,6 +66,6 @@ function transitionChampion(inputs,id,level=inputs.level) {
  next.abilityRanks=ranks.enforceAbilityRules(next.level,next.abilityRanks);
  return next;
 }
-const api={createBuildInputs,readBuildInputs,roleLevelCap,isBoot,eligibility,transitionInventory,transitionChampion};scope.BuildInputs=api;
-if(typeof module!=='undefined'&&module.exports)module.exports=api;
-})(typeof window!=='undefined'?window:globalThis);
+const api={createBuildInputs,readBuildInputs,roleLevelCap,isBoot,eligibility,transitionInventory,transitionChampion};const exportedApi = api;
+
+export default exportedApi;

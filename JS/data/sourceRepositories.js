@@ -1,9 +1,14 @@
+import RecordValues from '../core/records.js';
+import ChampionSource from './championSource.js';
+import ItemSource from './itemSource.js';
+import ApiClient from '../shared/apiClient.js';
+import BuildStats from '../shared/buildStats.js';
 /** Source transport/provenance only. Each repository keeps a selected data revision. */
-(function(scope){
-const records=scope.RecordValues || (typeof require==='function'?require('../core/records.js'):null);
-const itemSource=scope.ItemSource || (typeof require==='function'?require('./itemSource.js'):null);
-const championSource=scope.ChampionSource || (typeof require==='function'?require('./championSource.js'):null);
-function createRepository({api=scope.ApiClient,statsAdapter=scope.BuildStats}={}) {
+
+const records=RecordValues;
+const itemSource=ItemSource;
+const championSource=ChampionSource;
+function createRepository({api=ApiClient,statsAdapter=BuildStats}={}) {
  let revision=null, advancedItems=null, advancedRequest=null;
  const dd=(version,kind)=>({provider:'DataDragon',version,language:'en_US',url:'https://ddragon.leagueoflegends.com/cdn/'+version+'/data/en_US/'+kind+'.json',immutable:true});
  const cd=url=>({provider:'CommunityDragon',revision:'latest',immutable:false,url});
@@ -60,6 +65,6 @@ function createRepository({api=scope.ApiClient,statsAdapter=scope.BuildStats}={}
  }
  return {loadCatalogs,loadChampionCatalog,loadItemCatalog,loadRunes,loadChampionDetails,loadChampion,loadAdvancedItems,loadLocalization};
 }
-const api={createRepository};scope.SourceRepositories=api;
-if(typeof module!=='undefined'&&module.exports)module.exports=api;
-})(typeof window!=='undefined'?window:globalThis);
+const api={createRepository};const exportedApi = api;
+
+export default exportedApi;

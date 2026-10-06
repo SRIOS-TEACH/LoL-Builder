@@ -1,7 +1,9 @@
+import TextValues from '../core/text.js';
+import ItemPolicy from '../shared/itemPolicy.js';
 /** Catalog filtering returns IDs without changing source records or build selection. */
-(function(scope){
-const policy=scope.ItemPolicy || (typeof require==='function'?require('../shared/itemPolicy.js'):null);
-const text=scope.TextValues || (typeof require==='function'?require('../core/text.js'):null);
+
+const policy=ItemPolicy;
+const text=TextValues;
 const midBootIds=['3170','3171','3172','3173','3174','3175','3176'];
 function builderCatalog(items) {
  const entries=policy.dedupeByNameWithMapPriority(Object.entries(items).filter(([id,item])=>policy.isPurchasableItem(id,item)&&item.maps?.[11]),new Set([11]));
@@ -31,6 +33,6 @@ function queryItems(items,{search='',tags=[],maps=null,purchasable=false,dedupe=
  if(dedupe)entries=policy.dedupeByNameWithMapPriority(entries,selectedMaps||new Set([11]));
  return entries.sort((a,b)=>(sort==='price'?(a[1].gold?.total||0)-(b[1].gold?.total||0):0)||a[1].name.localeCompare(b[1].name)).map(([id])=>id);
 }
-const api={builderCatalog,queryChampions,queryItems,matchesShopStat};scope.CatalogQueries=api;
-if(typeof module!=='undefined'&&module.exports)module.exports=api;
-})(typeof window!=='undefined'?window:globalThis);
+const api={builderCatalog,queryChampions,queryItems,matchesShopStat};const exportedApi = api;
+
+export default exportedApi;

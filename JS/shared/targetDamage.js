@@ -1,10 +1,11 @@
+import ScenarioInputs from '../domain/scenarioInputs.js';
 /** Shared target health and mitigation rules. Damage type is explicit: AP/AD
  * scaling alone does not identify whether a damage packet is magic/physical.
  */
-(function(scope){
+
   const finite=Number.isFinite,clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
   const format=value=>finite(value)?Number(value.toFixed(4)).toString():'unavailable';
-  const scenario=scope.ScenarioInputs || (typeof require==='function'?require('../domain/scenarioInputs.js'):null);
+  const scenario=ScenarioInputs;
   const normalize=scenario.normalizeTarget;
   function targetStats(target){
     const t=normalize(target);if(!t.enabled)return {};
@@ -39,6 +40,6 @@
     return {...result,value:rawValue===null?null:rawValue*multiplier,multiplier,
       text:`${format(rawValue)} raw ${normalizedType} damage; ${resistanceText}; damage${outgoingText} × ${format(resistanceMultiplier)} × (1 − ${format(t.damageReduction)}% damage reduction) = ${format(rawValue===null?null:rawValue*multiplier)}.`};
   }
-  scope.TargetDamage={normalize,targetStats,apply};
-  if(typeof module!=='undefined')module.exports=scope.TargetDamage;
-})(typeof window!=='undefined'?window:globalThis);
+  const exportedApi = {normalize,targetStats,apply};
+
+export default exportedApi;

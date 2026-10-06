@@ -1,6 +1,5 @@
 const test=require('node:test');
-const assert=require('node:assert/strict');
-require('../JS/shared/runeEffects.js');
+const assert=require('node:assert/strict');const RuneEffects=require('../JS/shared/runeEffects.js').default;
 const {runes}=require('./rune-excerpts.json');
 const state=(ids,stacks={},time=0)=>({level:18,runeSelections:{primary:ids,secondary:[]},runeStacks:stacks,gameTimeMinutes:time});
 const calculate=(ids,stacks={},time=0,options={})=>RuneEffects.calculate(state(ids,stacks,time),runes,options).totals;

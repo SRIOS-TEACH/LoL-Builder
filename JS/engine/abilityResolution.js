@@ -1,5 +1,10 @@
+import ChampionSource from '../data/championSource.js';
+import AttackEffects from '../shared/attackEffects.js';
+import Calculations from '../shared/calculations.js';
+import ChampionEffects from '../shared/championEffects.js';
+import TargetDamage from '../shared/targetDamage.js';
 /** Spell aliases, ranked data, localization and numeric formula/token resolution. No generated HTML. */
-(function(scope){
+
 function create(state,data,statsEngine){
  const advancedItems=data.advancedItems || {};
  const {computeDerivedBuildStats,getComputedChampionStatsForTooltips,calculationContext}=statsEngine;
@@ -38,13 +43,13 @@ function getRankedValueIndex(values, rank) {
 }
 
 function getSpellDataValue(dataValues, tokenName, rank) {
-  const value = scope.Calculations.dataValue(dataValues, tokenName, rank, state.level);
+  const value = Calculations.dataValue(dataValues, tokenName, rank, state.level);
   if (value.missing) return null;
-  return { current: value.value, rankValues: [1,2,3,4,5].map(r => scope.Calculations.dataValue(dataValues, tokenName, r, state.level).value) };
+  return { current: value.value, rankValues: [1,2,3,4,5].map(r => Calculations.dataValue(dataValues, tokenName, r, state.level).value) };
 }
 
 function getCalcStatSource(part, stats) {
-  const value = scope.Calculations.stat(part, {stats});
+  const value = Calculations.stat(part, {stats});
   return { ...value, label: value.text };
 }
 
@@ -58,11 +63,11 @@ function adaptCalculation(row) {
 }
 
 function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap = {}) {
-  return scope.Calculations.partValue(part, calculationContext(stats,dataValues,rank,calculationsMap));
+  return Calculations.partValue(part, calculationContext(stats,dataValues,rank,calculationsMap));
 }
 
 function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap = {}, effects = []) {
-  return adaptCalculation(scope.Calculations.evaluate(calc, calculationContext(stats,dataValues,rank,calculationsMap,effects)));
+  return adaptCalculation(Calculations.evaluate(calc, calculationContext(stats,dataValues,rank,calculationsMap,effects)));
 }
 
 function canonicalizeToken(name) {
@@ -86,9 +91,9 @@ function buildResolvedSpellPayload(rawPayload, safeRank, stats) {
     // The source exposes only the maximum recall tooltip calculation. Resolve
     // its multiplier against the configured target before prose and DPS use it.
     if(state.selectedChampion==='Aurora' && k.toLowerCase()==='q2damagemax'){
-      const target=scope.TargetDamage.normalize(state.target);
+      const target=TargetDamage.normalize(state.target);
       const missing=target.enabled?1-target.currentHp/target.maxHp:0;
-      const bonus=scope.Calculations.dataValue(dataValues,'MissingHealthPercentMod',safeRank).value;
+      const bonus=Calculations.dataValue(dataValues,'MissingHealthPercentMod',safeRank).value;
       calc={...calc,mMultiplier:{__type:'NumberCalculationPart',mNumber:1+(bonus??0.5)*missing}};
     }
     const evaluated = stats ? evaluateGameCalculation(calc, dataValues, safeRank, stats, calculations, payload?.effects || []) : null;
@@ -132,7 +137,7 @@ function resolveLegacyToken(tokenRaw, ctx) {
   const multiplierMatchRegex = /^(?<left>[a-z0-9_:.]+)\*(?<mult>-?\d+(?:\.\d+)?)$/;
 
   const getQualifiedCtx = (spellRefRaw, localCtx) => {
-    const normalizedRef = scope.ChampionSource.normalizeSpellRecordName(spellRefRaw);
+    const normalizedRef = ChampionSource.normalizeSpellRecordName(spellRefRaw);
     const canonicalRef = canonicalizeToken(normalizedRef);
     if (!canonicalRef) return null;
 
@@ -156,7 +161,7 @@ function resolveLegacyToken(tokenRaw, ctx) {
     const resolveCalc = (lookupToken) => {
       if (denylist.has(canonicalizeToken(lookupToken))) return { kind: "empty", numeric: null };
 
-      let calc = scope.Calculations.lookup(localCtx.calcLookup, lookupToken);
+      let calc = Calculations.lookup(localCtx.calcLookup, lookupToken);
       if (!calc) {
         const canonicalKey = localCtx.calcLookupCanonicalMap?.[canonicalizeToken(lookupToken)];
         if (canonicalKey) calc = localCtx.calcLookup[canonicalKey];
@@ -285,7 +290,7 @@ function resolveLegacyToken(tokenRaw, ctx) {
   };
 
   if ((/^f\d+$/.test(baseToken)||['bonusarmor','bonusmr','resistsfortooltip','bonusattackrange'].includes(baseToken)) && ctx.stats) {
-    const value=scope.ChampionEffects.model(state).token(ctx.spell.id,baseToken,ctx.stats,computeDerivedBuildStats());
+    const value=ChampionEffects.model(state).token(ctx.spell.id,baseToken,ctx.stats,computeDerivedBuildStats());
     if(Number.isFinite(value))return {kind:"number",numeric:value};
   }
   const direct = resolveToken(baseToken, simpleCtx, simpleCtx);
@@ -340,7 +345,7 @@ function expandAbilityLocalization(text) {
 function buildAbilityContext(spell, rank, spellKey) {
   const safeRank = Math.max(1, Number(rank) || 1);
   const stats = getComputedChampionStatsForTooltips();
-  if (stats) stats.abilityDamageMultiplier = scope.AttackEffects.model(state, advancedItems).abilityModifiers(stats).abilityDamageMultiplier;
+  if (stats) stats.abilityDamageMultiplier = AttackEffects.model(state, advancedItems).abilityModifiers(stats).abilityDamageMultiplier;
   if (stats && spellKey !== 'p') {
     stats.haste += spellKey === 'r' ? stats.ultimateHaste : stats.basicHaste;
     stats.cooldownReduction = stats.haste / (100 + stats.haste);
@@ -417,12 +422,12 @@ function effectValues(payload,rank){
  if(!payload || !rank)return [];
  const context=calculationContext(getComputedChampionStatsForTooltips(),payload.dataValues,rank,payload.calculations,payload.effects);
   return Object.entries(payload.calculations||{}).filter(([name,calc])=>!name.startsWith('{')&&!calc.tooltipOnly&&!/^tooltiponly_/i.test(name)).map(([name,calc])=>{
-    const row=scope.Calculations.evaluate(calc,context);
+    const row=Calculations.evaluate(calc,context);
     const slot=['q','w','e','r'].find(slot=>state.cdragonAbilityData?.[slot]===payload);
     const id=state.championData?.spells?.[['q','w','e','r'].indexOf(slot)]?.id;
     const bindings={GarenE:{NumberOfStrikes:'f1'},BelvethE:{TotalStrikes:'f2'},SettW:{MaxDamage:'f1'},PoppyW:{BonusArmor:'bonusarmor',BonusMR:'bonusmr'},GarenW:{ResistsForTooltip:'resistsfortooltip'},Feast:{BonusAttackRange:'bonusattackrange'}};
     const key=bindings[id]?.[name];
-    const corrected=key?scope.ChampionEffects.model(state).token(id,key,context.stats,computeDerivedBuildStats()):null;
+    const corrected=key?ChampionEffects.model(state).token(id,key,context.stats,computeDerivedBuildStats()):null;
     return {name,row,value:Number.isFinite(corrected)?corrected:row.value,
      displayAsPercent:Number.isFinite(corrected)?false:row.displayAsPercent};
   });
@@ -430,6 +435,6 @@ function effectValues(payload,rank){
 return {effectValues,parseByRank,getSpellScalingSource,getRankedValueIndex,getSpellDataValue,getCalcStatSource,isMissingGameCalculation,adaptCalculation,evaluateCalculationPart,evaluateGameCalculation,canonicalizeToken,buildCanonicalTokenMap,buildResolvedSpellPayload,getDeterministicTokenCandidates,resolveAbilityToken,getSpellRankValueAt,getSpellTokenValueAtRank,expandAbilityLocalization,buildAbilityContext,gameTooltip,resolveLegacyToken};
 }
 const AbilityResolution={create};
- scope.AbilityResolution=AbilityResolution;
- if(typeof module!=="undefined")module.exports=AbilityResolution;
-})(typeof window!=="undefined"?window:globalThis);
+ const exportedApi = AbilityResolution;
+
+export default exportedApi;

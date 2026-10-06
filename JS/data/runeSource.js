@@ -1,6 +1,7 @@
+import TextValues from '../core/text.js';
 /** Reusable capability; no page initialization or DOM dependency. */
-(function(scope){
-const text=scope.TextValues || (typeof require === 'function' ? require('../core/text.js') : null);
+
+const text=TextValues;
 const RUNE_PATH_ID_TO_KEY = {
   8100: "domination",
   8000: "precision",
@@ -50,6 +51,6 @@ function normalizeRunes(runes, paths = {}, lookup = {}) {
 }
 
 const api = {slugifyRuneName, toDdragonPerkIcon, buildPathDefaults, normalizeRunes};
-scope.RuneSource = api;
-if (typeof module !== "undefined" && module.exports) module.exports = api;
-})(typeof window !== "undefined" ? window : globalThis);
+const exportedApi = api;
+
+export default exportedApi;

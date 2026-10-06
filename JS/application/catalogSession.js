@@ -1,7 +1,9 @@
+import RecordValues from '../core/records.js';
+import CatalogQueries from '../domain/catalogQueries.js';
 /** Independent browsing/query/inspection state, without a Builder or DOM. */
-(function(scope){
-const queries=scope.CatalogQueries || (typeof require==='function'?require('../domain/catalogQueries.js'):null);
-const values=scope.RecordValues || (typeof require==='function'?require('../core/records.js'):null);
+
+const queries=CatalogQueries;
+const values=RecordValues;
 function createCatalogSession({catalog,kind,loadDetail}) {
  let query={},selectedId=null,detail=null,requestId=0;
  const run=kind==='champion'?queries.queryChampions:queries.queryItems;
@@ -20,6 +22,6 @@ function createCatalogSession({catalog,kind,loadDetail}) {
  function dispose(){requestId++;selectedId=null;detail=null;}
  return {search,inspect,snapshot,dispose};
 }
-const api={createCatalogSession};scope.CatalogSessions=api;
-if(typeof module!=='undefined'&&module.exports)module.exports=api;
-})(typeof window!=='undefined'?window:globalThis);
+const api={createCatalogSession};const exportedApi = api;
+
+export default exportedApi;

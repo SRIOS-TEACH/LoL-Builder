@@ -1,5 +1,8 @@
+import Calculations from '../shared/calculations.js';
+import DamageText from '../shared/damageText.js';
+import ItemDescriptions from '../shared/itemDescriptions.js';
 /** Legacy ability/passive HTML adapter for structured resolution results. Formatting never supplies game numbers. */
-(function(scope){
+
 function formatAbilityStatLabel(label) {
   const m = {
     "bonus ad": "BonusAD",
@@ -50,14 +53,14 @@ function buildDetailedPassiveText() {
   const ctx=buildAbilityContext(dummy,1,'p');
   let text=buildDetailedAbilityText(dummy,1,'p',ctx);
   const passiveResult=statsEngine.passiveEvaluation(ctx.stats),summary=passiveResult.summary;
-  const f=scope.ItemDescriptions.number;
+  const f=ItemDescriptions.number;
   if(summary?.type==='ezreal')text+=`<p class="passive-current-value">${summary.stacks}/${summary.maxStacks} stacks: <attackSpeed>+${f(summary.bonusAttackSpeed*100)}% Attack Speed</attackSpeed>.</p>`;
   if(summary?.type==='aurora'){
     // Current script has no movement-speed buff; old unused BIN calculations remain.
     const {baseFraction,apCoefficient}=passiveResult;
     text=`Damaging an enemy 3 times with abilities or attacks deals <magicDamage>${f(summary.healthFraction*100)}% ((${f(baseFraction*100)}) + (${f(apCoefficient*100)}% Ability Power))% of their maximum HP as magic damage</magicDamage>. Against champions, this frees a spirit for ${f(summary.spiritDuration)} seconds. Each spirit restores <healing>${f(summary.healPerSpirit)} HP per second</healing>, up to ${summary.maxSpirits} spirits.<br><br><span class="passive-current-value">${summary.spirits}/${summary.maxSpirits} spirits: <healing>${f(summary.healingPerSecond)} HP per second</healing>.</span><br><rules>Damage against monsters is capped at 100–270, based on level.</rules>`;
     if(state.target.enabled){
-      const amount=scope.DamageText.damage(passiveResult.targetDamage,'magic',{target:state.target,stats:ctx.stats},`${f(summary.healthFraction*100)}% × ${state.target.maxHp} target max HP`);
+      const amount=DamageText.damage(passiveResult.targetDamage,'magic',{target:state.target,stats:ctx.stats},`${f(summary.healthFraction*100)}% × ${state.target.maxHp} target max HP`);
       text=text.replace('maximum HP as magic damage',`maximum HP as magic damage (${amount} against target)`);
     }
   }
@@ -70,7 +73,7 @@ function buildDetailedAbilityText(spell, rank, spellKey, context) {
   if(state.selectedChampion==='Aurora' && spellKey==='q')raw=raw.replace(/up to\s+(?=<magicDamage>\s*(?:\{\{|@)\s*q2damagemax)/i,'');
   if (!(Number(rank) > 0)) return spell.description || "";
   const ctx = context || buildAbilityContext(spell, rank, spellKey);
-  const replaced = scope.DamageText.render(raw,token=>resolveAbilityToken(token,ctx),{target:state.target,stats:ctx.stats});
+  const replaced = DamageText.render(raw,token=>resolveAbilityToken(token,ctx),{target:state.target,stats:ctx.stats});
 
   return replaced
     .replace(/<physicalDamage>/gi, '<span class="ability-damage-physical">')
@@ -95,7 +98,7 @@ function abilityEffectValues(payload,rank) {
   if(!payload || !rank)return '';
   const escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const rows=resolution.effectValues(payload,rank).map(({name,row,value,displayAsPercent})=>{
-   const shown=value===null?row.text:scope.Calculations.format(value*(displayAsPercent?100:1))+(displayAsPercent?'%':'');
+   const shown=value===null?row.text:Calculations.format(value*(displayAsPercent?100:1))+(displayAsPercent?'%':'');
    return `<div>${escape(name.replace(/([a-z])([A-Z])/g,'$1 $2'))}: ${escape(shown)}</div>`;
   });
   return rows.length?`<details class="ability-effect-values"><summary>Effect values</summary>${rows.join('')}</details>`:'';
@@ -103,6 +106,6 @@ function abilityEffectValues(payload,rank) {
 return {buildDetailedPassiveText,buildDetailedAbilityText,abilityEffectValues};
 }
 const AbilityPresentation={create,legacyToken,formatAbilityStatLabel,formatAbilityNumber,formatCalculationTerms};
- scope.AbilityPresentation=AbilityPresentation;
- if(typeof module!=="undefined")module.exports=AbilityPresentation;
-})(typeof window!=="undefined"?window:globalThis);
+ const exportedApi = AbilityPresentation;
+
+export default exportedApi;

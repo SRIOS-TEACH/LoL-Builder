@@ -1,3 +1,4 @@
+const {installBrowserHarness}=require('../tests/helpers/native-runtime.cjs');
 // Characterization evidence, not independently verified game-correctness expectations.
 const fs=require('node:fs'), path=require('node:path'), http=require('node:http'), assert=require('node:assert/strict');
 const {chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
@@ -12,7 +13,7 @@ const read=name=>fs.readFileSync(path.join(fixtures,name));
 const server=http.createServer((req,res)=>{
   const file=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));
   if(!file.startsWith(root+path.sep)){res.writeHead(403);res.end();return;}
-  try{res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(fs.readFileSync(file));}
+  try{res.setHeader('Content-Type',/\.m?js$/.test(file)?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(fs.readFileSync(file));}
   catch{res.writeHead(404);res.end();}
 });
 (async()=>{
@@ -21,10 +22,11 @@ const server=http.createServer((req,res)=>{
   const browser=await chromium.launch({headless:true,executablePath:process.env.BROWSER_PATH});
   try{
     const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
+    await installBrowserHarness(page,root);
     page.on('pageerror',e=>errors.push(e.message));
     await page.route('**/*',route=>{
       const url=new URL(route.request().url());
-      if(url.origin===base)return route.continue();
+      if(url.origin===base)return route.fallback();
       if(!url.pathname.endsWith('.json'))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"/>'});
       if(url.hostname==='raw.communitydragon.org'&&!advanced)return route.fulfill({status:503,body:'Unavailable'});
       const file=url.pathname.endsWith('/versions.json')?'versions.json':url.pathname.endsWith('/champion.json')?'champions.json':url.pathname.endsWith('/item.json')?'items.json':url.pathname.endsWith('/runesReforged.json')?'runes.json':url.pathname.endsWith('/items.cdtb.bin.json')?'cd-items.json':names.get(path.basename(url.pathname).toLowerCase());

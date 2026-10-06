@@ -1,8 +1,15 @@
+import TextValues from '../core/text.js';
+import CalculationContext from './calculationContext.js';
+import AttackEffects from '../shared/attackEffects.js';
+import BuildStats from '../shared/buildStats.js';
+import Calculations from '../shared/calculations.js';
+import ChampionEffects from '../shared/championEffects.js';
+import RuneEffects from '../shared/runeEffects.js';
 /** Build and rune stat orchestration, attacks and passive contributions for one explicit input snapshot. */
-(function(scope){
+
 function create(state,data={}) {
- const stripHtml=scope.TextValues.stripHtml,advancedItems=data.advancedItems || {};
- const {baseCalculationContext,calculationContext}=scope.CalculationContext.create(state,data);
+ const stripHtml=TextValues.stripHtml,advancedItems=data.advancedItems || {};
+ const {baseCalculationContext,calculationContext}=CalculationContext.create(state,data);
 function isApAdaptiveChampion() {
   const tags = new Set(state.championData?.tags || []);
   if (tags.has("Mage")) return true;
@@ -11,7 +18,7 @@ function isApAdaptiveChampion() {
 }
 
 function getStackRuneEffects() {
-  return scope.RuneEffects.calculate(state, data.runes || {}, {adaptiveAp: isApAdaptiveChampion(), ranged: (state.championData?.stats.attackrange || 0) > 300});
+  return RuneEffects.calculate(state, data.runes || {}, {adaptiveAp: isApAdaptiveChampion(), ranged: (state.championData?.stats.attackrange || 0) > 300});
 }
 
 function extractPassiveLabelsFromText(text) {
@@ -66,23 +73,23 @@ function buildPassiveLedger(itemTotals, runeTotals) {
     const source = advancedItems[id];
     if (!source) return;
     if(id==='3083' && itemPassiveEnabled(id,'warmog-s-vitality')){
-      const amp=scope.Calculations.dataValue(source.mDataValues,'HPAmp').value;
+      const amp=Calculations.dataValue(source.mDataValues,'HPAmp').value;
       if(Number.isFinite(amp))additiveMods.hp+=itemTotals.hp*amp;
     }
     const b = state.championData?.stats;
     const bonusMana = itemTotals.mp + runeTotals.mp;
-    const baseMana = b ? b.mp + b.mpperlevel * scope.BuildStats.growthFactor(state.level) : 0;
+    const baseMana = b ? b.mp + b.mpperlevel * BuildStats.growthFactor(state.level) : 0;
     const context = {level:state.level, stats:{mp:baseMana+bonusMana,bonusMp:bonusMana},
       dataValues:source.mDataValues || [], calculations:source.mItemCalculations || {}};
     // Effect bindings identify the passive; coefficients and formulas come from live data.
     if (id === "3089" && itemPassiveEnabled(id,'magical-opus')) {
-      const amp = scope.Calculations.dataValue(context.dataValues, "APAmp").value;
+      const amp = Calculations.dataValue(context.dataValues, "APAmp").value;
       if (amp !== null) { hasRabadon=true; apMultiplier *= 1+amp; }
     }
     const binding = {"3042":["BonusADFromMana","ad"], "3040":["BonusAPCalc","ap"]}[id];
     if (binding && b && itemPassiveEnabled(id,'awe')) {
       const [key,stat] = binding;
-      const row = scope.Calculations.evaluate(scope.Calculations.lookup(context.calculations,key),context);
+      const row = Calculations.evaluate(Calculations.lookup(context.calculations,key),context);
       if (row.value !== null) {
         additiveMods[stat] += row.value;
         passiveEffects.push({source:"Item",owner:item.name,label:"Awe",impact:`+${row.value.toFixed(1)} ${stat.toUpperCase()} (${row.text})`});
@@ -121,22 +128,22 @@ function computeDerivedBuildStats() {
   const passiveAd = ledger.statMods.ad;
   const passiveAp = ledger.statMods.ap;
 
-  const hp = (base.hp + base.hpperlevel * scope.BuildStats.growthFactor(L) + item.hp + rune.hp + (ledger.statMods.hp||0));
-  const baseHp5 = base.hpregen + base.hpregenperlevel * scope.BuildStats.growthFactor(L);
+  const hp = (base.hp + base.hpperlevel * BuildStats.growthFactor(L) + item.hp + rune.hp + (ledger.statMods.hp||0));
+  const baseHp5 = base.hpregen + base.hpregenperlevel * BuildStats.growthFactor(L);
   const hp5 = (baseHp5 * (1 + item.hp5PctBase / 100) + item.hp5 + rune.hp5);
-  const mp = (base.mp + base.mpperlevel * scope.BuildStats.growthFactor(L) + item.mp + rune.mp);
-  const baseMp5 = base.mpregen + base.mpregenperlevel * scope.BuildStats.growthFactor(L);
+  const mp = (base.mp + base.mpperlevel * BuildStats.growthFactor(L) + item.mp + rune.mp);
+  const baseMp5 = base.mpregen + base.mpregenperlevel * BuildStats.growthFactor(L);
   const mp5 = (baseMp5 * (1 + item.mp5PctBase / 100) + item.mp5 + rune.mp5);
-  const ad = (base.attackdamage + base.attackdamageperlevel * scope.BuildStats.growthFactor(L) + item.ad + rune.ad + passiveAd);
+  const ad = (base.attackdamage + base.attackdamageperlevel * BuildStats.growthFactor(L) + item.ad + rune.ad + passiveAd);
   const ap = item.ap + rune.ap + passiveAp;
-  const armor = (base.armor + base.armorperlevel * scope.BuildStats.growthFactor(L) + item.armor + rune.armor);
-  const mr = (base.spellblock + base.spellblockperlevel * scope.BuildStats.growthFactor(L) + item.mr + rune.mr);
-  const asTotal = scope.BuildStats.attackSpeed(base.attackspeed, base.attackspeedperlevel, base.attackspeedratio, L, item.asPct + rune.asPct);
+  const armor = (base.armor + base.armorperlevel * BuildStats.growthFactor(L) + item.armor + rune.armor);
+  const mr = (base.spellblock + base.spellblockperlevel * BuildStats.growthFactor(L) + item.mr + rune.mr);
+  const asTotal = BuildStats.attackSpeed(base.attackspeed, base.attackspeedperlevel, base.attackspeedratio, L, item.asPct + rune.asPct);
   const abilityHaste = item.haste + rune.haste;
-  const abilityModifiers = scope.AttackEffects.model(state, advancedItems).abilityModifiers({base});
+  const abilityModifiers = AttackEffects.model(state, advancedItems).abilityModifiers({base});
   const basicHaste = abilityModifiers.basicHaste + (rune.basicHaste || 0);
   const ultimateHaste = abilityModifiers.ultimateHaste + (rune.ultimateHaste || 0);
-  const critChance = Math.min(100, (base.crit + base.critperlevel * scope.BuildStats.growthFactor(L)) * 100 + item.critChance + rune.critChance);
+  const critChance = Math.min(100, (base.crit + base.critperlevel * BuildStats.growthFactor(L)) * 100 + item.critChance + rune.critChance);
   const critDamage = (base.critdamage ? base.critdamage * 100 : 200) + item.critDamage + rune.critDamage;
   const attackRange = (base.attackrange || 0) + item.attackRange + rune.attackRange + getChampionPassiveRangeBonus();
   const moveSpeed = (base.movespeed + item.msFlat + rune.msFlat) * (1 + (item.msPct + rune.msPct) / 100);
@@ -164,7 +171,7 @@ function computeDerivedBuildStats() {
     moveSpeed,
     passiveLedger: ledger,
   };
-  const applied = scope.AttackEffects.model(state, advancedItems).apply(scope.ChampionEffects.model(state).apply(computed));
+  const applied = AttackEffects.model(state, advancedItems).apply(ChampionEffects.model(state).apply(computed));
   // Rune percentage bonuses include health/resistances earned from champion stacks.
   applied.hp *= 1 + (rune.hpPct || 0) / 100;
   applied.armor *= 1 + (rune.armorPct || 0) / 100;
@@ -188,7 +195,7 @@ function getChampionPassiveRangeBonus() {
 }
 
 function computeAutoAttackProfile(computed) {
-  return scope.AttackEffects.model(state, advancedItems).profile(computed);
+  return AttackEffects.model(state, advancedItems).profile(computed);
 }
 
 function getComputedChampionStatsForTooltips() {
@@ -196,24 +203,24 @@ function getComputedChampionStatsForTooltips() {
   if (!computed) return null;
   const { base, item, rune, level: L, ad, ap, armor, mr, hp, mp } = computed;
 
-  const baseAd = base.attackdamage + base.attackdamageperlevel * scope.BuildStats.growthFactor(L);
+  const baseAd = base.attackdamage + base.attackdamageperlevel * BuildStats.growthFactor(L);
   const totalAd = ad;
   const baseAp = 0;
   const totalAp = ap;
-  const baseArmor = base.armor + base.armorperlevel * scope.BuildStats.growthFactor(L);
+  const baseArmor = base.armor + base.armorperlevel * BuildStats.growthFactor(L);
   const totalArmor = armor;
-  const baseMr = base.spellblock + base.spellblockperlevel * scope.BuildStats.growthFactor(L);
+  const baseMr = base.spellblock + base.spellblockperlevel * BuildStats.growthFactor(L);
   const totalMr = mr;
-  const baseHp = base.hp + base.hpperlevel * scope.BuildStats.growthFactor(L);
+  const baseHp = base.hp + base.hpperlevel * BuildStats.growthFactor(L);
   const totalHp = hp;
-  const baseMp = base.mp + base.mpperlevel * scope.BuildStats.growthFactor(L);
+  const baseMp = base.mp + base.mpperlevel * BuildStats.growthFactor(L);
   const totalMp = mp;
 
   let spellDamageMultiplier=1;
   if(state.target.enabled&&state.itemSlots.includes('4645')&&itemPassiveEnabled('4645','cinderbloom')){
     const source=advancedItems['4645'];
-    const threshold=scope.Calculations.dataValue(source?.mDataValues,'HealthThreshold').value;
-    const amp=scope.Calculations.dataValue(source?.mDataValues,'SpellItemDamageAmp').value;
+    const threshold=Calculations.dataValue(source?.mDataValues,'HealthThreshold').value;
+    const amp=Calculations.dataValue(source?.mDataValues,'SpellItemDamageAmp').value;
     if(Number.isFinite(threshold)&&Number.isFinite(amp)&&state.target.currentHp/state.target.maxHp<Number(threshold.toPrecision(7)))spellDamageMultiplier=1+amp;
   }
 
@@ -224,7 +231,7 @@ function getComputedChampionStatsForTooltips() {
     ranged: computed.ranged ?? base.attackrange > 300,
     healShieldPower: state.itemSlots.filter(Boolean).reduce((sum,id)=>sum+(advancedItems[id]?.mPercentHealingAmountMod||0),0),
     attackSpeed: computed.asTotal,
-    bonusAttackSpeed: (base.attackspeedperlevel * scope.BuildStats.growthFactor(L) + item.asPct + rune.asPct) / 100 + (computed.bonusAttackSpeedFromChampion || 0),
+    bonusAttackSpeed: (base.attackspeedperlevel * BuildStats.growthFactor(L) + item.asPct + rune.asPct) / 100 + (computed.bonusAttackSpeedFromChampion || 0),
     moveSpeed: computed.moveSpeed, baseMoveSpeed: base.movespeed,
     critChance: computed.critChance / 100, bonusCritChance: (item.critChance + rune.critChance) / 100,
     critDamage: computed.critDamage / 100, bonusCritDamage: (item.critDamage + rune.critDamage) / 100,
@@ -331,7 +338,7 @@ function getRuneStats() {
   return totals;
 }
 function passiveEvaluation(stats){
- const model=scope.ChampionEffects.model(state),summary=model.passiveSummary?.(stats);
+ const model=ChampionEffects.model(state),summary=model.passiveSummary?.(stats);
  if(summary?.type!=='aurora')return {summary};
  const baseFraction=model.passiveSummary({...stats,ap:0}).healthFraction;
  return {summary,baseFraction,apCoefficient:model.passiveSummary({...stats,ap:100}).healthFraction-baseFraction,
@@ -339,7 +346,7 @@ function passiveEvaluation(stats){
 }
 function itemContribution(id,key,computed){
  if(id!=='3089' || key!=='magical-opus' || !computed)return null;
- const amp=scope.Calculations.dataValue(advancedItems[id]?.mDataValues,'APAmp').value;
+ const amp=Calculations.dataValue(advancedItems[id]?.mDataValues,'APAmp').value;
  return computed.ap-computed.ap/(1+amp);
 }
 function summary(computed){
@@ -349,6 +356,6 @@ function summary(computed){
  return {passiveEvaluation,itemContribution,summary,isApAdaptiveChampion,getStackRuneEffects,extractPassiveLabelsFromText,extractPassiveDescriptionsFromHtml,buildPassiveLedger,computeDerivedBuildStats,itemPassiveEnabled,getChampionPassiveRangeBonus,computeAutoAttackProfile,getComputedChampionStatsForTooltips,baseCalculationContext,calculationContext,getItemStats,getRuneStats};
 }
 const BuildEvaluation={create};
- scope.BuildEvaluation=BuildEvaluation;
- if(typeof module!=="undefined")module.exports=BuildEvaluation;
-})(typeof window!=="undefined"?window:globalThis);
+ const exportedApi = BuildEvaluation;
+
+export default exportedApi;

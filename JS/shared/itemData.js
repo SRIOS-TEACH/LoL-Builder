@@ -1,9 +1,12 @@
-(function () {
+import SourceRepositories from '../data/sourceRepositories.js';
+import Recommendations from '../domain/recommendations.js';
+import Calculations from './calculations.js';
+import ItemPolicy from './itemPolicy.js';
+export function createItemLookup({repository = SourceRepositories.createRepository()} = {}) {
 /**
  * Shared item data and tooltip helpers; no page initialization or DOM state.
  *
- * This module intentionally exposes a small `window.ItemLookupShared` API that Builder reuses
- * so item parsing logic is implemented once in one place.
+ * Each consumer may create an independent optional-data cache.
  */
 
 /**
@@ -15,7 +18,7 @@ let itemDataRequest = null;
 /**
  * Supported map filters for the item browser.
  */
-const MAP_OPTIONS = window.ItemPolicy.MAP_OPTIONS;
+const MAP_OPTIONS = ItemPolicy.MAP_OPTIONS;
 
 /**
  * Keyword->color rules for tooltip highlighting.
@@ -47,25 +50,25 @@ const STAT_COLOR_RULES = [
  * Returns true when an item should be considered purchasable by the app.
  */
 function isPurchasableItem(id, item) {
-  return window.ItemPolicy.isPurchasableItem(id, item);
+  return ItemPolicy.isPurchasableItem(id, item);
 }
 
 /**
  * Deduplicates item entries by normalized item name and keeps best map candidate.
  */
 function dedupeByNameWithMapPriority(itemEntries, selectedMaps = new Set([11])) {
-  return window.ItemPolicy.dedupeByNameWithMapPriority(itemEntries, selectedMaps);
+  return ItemPolicy.dedupeByNameWithMapPriority(itemEntries, selectedMaps);
 }
 
 /**
  * Loads Community Dragon item payload and indexes by numeric item id.
  */
-let itemRepository=null;
+let itemRepository=repository;
 function loadCommunityDragonCalcs() {
   if (ITEM_DATA.status === 'ready') return Promise.resolve(true);
   if (itemDataRequest) return itemDataRequest;
   ITEM_DATA.status='loading';
-  itemRepository ||= window.SourceRepositories.createRepository();
+  itemRepository ||= SourceRepositories.createRepository();
   itemDataRequest=itemRepository.loadAdvancedItems().then(result=>{
     ITEM_DATA.status=result.status;
     if(result.status==='ready')ITEM_DATA.cdragonById=result.records;
@@ -79,7 +82,7 @@ function loadCommunityDragonCalcs() {
  * Keep their order, exclude other modes and retired/unavailable shop items,
  * and never substitute recommendations inferred from champion tags.
  */
-function getRecommendedItems(...args) { return window.Recommendations.getRecommendedItems(...args); }
+function getRecommendedItems(...args) { return Recommendations.getRecommendedItems(...args); }
 
 /**
  * Resolves a token like e1/e2 from Data Dragon item effect fields.
@@ -124,7 +127,7 @@ function colorizeStatsInHtml(html) {
 }
 
 function gameCalculationToText(calcName, calc, calcMap, dataValueMap) {
-  return window.Calculations.evaluate(calc, {calculations:calcMap,dataValues:dataValueMap}).text;
+  return Calculations.evaluate(calc, {calculations:calcMap,dataValues:dataValueMap}).text;
 }
 
 /**
@@ -158,9 +161,9 @@ function buildExtractedFormulas(itemId, context = {}) {
   const item = ITEM_DATA.cdragonById[String(itemId)];
   const calculations = item?.mItemCalculations || {};
   const lines = Object.entries(calculations).map(([key, calc]) => {
-    const row=window.Calculations.evaluate(calc,{...context,calculations,dataValues:item.mDataValues || [],effects:item.mEffectAmount || []});
+    const row=Calculations.evaluate(calc,{...context,calculations,dataValues:item.mDataValues || [],effects:item.mEffectAmount || []});
     const shown=row.value===null?null:row.value*(row.displayAsPercent?100:1);
-    const formula=shown===null ? row.text : `${window.Calculations.format(shown)}${row.displayAsPercent?'%':''} (${row.text})`;
+    const formula=shown===null ? row.text : `${Calculations.format(shown)}${row.displayAsPercent?'%':''} (${row.text})`;
     return {key,name:prettyCalcName(key),formula,expression:row.text,value:shown,category:categorizeEffect(key,formula),inputs:row.inputs,unsupported:row.unsupported};
   });
   return {lines,extracted:lines};
@@ -175,7 +178,7 @@ function injectItemCalculationValues(html, rows) {
   for(const group of groups){
     const matches=rows.filter(row=>group.keys.test(row.key));
     if(matches.length!==1)continue;
-    const row=matches[0], value=row.value===null?row.expression:window.Calculations.format(row.value);
+    const row=matches[0], value=row.value===null?row.expression:Calculations.format(row.value);
     html=html.replace(group.pattern, group.noun==='Ability Power'?`Gain <scaleAP>${value} Ability Power</scaleAP>`:`a <shield>${value} Shield</shield>`);
   }
   return html;
@@ -232,7 +235,7 @@ function enhanceActiveTooltip(descriptionHtml) {
   return String(descriptionHtml || "").replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
 }
 
-window.ItemLookupShared = {
+const exportedApi = {
   MAP_OPTIONS,
   isPurchasableItem,
   dedupeByNameWithMapPriority,
@@ -250,4 +253,6 @@ window.ItemLookupShared = {
   getState: () => ITEM_DATA,
 };
 
-})();
+return exportedApi;
+}
+export default createItemLookup();

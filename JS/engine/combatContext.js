@@ -1,5 +1,5 @@
-(function(scope){
-  const C=scope.Calculations;
+import Calculations from '../shared/calculations.js';
+const C=Calculations;
   const nice=s=>String(s).replace(/([a-z])([A-Z])/g,'$1 $2').replace(/[_:]/g,' ');
   const labels={ap:'Ability power',totalAd:'Attack damage',critDamage:'Critical damage',hp:'Maximum health',mp:'Mana',mr:'Magic resist',haste:'Ability haste',moveSpeed:'Move speed',attackRange:'Attack range',healShieldPower:'Heal/shield power'};
   function sourceContext(source,base){return {...base,dataValues:source.dataValues||[],calculations:source.calculations||{},effects:source.effects||[]};}
@@ -77,6 +77,6 @@
     return context;
   }
   function itemSource(id,item,label){return {label:label||`Item ${id}`,dataValues:item?.mDataValues,calculations:item?.mItemCalculations,effects:item?.mEffectAmount};}
-scope.CombatContext={descriptors,apply,itemSource};
-if(typeof module!=="undefined")module.exports=scope.CombatContext;
-})(typeof window!=="undefined"?window:globalThis);
+const exportedApi = {descriptors,apply,itemSource};
+
+export default exportedApi;

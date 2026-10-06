@@ -1,5 +1,6 @@
+
 /** Pure rules with explicit data and input records. */
-(function(scope){
+
 function getRecommendedItems(raw, { mapId = 11, mode = 'CLASSIC', items = {} } = {}) {
   const starting = new Set(), core = new Set();
   const add = (target, refs) => {
@@ -31,6 +32,6 @@ function recommendedItemIds(raw,champion,items) {
 }
 
 
-const api={getRecommendedItems, recommendedItemIds};scope.Recommendations=api;
-if(typeof module!=="undefined"&&module.exports)module.exports=api;
-})(typeof window!=="undefined"?window:globalThis);
+const api={getRecommendedItems, recommendedItemIds};const exportedApi = api;
+
+export default exportedApi;

@@ -1,14 +1,20 @@
+import {createLifecycle} from '../ui/lifecycle.mjs';
+import CombatContext from '../engine/combatContext.js';
 /** Explicit combat context. No unstated stack/health defaults and no game coefficients. */
-(function(scope){
-  const context=scope.CombatContext || (typeof require==='function'?require('../engine/combatContext.js'):null);
+
+  const context=CombatContext;
   const {descriptors,apply,itemSource}=context;
+  const mounts=new WeakMap();
+  function dispose(root){mounts.get(root)?.dispose();mounts.delete(root);}
   function render(root,{sources,base={},values,onChange,fields:providedFields,inline=false}){
     if(!root)return;
+    dispose(root);
+    const life=createLifecycle(),document=root.ownerDocument;mounts.set(root,life);
     const fields=providedFields||descriptors(sources,base);
     root.replaceChildren();
     if(!fields.length)return;
     const details=document.createElement('details');details.open=root.dataset.open==='true';
-    details.addEventListener('toggle',()=>root.dataset.open=String(details.open));
+    life.on(details,'toggle',()=>root.dataset.open=String(details.open));
     const heading=document.createElement('summary');heading.textContent=`Calculation inputs (${fields.length})`;details.append(heading);
     const hint=document.createElement('p');hint.textContent='Enter combat state to resolve formulas. Blank means unknown. Stack inputs affect the formulas that reference them; they do not automatically apply all passive stat bonuses.';details.append(hint);
     const grid=document.createElement('div');grid.className='combat-input-grid';
@@ -24,7 +30,7 @@
         input.placeholder=field.defaultValue===undefined?'Unknown':String(field.defaultValue*(field.percent?100:1));
         input.value=Number.isFinite(values[field.key])?String(values[field.key]*(field.percent?100:1)):'';
       }
-      input.addEventListener('change',()=>{
+      life.on(input,'change',()=>{
         if(!field.boolean&&input.value!==''){
           let value=Number(input.value);
           if(!Number.isFinite(value))return;
@@ -41,6 +47,6 @@
     }
     details.append(grid);root.append(inline?grid:details);
   }
-  scope.CombatInputs={descriptors,apply,render,itemSource};
-  if(typeof module!=='undefined')module.exports=scope.CombatInputs;
-})(typeof window!=='undefined'?window:globalThis);
+  const exportedApi = {descriptors,apply,render,itemSource,dispose};
+
+export default exportedApi;

@@ -1,5 +1,7 @@
+import DamagePresentation from '../presentation/damagePresentation.js';
+import TargetDamage from './targetDamage.js';
 /** Damage per cooldown with separately typed damage packets. See docs/DPS.md for timing conventions. */
-(function (scope) {
+
   const finite = value => typeof value === 'number' && Number.isFinite(value);
   const fmt = value => finite(value) ? (Math.round(value * 10) / 10).toFixed(1) : 'Value unavailable';
   const plain = text => String(text || '').replace(/<[^>]*>/g, '').trim();
@@ -18,7 +20,7 @@
   ]):typed(a,null);
 
   function mitigated(a,target,stats) {
-    const helper=scope.TargetDamage;
+    const helper=TargetDamage;
     const amplification=finite(stats?.abilityDamageMultiplier)?stats.abilityDamageMultiplier:1;
     if(amplification!==1){
       a=multiply(a,amplification);
@@ -225,7 +227,7 @@
       note='Combined damage includes both casts. Enter the cast interval and whether cooldown overlaps it to calculate the full cycle. Before mitigation; excludes resets and extra procs.';
     } else switch(spell.id) {
       case 'VeigarR': {
-        const health = target?.enabled ? scope.TargetDamage.targetStats(target) : null;
+        const health = target?.enabled ? TargetDamage.targetStats(target) : null;
         if (health) add('Primordial Burst',multiply(token('MinDamage'),Math.min(2,1+1.5*health.missingHealthPercent)));
         else { add('Minimum',token('MinDamage')); add('Maximum',token('MaxDamage')); }
         note='Primordial Burst scales with target missing health, up to twice its base damage. Before mitigation.';
@@ -384,11 +386,11 @@
   }
 
   function render(result){
-    const presentation=scope.DamagePresentation || (typeof require==='function'?require('../presentation/damagePresentation.js'):null);
+    const presentation=DamagePresentation;
     return presentation.render(result);
   }
 
   const api={cooldown,cycleTime,components,profile,render,timingFields,onHitTiming,passiveProfile};
-  scope.AbilityDps=api;
-  if(typeof module!=='undefined'&&module.exports)module.exports=api;
-})(typeof window!=='undefined'?window:globalThis);
+  const exportedApi = api;
+
+export default exportedApi;

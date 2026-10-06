@@ -1,7 +1,7 @@
 // Repeatable full-corpus check using the same inputs and context code as the UI.
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
-const C=require('../JS/shared/calculations');
-const Inputs=require('../JS/shared/combatInputs');
+const C=require('../JS/shared/calculations').default;
+const Inputs=require('../JS/shared/combatInputs').default;
 const fixtures=process.env.FIXTURES_DIR||path.join(__dirname,'fixtures');
 const base={rank:3,level:18,ranged:false,stats:{ap:200,baseAp:0,totalAd:180,bonusAd:80,armor:100,bonusArmor:40,mr:80,bonusMr:30,hp:3000,bonusHp:1000,mp:2000,bonusMp:1000,haste:50,attackSpeed:1,bonusAttackSpeed:.3,moveSpeed:380,baseMoveSpeed:345,critChance:.25,critDamage:1.75,bonusCritDamage:0,cooldownReduction:1/3,lifeSteal:.1,physicalVamp:0,omniVamp:0,magicPenFlat:0,lethality:0,tenacity:0,attackRange:125,baseAttackRange:125,bonusAttackRange:0,healShieldPower:0},itemCounts:{0:0,1:0,2:0,3:0,4:0,5:0,6:0}};
 const summary={records:0,scenarios:0,numeric:0,inactive:0,needsInputs:[],sourceIssues:[]};

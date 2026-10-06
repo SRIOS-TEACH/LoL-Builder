@@ -1,5 +1,6 @@
+
 /** Reusable capability; no page initialization or DOM dependency. */
-(function(scope){
+
 function readNumericStat(entry, base, aliases) {
   const entryValues = aliases
     .map((key) => entry?.[key])
@@ -76,6 +77,6 @@ function prepareItems(items, advanced, statsAdapter) {
 }
 
 const api = {readNumericStat, buildMergedItemStats, indexAdvancedItems, prepareItems};
-scope.ItemSource = api;
-if (typeof module !== "undefined" && module.exports) module.exports = api;
-})(typeof window !== "undefined" ? window : globalThis);
+const exportedApi = api;
+
+export default exportedApi;

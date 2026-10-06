@@ -1,7 +1,16 @@
+import CalculationPipeline from './calculationPipeline.js';
+import ItemEvaluation from './itemEvaluation.js';
+import AbilityDps from '../shared/abilityDps.js';
+import AttackEffects from '../shared/attackEffects.js';
+import Calculations from '../shared/calculations.js';
+import ChampionEffects from '../shared/championEffects.js';
+import ComboTester from '../shared/comboTester.js';
+import RuneEffects from '../shared/runeEffects.js';
+import TargetDamage from '../shared/targetDamage.js';
 /** Build-specific action definitions and isolated health-step evaluation. UI owns only sequence editing and display. */
-(function(scope){
+
  const finite=Number.isFinite;
-  const dataValue = (payload, key, rank) => scope.Calculations.dataValue(payload?.dataValues || [], key, rank).value;
+  const dataValue = (payload, key, rank) => Calculations.dataValue(payload?.dataValues || [], key, rank).value;
   const castTime = (spell,rank=1) => {
     const cast = finite(spell?.mCastTime) ? spell.mCastTime : finite(spell?.spellCastTime) ? spell.spellCastTime : null;
     const channel = Array.isArray(spell?.mChannelDuration) ? spell.mChannelDuration[Math.min(rank,spell.mChannelDuration.length-1)] : spell?.mChannelDuration;
@@ -17,17 +26,17 @@
       const row=resolution.resolveAbilityToken(token,ctx),view=presentation.presentToken?.({...row});
       return view?{...row,html:view.html,text:view.text || row.text}:row;
     };
-    const resolveItemDescriptionHtml=(item,id)=>scope.ItemEvaluation.evaluate({id,item,source:data.advancedItems?.[id],strings:state.strings,context:calculationContext(getComputedChampionStatsForTooltips())});
+    const resolveItemDescriptionHtml=(item,id)=>ItemEvaluation.evaluate({id,item,source:data.advancedItems?.[id],strings:state.strings,context:calculationContext(getComputedChampionStatsForTooltips())});
     const rawSpell = name => Object.values(state.cdragonRaw || {}).find(r => r.mScriptName === name)?.mSpell;
     if (!state.championData) return [];
     const computed = computeDerivedBuildStats(), attack = computeAutoAttackProfile(computed);
     const record = Object.entries(state.cdragonRaw || {}).find(([path,r]) => /\/CharacterRecords\/Root$/i.test(path) && r.__type === 'CharacterRecord')?.[1];
     const source = advancedItems;
     const override = record?.basicAttack?.mOverrideAutoattackCastTime?.mOverrideAutoattackCastTimeCalculation;
-    const overrideTime = override ? scope.Calculations.evaluate(override,calculationContext(getComputedChampionStatsForTooltips())).value : null;
-    const windup = scope.ComboTester.attackWindup(record,computed.asTotal,computed.base.attackspeed,overrideTime);
+    const overrideTime = override ? Calculations.evaluate(override,calculationContext(getComputedChampionStatsForTooltips())).value : null;
+    const windup = ComboTester.attackWindup(record,computed.asTotal,computed.base.attackspeed,overrideTime);
     const result = ['no-crit','crit'].map(outcome => {
-      const hit = scope.AttackEffects.model(state,source).profile(computed,{critOutcome:outcome});
+      const hit = AttackEffects.model(state,source).profile(computed,{critOutcome:outcome});
       return {id:`aa:${outcome}`,group:'aa',label:outcome === 'crit' ? 'AA crit' : 'AA no crit',shortcut:'AA',
         damage:hit.baseAttackDamage,damageType:hit.baseAttackType,
         cooldown:computed.asTotal > 0 ? 1/computed.asTotal : null,castTime:windup,
@@ -37,8 +46,8 @@
       const slot = ['q','w','e','r'][index], rank = state.abilityRanks[slot];
       if (!rank) continue;
       const context = buildAbilityContext(spell,rank,slot), payload = context.cdragonSpell;
-      const cooldown = scope.AbilityDps.cooldown(spell,rank,context.stats,payload);
-      const profile = scope.AbilityDps.profile({spell,rank,cooldown,slot,champion:state.selectedChampion,
+      const cooldown = AbilityDps.cooldown(spell,rank,context.stats,payload);
+      const profile = AbilityDps.profile({spell,rank,cooldown,slot,champion:state.selectedChampion,
         tooltip:expandAbilityLocalization(spell.tooltip || spell.description || ''),
         resolve:token => resolveAbilityToken(token,context),payload,target:state.target,stats:context.stats,
         timing:{delay:state.combatValues[`dps:${slot}:delay`],overlap:state.combatValues[`dps:${slot}:overlap`]}});
@@ -82,7 +91,7 @@
         .forEach(r => { if (!rows.has(r.label)) rows.set(r.label,r); });
       collect(attack);
       for (const control of attack.controls.filter(c => c.slot === 'p' && c.type === 'toggle' && !c.disabled)) {
-        collect(scope.AttackEffects.model({...state,combatValues:{...state.combatValues,[control.key]:true}},source).profile(computed));
+        collect(AttackEffects.model({...state,combatValues:{...state.combatValues,[control.key]:true}},source).profile(computed));
       }
       const base = {group:'p',shortcut:'P',icon:passive.image?.full,iconGroup:'passive',castTime:0,cooldown:null};
       for (const [label,row] of rows) result.push({...base,id:`p:${label}`,label:`P — ${label}`,
@@ -91,10 +100,10 @@
       if (!rows.size) {
         const spell = {id:'passive',effectBurn:[],vars:[],description:passive.description,tooltip:gameTooltip(state.cdragonAbilityData?.p,passive.description)};
         const context = buildAbilityContext(spell,1,'p');
-        const profile = scope.AbilityDps.profile({spell,rank:1,slot:'p',champion:state.selectedChampion,tooltip:expandAbilityLocalization(spell.tooltip),
+        const profile = AbilityDps.profile({spell,rank:1,slot:'p',champion:state.selectedChampion,tooltip:expandAbilityLocalization(spell.tooltip),
           resolve:token => resolveAbilityToken(token,context),payload:context.cdragonSpell,target:state.target,stats:context.stats});
-        const summary = scope.ChampionEffects.model(state).passiveSummary(context.stats);
-        const damage = summary?.type === 'aurora' ? scope.TargetDamage.apply(state.target.enabled ? summary.healthFraction * state.target.maxHp : null,'magic',{target:state.target,stats:context.stats}) : profile.rows[0]?.damage;
+        const summary = ChampionEffects.model(state).passiveSummary(context.stats);
+        const damage = summary?.type === 'aurora' ? TargetDamage.apply(state.target.enabled ? summary.healthFraction * state.target.maxHp : null,'magic',{target:state.target,stats:context.stats}) : profile.rows[0]?.damage;
         result.push({...base,id:'p:passive',label:`P — ${passive.name}`,damage:damage?.value ?? (profile.status === 'No direct damage' ? 0 : null),
           components:damage?.components,damageType:summary?.type === 'aurora' ? 'magic' : undefined,
           note:'One explicit passive trigger. Utility and stat effects use the configured build; this action does not grant stacks automatically. '+(profile.note || profile.status || '')});
@@ -105,15 +114,15 @@
       const item = state.items[id];
       if (!item) continue;
       for (const section of resolveItemDescriptionHtml(item,id).sections || []) {
-        const binding = scope.AttackEffects.itemPassiveBindings?.[id]?.[section.key];
+        const binding = AttackEffects.itemPassiveBindings?.[id]?.[section.key];
         const procState = {...state,combatValues:{...state.combatValues,...(binding ? {[binding]:true} : {})}};
-        const profile = binding ? scope.AttackEffects.model(procState,source).profile(computed) : attack;
+        const profile = binding ? AttackEffects.model(procState,source).profile(computed) : attack;
         const row = profile.rows.find(r => String(r.itemId) === String(id) && r.passiveKey === section.key);
         const options = row ? [{value:row.value,components:[{value:row.value,type:row.type}]}] : section.damageOptions || [];
         if (!section.active && !options.length) continue;
         // Some tooltips split the ACTIVE cooldown header from its named effect.
         if (section.active && section.key === 'active' && !options.length) continue;
-        const cooldown = row?.cooldown ?? section.cooldown ?? (section.active ? scope.ItemEvaluation.activeCooldown(data.advancedItems?.[id]) : null) ?? (row && !Object.hasOwn(row,'interval') ? 0 : null);
+        const cooldown = row?.cooldown ?? section.cooldown ?? (section.active ? ItemEvaluation.activeCooldown(data.advancedItems?.[id]) : null) ?? (row && !Object.hasOwn(row,'interval') ? 0 : null);
         for (const [index,option] of (options.length ? options : [{value:null}]).entries()) {
           result.push({id:`item:${id}:${section.key}`+(index ? `:damage:${index}` : ''),group:row?.spellbladeId ? 'spellblade' : `item:${id}:${section.key}`,
             label:`${section.active ? 'Active' : 'Passive'} · ${item.name} — ${section.label}`+(option.label ? ` — ${option.label}` : ''),shortcut:'?',itemId:id,
@@ -128,7 +137,7 @@
       result.push({id:`bonus:${index}:${row.label}`,group:`bonus:${row.label}`,label:`Champion bonus — ${row.label}`,
         damage:row.value,damageType:row.type,shortcut:'?',castTime:0,cooldown:row.cooldown ?? null,note:'One explicit bonus trigger, not included in AA. '+row.formula});
     }
-    result.push(...scope.RuneEffects.damageActions(state,data.runes || {},getComputedChampionStatsForTooltips(),{adaptiveAp:isApAdaptiveChampion()}));
+    result.push(...RuneEffects.damageActions(state,data.runes || {},getComputedChampionStatsForTooltips(),{adaptiveAp:isApAdaptiveChampion()}));
     return result;
   }
 
@@ -141,12 +150,12 @@ function selectActions(steps,catalog,customBase){
  });
 }
 function evaluate({build,scenario,data,steps,customBase={},presentation={}}){
- const run=scope.CalculationPipeline.create({build,scenario,data});
+ const run=CalculationPipeline.create({build,scenario,data});
  const catalog=actions(run,presentation),cache=new Map();
- const result=scope.ComboTester.simulate(selectActions(steps,catalog,customBase),{target:run.state.target,
+ const result=ComboTester.simulate(selectActions(steps,catalog,customBase),{target:run.state.target,
   resolveAction:(original,current,index)=>{
    if(!cache.has(current.currentHp)){
-    const stepRun=scope.CalculationPipeline.create({build,scenario:{...scenario,target:current},data});
+    const stepRun=CalculationPipeline.create({build,scenario:{...scenario,target:current},data});
     cache.set(current.currentHp,selectActions(steps,actions(stepRun,presentation),customBase));
    }
    return cache.get(current.currentHp)[index];
@@ -155,6 +164,6 @@ function evaluate({build,scenario,data,steps,customBase={},presentation={}}){
  return {...result,status:unresolved?(result.timeline.some(row=>Number.isFinite(row.action.damage))?'partial':'unsupported'):'ready'};
 }
 const ComboEvaluation={actions,selectActions,evaluate};
- scope.ComboEvaluation=ComboEvaluation;
- if(typeof module!=="undefined")module.exports=ComboEvaluation;
-})(typeof window!=="undefined"?window:globalThis);
+ const exportedApi = ComboEvaluation;
+
+export default exportedApi;

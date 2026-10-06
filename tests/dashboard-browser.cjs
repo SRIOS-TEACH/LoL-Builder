@@ -1,3 +1,4 @@
+const {installBrowserHarness}=require('./helpers/native-runtime.cjs');
 // Run with FIXTURES_DIR pointing to downloaded Data Dragon JSON (see docs/TESTING.md).
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -12,7 +13,7 @@ const errors=[], requests=[];
 const server=http.createServer((req,res)=>{
  const file=path.resolve(root,'.'+decodeURIComponent(req.url.split('?')[0]));
  if (!file.startsWith(root+path.sep)) {res.writeHead(403);res.end();return;}
- try {res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(fs.readFileSync(file));}
+ try {res.setHeader('Content-Type',/\.m?js$/.test(file)?'text/javascript':file.endsWith('.css')?'text/css':'text/html');res.end(fs.readFileSync(file));}
  catch {res.writeHead(404);res.end();}
 });
 (async()=>{
@@ -21,11 +22,12 @@ const server=http.createServer((req,res)=>{
  const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
  try {
  const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ await installBrowserHarness(page,root);
  page.on('pageerror',e=>errors.push(e.message));
  let failCore=false;
  await page.route('**/*',async route=>{
    const url=new URL(route.request().url());
-   if(url.origin===base)return route.continue();
+   if(url.origin===base)return route.fallback();
    requests.push(url.href);
    if(url.pathname.endsWith('/splash/Aatrox_3.jpg')) return route.fulfill({status:404,body:'Missing splash'});
    if(!url.pathname.endsWith('.json'))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#334155"/></svg>'});

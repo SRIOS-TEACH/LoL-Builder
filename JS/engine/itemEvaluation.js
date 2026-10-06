@@ -1,6 +1,9 @@
+import AbilityDps from '../shared/abilityDps.js';
+import Calculations from '../shared/calculations.js';
+import TargetDamage from '../shared/targetDamage.js';
 /** Item source prose interpretation and numeric outcomes. Source tags identify damage types; formatted HTML is never numeric input. */
-(function(scope){
- const C=scope.Calculations;
+
+ const C=Calculations;
  const slug=text=>String(text).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   function tagDamageProse(html) {
     return String(html).split(/(<(?:physicalDamage|magicDamage|trueDamage)>[\s\S]*?<\/(?:physicalDamage|magicDamage|trueDamage)>)/gi)
@@ -22,12 +25,12 @@
     return sections;
   }
   function damageOptions(template,resolve,context) {
-    if (!scope.AbilityDps) return [];
+    if (!AbilityDps) return [];
     const text=template.replace(/@([^@]+)@/g,(_,key)=>'{{ '+key+' }}');
-    return scope.AbilityDps.components(text,resolve,{target:context.target}).map((row,index,rows)=>{
+    return AbilityDps.components(text,resolve,{target:context.target}).map((row,index,rows)=>{
       const before=text.slice(0,text.indexOf(row.identity.slice(row.identity.indexOf(':')+1)));
       const label=/Maximum:\s*<[^>]+>\s*$/i.test(before) ? 'Maximum (isolated target)' : rows.length>1 ? (index===0?'Single hit / first component':`Damage component ${index+1}`) : '';
-      const components=row.damage.components.map(p=>scope.TargetDamage.apply(p.value,p.type,context));
+      const components=row.damage.components.map(p=>TargetDamage.apply(p.value,p.type,context));
       return {label,value:components.every(p=>Number.isFinite(p.value))?components.reduce((n,p)=>n+p.value,0):null,components};
     });
   }
@@ -78,7 +81,7 @@
    let outcomes=damageOptions(section.html,token=>resolve(prepared,token),context);
    if(String(input.id)==='3042' && input.source && ['shock','shock-on-hit'].includes(section.key)){
     const raw=prepared.calc(section.key==='shock-on-hit'?'OnHitDamage':prepared.rangeKey);
-    const packet=scope.TargetDamage.apply(raw.value,'physical',context);
+    const packet=TargetDamage.apply(raw.value,'physical',context);
     outcomes=[{label:'',value:packet.value,components:[packet]}];
    }
    return {key:section.key,label:section.label,active:section.active,
@@ -96,6 +99,6 @@
   return values.find(([name])=>!/spellblade|sheen|onhit/i.test(name))?.[1] ?? null;
  }
  const ItemEvaluation={slug,prepare,resolve,evaluate,activeCooldown,splitSections,damageOptions,tagDamageProse};
- scope.ItemEvaluation=ItemEvaluation;
- if(typeof module!=='undefined')module.exports=ItemEvaluation;
-})(typeof window!=='undefined'?window:globalThis);
+ const exportedApi = ItemEvaluation;
+
+export default exportedApi;

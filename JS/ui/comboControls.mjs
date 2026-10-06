@@ -1,36 +1,43 @@
-/* Builder adapter. The scheduler lives in shared/comboTester.js. */
-(function() {
-  const finite = Number.isFinite, escape = value => window.TextValues.escapeHtml(String(value));
+import TextValues from '../core/text.js';
+import BuildInputs from '../domain/buildInputs.js';
+import ComboEvaluation from '../engine/comboEvaluation.js';
+import AbilityPresentation from '../presentation/abilityPresentation.js';
+import ItemDescriptions from '../shared/itemDescriptions.js';
+import {createLifecycle,createView} from './lifecycle.mjs';
+export function createComboControls({elements,events,initial,evaluate}) {
+ const life=createLifecycle(),document=createView(elements),viewport=events.ownerDocument.defaultView;let model=initial;
+
+  const finite = Number.isFinite, escape = value => TextValues.escapeHtml(String(value));
   const number = value => finite(value) ? Number(value.toFixed(3)) : '';
   let champion = '', steps = [], catalog = [], nextId = 1, editingId = null;
   // Descriptions annotate evaluated packets; they never supply damage/timing inputs.
   const comboPresentation={
-    presentToken:window.AbilityPresentation.legacyToken,
+    presentToken:AbilityPresentation.legacyToken,
     presentItemSection:({id,item,source,strings,context,section})=>{
-      const view=window.ItemDescriptions.describe({id,item,source,strings,context}).sections.find(row=>row.key===section.key);
+      const view=ItemDescriptions.describe({id,item,source,strings,context}).sections.find(row=>row.key===section.key);
       return view?.html.replace(/<[^>]*>/g,' ') ?? section.text;
     },
   };
-  function actions() { return window.ComboEvaluation.actions(builderEvaluation(),comboPresentation); }
+  function actions() { return ComboEvaluation.actions(evaluate(),comboPresentation); }
 
   const customBase = {label:'Custom Action',shortcut:'?',damage:null,castTime:null,cooldown:null,damageType:'physical',
     note:'Name this action and enter its damage and timing. Damage is the final amount after target defences. Blank values count as zero.'};
   const leagueMark = '<svg class="combo-league-mark" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" stroke-width="3"/><path fill="currentColor" d="M16 9h11l-3 4v21h10l5-4-3 10H13l3-5z"/></svg>';
   const copyMark = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>';
   function icon(action) {
-    const url = action.iconUrl || (action.icon ? `https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/${action.iconGroup || 'spell'}/${action.icon}`
-      : action.itemId ? `https://ddragon.leagueoflegends.com/cdn/${BUILDER.version}/img/item/${action.itemId}.png` : null);
+    const url = action.iconUrl || (action.icon ? `https://ddragon.leagueoflegends.com/cdn/${model.version}/img/${action.iconGroup || 'spell'}/${action.icon}`
+      : action.itemId ? `https://ddragon.leagueoflegends.com/cdn/${model.version}/img/item/${action.itemId}.png` : null);
     return `<span class="combo-action-icon" aria-hidden="true">${action.group === 'aa'
-      ? `<span class="combo-ad-symbol">${STAT_ICONS.AD}</span>`
+      ? `<span class="combo-ad-symbol">${'🗡️'}</span>`
       : `${url ? `<img src="${escape(url)}" alt="">` : leagueMark}<span class="combo-key">${escape(action.shortcut || '?')}</span>`}</span>`;
   }
-  function selectedActions(entries=catalog) { return window.ComboEvaluation.selectActions(steps,entries,customBase); }
+  function selectedActions(entries=catalog) { return ComboEvaluation.selectActions(steps,entries,customBase); }
   function simulate() {
-    const evaluation=builderEvaluation();
-    return window.ComboEvaluation.evaluate({build:window.BuildInputs.readBuildInputs(BUILDER),
-      scenario:{target:BUILDER.target,gameTimeMinutes:BUILDER.gameTimeMinutes},data:evaluation.data,steps,customBase,presentation:comboPresentation});
+    const evaluation=evaluate();
+    return ComboEvaluation.evaluate({build:BuildInputs.readBuildInputs(evaluation.state),
+      scenario:{target:model.target,gameTimeMinutes:model.gameTimeMinutes},data:evaluation.data,steps,customBase,presentation:comboPresentation});
   }
-  const breakdownAttribute = parts => `data-combo-breakdown="${escape(JSON.stringify(parts))}" aria-describedby="comboDamageTooltip"`;
+  const breakdownAttribute = parts => `data-combo-breakdown="${escape(JSON.stringify(parts))}" aria-describedby="${document.getElementById('comboDamageTooltip').id}"`;
   const warning = text => `<span class="combo-alert" aria-label="${escape(text)}" title="${escape(text)}">!</span>`;
   function render() {
     hideDamageTooltip();
@@ -40,7 +47,7 @@
       const step = steps[index], row = result.timeline[index];
       return `<li data-step="${step.id}"><div class="combo-step-box">
         <button type="button" class="combo-step-edit" data-op="edit" aria-label="Edit step ${index+1}: ${escape(action.label)}" title="${escape(action.label)} · ${row.start.toFixed(2)}s" ${breakdownAttribute(row.breakdown)}>
-          ${icon(action)}<span class="combo-step-damage">${Number(row.damage.toFixed(1))}${row.errors.length ? warning(row.errors.join(' ')) : ''}${BUILDER.target.enabled ? `<small class="combo-step-hp" data-combo-hp="${row.hpAfter}">${row.hpAfter.toFixed(1)} HP left</small>` : ''}</span>
+          ${icon(action)}<span class="combo-step-damage">${Number(row.damage.toFixed(1))}${row.errors.length ? warning(row.errors.join(' ')) : ''}${model.target.enabled ? `<small class="combo-step-hp" data-combo-hp="${row.hpAfter}">${row.hpAfter.toFixed(1)} HP left</small>` : ''}</span>
         </button><button type="button" class="combo-icon-button" data-op="copy" aria-label="Copy step ${index+1}" title="Copy action">${copyMark}</button><button type="button" class="combo-icon-button" data-op="remove" aria-label="Remove step ${index+1}" title="Remove action">×</button>
         </div><div class="combo-step-move"><button type="button" data-op="up" aria-label="Move step ${index+1} up" ${index === 0 ? 'disabled' : ''}>↑</button><button type="button" data-op="down" aria-label="Move step ${index+1} down" ${index === steps.length-1 ? 'disabled' : ''}>↓</button></div></li>`;
     }).join('');
@@ -49,8 +56,8 @@
       ${damageWarning ? '<small class="combo-result-note" data-damage-note>Missing damage counts as 0; unknown damage types are flagged.</small>' : ''}
       <div><span>Minimum time</span><strong><span data-combo-duration>${result.duration.toFixed(2)} s</span>${timeWarning ? warning(result.timeWarnings.join('\n')) : ''}</strong></div>
       ${timeWarning ? '<small class="combo-result-note" data-time-note>Missing timing counts as 0. Check flagged steps for timing or order.</small>' : ''}
-      ${BUILDER.target.enabled ? `<div><span>Target HP remaining</span><strong data-combo-remaining>${result.remainingHp.toFixed(1)}</strong></div><small>Health effects update per action. Damage includes overkill.</small>` : ''}
-      <small>${BUILDER.target.enabled ? 'Against target' : 'Before target defences'} · ${steps.length} actions · estimate</small>`;
+      ${model.target.enabled ? `<div><span>Target HP remaining</span><strong data-combo-remaining>${result.remainingHp.toFixed(1)}</strong></div><small>Health effects update per action. Damage includes overkill.</small>` : ''}
+      <small>${model.target.enabled ? 'Against target' : 'Before target defences'} · ${steps.length} actions · estimate</small>`;
     document.getElementById('comboClear').disabled = !steps.length;
   }
   function renderPicker() {
@@ -62,14 +69,14 @@
   }
   function refresh() {
     if (!document.getElementById('comboSteps')) return;
-    if (champion !== BUILDER.selectedChampion) {
-      champion = BUILDER.selectedChampion; steps = []; editingId = null;
+    if (champion !== model.selectedChampion) {
+      champion = model.selectedChampion; steps = []; editingId = null;
       document.getElementById('comboEditModal').close();
     }
     catalog = actions();
     document.getElementById('comboQuick').innerHTML = ['q','w','e','r','aa'].map(key => {
       const action = catalog.find(a => a.group === key && /Combined total/.test(a.label) && !a.stage) || catalog.find(a => a.group === key && !a.stage);
-      const spell = BUILDER.championData?.spells[['q','w','e','r'].indexOf(key)];
+      const spell = model.championData?.spells[['q','w','e','r'].indexOf(key)];
       return `<button type="button" class="combo-quick-button" data-add="${escape(action?.id || '')}" aria-label="Add ${key === 'aa' ? 'AA no crit' : key.toUpperCase()}" title="${key === 'aa' ? 'AA no crit' : key.toUpperCase()}" ${action ? '' : 'disabled'}>${icon(action || {group:key,shortcut:key.toUpperCase(),icon:spell?.image?.full})}</button>`;
     }).join('')+`<button type="button" class="combo-quick-button" data-open-custom aria-label="Custom Action" title="Choose an action">${icon(customBase)}</button>`;
     renderPicker(); render();
@@ -106,33 +113,33 @@
     tooltip.innerHTML = '<strong>Damage breakdown</strong>'+[['physical','Physical'],['magic','Magical'],['true','True'],['untyped','Unknown type']].filter(([type])=>type !== 'untyped' || parts[type] > 0).map(([type,label])=>`<div class="combo-type-${type}"><span>${label}</span><b>${(parts[type] || 0).toFixed(1)}</b></div>`).join('');
     tooltip.hidden = false;
     const rect = element.getBoundingClientRect(), box = tooltip.getBoundingClientRect();
-    tooltip.style.left = Math.max(8,Math.min(rect.left,innerWidth-box.width-8))+'px';
-    tooltip.style.top = Math.max(8,rect.bottom+box.height+10 < innerHeight ? rect.bottom+8 : rect.top-box.height-8)+'px';
+    tooltip.style.left = Math.max(8,Math.min(rect.left,viewport.innerWidth-box.width-8))+'px';
+    tooltip.style.top = Math.max(8,rect.bottom+box.height+10 < viewport.innerHeight ? rect.bottom+8 : rect.top-box.height-8)+'px';
   }
   function bindDialog(id,closeId,restore) {
     const modal = document.getElementById(id);
-    document.getElementById(closeId).onclick = () => modal.close();
-    modal.addEventListener('close',restore);
+    life.property(document.getElementById(closeId),'onclick',() => modal.close());
+    life.on(modal,'close',restore);
     let backdrop = false;
-    modal.addEventListener('pointerdown',event => { const r = modal.getBoundingClientRect(); backdrop = event.target === modal && (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom); });
-    modal.addEventListener('click',event => { if (backdrop && event.target === modal) modal.close(); backdrop = false; });
+    life.on(modal,'pointerdown',event => { const r = modal.getBoundingClientRect(); backdrop = event.target === modal && (event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom); });
+    life.on(modal,'click',event => { if (backdrop && event.target === modal) modal.close(); backdrop = false; });
   }
-  document.addEventListener('DOMContentLoaded', () => {
+  function mount() {
     bindDialog('comboActionModal','closeComboActions',()=>document.querySelector('[data-open-custom]')?.focus());
     bindDialog('comboEditModal','closeComboEdit',()=>document.querySelector(`[data-step="${editingId}"] [data-op="edit"]`)?.focus());
-    document.getElementById('comboQuick').onclick = event => {
+    life.property(document.getElementById('comboQuick'),'onclick',event => {
       const button = event.target.closest('button'); if (!button) return;
       if (button.hasAttribute('data-open-custom')) { renderPicker(); const modal = document.getElementById('comboActionModal'); modal.showModal(); modal.scrollTop = 0; document.getElementById('closeComboActions').focus({preventScroll:true}); }
       else add(button.dataset.add);
-    };
-    document.getElementById('comboActionList').onclick = event => {
+    });
+    life.property(document.getElementById('comboActionList'),'onclick',event => {
       const button = event.target.closest('button'); if (!button || button.disabled) return;
       const custom = button.hasAttribute('data-custom-action'), id = add(button.dataset.actionId,custom);
       document.getElementById('comboActionModal').close();
       if (custom && id) edit(id);
-    };
-    document.getElementById('comboClear').onclick = () => { steps = []; render(); };
-    document.getElementById('comboSteps').onclick = event => {
+    });
+    life.property(document.getElementById('comboClear'),'onclick',() => { steps = []; render(); });
+    life.property(document.getElementById('comboSteps'),'onclick',event => {
       const button = event.target.closest('[data-op]'); if (!button) return;
       const index = steps.findIndex(step => String(step.id) === button.closest('li').dataset.step);
       if (index < 0) return;
@@ -143,10 +150,10 @@
       if (op === 'up' && index > 0) [steps[index-1],steps[index]] = [steps[index],steps[index-1]];
       if (op === 'down' && index < steps.length-1) [steps[index+1],steps[index]] = [steps[index],steps[index+1]];
       render();
-      const focusRow = document.querySelector(`[data-step="${id}"]`) || document.querySelector('#comboSteps li:last-child');
+      const focusRow = document.querySelector(`[data-step="${id}"]`) || document.getElementById('comboSteps').querySelector('li:last-child');
       (focusRow?.querySelector(`[data-op="${op}"]:not(:disabled)`) || focusRow?.querySelector('[data-op="edit"]') || document.querySelector('[data-open-custom]'))?.focus();
-    };
-    document.getElementById('comboEditFields').addEventListener('input',event => {
+    });
+    life.on(document.getElementById('comboEditFields'),'input',event => {
       const input = event.target.closest('[data-field]'), step = steps.find(s => s.id === editingId);
       if (!input || !step) return;
       const key = input.dataset.field;
@@ -157,18 +164,19 @@
       const index = steps.findIndex(s=>s.id === editingId);
       document.querySelector('.combo-edit-warnings').textContent = simulate().timeline[index].errors.join(' ');
     });
-    document.getElementById('comboResetStep').onclick = () => {
+    life.property(document.getElementById('comboResetStep'),'onclick',() => {
       const step = steps.find(s=>s.id === editingId); if (!step) return;
       step.overrides = {}; render(); edit(editingId);
-    };
-    document.addEventListener('pointerover',event => { const el = event.target.closest('[data-combo-breakdown]'); if (el) showDamageTooltip(el); });
-    document.addEventListener('pointerout',event => { if (event.target.closest('[data-combo-breakdown]') && !event.target.closest('[data-combo-breakdown]').contains(event.relatedTarget)) hideDamageTooltip(); });
-    document.addEventListener('focusin',event => { const el = event.target.closest('[data-combo-breakdown]'); if (el) showDamageTooltip(el); });
-    document.addEventListener('focusout',hideDamageTooltip);
-    document.addEventListener('scroll',hideDamageTooltip,true);
-    window.addEventListener('resize',hideDamageTooltip);
-    document.addEventListener('keydown',event=>{if(event.key==='Escape')hideDamageTooltip();});
+    });
+    life.on(events,'pointerover',event => { const el = event.target.closest('[data-combo-breakdown]'); if (el) showDamageTooltip(el); });
+    life.on(events,'pointerout',event => { if (event.target.closest('[data-combo-breakdown]') && !event.target.closest('[data-combo-breakdown]').contains(event.relatedTarget)) hideDamageTooltip(); });
+    life.on(events,'focusin',event => { const el = event.target.closest('[data-combo-breakdown]'); if (el) showDamageTooltip(el); });
+    life.on(events,'focusout',hideDamageTooltip);
+    life.on(events,'scroll',hideDamageTooltip,true);
+    life.on(viewport,'resize',hideDamageTooltip);
+    life.on(events,'keydown',event=>{if(event.key==='Escape')hideDamageTooltip();});
     refresh();
-  });
-  window.ComboUI = {refresh};
-})();
+  }
+  mount();
+  return {update(next){if(life.disposed)return;model=next;refresh();},dispose(){life.dispose();hideDamageTooltip();for(const name of ['comboActionModal','comboEditModal'])document.getElementById(name).close();}};
+}

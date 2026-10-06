@@ -1,5 +1,6 @@
+
 /** Pure stat helpers. Tooltip fallback reads the stats block, never passive prose. */
-(function (scope) {
+
   function growthFactor(level) {
     const n = Math.max(1, Math.min(20, Number(level) || 1)) - 1;
     return n * (0.7025 + 0.0175 * n);
@@ -46,6 +47,6 @@
     }
     return { ...stats, ...numericStats };
   }
-  scope.BuildStats = { growthFactor, attackSpeed, mergeChampionStats, itemStatsFromDescription };
-  if (typeof module !== 'undefined') module.exports = scope.BuildStats;
-})(typeof window !== 'undefined' ? window : globalThis);
+  const exportedApi = { growthFactor, attackSpeed, mergeChampionStats, itemStatsFromDescription };
+
+export default exportedApi;

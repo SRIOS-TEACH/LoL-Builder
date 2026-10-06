@@ -14,9 +14,10 @@
     "test:combos": "node tests/combo-browser.cjs",
     "test:combo-effects": "node tests/combo-effects-browser.cjs",
     "build": "node scripts/build-site.cjs",
-    "build:preview": "node scripts/build-site.cjs --preview"
+    "build:preview": "node scripts/build-site.cjs --preview",
+    "test:reuse-ui": "node tests/ui-reuse-browser.cjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13"
   }
 }

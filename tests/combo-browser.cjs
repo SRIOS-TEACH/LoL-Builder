@@ -1,3 +1,4 @@
+const {installBrowserHarness}=require('./helpers/native-runtime.cjs');
 // Fixture-backed combo editor and calculation checks. Requires the advanced downloaded game fixtures.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -15,7 +16,7 @@ const server = http.createServer((request, response) => {
   const file = path.resolve(root, '.' + decodeURIComponent(request.url.split('?')[0]));
   if (!file.startsWith(root + path.sep)) { response.writeHead(403); response.end(); return; }
   try {
-    response.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.svg') ? 'image/svg+xml' : 'text/html');
+    response.setHeader('Content-Type', /\.m?js$/.test(file) ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.svg') ? 'image/svg+xml' : 'text/html');
     response.end(fs.readFileSync(file));
   } catch { response.writeHead(404); response.end(); }
 });
@@ -26,10 +27,11 @@ const server = http.createServer((request, response) => {
   const browser = await chromium.launch({ headless: true, ...(process.env.BROWSER_PATH ? { executablePath: process.env.BROWSER_PATH } : {}) });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+ await installBrowserHarness(page,root);
     page.on('pageerror', error => errors.push(error.message));
     await page.route('**/*', async route => {
       const url = new URL(route.request().url());
-      if (url.origin === base) return route.continue();
+      if (url.origin === base) return route.fallback();
       if (!url.pathname.endsWith('.json')) return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#334155"/></svg>' });
       const name = url.pathname.endsWith('/items.cdtb.bin.json') ? 'cd-items.json'
         : url.pathname.endsWith('/versions.json') ? 'versions.json'

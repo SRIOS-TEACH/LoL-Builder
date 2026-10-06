@@ -1,6 +1,8 @@
+import TextValues from '../core/text.js';
+import TargetDamage from './targetDamage.js';
 /** Resolve typed damage prose without changing scaling ratios, healing or utility values. */
-(function(scope){
-  const text=scope.TextValues || (typeof require==='function'?require('../core/text.js'):null);
+
+  const text=TextValues;
   const escape=text.escapeHtml;
   const plain=value=>String(value).replace(/<[^>]*>/g,'');
   const number=value=>Number.isFinite(value)?Number(value.toFixed(2)).toLocaleString('en-US'):'Value unavailable';
@@ -9,7 +11,7 @@
   function damage(value,type,context,equation=''){
     const multiplier=abilityMultiplier(context);
     if(multiplier!==1){equation=[equation,`${number(value)} × ${number(multiplier)} Focused Will`].filter(Boolean).join('; ');value=Number.isFinite(value)?value*multiplier:value;}
-    const row=scope.TargetDamage.apply(value,type,context);
+    const row=TargetDamage.apply(value,type,context);
     return `<span class="target-damage-number" tabindex="0" data-raw-damage="${value}" data-damage-type="${type}" title="${escape([equation,row.text].filter(Boolean).join('; '))}">${number(row.value)}</span>`;
   }
   function render(template,resolve,context={},syntax='ability'){
@@ -35,7 +37,7 @@
           // Ratios remain ratios. A health-based damage coefficient additionally
           // displays its resulting damage against the configured target.
           const health=after.match(/^\s*(?:%\s*)?(?:of\s+)?(?:(?:the\s+)?(?:target(?:'s)?|enemy(?:'s)?|their|its)\s+)?(max(?:imum)?|current|missing)\s+(?:health|hp)\b/i);
-          const t=scope.TargetDamage.targetStats(context.target);
+          const t=TargetDamage.targetStats(context.target);
           const healthValue=health?({max:t.hp,maximum:t.hp,current:t.currentHp,missing:t.missingHp})[health[1].toLowerCase()]:null;
           const multiplier=abilityMultiplier(context);
           const original=multiplier===1||!health?resolveOrdinary(full,key,suffix):`<span title="${escape(`${number(row.numeric)}% × ${number(multiplier)} Focused Will`)}">${number(row.numeric*multiplier)}${row.isPercent||suffix?'%':''}</span>`;
@@ -48,6 +50,6 @@
     html=html.replace(pattern(syntax),resolveOrdinary);
     return html;
   }
-  scope.DamageText={render,damage};
-  if(typeof module!=='undefined')module.exports=scope.DamageText;
-})(typeof window!=='undefined'?window:globalThis);
+  const exportedApi = {render,damage};
+
+export default exportedApi;

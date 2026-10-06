@@ -1,7 +1,8 @@
+
 /** Data-driven Community Dragon calculation interpreter, shared by items and spells.
  * A missing combat input produces a symbolic expression, never an invented zero.
  */
-(function (scope) {
+
   const number = value => Number.isFinite(Number(value)) ? Number(value) : null;
   const format = value => Number.isFinite(value) ? String(Number(value.toFixed(3))) : 'Unavailable';
   const hash = name => {
@@ -232,6 +233,6 @@
       default:return unknown('Unsupported formula',type||'unknown part',true);
     }
   }
-  scope.Calculations={evaluate,partValue,dataValue,stat,lookup,hash,format,healthStats,conditionKey,condition};
-  if(typeof module!=='undefined')module.exports=scope.Calculations;
-})(typeof window!=='undefined'?window:globalThis);
+  const exportedApi = {evaluate,partValue,dataValue,stat,lookup,hash,format,healthStats,conditionKey,condition};
+
+export default exportedApi;

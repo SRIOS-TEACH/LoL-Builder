@@ -1,5 +1,6 @@
+
 /** Scenario values are independent of calculation engines and page state. */
-(function(scope){
+
 const finite=Number.isFinite,clamp=(value,min,max)=>Math.min(max,Math.max(min,value));
 const numeric=(value,fallback)=>value!==null&&value!==''&&finite(Number(value))?Number(value):fallback;
 /** Preserve the current target defaults and units: HP, resistances and percent reduction. */
@@ -13,6 +14,6 @@ function normalizeGameTime(value) {return finite(Number(value))?Math.max(0,Numbe
 function createScenarioInputs(initial={}) {
  return {target:normalizeTarget(initial.target),gameTimeMinutes:normalizeGameTime(initial.gameTimeMinutes)};
 }
-const api={normalizeTarget,normalizeGameTime,createScenarioInputs};scope.ScenarioInputs=api;
-if(typeof module!=='undefined'&&module.exports)module.exports=api;
-})(typeof window!=='undefined'?window:globalThis);
+const api={normalizeTarget,normalizeGameTime,createScenarioInputs};const exportedApi = api;
+
+export default exportedApi;
