@@ -1,6 +1,487 @@
 {
   "champions": 173,
-  "affectedChampions": 0,
-  "affectedAbilities": 0,
-  "unavailable": []
+  "affectedChampions": 13,
+  "affectedAbilities": 13,
+  "unavailable": [
+    {
+      "champion": "Aphelios",
+      "slot": "P",
+      "ability": "The Hitman and the Seer",
+      "token": "spell.ApheliosCalibrumQ:Hotkey",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Aphelios",
+      "slot": "P",
+      "ability": "The Hitman and the Seer",
+      "token": "Spell_ApheliosP_GunShortDesc_{{ f1",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Aphelios",
+      "slot": "P",
+      "ability": "The Hitman and the Seer",
+      "token": "Spell_ApheliosP_GunShortDesc_{{ f2",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Aphelios",
+      "slot": "P",
+      "ability": "The Hitman and the Seer",
+      "token": "Spell_ApheliosP_GunShortDesc_{{ f3",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Aphelios",
+      "slot": "P",
+      "ability": "The Hitman and the Seer",
+      "token": "Spell_ApheliosP_GunShortDesc_{{ f4",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Aphelios",
+      "slot": "P",
+      "ability": "The Hitman and the Seer",
+      "token": "Spell_ApheliosP_GunShortDesc_{{ f5",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "AurelionSol",
+      "slot": "P",
+      "ability": "Cosmic Creator",
+      "token": "f2.1",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "AurelionSol",
+      "slot": "P",
+      "ability": "Cosmic Creator",
+      "token": "f3.1",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "AurelionSol",
+      "slot": "P",
+      "ability": "Cosmic Creator",
+      "token": "f4.1",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "AurelionSol",
+      "slot": "P",
+      "ability": "Cosmic Creator",
+      "token": "f1",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Bard",
+      "slot": "P",
+      "ability": "Traveler's Call",
+      "token": "f1",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Bard",
+      "slot": "P",
+      "ability": "Traveler's Call",
+      "token": "f5",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Bard",
+      "slot": "P",
+      "ability": "Traveler's Call",
+      "token": "f4",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Kaisa",
+      "slot": "P",
+      "ability": "Second Skin",
+      "token": "f1.1",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Kaisa",
+      "slot": "P",
+      "ability": "Second Skin",
+      "token": "spell.KaisaQ:Effect6Amount",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Kaisa",
+      "slot": "P",
+      "ability": "Second Skin",
+      "token": "f2.1",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Kaisa",
+      "slot": "P",
+      "ability": "Second Skin",
+      "token": "spell.KaisaW:Effect2Amount",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Kaisa",
+      "slot": "P",
+      "ability": "Second Skin",
+      "token": "f3.1",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Kaisa",
+      "slot": "P",
+      "ability": "Second Skin",
+      "token": "spell.KaisaE:Effect6Amount",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Kalista",
+      "slot": "P",
+      "ability": "Martial Poise",
+      "token": "Spell_KalistaP_Tooltip_{{ GameModeInteger",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Kayn",
+      "slot": "P",
+      "ability": "The Darkin Scythe",
+      "token": "game_spell_Kayn_P_main_{{ f1",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Ornn",
+      "slot": "P",
+      "ability": "Living Forge",
+      "token": "Spell_OrnnP_Tooltip_{{ GameModeInteger",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Quinn",
+      "slot": "P",
+      "ability": "Harrier",
+      "token": "f1",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Smolder",
+      "slot": "P",
+      "ability": "Dragon Practice",
+      "token": "f1.0",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Swain",
+      "slot": "P",
+      "ability": "Ravenous Flock",
+      "token": "f1",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "TwistedFate",
+      "slot": "P",
+      "ability": "Loaded Dice",
+      "token": "Spell_SecondSight_Tooltip_{{ GameModeInteger",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Xayah",
+      "slot": "P",
+      "ability": "Clean Cuts",
+      "token": "f14",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Xayah",
+      "slot": "P",
+      "ability": "Clean Cuts",
+      "token": "f16*100",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Xayah",
+      "slot": "P",
+      "ability": "Clean Cuts",
+      "token": "f12",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    },
+    {
+      "champion": "Zilean",
+      "slot": "P",
+      "ability": "Time In A Bottle",
+      "token": "Spell_HeightenedLearning_Tooltip_{{ GameModeInteger",
+      "reason": "No matching live value or formula",
+      "levels": [
+        1,
+        6,
+        11,
+        18
+      ],
+      "ranks": [
+        1
+      ]
+    }
+  ]
 }

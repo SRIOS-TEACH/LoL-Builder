@@ -8,7 +8,7 @@ This is a static HTML/CSS/JavaScript app with no production dependencies. Root p
 - `JS/shared/buildStats.js`: pure growth, attack-speed and item stat-block parsing helpers.
 - `JS/shared/abilityRules.js`: generic Q/W/E/R rank normalization and level budget. Champion-specific rank systems are not yet supported.
 - `JS/champLookup.js`, `JS/itemLookup.js`: page-specific state, events and rendering.
-- `JS/builder.js`: build state, champion selection, rune selection, derived stats, ability resolution and rendering. The ability resolver remains the largest area needing further decomposition, after captured advanced-data tests are available.
+- `JS/builder.js`: page state, selection, controls and rendering. Thin calculation adapters delegate to the explicit engine pipeline; compatibility globals remain until Phase 5.
 
 Data Dragon is authoritative for the selected patch's base champion stats. Community Dragon is optional and cannot replace the entire stat object. Cached API payloads must be treated as read-only; selection makes its own champion/stat objects.
 
@@ -18,4 +18,8 @@ The app is a stat sandbox, not a combat simulator. Described passives are not ne
 
 ## Extracted reusable capabilities
 
-JS/data owns source loading, provenance and champion/item/rune normalization. JS/domain owns catalog queries, recommendations and build/rune/scenario inputs. JS/application/catalogSession.js provides independent browsing sessions. JS/core contains the shared record/text operations used by these consumers. Inputs and queries are separate from read-only source catalogs. The Builder and dormant lookup controllers call these capabilities through compatibility adapters; calculation and UI extraction are still planned. See [contracts, composition and current limits](REFACTOR-PHASE3.md).
+JS/data owns source loading, provenance and champion/item/rune normalization. JS/domain owns catalog queries, recommendations and build/rune/scenario inputs. JS/application/catalogSession.js provides independent browsing sessions. JS/core contains the shared record/text operations used by these consumers. Inputs and queries are separate from read-only source catalogs. The Builder and dormant lookup controllers call these capabilities through compatibility adapters; Calculation capabilities now live in JS/engine and description formatting in JS/presentation; component scoping remains Phase 5 work. See [contracts, composition and current limits](REFACTOR-PHASE3.md).
+
+## Explicit calculation sessions
+
+BuildInputs, ScenarioInputs and prepared source data compose through CalculationPipeline. Stat/context evaluation, structured ability/item resolution and combo action/health-step evaluation are reusable without Builder or browser APIs. Formula-only, partial and unsupported results remain explicit. See [Phase 4 contracts and verification](REFACTOR-PHASE4.md).

@@ -97,3 +97,7 @@ The Builder delegates these responsibilities to reusable capabilities. See [Phas
   - Rune/perk icons: `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/`
 
 ---
+
+## Reusable calculation pipeline
+
+Stat, ability/item and combo calculations now accept independent build/scenario inputs and prepared data. They can run without the Builder page for future explorers and build comparison. See [Phase 4 contracts](docs/REFACTOR-PHASE4.md) and [completion checklist](docs/REFACTOR-ACTIONS.md).

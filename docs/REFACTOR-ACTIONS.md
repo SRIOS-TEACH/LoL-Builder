@@ -1,6 +1,6 @@
 # Refactoring action list
 
-Updated: 2 October 2026. Phases 0–3 are complete with the documented baseline exceptions. Phase 4 is next; calculation algorithms remain unchanged.
+Updated: 6 October 2026. Phases 0–4 are complete with the documented baseline exceptions. Phase 5 is next; calculation algorithms remain unchanged.
 
 This is the working checklist for [the refactoring plan](REFACTOR-PLAN.md). Check an action only after its work and verification are complete. Record the completion date and supporting test results or commit beside completed future actions. A phase is complete only when its gate passes. Keep the protected baseline fixed; make new changes on `codex/modular-refactor`.
 
@@ -61,16 +61,18 @@ P3.1–P3.8 implemented and checked 2 October 2026. The headless fixture harness
 
 ## Phase 4 — Explicit calculation pipeline
 
-- [ ] P4.1 Repair the stale ability-audit readiness check in a separate change and classify the unresolved passive tokens.
-- [ ] P4.2 Cover aliases, forms, child records, localization and unavailable data before extracting resolution logic.
-- [ ] P4.3 Extract stat orchestration and calculation context with explicit inputs and outputs.
-- [ ] P4.4 Separate source-token/formula resolution from presentation.
-- [ ] P4.5 Extract combo action construction from UI state.
-- [ ] P4.6 Replace temporary global target changes with independent per-run scenario and health-step state.
-- [ ] P4.7 Return structured, full-precision results with partial and unsupported statuses preserved.
-- [ ] P4.8 Compare headless calculations against baseline records with documented tolerances.
-- [ ] P4.9 Verify A/B/A evaluation, input immutability and equivalent Builder/explorer contexts.
-- [ ] P4 gate: calculation capabilities run without a page and produce equivalent results without shared mutable build state.
+- [x] P4.1 Repair the stale ability-audit readiness check in a separate change and classify the unresolved passive tokens.
+- [x] P4.2 Cover aliases, forms, child records, localization and unavailable data before extracting resolution logic.
+- [x] P4.3 Extract stat orchestration and calculation context with explicit inputs and outputs.
+- [x] P4.4 Separate source-token/formula resolution from presentation.
+- [x] P4.5 Extract combo action construction from UI state.
+- [x] P4.6 Replace temporary global target changes with independent per-run scenario and health-step state.
+- [x] P4.7 Return structured, full-precision results with partial and unsupported statuses preserved.
+P4.1–P4.7 implemented and checked 6 October 2026. The repaired 173-champion audit retains the 30 classified baseline findings; ten focused resolver/isolation tests pass. Stats, contexts, token evaluation, item outcomes and combo health steps now run without a page. P4.8–P4.9 and the phase gate passed: 223 unit tests, 28 browser runs and 20 exact complete-case comparisons; ten headless cases match numeric/status baselines and demonstrate A/B/A/input isolation. A clean saved-source archive passed unit tests, the build and headless checks. Final cleanup passed 22 focused tests and five further exact advanced case comparisons. See [Phase 4 contracts](REFACTOR-PHASE4.md) and [verification](phase4-verification.json). Six final presentation/browser follow-ups and another 20 exact case comparisons passed after preserving original combo explanation text. Publishing uses the existing separate preview workflow.
+
+- [x] P4.8 Compare headless calculations against baseline records with documented tolerances.
+- [x] P4.9 Verify A/B/A evaluation, input immutability and equivalent Builder/explorer contexts.
+- [x] P4 gate: calculation capabilities run without a page and produce equivalent results without shared mutable build state.
 
 ## Phase 5 — Reusable UI and page composition
 

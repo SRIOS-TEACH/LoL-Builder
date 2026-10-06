@@ -88,3 +88,7 @@ Picker readiness requires the Data Dragon champion and item indexes; rune choice
 ## Reusable catalogs and input rules
 
 Run node scripts/verify-reuse.cjs with the captured fixtures above to demonstrate champion/item browsing and independent build/scenario inputs without a page. FIXTURES_DIR and REUSE_OUTPUT select input and report locations. Ten fixture-free cases in tests/catalog-reuse.test.cjs exercise catalog retention, isolated query/request state, input ownership, role/rune rules, metadata and retries. See [Phase 3 contracts](REFACTOR-PHASE3.md).
+
+## Independent calculation pipeline
+
+Run node scripts/verify-calculations.cjs with FIXTURES_DIR to compare ten protected advanced/fallback cases headlessly, including stats, attacks, abilities, combo warning states and sequential health. CALCULATION_OUTPUT selects the report. Ten fixture-free cases in tests/calculation-pipeline.test.cjs run under npm test and cover precision, aliases/forms/child selection, localization, unsupported values and A/B/A/input isolation. The ability audit now starts with the current ready seven-slot inventory and retains the 30 classified baseline calls; do not reuse the historical zero-unavailable claim. See [Phase 4 contracts](REFACTOR-PHASE4.md).

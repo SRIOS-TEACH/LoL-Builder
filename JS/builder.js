@@ -1,3 +1,9 @@
+function builderEvaluation(scenario={target:BUILDER.target,gameTimeMinutes:BUILDER.gameTimeMinutes}) {
+ return window.CalculationPipeline.create({build:window.BuildInputs.readBuildInputs(BUILDER),scenario,
+  data:{champion:BUILDER.championData,championRaw:BUILDER.cdragonRaw,abilities:BUILDER.cdragonAbilityData,
+   items:BUILDER.items,advancedItems:getItemLookupShared().getState().cdragonById,runes:RUNE_DATA.runeLookup,
+   strings:BUILDER.strings,stringsReady:BUILDER.stringsReady,stringsLoading:BUILDER.stringsLoading}});
+}
 const STAT_ICONS = {
   "On-hit": "💥",
   "HP": "❤️",
@@ -65,12 +71,7 @@ function initializeRuneSelections() {
  BUILDER.runeSelections=window.RuneInputRules.createRules(RUNE_DATA).initialize(BUILDER.runeSelections);
 }
 
-function isApAdaptiveChampion() {
-  const tags = new Set(BUILDER.championData?.tags || []);
-  if (tags.has("Mage")) return true;
-  if (tags.has("Marksman") || tags.has("Fighter") || tags.has("Assassin")) return false;
-  return true;
-}
+function isApAdaptiveChampion(...args) { return builderEvaluation().stats.isApAdaptiveChampion(...args); }
 
 async function hydrateRunesFromDdragon(version) {
   const runes = await builderRepository.loadRunes(version).then(result=>{BUILDER.runeSource=result.source;return result.records;}).catch(() => null);
@@ -262,9 +263,7 @@ function initRuneControls() {
   document.addEventListener('scroll', hideRuneTooltip, true);
 }
 
-function getStackRuneEffects() {
-  return window.RuneEffects.calculate(BUILDER, RUNE_DATA.runeLookup, {adaptiveAp: isApAdaptiveChampion(), ranged: (BUILDER.championData?.stats.attackrange || 0) > 300});
-}
+function getStackRuneEffects(...args) { return builderEvaluation().stats.getStackRuneEffects(...args); }
 
 function renderRuneStacks() {
   const fields = window.RuneEffects.fields(BUILDER, RUNE_DATA.runeLookup), notes = getStackRuneEffects().notes;
@@ -485,10 +484,7 @@ function ensureGameText() {
     });
   return gameTextRequest;
 }
-function gameTooltip(payload,fallback='') {
-  const loc=payload?.spellData?.mClientData?.mTooltipData?.mLocKeys;
-  return BUILDER.strings?.[loc?.keyTooltip?.toLowerCase()] || BUILDER.strings?.[loc?.keyTooltipExtended?.toLowerCase()] || fallback;
-}
+function gameTooltip(...args) { return builderEvaluation().resolution.gameTooltip(...args); }
 
 async function setChampion(name) {
   const requestId = ++BUILDER.championRequestId;
@@ -722,23 +718,9 @@ function enforceAbilityRules() {
   BUILDER.abilityRanks = window.AbilityRules.enforceAbilityRules(BUILDER.level, BUILDER.abilityRanks);
 }
 
-function parseByRank(valueBurn, rank) {
-  if (!rank) return "-";
-  if (valueBurn === undefined || valueBurn === null || valueBurn === "") return "-";
-  const parts = String(valueBurn).split("/");
-  return parts[Math.max(0, Math.min(parts.length - 1, rank - 1))] || parts[0] || "-";
-}
+function parseByRank(...args) { return builderEvaluation().resolution.parseByRank(...args); }
 
-function extractPassiveLabelsFromText(text) {
-  const labels = [];
-  const re = /(?:UNIQUE\s+)?PASSIVE\s*(?:-|:)?\s*([A-Za-z0-9' ]+)?/gi;
-  let match;
-  while ((match = re.exec(text))) {
-    const raw = String(match[1] || "").trim();
-    labels.push(raw || "Passive");
-  }
-  return Array.from(new Set(labels));
-}
+function extractPassiveLabelsFromText(...args) { return builderEvaluation().stats.extractPassiveLabelsFromText(...args); }
 
 /**
  * Resolves an item description using shared Item Lookup transformers so formulas/cooldowns are concrete.
@@ -780,158 +762,14 @@ function resolveItemDescriptionHtml(item, itemId = "", options = {}) {
  * @param {string} descriptionHtml Tooltip html.
  * @returns {{label: string, impact: string}[]} Passive rows.
  */
-function extractPassiveDescriptionsFromHtml(descriptionHtml) {
-  const html = String(descriptionHtml || "");
-  if (!html) return [];
+function extractPassiveDescriptionsFromHtml(...args) { return builderEvaluation().stats.extractPassiveDescriptionsFromHtml(...args); }
 
-  const normalized = html.replace(/<br\s*\/?>/gi, "\n");
-  const rows = [];
-  const sectionRe = /<(passive|onhit|unique)>\s*([^<]*)\s*<\/\1>\s*([\s\S]*?)(?=<(?:passive|onhit|unique|active)>|$)/gi;
-  let match;
-  while ((match = sectionRe.exec(normalized))) {
-    const type = String(match[1] || "").toUpperCase();
-    const label = stripHtml(match[2] || "").trim() || type;
-    const desc = stripHtml(match[3] || "").trim();
-    if (!desc) continue;
-    rows.push({ label, impact: desc });
-  }
+function buildPassiveLedger(...args) { return builderEvaluation().stats.buildPassiveLedger(...args); }
 
-  if (rows.length) return rows;
+function computeDerivedBuildStats(...args) { return builderEvaluation().stats.computeDerivedBuildStats(...args); }
 
-  const fallback = stripHtml(html);
-  const labelFallbacks = extractPassiveLabelsFromText(fallback);
-  return labelFallbacks.map((label) => ({ label, impact: fallback }));
-}
+function itemPassiveEnabled(...args) { return builderEvaluation().stats.itemPassiveEnabled(...args); }
 
-function buildPassiveLedger(itemTotals, runeTotals) {
-  const selectedItems = [...new Set(BUILDER.itemSlots)]
-    .filter((id) => id && BUILDER.items[id])
-    .map((id) => ({ id: String(id), item: BUILDER.items[id] }));
-  const passiveEffects = [];
-  const additiveMods = { ad: 0, ap: 0, hp: 0 };
-  let apMultiplier = 1;
-  let hasRabadon = false;
-
-  selectedItems.forEach(({ id, item }) => {
-    const resolvedDescriptionHtml = item.description || "";
-    extractPassiveDescriptionsFromHtml(resolvedDescriptionHtml).forEach(({ label, impact }) => {
-      passiveEffects.push({ source: "Item", owner: item.name, label, impact });
-    });
-
-    const source = window.ItemLookupShared.getState().cdragonById[id];
-    if (!source) return;
-    if(id==='3083' && itemPassiveEnabled(id,'warmog-s-vitality')){
-      const amp=window.Calculations.dataValue(source.mDataValues,'HPAmp').value;
-      if(Number.isFinite(amp))additiveMods.hp+=itemTotals.hp*amp;
-    }
-    const b = BUILDER.championData?.stats;
-    const bonusMana = itemTotals.mp + runeTotals.mp;
-    const baseMana = b ? b.mp + b.mpperlevel * window.BuildStats.growthFactor(BUILDER.level) : 0;
-    const context = {level:BUILDER.level, stats:{mp:baseMana+bonusMana,bonusMp:bonusMana},
-      dataValues:source.mDataValues || [], calculations:source.mItemCalculations || {}};
-    // Effect bindings identify the passive; coefficients and formulas come from live data.
-    if (id === "3089" && itemPassiveEnabled(id,'magical-opus')) {
-      const amp = window.Calculations.dataValue(context.dataValues, "APAmp").value;
-      if (amp !== null) { hasRabadon=true; apMultiplier *= 1+amp; }
-    }
-    const binding = {"3042":["BonusADFromMana","ad"], "3040":["BonusAPCalc","ap"]}[id];
-    if (binding && b && itemPassiveEnabled(id,'awe')) {
-      const [key,stat] = binding;
-      const row = window.Calculations.evaluate(window.Calculations.lookup(context.calculations,key),context);
-      if (row.value !== null) {
-        additiveMods[stat] += row.value;
-        passiveEffects.push({source:"Item",owner:item.name,label:"Awe",impact:`+${row.value.toFixed(1)} ${stat.toUpperCase()} (${row.text})`});
-      }
-    }
-  });
-
-  if (BUILDER.championData?.passive) {
-    const champPassiveName = BUILDER.championData.passive.name || "Passive";
-    passiveEffects.push({ source: "Champion", owner: BUILDER.selectedChampion, label: champPassiveName, impact: "Champion passive identified" });
-  }
-
-  const apBeforeMultiplier = itemTotals.ap + runeTotals.ap + additiveMods.ap;
-  const apAmp = Math.max(0, apBeforeMultiplier * (apMultiplier - 1));
-  const statMods = {
-    ad: additiveMods.ad,
-    ap: additiveMods.ap + apAmp,
-    hp: additiveMods.hp,
-  };
-
-  if (hasRabadon && apAmp > 0) {
-    passiveEffects.push({ source: "Item", owner: "Rabadon's Deathcap", label: "Magical Opus", impact: `+${apAmp.toFixed(1)} AP (multipliers applied last)` });
-  }
-
-  return { passiveEffects, statMods, apMultiplier };
-}
-
-function computeDerivedBuildStats() {
-  if (!BUILDER.championData) return null;
-  const base = BUILDER.championData.stats;
-  const item = getItemStats();
-  const rune = getRuneStats();
-  const L = BUILDER.level;
-
-  const ledger = buildPassiveLedger(item, rune);
-  const passiveAd = ledger.statMods.ad;
-  const passiveAp = ledger.statMods.ap;
-
-  const hp = (base.hp + base.hpperlevel * window.BuildStats.growthFactor(L) + item.hp + rune.hp + (ledger.statMods.hp||0));
-  const baseHp5 = base.hpregen + base.hpregenperlevel * window.BuildStats.growthFactor(L);
-  const hp5 = (baseHp5 * (1 + item.hp5PctBase / 100) + item.hp5 + rune.hp5);
-  const mp = (base.mp + base.mpperlevel * window.BuildStats.growthFactor(L) + item.mp + rune.mp);
-  const baseMp5 = base.mpregen + base.mpregenperlevel * window.BuildStats.growthFactor(L);
-  const mp5 = (baseMp5 * (1 + item.mp5PctBase / 100) + item.mp5 + rune.mp5);
-  const ad = (base.attackdamage + base.attackdamageperlevel * window.BuildStats.growthFactor(L) + item.ad + rune.ad + passiveAd);
-  const ap = item.ap + rune.ap + passiveAp;
-  const armor = (base.armor + base.armorperlevel * window.BuildStats.growthFactor(L) + item.armor + rune.armor);
-  const mr = (base.spellblock + base.spellblockperlevel * window.BuildStats.growthFactor(L) + item.mr + rune.mr);
-  const asTotal = window.BuildStats.attackSpeed(base.attackspeed, base.attackspeedperlevel, base.attackspeedratio, L, item.asPct + rune.asPct);
-  const abilityHaste = item.haste + rune.haste;
-  const abilityModifiers = window.AttackEffects.model(BUILDER, window.ItemLookupShared.getState().cdragonById).abilityModifiers({base});
-  const basicHaste = abilityModifiers.basicHaste + (rune.basicHaste || 0);
-  const ultimateHaste = abilityModifiers.ultimateHaste + (rune.ultimateHaste || 0);
-  const critChance = Math.min(100, (base.crit + base.critperlevel * window.BuildStats.growthFactor(L)) * 100 + item.critChance + rune.critChance);
-  const critDamage = (base.critdamage ? base.critdamage * 100 : 200) + item.critDamage + rune.critDamage;
-  const attackRange = (base.attackrange || 0) + item.attackRange + rune.attackRange + getChampionPassiveRangeBonus();
-  const moveSpeed = (base.movespeed + item.msFlat + rune.msFlat) * (1 + (item.msPct + rune.msPct) / 100);
-
-  const computed = {
-    base,
-    item,
-    rune,
-    level: L,
-    hp,
-    hp5,
-    mp,
-    mp5,
-    ad,
-    ap,
-    armor,
-    mr,
-    asTotal,
-    abilityHaste,
-    basicHaste,
-    ultimateHaste,
-    critChance,
-    critDamage,
-    attackRange,
-    moveSpeed,
-    passiveLedger: ledger,
-  };
-  const applied = window.AttackEffects.model(BUILDER, window.ItemLookupShared.getState().cdragonById).apply(window.ChampionEffects.model(BUILDER).apply(computed));
-  // Rune percentage bonuses include health/resistances earned from champion stacks.
-  applied.hp *= 1 + (rune.hpPct || 0) / 100;
-  applied.armor *= 1 + (rune.armorPct || 0) / 100;
-  applied.mr *= 1 + (rune.mrPct || 0) / 100;
-  // Deathcap also amplifies AP gained from champion stacks.
-  if (['Veigar','Thresh'].includes(BUILDER.selectedChampion))applied.ap += (applied.ap - computed.ap) * (ledger.apMultiplier - 1);
-  if(applied.championBonuses.ap)applied.championBonuses.ap=applied.ap-computed.ap;
-  for(const [stat,value] of Object.entries(applied.championBonuses))if(value)ledger.passiveEffects.push({source:"Champion",owner:BUILDER.selectedChampion,label:"Ability / stack bonus",impact:`${value>=0?"+":""}${value.toFixed(2)} ${stat}`});
-  return applied;
-}
-
-function itemPassiveEnabled(id,key) { return BUILDER.disabledItemPassives?.[`${id}:${key}`]!==true; }
 function renderPassivePanel() {
   const root=document.getElementById('passiveModalList');
   if(!root)return;
@@ -950,8 +788,7 @@ function renderPassivePanel() {
       const enabled=itemPassiveEnabled(id,section.key) && (!activation || BUILDER.combatValues[activation]===true);
       let html=section.html;
       if(id==='3089' && section.key==='magical-opus' && computed){
-        const amp=window.Calculations.dataValue(window.ItemLookupShared.getState().cdragonById[id]?.mDataValues,'APAmp').value;
-        const amount=enabled?computed.ap-computed.ap/(1+amp):0;
+        const amount=enabled?builderEvaluation().stats.itemContribution(id,section.key,computed):0;
         html+=` <scaleAP>(+${window.ItemDescriptions.number(amount)} AP)</scaleAP>`;
       }
       rows.push(`<section class="ability-card passive-effect-card${enabled?'':' passive-disabled'}" data-passive-section="${key}"><div class="passive-effect-heading"><strong>${window.ItemDescriptions.escape(item.name)} — ${window.ItemDescriptions.escape(section.label)}</strong><button type="button" class="btn btn-sm" data-item-passive="${key}" aria-pressed="${enabled}" aria-label="${window.ItemDescriptions.escape(item.name+' — '+section.label)}">${enabled?'On':'Off'}</button></div><div class="passive-description">${html}</div>${modeled?'':'<p class="text-muted passive-coverage">Reference effect: not included in damage or stat totals.</p>'}</section>`);
@@ -978,22 +815,14 @@ function closePassiveModal() {
   document.getElementById("passiveModal").classList.add("hidden");
 }
 
-function getChampionPassiveRangeBonus() {
-  if (!BUILDER.championData) return 0;
-  if (BUILDER.selectedChampion === "Tristana") {
-    return ((Number(BUILDER.level) || 1) - 1) * (136 / 17);
-  }
-  return 0;
-}
+function getChampionPassiveRangeBonus(...args) { return builderEvaluation().stats.getChampionPassiveRangeBonus(...args); }
 
 /**
  * Computes auto-attack profile from derived stats and supported on-hit item passives.
  * @param {ReturnType<typeof computeDerivedBuildStats>} computed Derived build stats.
  * @returns {{autoAttackDamage:number,attackDps:number,attackRange:number,onHitRows:string[]}}
  */
-function computeAutoAttackProfile(computed) {
-  return window.AttackEffects.model(BUILDER, window.ItemLookupShared.getState().cdragonById).profile(computed);
-}
+function computeAutoAttackProfile(...args) { return builderEvaluation().stats.computeAutoAttackProfile(...args); }
 
 function summarizePassiveNumericData(cdragonPassive) {
   const rows = (cdragonPassive?.dataValues || [])
@@ -1011,186 +840,28 @@ function summarizePassiveNumericData(cdragonPassive) {
   return rows;
 }
 
-function buildDetailedPassiveText() {
-  const passive=BUILDER.championData?.passive;
-  if(!passive)return '';
-  const payload=BUILDER.cdragonAbilityData?.p;
-  const raw=gameTooltip(payload,passive.description||'');
-  const dummy={id:'passive',effectBurn:[],vars:[],costType:'',description:passive.description,tooltip:raw};
-  const ctx=buildAbilityContext(dummy,1,'p');
-  let text=buildDetailedAbilityText(dummy,1,'p',ctx);
-  const summary=window.ChampionEffects.model(BUILDER).passiveSummary?.(ctx.stats);
-  const f=window.ItemDescriptions.number;
-  if(summary?.type==='ezreal')text+=`<p class="passive-current-value">${summary.stacks}/${summary.maxStacks} stacks: <attackSpeed>+${f(summary.bonusAttackSpeed*100)}% Attack Speed</attackSpeed>.</p>`;
-  if(summary?.type==='aurora'){
-    // Current script has no movement-speed buff; old unused BIN calculations remain.
-    const passiveModel=window.ChampionEffects.model(BUILDER);
-    const baseFraction=passiveModel.passiveSummary({...ctx.stats,ap:0}).healthFraction;
-    const apCoefficient=passiveModel.passiveSummary({...ctx.stats,ap:100}).healthFraction-baseFraction;
-    text=`Damaging an enemy 3 times with abilities or attacks deals <magicDamage>${f(summary.healthFraction*100)}% ((${f(baseFraction*100)}) + (${f(apCoefficient*100)}% Ability Power))% of their maximum HP as magic damage</magicDamage>. Against champions, this frees a spirit for ${f(summary.spiritDuration)} seconds. Each spirit restores <healing>${f(summary.healPerSpirit)} HP per second</healing>, up to ${summary.maxSpirits} spirits.<br><br><span class="passive-current-value">${summary.spirits}/${summary.maxSpirits} spirits: <healing>${f(summary.healingPerSecond)} HP per second</healing>.</span><br><rules>Damage against monsters is capped at 100–270, based on level.</rules>`;
-    if(BUILDER.target.enabled){
-      const amount=window.DamageText.damage(summary.healthFraction*BUILDER.target.maxHp,'magic',{target:BUILDER.target,stats:ctx.stats},`${f(summary.healthFraction*100)}% × ${BUILDER.target.maxHp} target max HP`);
-      text=text.replace('maximum HP as magic damage',`maximum HP as magic damage (${amount} against target)`);
-    }
-  }
-  if(!BUILDER.stringsReady && !summary)text+=`<p class="text-muted">${BUILDER.stringsLoading?'Loading detailed game description…':'Detailed game description unavailable; showing the summary.'}</p>`;
-  return text;
-}
-function getComputedChampionStatsForTooltips() {
-  const computed = computeDerivedBuildStats();
-  if (!computed) return null;
-  const { base, item, rune, level: L, ad, ap, armor, mr, hp, mp } = computed;
+function buildDetailedPassiveText(...args) { const evaluation=builderEvaluation(); return window.AbilityPresentation.create(evaluation.state,evaluation.stats,evaluation.resolution,resolveAbilityToken).buildDetailedPassiveText(...args); }
+function getComputedChampionStatsForTooltips(...args) { return builderEvaluation().stats.getComputedChampionStatsForTooltips(...args); }
 
-  const baseAd = base.attackdamage + base.attackdamageperlevel * window.BuildStats.growthFactor(L);
-  const totalAd = ad;
-  const baseAp = 0;
-  const totalAp = ap;
-  const baseArmor = base.armor + base.armorperlevel * window.BuildStats.growthFactor(L);
-  const totalArmor = armor;
-  const baseMr = base.spellblock + base.spellblockperlevel * window.BuildStats.growthFactor(L);
-  const totalMr = mr;
-  const baseHp = base.hp + base.hpperlevel * window.BuildStats.growthFactor(L);
-  const totalHp = hp;
-  const baseMp = base.mp + base.mpperlevel * window.BuildStats.growthFactor(L);
-  const totalMp = mp;
+function getSpellScalingSource(...args) { return builderEvaluation().resolution.getSpellScalingSource(...args); }
 
-  let spellDamageMultiplier=1;
-  if(BUILDER.target.enabled&&BUILDER.itemSlots.includes('4645')&&itemPassiveEnabled('4645','cinderbloom')){
-    const source=window.ItemLookupShared.getState().cdragonById['4645'];
-    const threshold=window.Calculations.dataValue(source?.mDataValues,'HealthThreshold').value;
-    const amp=window.Calculations.dataValue(source?.mDataValues,'SpellItemDamageAmp').value;
-    if(Number.isFinite(threshold)&&Number.isFinite(amp)&&BUILDER.target.currentHp/BUILDER.target.maxHp<Number(threshold.toPrecision(7)))spellDamageMultiplier=1+amp;
-  }
+function getRankedValueIndex(...args) { return builderEvaluation().resolution.getRankedValueIndex(...args); }
 
-  return {
-    ap: totalAp, baseAp: 0,
-    magicDamageMultiplier:spellDamageMultiplier,trueDamageMultiplier:spellDamageMultiplier,
-    itemHp: item.hp,
-    ranged: computed.ranged ?? base.attackrange > 300,
-    healShieldPower: BUILDER.itemSlots.filter(Boolean).reduce((sum,id)=>sum+(window.ItemLookupShared.getState().cdragonById[id]?.mPercentHealingAmountMod||0),0),
-    attackSpeed: computed.asTotal,
-    bonusAttackSpeed: (base.attackspeedperlevel * window.BuildStats.growthFactor(L) + item.asPct + rune.asPct) / 100 + (computed.bonusAttackSpeedFromChampion || 0),
-    moveSpeed: computed.moveSpeed, baseMoveSpeed: base.movespeed,
-    critChance: computed.critChance / 100, bonusCritChance: (item.critChance + rune.critChance) / 100,
-    critDamage: computed.critDamage / 100, bonusCritDamage: (item.critDamage + rune.critDamage) / 100,
-    haste: computed.abilityHaste,
-    basicHaste: computed.basicHaste,
-    ultimateHaste: computed.ultimateHaste,
-    cooldownReduction: computed.abilityHaste / (100 + computed.abilityHaste),
-    lifeSteal: (item.physicalVamp + rune.physicalVamp + (computed.championLifeSteal||0)) / 100, physicalVamp: (item.physicalVamp + rune.physicalVamp + (computed.championLifeSteal||0)) / 100, omniVamp: item.omniVamp / 100,
-    magicPenFlat: computed.magicPenFlat, magicPenPct:computed.magicPenPct,
-    lethality: computed.armorPenFlat, armorPenFlat:computed.armorPenFlat, armorPenPct:computed.armorPenPct, tenacity: item.tenacity / 100,
-    attackRange: computed.attackRange, baseAttackRange: base.attackrange,
-    bonusAttackRange: computed.attackRange - base.attackrange,
-    totalAd,
-    bonusAd: totalAd - baseAd,
-    armor: totalArmor,
-    bonusArmor: totalArmor - baseArmor,
-    mr: totalMr,
-    bonusMr: totalMr - baseMr,
-    hp: totalHp,
-    bonusHp: totalHp - baseHp,
-    mp: totalMp,
-    bonusMp: totalMp - baseMp,
-  };
-}
+function getSpellDataValue(...args) { return builderEvaluation().resolution.getSpellDataValue(...args); }
 
-function getSpellScalingSource(link, stats) {
-  const map = {
-    spelldamage: { value: stats.ap, label: "AP" },
-    bonusattackdamage: { value: stats.bonusAd, label: "bonus AD" },
-    attackdamage: { value: stats.totalAd, label: "AD" },
-    armor: { value: stats.armor, label: "Armor" },
-    bonusarmor: { value: stats.bonusArmor, label: "bonus Armor" },
-    spellblock: { value: stats.mr, label: "MR" },
-    bonusspellblock: { value: stats.bonusMr, label: "bonus MR" },
-    health: { value: stats.hp, label: "HP" },
-    bonushealth: { value: stats.bonusHp, label: "bonus HP" },
-    mana: { value: stats.mp, label: "Mana" },
-    bonusmana: { value: stats.bonusMp, label: "bonus Mana" },
-  };
-  return map[String(link || "").toLowerCase()] || null;
-}
+function getCalcStatSource(...args) { return builderEvaluation().resolution.getCalcStatSource(...args); }
 
-function getRankedValueIndex(values, rank) {
-  if (!Array.isArray(values) || !values.length) return 0;
-  const clampedRank = Math.max(0, Number(rank) || 0);
-  // CommunityDragon spell arrays commonly have a sentinel value at index 0 and real ranks at 1..N.
-  if (values.length >= 7) {
-    return Math.max(0, Math.min(values.length - 1, clampedRank));
-  }
-  return Math.max(0, Math.min(values.length - 1, clampedRank - 1));
-}
+function formatAbilityStatLabel(...args) { return window.AbilityPresentation.formatAbilityStatLabel(...args); }
 
-function getSpellDataValue(dataValues, tokenName, rank) {
-  const value = window.Calculations.dataValue(dataValues, tokenName, rank, BUILDER.level);
-  if (value.missing) return null;
-  return { current: value.value, rankValues: [1,2,3,4,5].map(r => window.Calculations.dataValue(dataValues, tokenName, r, BUILDER.level).value) };
-}
+function formatAbilityNumber(...args) { return window.AbilityPresentation.formatAbilityNumber(...args); }
 
-function getCalcStatSource(part, stats) {
-  const value = window.Calculations.stat(part, {stats});
-  return { ...value, label: value.text };
-}
+function formatCalculationTerms(...args) { return window.AbilityPresentation.formatCalculationTerms(...args); }
 
-function formatAbilityStatLabel(label) {
-  const m = {
-    "bonus ad": "BonusAD",
-    ad: "AD",
-    ap: "AP",
-    hp: "HP",
-    mana: "Mana",
-    armor: "Armor",
-    "bonus armor": "BonusArmor",
-    mr: "MR",
-    "bonus mr": "BonusMR",
-  };
-  return m[String(label || "").toLowerCase()] || String(label || "Stat").replace(/\s+/g, "");
-}
+function isMissingGameCalculation(...args) { return builderEvaluation().resolution.isMissingGameCalculation(...args); }
 
-function formatAbilityNumber(value, isPercent = false) {
-  const n = Number(value || 0);
-  if (isPercent) return `${n.toFixed(1)}%`;
-  return Number.isInteger(n) ? String(n) : n.toFixed(1);
-}
+function baseCalculationContext(...args) { return builderEvaluation().stats.baseCalculationContext(...args); }
 
-function formatCalculationTerms(terms, fallbackValue = 0) {
-  if (!Array.isArray(terms)) return formatAbilityNumber(fallbackValue);
-  const joined = terms
-    .map((row) => String(row?.text || "").trim())
-    .filter(Boolean)
-    .join(" + ");
-  return joined || formatAbilityNumber(fallbackValue);
-}
-
-function isMissingGameCalculation(result) {
-  if (!result || !Array.isArray(result.terms) || !result.terms.length) return true;
-  return result.terms.every((term) => term?.missing === true);
-}
-
-function baseCalculationContext(stats, dataValues = [], rank = 1, calculations = {}, effects = []) {
-  return {
-    stats, dataValues, rank, calculations, effects, level: BUILDER.level,
-    target:BUILDER.target, targetStats:window.TargetDamage.targetStats(BUILDER.target), targetFormulaOnly:!BUILDER.target.enabled, managedTarget:true, automaticSelfStats:true,
-    resolveExternal: (path, key) => {
-      const record=window.Calculations.lookup(BUILDER.cdragonRaw,path);
-      const payload=extractCdragonSpell(record);
-      return window.Calculations.dataValue(payload?.dataValues,key,rank,BUILDER.level);
-    },
-    ranged: stats?.ranged ?? (BUILDER.championData ? BUILDER.championData.stats.attackrange > 300 : undefined),
-    itemCounts: BUILDER.itemSlots.filter(Boolean).reduce((counts,id) => {
-      const rarity=window.ItemLookupShared.getState().cdragonById[id]?.epicness;
-      if (rarity !== undefined) counts[rarity]=(counts[rarity]||0)+1;
-      return counts;
-    }, {0:0,1:0,2:0,3:0,4:0,5:0,6:0}),
-  };
-}
-
-function calculationContext(...args) {
-  const defaults=Object.fromEntries(window.ChampionEffects.model(BUILDER).fields.filter(f=>f.defaultValue!==undefined).map(f=>[f.key,f.defaultValue]));
-  const state=Object.fromEntries(Object.entries({...defaults,...BUILDER.combatValues}).filter(([key])=>!key.startsWith('target:')&&(!key.startsWith('self:')||key==='self:healthPercent:0')));
-  return window.CombatInputs.apply(baseCalculationContext(...args),state);
-}
+function calculationContext(...args) { return builderEvaluation().stats.calculationContext(...args); }
 
 function combatSources() {
   const buffNames={};
@@ -1261,421 +932,40 @@ function renderCombatInputs() {
   }
 }
 
-function adaptCalculation(row) {
-  return {...row, total:row.value, terms:[{text:row.text,value:row.value,missing:row.missing}]};
-}
+function adaptCalculation(...args) { return builderEvaluation().resolution.adaptCalculation(...args); }
 
-function evaluateCalculationPart(part, dataValues, rank, stats, calculationsMap = {}) {
-  return window.Calculations.partValue(part, calculationContext(stats,dataValues,rank,calculationsMap));
-}
+function evaluateCalculationPart(...args) { return builderEvaluation().resolution.evaluateCalculationPart(...args); }
 
-function evaluateGameCalculation(calc, dataValues, rank, stats, calculationsMap = {}, effects = []) {
-  return adaptCalculation(window.Calculations.evaluate(calc, calculationContext(stats,dataValues,rank,calculationsMap,effects)));
-}
+function evaluateGameCalculation(...args) { return builderEvaluation().resolution.evaluateGameCalculation(...args); }
 
-function canonicalizeToken(name) {
-  return String(name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-}
+function canonicalizeToken(...args) { return builderEvaluation().resolution.canonicalizeToken(...args); }
 
-function buildCanonicalTokenMap(keys = []) {
-  return keys.reduce((acc, key) => {
-    const canonical = canonicalizeToken(key);
-    if (!canonical || acc[canonical]) return acc;
-    acc[canonical] = key;
-    return acc;
-  }, {});
-}
+function buildCanonicalTokenMap(...args) { return builderEvaluation().resolution.buildCanonicalTokenMap(...args); }
 
-function buildResolvedSpellPayload(rawPayload, safeRank, stats) {
-  const payload = rawPayload || null;
-  const calculations = payload?.calculations || {};
-  const dataValues = payload?.dataValues || [];
-  const calcLookup = Object.fromEntries(Object.entries(calculations).map(([k, calc]) => {
-    // The source exposes only the maximum recall tooltip calculation. Resolve
-    // its multiplier against the configured target before prose and DPS use it.
-    if(BUILDER.selectedChampion==='Aurora' && k.toLowerCase()==='q2damagemax'){
-      const target=window.TargetDamage.normalize(BUILDER.target);
-      const missing=target.enabled?1-target.currentHp/target.maxHp:0;
-      const bonus=window.Calculations.dataValue(dataValues,'MissingHealthPercentMod',safeRank).value;
-      calc={...calc,mMultiplier:{__type:'NumberCalculationPart',mNumber:1+(bonus??0.5)*missing}};
-    }
-    const evaluated = stats ? evaluateGameCalculation(calc, dataValues, safeRank, stats, calculations, payload?.effects || []) : null;
-    return [String(k).toLowerCase(), evaluated];
-  }));
-  return {
-    cdragonSpell: payload,
-    calcLookup,
-    calcLookupCanonicalMap: buildCanonicalTokenMap(Object.keys(calcLookup)),
-    dataValueCanonicalMap: buildCanonicalTokenMap(dataValues.map((d) => String(d?.mName || d?.name || "").toLowerCase())),
-  };
-}
+function buildResolvedSpellPayload(...args) { return builderEvaluation().resolution.buildResolvedSpellPayload(...args); }
 
-function getDeterministicTokenCandidates(token) {
-  const candidates = [];
-  const seen = new Set();
-  const add = (value) => {
-    const normalized = String(value || "").trim().toLowerCase();
-    if (!normalized || seen.has(normalized)) return;
-    seen.add(normalized);
-    candidates.push(normalized);
-  };
+function getDeterministicTokenCandidates(...args) { return builderEvaluation().resolution.getDeterministicTokenCandidates(...args); }
 
-  const tryTrimEdge = (value) => {
-    add(value);
-    const effectAmountMatch = value.match(/^effect(\d+)amount$/);
-    if (effectAmountMatch) add(`e${effectAmountMatch[1]}`);
-    if (value.endsWith("_tooltip")) add(value.slice(0, -8));
-    if (value.endsWith("tooltip")) add(value.slice(0, -7));
+function resolveAbilityToken(...args) { return window.AbilityPresentation.legacyToken(builderEvaluation().resolution.resolveAbilityToken(...args)); }
 
 
-  };
+function getSpellRankValueAt(...args) { return builderEvaluation().resolution.getSpellRankValueAt(...args); }
 
-  tryTrimEdge(String(token || "").trim().toLowerCase());
-  return candidates;
-}
+function getSpellTokenValueAtRank(...args) { return builderEvaluation().resolution.getSpellTokenValueAtRank(...args); }
 
-function resolveAbilityToken(tokenRaw, ctx) {
-  const token = String(tokenRaw || "").trim().toLowerCase().replace(/\.\d+(?=\*|$)/, "");
-  const denylist = new Set(["gamemodeinteger", "gamemodeinteger1", "gamemodeinteger2", "gamemodeinteger3"]);
-  const multiplierMatchRegex = /^(?<left>[a-z0-9_:.]+)\*(?<mult>-?\d+(?:\.\d+)?)$/;
+function expandAbilityLocalization(...args) { return builderEvaluation().resolution.expandAbilityLocalization(...args); }
 
-  const getQualifiedCtx = (spellRefRaw, localCtx) => {
-    const normalizedRef = normalizeSpellRecordName(spellRefRaw);
-    const canonicalRef = canonicalizeToken(normalizedRef);
-    if (!canonicalRef) return null;
+function buildAbilityContext(...args) { return builderEvaluation().resolution.buildAbilityContext(...args); }
 
-    const aliasEntry = localCtx.allSpellPayloadByAlias?.[canonicalRef] || null;
-    const payload = aliasEntry?.payload || localCtx.allSpellPayloadByRef?.[canonicalRef];
-    if (!payload) return null;
+function buildDetailedAbilityText(...args) { const evaluation=builderEvaluation(); return window.AbilityPresentation.create(evaluation.state,evaluation.stats,evaluation.resolution,resolveAbilityToken).buildDetailedAbilityText(...args); }
 
-    return {
-      ...localCtx,
-      cdragonSpell: payload.cdragonSpell,
-      calcLookup: payload.calcLookup,
-      calcLookupCanonicalMap: payload.calcLookupCanonicalMap,
-      dataValueCanonicalMap: payload.dataValueCanonicalMap,
-      qualifiedSpellAlias: aliasEntry?.metadata || null,
-    };
-  };
+function abilityEffectValues(...args) { const evaluation=builderEvaluation(); return window.AbilityPresentation.create(evaluation.state,evaluation.stats,evaluation.resolution,resolveAbilityToken).abilityEffectValues(...args); }
 
-  const resolveSimple = (baseToken, localCtx = ctx) => {
-    const candidates = getDeterministicTokenCandidates(baseToken);
-
-    const resolveCalc = (lookupToken) => {
-      if (denylist.has(canonicalizeToken(lookupToken))) return { html: "", numeric: null };
-
-      let calc = window.Calculations.lookup(localCtx.calcLookup, lookupToken);
-      if (!calc) {
-        const canonicalKey = localCtx.calcLookupCanonicalMap?.[canonicalizeToken(lookupToken)];
-        if (canonicalKey) calc = localCtx.calcLookup[canonicalKey];
-      }
-      if (!calc) return null;
-
-      if (calc.missing || calc.total === null) return {
-        html: `<span class="ability-detail-eq">${calc.unsupported?.length ? 'Value unavailable' : calc.text}</span>`,
-        numeric: null,
-      };
-      const shown = calc.displayAsPercent ? (calc.total * 100) : calc.total;
-      const eq = formatCalculationTerms(calc.terms, shown);
-      return {
-        html: `<span class="ability-detail-number">${formatAbilityNumber(shown, calc.displayAsPercent)} <span class="ability-detail-eq">(${eq})</span></span>`,
-        numeric: shown,
-        isPercent: calc.displayAsPercent === true,
-      };
-    };
-
-    const resolveDataValue = (lookupToken) => {
-      let dataValue = getSpellDataValue(localCtx.cdragonSpell?.dataValues || [], lookupToken, localCtx.safeRank);
-      if (!dataValue) {
-        const canonicalKey = localCtx.dataValueCanonicalMap?.[canonicalizeToken(lookupToken)];
-        if (canonicalKey) dataValue = getSpellDataValue(localCtx.cdragonSpell?.dataValues || [], canonicalKey, localCtx.safeRank);
-      }
-      if (!dataValue) return null;
-      return {
-        html: `<span class="ability-detail-number">${formatAbilityNumber(dataValue.current)}</span>`,
-        numeric: dataValue.current,
-      };
-    };
-
-    const resolveKnownToken = (lookupToken) => {
-      let key = lookupToken;
-      if (!Object.prototype.hasOwnProperty.call(localCtx.knownTokens, key)) {
-        key = localCtx.knownTokenCanonicalMap?.[canonicalizeToken(lookupToken)] || key;
-      }
-      if (!Object.prototype.hasOwnProperty.call(localCtx.knownTokens, key)) return null;
-      const v = localCtx.knownTokens[key];
-      if (v === "" || v === "-") return { html: "", numeric: null };
-      const parsed = Number(v);
-      return {
-        html: `<span class="ability-detail-number">${v}</span>`,
-        numeric: Number.isFinite(parsed) ? parsed : null,
-      };
-    };
-
-    for (const normalizedToken of candidates) {
-      const calcResolved = resolveCalc(normalizedToken);
-      if (calcResolved) return calcResolved;
-
-      const dataResolved = resolveDataValue(normalizedToken);
-      if (dataResolved) return dataResolved;
-
-      const effectMatch = normalizedToken.match(/^e(\d+)$/);
-      if (effectMatch) {
-        const idx = Math.max(1, Number(effectMatch[1]));
-        const arr = localCtx.spell.effect?.[idx] || [];
-        if (!arr.length) continue;
-        const rankIndex = Math.max(0, Math.min(arr.length - 1, localCtx.safeRank - 1));
-        const current = Number(arr[rankIndex]) || 0;
-        return {
-          html: `<span class="ability-detail-number">${formatAbilityNumber(current)}</span>`,
-          numeric: current,
-        };
-      }
-
-      if (/^[af]\d+$/.test(normalizedToken) && localCtx.stats) {
-        const v = localCtx.vars[normalizedToken];
-        if (!v) continue;
-        const source = getSpellScalingSource(v.link, localCtx.stats);
-        if (!source) continue;
-        const coeffRaw = Array.isArray(v.coeff) ? (v.coeff[getRankedValueIndex(v.coeff, localCtx.safeRank)] ?? v.coeff[0]) : v.coeff;
-        const coeff = Number(coeffRaw || 0);
-        const scaled = coeff * source.value;
-        return {
-          html: `<span class="ability-detail-number">${formatAbilityNumber(scaled)} <span class="ability-detail-eq">(${(coeff * 100).toFixed(0)}% ${formatAbilityStatLabel(source.label)})</span></span>`,
-          numeric: scaled,
-        };
-      }
-
-      const knownResolved = resolveKnownToken(normalizedToken);
-      if (knownResolved) return knownResolved;
-    }
-
-    return null;
-  };
-
-  const isNextLevel = token.endsWith("nl");
-  const baseToken = isNextLevel ? token.slice(0, -2) : token;
-  const nextRank = Math.min(5, ctx.safeRank + 1);
-  const simpleCtx = { ...ctx, safeRank: isNextLevel ? nextRank : ctx.safeRank };
-
-  const resolveWithMath = (candidateToken, localCtx, fallbackCtx = localCtx) => {
-    const multMatch = candidateToken.match(multiplierMatchRegex);
-    if (multMatch?.groups?.left && multMatch?.groups?.mult) {
-      const left = resolveToken(multMatch.groups.left, localCtx, fallbackCtx);
-      if (!left) return null;
-      const mult = Number(multMatch.groups.mult);
-      if(left.numeric===null)return {html:`${mult} × (${left.html})`,numeric:null};
-      const value = left.numeric * mult;
-      return {
-        html: `<span class="ability-detail-number">${formatAbilityNumber(value)}</span>`,
-        numeric: value,
-      };
-    }
-
-    return resolveSimple(candidateToken, localCtx);
-  };
-
-  const resolveToken = (candidateToken, localCtx, fallbackCtx = localCtx) => {
-    const qualifiedTokenMatch = candidateToken.match(/^spell\.([^:]+):(.+)$/);
-    if (qualifiedTokenMatch) {
-      const qualifiedCtx = getQualifiedCtx(qualifiedTokenMatch[1], localCtx);
-      const qualifiedBaseToken = String(qualifiedTokenMatch[2] || "").trim().toLowerCase();
-      if (qualifiedCtx && qualifiedBaseToken) {
-        const qualifiedResolved = resolveWithMath(qualifiedBaseToken, qualifiedCtx, fallbackCtx);
-        if (qualifiedResolved) return qualifiedResolved;
-
-        const fallbackResolved = resolveWithMath(qualifiedBaseToken, fallbackCtx, fallbackCtx);
-        if (fallbackResolved) return fallbackResolved;
-      }
-      return null;
-    }
-
-    return resolveWithMath(candidateToken, localCtx, fallbackCtx);
-  };
-
-  if ((/^f\d+$/.test(baseToken)||['bonusarmor','bonusmr','resistsfortooltip','bonusattackrange'].includes(baseToken)) && ctx.stats) {
-    const value=window.ChampionEffects.model(BUILDER).token(ctx.spell.id,baseToken,ctx.stats,computeDerivedBuildStats());
-    if(Number.isFinite(value))return {html:`<span class="ability-detail-number">${formatAbilityNumber(value)}</span>`,numeric:value};
-  }
-  const direct = resolveToken(baseToken, simpleCtx, simpleCtx);
-  if (direct) return direct;
-
-  return null;
-}
-
-
-function getSpellRankValueAt(spell, rawValue, safeRank) {
-  if (rawValue === null || rawValue === undefined) return "-";
-  if (typeof rawValue === "string") {
-    if (rawValue.includes("/")) return parseByRank(rawValue, safeRank);
-    return rawValue || "-";
-  }
-  if (Array.isArray(rawValue)) {
-    if (!rawValue.length) return "-";
-    const idx = Math.max(0, Math.min(rawValue.length - 1, safeRank - 1));
-    const picked = rawValue[idx] ?? rawValue[0];
-    return picked === null || picked === undefined || picked === "" ? "-" : String(picked);
-  }
-  const numeric = Number(rawValue);
-  if (Number.isFinite(numeric)) return String(rawValue);
-  return String(rawValue || "-");
-}
-
-function getSpellTokenValueAtRank(spell, baseToken, safeRank) {
-  const token = String(baseToken || "").toLowerCase();
-  const toCamelCase = (value) => String(value || "").replace(/[_-]+([a-z0-9])/gi, (_, chr) => chr.toUpperCase());
-  const camel = toCamelCase(token);
-  const candidateKeys = [token, `${token}burn`, camel, `${camel}Burn`];
-  for (const key of candidateKeys) {
-    if (!Object.prototype.hasOwnProperty.call(spell, key)) continue;
-    const resolved = getSpellRankValueAt(spell, spell[key], safeRank);
-    if (resolved !== "-") return resolved;
-  }
-  return "-";
-}
-
-function expandAbilityLocalization(text) {
-  // This Builder selects Summoner's Rift items; game-mode variant 1 is the standard ruleset.
-  let result=String(text).replace(/\{\{\s*(Spell_\w+_Tooltip_)\{\{\s*gamemodeinteger\s*\}\}\s*\}\}/gi,(_,prefix)=>`{{ ${prefix}1 }}`);
-  // Show every weapon outcome rather than silently assume Aphelios's main hand.
-  result=result.replace(/\{\{\s*Spell_ApheliosR_WeaponMod_\{\{\s*f1\s*\}\}\s*\}\}/gi,
-    ()=>[1,2,3,4,5].map(i=>`{{ Spell_ApheliosR_WeaponMod_${i} }}`).join(''));
-  for(let depth=0;depth<8;depth++){
-    const expanded=result.replace(/\{\{\s*([^{}]+?)\s*\}\}/g,(full,key)=>BUILDER.strings?.[key.trim().toLowerCase()]??full);
-    if(expanded===result)break;result=expanded;
-  }
-  return result.replace(/@([^@]+)@/g,(_,key)=>`{{ ${key} }}`);
-}
-
-function buildAbilityContext(spell, rank, spellKey) {
-  const safeRank = Math.max(1, Number(rank) || 1);
-  const stats = getComputedChampionStatsForTooltips();
-  if (stats) stats.abilityDamageMultiplier = window.AttackEffects.model(BUILDER, window.ItemLookupShared.getState().cdragonById).abilityModifiers(stats).abilityDamageMultiplier;
-  if (stats && spellKey !== 'p') {
-    stats.haste += spellKey === 'r' ? stats.ultimateHaste : stats.basicHaste;
-    stats.cooldownReduction = stats.haste / (100 + stats.haste);
-  }
-  const vars = Object.fromEntries((spell.vars || []).map((v) => [String(v.key || "").toLowerCase(), v]));
-  
-  const cdragonSpell = BUILDER.cdragonAbilityData?.[spellKey] || null;
-  const resolvedSpellPayload = buildResolvedSpellPayload(cdragonSpell, safeRank, stats);
-  const calcLookup = resolvedSpellPayload.calcLookup;
-
-  const getSpellTokenValue = (baseToken) => getSpellTokenValueAtRank(spell, baseToken, safeRank);
-  const nearbyAmmoTokens = Object.fromEntries(
-    Object.keys(spell || {})
-      .filter((tokenKey) => /(ammo|recharge|stock)/i.test(String(tokenKey || "")))
-      .map((tokenKey) => [String(tokenKey || "").toLowerCase(), getSpellRankValueAt(spell, spell[tokenKey], safeRank)])
-      .filter(([, tokenValue]) => tokenValue !== "-")
-  );
-
-  const knownTokens = {
-    cost: parseByRank(spell.costBurn, safeRank),
-    cooldown: parseByRank(spell.cooldownBurn, safeRank),
-    range: parseByRank(spell.rangeBurn, safeRank),
-    maxammo: getSpellTokenValue("maxammo"),
-    ammorechargetime: getSpellTokenValue("ammorechargetime"),
-    abilityresourcename: (spell.costType || "").replace(/<[^>]+>/g, "").replace(/[{}`]/g, "").trim() || "Mana",
-    spellmodifierdescriptionappend: "",
-    ...nearbyAmmoTokens,
-  };
-
-  const calcLookupCanonicalMap = resolvedSpellPayload.calcLookupCanonicalMap;
-  const dataValueCanonicalMap = resolvedSpellPayload.dataValueCanonicalMap;
-  const knownTokenCanonicalMap = buildCanonicalTokenMap(Object.keys(knownTokens));
-
-  const allSpellPayloadByRef = Object.entries(BUILDER.cdragonAbilityData?.byRef || {}).reduce((acc, [refKey, payload]) => {
-    acc[refKey] = buildResolvedSpellPayload(payload, safeRank, stats);
-    return acc;
-  }, {});
-  const allSpellPayloadByAlias = Object.entries(BUILDER.cdragonAbilityData?.byAlias || {}).reduce((acc, [aliasKey, entry]) => {
-    if (!entry?.payload) return acc;
-    acc[aliasKey] = {
-      ...entry,
-      payload: buildResolvedSpellPayload(entry.payload, safeRank, stats),
-    };
-    return acc;
-  }, {});
-
-  return {
-    spell,
-    safeRank,
-    stats,
-    vars,
-    cdragonSpell: resolvedSpellPayload.cdragonSpell,
-    calcLookup,
-    knownTokens,
-    calcLookupCanonicalMap,
-    dataValueCanonicalMap,
-    knownTokenCanonicalMap,
-    allSpellPayloadByRef,
-    allSpellPayloadByAlias,
-  };
-}
-
-function buildDetailedAbilityText(spell, rank, spellKey, context) {
-  let raw = expandAbilityLocalization(spell.tooltip || spell.description || "");
-  if(BUILDER.selectedChampion==='Aurora' && spellKey==='q')raw=raw.replace(/up to\s+(?=<magicDamage>\s*(?:\{\{|@)\s*q2damagemax)/i,'');
-  if (!(Number(rank) > 0)) return spell.description || "";
-  const ctx = context || buildAbilityContext(spell, rank, spellKey);
-  const replaced = window.DamageText.render(raw,token=>resolveAbilityToken(token,ctx),{target:BUILDER.target,stats:ctx.stats});
-
-  return replaced
-    .replace(/<physicalDamage>/gi, '<span class="ability-damage-physical">')
-    .replace(/<\/physicalDamage>/gi, '</span>')
-    .replace(/<magicDamage>/gi, '<span class="ability-damage-magic">')
-    .replace(/<\/magicDamage>/gi, '</span>')
-    .replace(/<trueDamage>/gi, '<span class="ability-damage-true">')
-    .replace(/<\/trueDamage>/gi, '</span>')
-    .replace(/<healing>/gi, '<span class="ability-healing">')
-    .replace(/<\/healing>/gi, '</span>')
-    .replace(/<status>/gi, '<span class="ability-status">')
-    .replace(/<\/status>/gi, '</span>')
-    .replace(/[{}]/g, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
-
-function abilityEffectValues(payload,rank) {
-  // Target mode presents damage through typed prose and outcome tables. Raw
-  // calculation records also contain ratios/hidden totals with no damage type.
-  if(BUILDER.target.enabled)return '';
-  if(!payload || !rank)return '';
-  const context=calculationContext(getComputedChampionStatsForTooltips(),payload.dataValues,rank,payload.calculations,payload.effects);
-  const escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const rows=Object.entries(payload.calculations||{}).filter(([name,calc])=>!name.startsWith('{')&&!calc.tooltipOnly&&!/^tooltiponly_/i.test(name)).map(([name,calc])=>{
-    const row=window.Calculations.evaluate(calc,context);
-    const slot=['q','w','e','r'].find(slot=>BUILDER.cdragonAbilityData?.[slot]===payload);
-    const id=BUILDER.championData?.spells?.[['q','w','e','r'].indexOf(slot)]?.id;
-    const bindings={GarenE:{NumberOfStrikes:'f1'},BelvethE:{TotalStrikes:'f2'},SettW:{MaxDamage:'f1'},PoppyW:{BonusArmor:'bonusarmor',BonusMR:'bonusmr'},GarenW:{ResistsForTooltip:'resistsfortooltip'},Feast:{BonusAttackRange:'bonusattackrange'}};
-    const key=bindings[id]?.[name];
-    const corrected=key?window.ChampionEffects.model(BUILDER).token(id,key,context.stats,computeDerivedBuildStats()):null;
-    const value=Number.isFinite(corrected)?window.Calculations.format(corrected):row.value===null?row.text:window.Calculations.format(row.value*(row.displayAsPercent?100:1))+(row.displayAsPercent?'%':'');
-    return `<div>${escape(name.replace(/([a-z])([A-Z])/g,'$1 $2'))}: ${escape(value)}</div>`;
-  });
-  return rows.length?`<details class="ability-effect-values"><summary>Effect values</summary>${rows.join('')}</details>`:'';
-}
-
-function renderAlternateAbilityDps(spell, rank, slot) {
-  const forms={JavelinToss:['Takedown','Cougar Q'],Bushwhack:['Pounce','Cougar W'],PrimalSurge:['Swipe','Cougar E'],
-    JayceToTheSkies:['JayceShockBlast','Cannon Q'],JayceStaticField:['JayceHyperCharge','Cannon W'],JayceThunderingBlow:['JayceAccelerationGate','Cannon E'],
-    EliseHumanQ:['EliseSpiderQCast','Spider Q'],EliseHumanW:['EliseSpiderW','Spider W'],EliseHumanE:['EliseSpiderE','Spider E'],
-    GnarQ:['GnarBigQ','Mega Q'],GnarW:['GnarBigW','Mega W'],GnarE:['GnarBigE','Mega E']};
-  const form=forms[spell.id];
-  if(!form || !(rank>0))return '';
-  const payload=BUILDER.cdragonAbilityData?.byAlias?.[canonicalizeToken(form[0])]?.payload;
-  const loc=payload?.spellData?.mClientData?.mTooltipData?.mLocKeys;
-  const raw=BUILDER.strings?.[loc?.keyTooltip?.toLowerCase()];
-  if(!payload || !raw)return `<div class="ability-dps"><strong>${form[1]} Damage:</strong> Alternate form data unavailable</div>`;
-  // Cougar skills scale with Aspect of the Cougar rather than their human skill ranks.
-  const formRank=['Takedown','Pounce','Swipe'].includes(form[0])?Math.max(1,BUILDER.abilityRanks.r):rank;
-  const alternate={...spell,id:form[0],tooltip:raw,cooldown:payload.spellData.cooldownTime?.slice(1)};
-  const context=buildAbilityContext(alternate,formRank,slot);
-  Object.assign(context,buildResolvedSpellPayload(payload,formRank,context.stats));
-  const result=window.AbilityDps.profile({spell:alternate,rank:formRank,payload,champion:BUILDER.selectedChampion,slot,
-    tooltip:expandAbilityLocalization(raw),resolve:token=>resolveAbilityToken(token,context),
-    cooldown:window.AbilityDps.cooldown(alternate,formRank,context.stats,payload),target:BUILDER.target,stats:context.stats});
-  return `<div class="ability-dps-form"><strong>${form[1]}</strong>${window.AbilityDps.render(result)}</div>`;
+function renderAlternateAbilityDps(spell,rank,slot) {
+ const result=builderEvaluation().evaluateAlternate(spell,rank,slot,{presentToken:window.AbilityPresentation.legacyToken});
+ if(!result)return '';
+ if(result.status==='unsupported')return `<div class="ability-dps"><strong>${result.label} Damage:</strong> Alternate form data unavailable</div>`;
+ return `<div class="ability-dps-form"><strong>${result.label}</strong>${window.AbilityDps.render(result.damage)}</div>`;
 }
 
 function renderAbilityCards() {
@@ -1715,18 +1005,15 @@ function renderAbilityCards() {
     const rank = BUILDER.abilityRanks[key];
     const cdBase = parseByRank(spell.cooldownBurn, rank);
     const context = rank > 0 ? buildAbilityContext(spell, rank, key) : null;
-    const cdNumeric = window.AbilityDps.cooldown(spell, rank, context?.stats, context?.cdragonSpell);
+    const abilityResult=builderEvaluation().evaluateAbility(spell,rank,key,{context:context || undefined,attack,presentToken:window.AbilityPresentation.legacyToken});
+    const cdNumeric = abilityResult.cooldown;
     const cd = cdNumeric !== null
       ? `${cdNumeric.toFixed(2)} (base ${Number(cdBase).toFixed(2)})`
       : cdBase;
     const cost = parseByRank(spell.costBurn, rank);
     const range = parseByRank(spell.rangeBurn, rank);
     const detail = buildDetailedAbilityText(spell, rank, key, context);
-    const dpsOptions={spell, rank, cooldown:cdNumeric,champion:BUILDER.selectedChampion,slot:key,
-      tooltip:expandAbilityLocalization(spell.tooltip || spell.description || ''),
-      resolve:token=>resolveAbilityToken(token, context), payload:context?.cdragonSpell,target:BUILDER.target,stats:context?.stats,
-      timing:{delay:BUILDER.combatValues[`dps:${key}:delay`],overlap:BUILDER.combatValues[`dps:${key}:overlap`]}};
-    let dps = window.AbilityDps.render(window.AbilityOnHit.apply(window.AbilityDps.profile(dpsOptions),{...dpsOptions,attack}));
+    let dps=window.AbilityDps.render(abilityResult.onHitDamage);
     dps += renderAlternateAbilityDps(spell,rank,key);
     const parsed = document.createElement('div'); parsed.innerHTML=dps;
     const damageNumbers=[...parsed.querySelectorAll('tbody tr')].map(row=>row.children[1]?.innerHTML.trim()).filter(Boolean);
@@ -1805,86 +1092,9 @@ function renderAbilityCards() {
   document.getElementById("abilityRuleHint").textContent = `At level ${BUILDER.level}: basic max ${abilityMaxByLevel(BUILDER.level, "q")}, R max ${abilityMaxByLevel(BUILDER.level, "r")}, total points ${BUILDER.level}.`;
 }
 
-function getItemStats() {
-  const totals = {
-    hp: 0, hp5: 0, hp5PctBase: 0, mp: 0, mp5: 0, mp5PctBase: 0, ad: 0, ap: 0, armor: 0, mr: 0,
-    haste: 0, asPct: 0, critChance: 0, critDamage: 0, attackRange: 0, msFlat: 0, msPct: 0,
-    arPenFlat: 0, arPenPct: 0, mrPenFlat: 0, mrPenPct: 0, physicalVamp: 0, omniVamp: 0, tenacity: 0,
-  };
-  BUILDER.itemSlots.forEach((id) => {
-    if (!id) return;
-    const s = BUILDER.items[id].stats || {};
-    totals.hp += s.FlatHPPoolMod || 0;
-    totals.mp += s.FlatMPPoolMod || 0;
-    totals.hp5 += s.FlatHPRegenMod || 0;
-    totals.hp5PctBase += ((s.PercentBaseHPRegenMod || s.PercentHPRegenMod || 0) * 100);
-    totals.mp5 += s.FlatMPRegenMod || 0;
-    totals.mp5PctBase += ((s.PercentBaseMPRegenMod || s.PercentMPRegenMod || 0) * 100);
-    totals.ad += s.FlatPhysicalDamageMod || 0;
-    totals.ap += s.FlatMagicDamageMod || 0;
-    totals.armor += s.FlatArmorMod || 0;
-    totals.mr += s.FlatSpellBlockMod || 0;
-    totals.haste += Number(
-      s.FlatHasteMod
-      ?? s.FlatAbilityHasteMod
-      ?? s.AbilityHaste
-      ?? s.FlatCooldownReduction
-      ?? 0,
-    );
-    totals.asPct += (s.PercentAttackSpeedMod || 0) * 100;
-    totals.critChance += ((s.FlatCritChanceMod || 0) + (s.PercentCritChanceMod || 0)) * 100;
-    totals.critDamage += ((s.FlatCritDamageMod || 0) + (s.PercentCritDamageMod || 0)) * 100;
-    totals.attackRange += s.FlatAttackRangeMod || 0;
-    totals.msFlat += s.FlatMovementSpeedMod || 0;
-    totals.msPct += (s.PercentMovementSpeedMod || 0) * 100;
-    totals.arPenFlat += s.FlatLethalityMod || 0;
-    totals.arPenPct += (s.PercentArmorPenetrationMod || 0) * 100;
-    totals.mrPenFlat += s.FlatMagicPenetrationMod || 0;
-    totals.mrPenPct += (s.PercentMagicPenetrationMod || 0) * 100;
-    totals.physicalVamp += ((s.PercentPhysicalVampMod || 0) + (s.PercentLifeStealMod || 0)) * 100;
-    totals.omniVamp += (s.PercentOmnivampMod || 0) * 100;
-    totals.tenacity += (s.PercentTenacityMod || 0) * 100;
-  });
-  return totals;
-}
+function getItemStats(...args) { return builderEvaluation().stats.getItemStats(...args); }
 
-function getRuneStats() {
-  const totals = {
-    hp: 0, hp5: 0, hp5PctBase: 0, mp: 0, mp5: 0, mp5PctBase: 0, ad: 0, ap: 0, armor: 0, mr: 0,
-    haste: 0, asPct: 0, critChance: 0, critDamage: 0, attackRange: 0, msFlat: 0, msPct: 0,
-    arPenFlat: 0, arPenPct: 0, mrPenFlat: 0, mrPenPct: 0, physicalVamp: 0, omniVamp: 0, tenacity: 0,
-  };
-  const selected = [
-    ...BUILDER.runeSelections.primary,
-    ...BUILDER.runeSelections.secondary,
-    ...BUILDER.runeSelections.shards,
-  ];
-
-  selected.forEach((runeId) => {
-    if (runeId === "ability-haste") totals.haste += 8;
-    if (runeId === "attack-speed") totals.asPct += 10;
-    if (runeId === "scaling-health") totals.hp += 10 + ((BUILDER.level - 1) * 190) / 17;
-    if (runeId === "health") totals.hp += 65;
-    if (runeId === "move-speed") totals.msPct += 2.5;
-    if (runeId === "tenacity-slow-resist") totals.tenacity += 15;
-    if (runeId === "armor") totals.armor += 6;
-    if (runeId === "magic-resist") totals.mr += 10;
-
-    if (runeId === "adaptive-force") {
-      if (isApAdaptiveChampion()) totals.ap += 9;
-      else totals.ad += 9 * 0.6;
-    }
-
-    // Sorcery: +5 Ability Haste at level 5 and again at level 8.
-    if (runeId === "transcendence") {
-      if (BUILDER.level >= 5) totals.haste += 5;
-      if (BUILDER.level >= 8) totals.haste += 5;
-    }
-  });
-
-  for (const [stat, value] of Object.entries(getStackRuneEffects().totals)) totals[stat] = (totals[stat] || 0) + value;
-  return totals;
-}
+function getRuneStats(...args) { return builderEvaluation().stats.getRuneStats(...args); }
 
 function renderStats() {
   const root = document.getElementById("statsTable");
@@ -1932,6 +1142,7 @@ function renderStats() {
   } = computed;
 
 
+  const summaries=builderEvaluation().stats.summary(computed);
   const rows = [
     { name: "HP", icon: STAT_ICONS["HP"], value: hp, eq: `${base.hp.toFixed(1)} + ${base.hpperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.hp.toFixed(1)} + ${rune.hp.toFixed(1)} + passive(${(passiveLedger.statMods.hp||0).toFixed(1)})` },
     { name: "MP", icon: STAT_ICONS["MP"], value: mp, eq: `${base.mp.toFixed(1)} + ${base.mpperlevel.toFixed(1)}*${window.BuildStats.growthFactor(L).toFixed(3)} + ${item.mp.toFixed(1)} + ${rune.mp.toFixed(1)}` },
@@ -1950,7 +1161,7 @@ function renderStats() {
     { name: "ARPen", icon: STAT_ICONS["ARPen"], value: 0, eq: `Flat: items ${item.arPenFlat.toFixed(1)} + runes ${rune.arPenFlat.toFixed(1)} + passive ${(computed.championPenetration?.armorPenFlat||0).toFixed(1)}; percent: 100 × (1 − (1 − ${item.arPenPct.toFixed(1)}%) × (1 − ${rune.arPenPct.toFixed(1)}%) × (1 − ${(computed.championPenetration?.armorPenPct||0).toFixed(1)}%))` },
     { name: "MRPen", icon: STAT_ICONS["MRPen"], value: 0, eq: `Flat: items ${item.mrPenFlat.toFixed(1)} + runes ${rune.mrPenFlat.toFixed(1)}; percent: 100 × (1 − (1 − ${item.mrPenPct.toFixed(1)}%) × (1 − ${rune.mrPenPct.toFixed(1)}%) × (1 − ${(computed.championPenetration?.magicPenPct||0).toFixed(1)}%))` },
     { name: "Lifesteal", icon: STAT_ICONS["Lifesteal"], value: 0, eq: `Lifesteal: ${item.physicalVamp.toFixed(1)}% items + ${rune.physicalVamp.toFixed(1)}% runes + ${(computed.championLifeSteal||0).toFixed(1)}% champion; Omnivamp: ${item.omniVamp.toFixed(1)}%` },
-    { name: "Tenacity", icon: STAT_ICONS["Tenacity"], value: 0, eq: `${(100 * (1 - (1 - item.tenacity / 100) * (1 - rune.tenacity / 100))).toFixed(1)}%` },
+    { name: "Tenacity", icon: STAT_ICONS["Tenacity"], value: 0, eq: `${summaries.tenacity.toFixed(1)}%` },
   ];
 
   const bonusKeys={HP:"hp",AD:"ad",AP:"ap",Arm:"armor",MR:"mr",AS:"asTotal",Range:"attackRange","Crit %":"critChance"};
@@ -1960,8 +1171,8 @@ function renderStats() {
     if (row.name === "AH") return { ...row, displayValue: `${window.ItemDescriptions.number(abilityHaste)} (${window.ItemDescriptions.number(computed.basicHaste)}/${window.ItemDescriptions.number(computed.ultimateHaste)})` };
     if (row.name === "ARPen") return { ...row, displayValue: `${computed.armorPenFlat.toFixed(1)}/${computed.armorPenPct.toFixed(1)}%` };
     if (row.name === "MRPen") return { ...row, displayValue: `${computed.magicPenFlat.toFixed(1)}/${computed.magicPenPct.toFixed(1)}%` };
-    if (row.name === "Lifesteal") return { ...row, displayValue: `${(item.physicalVamp+rune.physicalVamp+(computed.championLifeSteal||0)).toFixed(1)}%/${item.omniVamp.toFixed(1)}%` };
-    if (row.name === "Tenacity") return { ...row, displayValue: `${(100 * (1 - (1 - item.tenacity / 100) * (1 - rune.tenacity / 100))).toFixed(1)}%` };
+    if (row.name === "Lifesteal") return { ...row, displayValue: `${summaries.lifeSteal.toFixed(1)}%/${item.omniVamp.toFixed(1)}%` };
+    if (row.name === "Tenacity") return { ...row, displayValue: `${summaries.tenacity.toFixed(1)}%` };
     return {
       ...row,
       displayValue: row.value.toFixed(row.name === "AS" ? 3 : 1),

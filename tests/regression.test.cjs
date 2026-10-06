@@ -43,7 +43,7 @@ function app(fetchImpl = async () => ({ok:true,json:async()=>({})})) {
   const context = vm.createContext({console, fetch:fetchImpl, AbortController, setTimeout, clearTimeout,
     document:{addEventListener(){}}, module:{exports:{}}});
   context.window = context;
-  for (const file of ['core/records','core/text','shared/apiClient','shared/itemPolicy','shared/abilityRules','domain/scenarioInputs','shared/targetDamage','shared/damageText','shared/abilityDps','shared/buildStats','shared/calculations','shared/combatInputs','shared/championEffects','data/championSource','data/itemSource','data/runeSource','data/sourceRepositories','domain/catalogQueries','domain/recommendations','domain/buildInputs','domain/runeInputs','shared/itemData','builder']) {
+  for (const file of ['core/records','core/text','shared/apiClient','shared/itemPolicy','shared/abilityRules','domain/scenarioInputs','shared/targetDamage','shared/damageText','shared/abilityDps','shared/buildStats','shared/calculations','engine/combatContext','shared/combatInputs','shared/championEffects','data/championSource','data/itemSource','data/runeSource','data/sourceRepositories','domain/catalogQueries','domain/recommendations','domain/buildInputs','domain/runeInputs','shared/itemData','engine/calculationContext','engine/buildEvaluation','engine/abilityResolution','presentation/abilityPresentation','engine/itemEvaluation','engine/calculationPipeline','engine/comboEvaluation','builder']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'JS',file+'.js'),'utf8'),context);
   }
   context.run = code => vm.runInContext(code,context);
