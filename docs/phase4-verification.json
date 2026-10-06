@@ -204,7 +204,34 @@
     "fixturesExternalReadOnly": true,
     "note": "Final annotated source archive checked separately; original broad browser matrix passed 222 tests before the additional presentation-invariance case."
   },
-  "publication": "Refactor branch push will trigger test-gated Pages preview. No main application merge.",
+  "publication": {
+    "verifiedRuntimeRevision": "56cf8377f388ce87900bf31b9c4cb051f8d91504",
+    "productionRevision": "191a259364ff8390e97afe84d5a6b8ac18735690",
+    "workflowRuns": [
+      {
+        "id": 37463446008,
+        "name": "Deploy production and refactor preview to Pages",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/SRIOS-TEACH/LoL-Builder/actions/runs/37463446008"
+      },
+      {
+        "id": 37463446010,
+        "name": "Regression tests",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/SRIOS-TEACH/LoL-Builder/actions/runs/37463446010"
+      }
+    ],
+    "all60RuntimeFilesMatchSavedGitBytes": true,
+    "productionFilesPreserved": [
+      "Builder.html",
+      "JS/builder.js",
+      "JS/comboUI.js",
+      "riot.txt"
+    ],
+    "baselineReferencesPreserved": true
+  },
   "browserMatrixRuntimeFiles": [
     {
       "path": "Builder.html",

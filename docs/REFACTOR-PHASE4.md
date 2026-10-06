@@ -67,3 +67,7 @@ All 223 unit tests, 28 browser runs and 20 exact complete-case comparisons passe
 ## Remaining work
 
 Phase 5 owns component scoping, page composition, native-module/test-loader migration and removing compatibility globals. The pure engines currently use the established global/CommonJS export conventions; callers load the documented dependencies in order. Complete explorer/comparison products and game accuracy changes remain separate feature work.
+
+## Published preview
+
+Calculation commit 56cf837 was published to codex/modular-refactor on 6 October 2026. [GitHub regression checks](https://github.com/SRIOS-TEACH/LoL-Builder/actions/runs/37463446010) and [Pages deployment](https://github.com/SRIOS-TEACH/LoL-Builder/actions/runs/37463446008) succeeded. All 60 live runtime files match saved Git bytes; production HTML/code and riot.txt retain the main branch content. Main and the fixed baseline references were verified unchanged by this work. [Open the separate refactor preview](https://srios-teach.github.io/LoL-Builder/modular-refactor/Builder.html).
