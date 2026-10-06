@@ -38,7 +38,7 @@ const server=http.createServer((req,res)=>{
    return route.fulfill({contentType:'application/json',body:read(file)});
  });
  await page.goto(base+'/Builder.html');
- await page.waitForFunction(()=>document.querySelectorAll('#itemSlots button').length===6);
+ await page.waitForFunction(()=>BUILDER.uiReady && document.querySelectorAll('#itemSlots button').length===7);
 
  const rows=[];
  await page.evaluate(()=>{
