@@ -1,6 +1,6 @@
 # Phase 6 — Release verification and handover
 
-Release work dated 8 October 2026 on `codex/modular-refactor`. All local release checks pass; publication is being finalized. Production and the protected baseline remain separate.
+Release work dated 8 October 2026 on `codex/modular-refactor`. All release checks, publication and live verification pass. Production and the protected baseline remain separate.
 
 ## Release boundary
 
@@ -50,3 +50,7 @@ The actual-entry performance comparison alternates five trials per version/mode,
 The 40–53 ms startup increase is disclosed, with all results within the predeclared budgets. It is consistent with additional native import loading/composition; the benchmark does not isolate individual causes. Ordinary measured interactions remain below 23 ms. Local assets are served from memory, API fixtures have a fixed 20 ms delay, and remote artwork is replaced. Routing disables HTTP cache, so repeat-context visits are not real CDN/disk-cache measurements. Desktop/mobile overflow and ability geometry match the original.
 
 See [complete checks](phase6-verification.json), [performance samples/method/budgets](phase6-performance.json), [independent recovery](phase6-recovery.json), [headless values](phase6-headless.json), and [source-bound release proof](phase6-release.json). Full logs and isolated fixture/source copies remain in ignored local test-results folders. Known limitations are the preserved baseline limitations, including optional live/unversioned Community Dragon data and bounded simulation support; this refactor is not new-patch or universal game-accuracy certification.
+
+## Verified publication
+
+Application/tooling commit `2a9852827fa4748967f5bef6e18f6e0971e563df` passed [GitHub regression/build/release checks](https://github.com/SRIOS-TEACH/LoL-Builder/actions/runs/37636770137) and [Pages deployment](https://github.com/SRIOS-TEACH/LoL-Builder/actions/runs/37636770282). All 71 runtime files on both live routes match saved Git bytes; native JavaScript MIME types are correct. Both actual hosted entries pass core interactions with preserved API fixtures. Seven production smoke files, including riot.txt, match the unchanged main commit; the deployment workflow verifies all production bytes before upload. The baseline branch/tag remain fixed. [Publication evidence](phase6-publication.json) records the verified revisions and file hashes. Completion-documentation updates retain the identical runtime. [Open the refactor preview](https://srios-teach.github.io/LoL-Builder/modular-refactor/Builder.html).

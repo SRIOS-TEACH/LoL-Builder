@@ -1,6 +1,6 @@
 # Refactoring action list
 
-Updated: 8 October 2026. Phases 0–5 are complete with the documented baseline exceptions. Phase 6 release verification and handover are in progress; calculation algorithms remain unchanged.
+Updated: 8 October 2026. Phases 0–6 are complete with the documented baseline exceptions; calculation algorithms remain unchanged.
 
 This is the working checklist for [the refactoring plan](REFACTOR-PLAN.md). Check an action only after its work and verification are complete. Record the completion date and supporting test results or commit beside completed future actions. A phase is complete only when its gate passes. Keep the protected baseline fixed; make new changes on `codex/modular-refactor`.
 
@@ -97,8 +97,10 @@ Completed and verified 7 October 2026: 225 unit tests, 32 browser checks across 
 - [x] P6.5 Document how to add data, effects and UI, and how explorers and build comparison compose the shared capabilities.
 - [x] P6.6 Retain meaningful reuse/isolation harnesses and reproduce checks from a clean checkout.
 - [x] P6.7 Rehearse rollback to the protected baseline.
-- [ ] P6.8 Publish the tested refactoring artifact when ready.
-- [ ] P6 gate: one source, reproducible checks, documented ownership, no unexplained changes and verified recovery.
+- [x] P6.8 Publish the tested refactoring artifact when ready.
+- [x] P6 gate: one source, reproducible checks, documented ownership, no unexplained changes and verified recovery.
+
+Completed 8 October 2026: 227 units, 32 two-route browser checks, 20 exact baseline comparisons, source audits, ten headless cases, independent UI/catalog reuse, 40 measured real-entry visits, clean-source reproduction and independent rollback (201 original units and ten exact cases). The guarded Pages artifact preserves 133 production files and 142 refactor files; GitHub checks/deployment and both live native entries passed. All 71 runtime files remain identical to Phase 5. See [handover](REFACTOR-PHASE6.md), [release proof](phase6-release.json), [publication](phase6-publication.json) and [extension recipes](EXTENDING.md). Production and the fixed baseline references remain unchanged.
 
 Complete explorer pages, the build comparison product, new mechanics and fixes to baseline calculation behavior remain separate feature work unless explicitly added to scope.
 
