@@ -15,7 +15,9 @@
     "test:combo-effects": "node tests/combo-effects-browser.cjs",
     "build": "node scripts/build-site.cjs",
     "build:preview": "node scripts/build-site.cjs --preview",
-    "test:reuse-ui": "node tests/ui-reuse-browser.cjs"
+    "test:reuse-ui": "node tests/ui-reuse-browser.cjs",
+    "verify:refactor": "node scripts/verify-refactor.cjs",
+    "verify:release": "node scripts/verify-release.cjs"
   },
   "engines": {
     "node": ">=22.13"

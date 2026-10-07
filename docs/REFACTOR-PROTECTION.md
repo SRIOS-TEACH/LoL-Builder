@@ -77,3 +77,15 @@ Once authorized, publish only `codex/pre-refactor-baseline`, `codex/modular-refa
 ## Next use
 
 Continue implementation in the managed refactoring checkout, starting with the planned Phase 2 work. Keep the baseline tag fixed. Preserve new ignored files before retiring any worktree. Use the app's managed worktree archive/restore lifecycle for later cleanup; keep the independent backup outside the checkout.
+
+## Current recovery and publication procedure — 8 October 2026
+
+The earlier checkpoint/publication paragraphs above describe Phase 0 history. Both preserved references were subsequently published and verified. The refactor now has a separate Pages route; pushing its branch triggers a combined deployment that preserves production. Do not use the historical statement that Pages only deploys main as the current workflow description.
+
+For rollback rehearsal, verify the bundle and ZIP against their recorded SHA-256 values, clone the bundle into a fresh folder, detach at `baseline/pre-refactor-2026-09-30`, verify all 1,336 ZIP entries and restore the 377 fixture files. The fresh Phase 6 rehearsal passed all 201 original unit tests, advanced/fallback browsing and ten exact saved cases, with clean tracked source and valid Git objects. [Phase 6 evidence](phase6-recovery.json) records that independent recovery.
+
+A bad incremental refactor change can be reverted on the refactor branch and reverified. Keep the baseline branch/tag fixed. To restore the whole original application, first recover it into a new checkout and validate it; never force-reset an existing checkout containing later work. Preserve both the refactor commit and required ignored data before any deliberate production restoration.
+
+This rehearsal proves source/data recovery without GitHub or the original Git directory. It does not repoint the live deployment or create a production rollback commit. Production promotion/restoration is a separate release decision; existing production remains unchanged. If restoring the original runtime intentionally, its former script layout needs corresponding reviewed deployment expectations rather than pretending it is the native refactor release fingerprint.
+
+[The current Pages guide](REFACTOR-PAGES.md) identifies both live routes and the manifest. Verify the manifest's refactor and production revisions and compare the downloaded artifact to saved Git bytes after publication. Git reference preservation is distinct from configuring GitHub branch-protection policies.

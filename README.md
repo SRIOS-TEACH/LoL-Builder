@@ -103,3 +103,5 @@ The Builder delegates these responsibilities to reusable capabilities. See [Phas
 Stat, ability/item and combo calculations now accept independent build/scenario inputs and prepared data. They can run without the Builder page for future explorers and build comparison. See [Phase 4 contracts](docs/REFACTOR-PHASE4.md) and [completion checklist](docs/REFACTOR-ACTIONS.md).
 
 Phase 5: [reusable UI, native modules and composition contracts](docs/REFACTOR-PHASE5.md).
+
+Refactor handover: [Phase 6 release checks](docs/REFACTOR-PHASE6.md), [extension recipes](docs/EXTENDING.md), [contributor workflow](docs/CONTRIBUTING.md), and [recovery](docs/REFACTOR-PROTECTION.md).

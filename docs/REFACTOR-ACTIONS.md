@@ -1,6 +1,6 @@
 # Refactoring action list
 
-Updated: 7 October 2026. Phases 0–5 are complete with the documented baseline exceptions; calculation algorithms remain unchanged.
+Updated: 8 October 2026. Phases 0–5 are complete with the documented baseline exceptions. Phase 6 release verification and handover are in progress; calculation algorithms remain unchanged.
 
 This is the working checklist for [the refactoring plan](REFACTOR-PLAN.md). Check an action only after its work and verification are complete. Record the completion date and supporting test results or commit beside completed future actions. A phase is complete only when its gate passes. Keep the protected baseline fixed; make new changes on `codex/modular-refactor`.
 
@@ -90,13 +90,13 @@ Completed and verified 7 October 2026: 225 unit tests, 32 browser checks across 
 
 ## Phase 6 — Verify and hand over
 
-- [ ] P6.1 Run relevant regressions and compare numerical results, statuses, layout and performance against the baseline.
-- [ ] P6.2 Review the deletion ledger and explain every intentional behavior difference.
-- [ ] P6.3 Produce a runtime-only deployment artifact and make required checks gate deployment.
-- [ ] P6.4 Update architecture, testing, contributor and roadmap documentation.
-- [ ] P6.5 Document how to add data, effects and UI, and how explorers and build comparison compose the shared capabilities.
-- [ ] P6.6 Retain meaningful reuse/isolation harnesses and reproduce checks from a clean checkout.
-- [ ] P6.7 Rehearse rollback to the protected baseline.
+- [x] P6.1 Run relevant regressions and compare numerical results, statuses, layout and performance against the baseline.
+- [x] P6.2 Review the deletion ledger and explain every intentional behavior difference.
+- [x] P6.3 Produce a runtime-only deployment artifact and make required checks gate deployment.
+- [x] P6.4 Update architecture, testing, contributor and roadmap documentation.
+- [x] P6.5 Document how to add data, effects and UI, and how explorers and build comparison compose the shared capabilities.
+- [x] P6.6 Retain meaningful reuse/isolation harnesses and reproduce checks from a clean checkout.
+- [x] P6.7 Rehearse rollback to the protected baseline.
 - [ ] P6.8 Publish the tested refactoring artifact when ready.
 - [ ] P6 gate: one source, reproducible checks, documented ownership, no unexplained changes and verified recovery.
 

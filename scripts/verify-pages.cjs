@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const {execFileSync} = require('node:child_process');
 const [production, refactor, output] = process.argv.slice(2).map(name => path.resolve(name));
 if (!production || !refactor || !output) throw new Error('Usage: verify-pages.cjs production refactor-dist output');
+require('./verify-release.cjs').verifyRelease({sourceRoot:path.dirname(refactor)});
 const tracked = execFileSync('git', ['ls-files', '-z'], {cwd:production}).toString().split('\0').filter(Boolean);
 assert.ok(!tracked.some(name => name.startsWith('modular-refactor/')), 'Production already owns the preview path');
 for (const name of tracked) assert.deepEqual(fs.readFileSync(path.join(output,name)),fs.readFileSync(path.join(production,name)), 'Production changed: '+name);

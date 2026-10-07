@@ -1,6 +1,6 @@
 # Roadmap to v1.0
 
-Planning baseline: 13 September 2026. This is a proposed delivery sequence, not a commitment to dates or a claim that the features below already exist.
+Planning baseline: 13 September 2026. Updated for the structural refactor: 8 October 2026. This is a proposed delivery sequence, not a commitment to dates or a claim that the features below already exist.
 
 The v1.0 goal is: **create a build, save it, load it later, choose a target, test a combo, compare alternatives, and share a reproducible result.** Keep the desktop dashboard compact; use dedicated library/combo panels for larger workflows.
 
@@ -8,9 +8,11 @@ Profiles initially mean named saved build/scenario configurations, not online us
 
 ## Starting point
 
-The current app has champion/item lookup, a build dashboard, runes, role-dependent slot/level choices, ability and average attack calculations, conditional inputs, splash selection and source-provided recommendations. It is still a sandbox rather than a time-based combat simulator. Existing coverage and assumptions are documented in ON-ATTACK.md, DPS.md and AUDIT.md; browser coverage alone does not establish in-game numerical accuracy.
+The current app has champion/item inspection inside Builder, a build dashboard, runes, role-dependent slot/level choices, ability and average attack calculations, conditional inputs, splash selection and source-provided recommendations. It is still a sandbox rather than a time-based combat simulator. Existing coverage and assumptions are documented in ON-ATTACK.md, DPS.md and AUDIT.md; browser coverage alone does not establish in-game numerical accuracy.
 
-The repository already contains a GitHub Pages deployment workflow. It publishes the repository on pushes to main, separately from the unit-test workflow. Live deployment health and repository protection settings have not been verified for this roadmap.
+The structural refactor supplies reusable catalogs, independent build/scenario/calculation sessions and scoped UI components with native imports. Standalone champion/item explorer routes still show temporary notices; the complete explorer and comparison products are not implemented. [Extension recipes](EXTENDING.md) describe how to compose them.
+
+Production remains the preserved application. The separate `/modular-refactor/` Pages preview uses a runtime-only artifact, unit/build checks and a release fingerprint guard. [Phase 6 release verification](REFACTOR-PHASE6.md) records numerical/UI/performance comparison, clean-source reproduction and rollback rehearsal. Git references and backups were checked; this is not a claim that GitHub branch-protection rules were configured.
 
 ## Delivery milestones
 
@@ -200,4 +202,4 @@ Existing package.json commands already cover unit, browser, DPS, combat, attack,
 
 ## Recommended next implementation
 
-Implement M1 attack targets with one canonical target model, consistent mitigation and independently calculated tests, followed by M2's bounded combo timeline. Add only the internal models/fixed fixtures these need; full serialization and library work remain M3/M4. Design patch promotion and hosting alongside this work. This roadmap update does not deploy hosting, enable ads, configure scheduled jobs or create user accounts.
+The existing target and bounded combo tools already cover subsets of M1/M2; the remaining shields, target builds, resets/resources and wider mechanics need separate accuracy work. Use the completed shared layers for an item explorer, champion explorer or explicit two-build comparison slice according to product priorities. Keep numerical changes independently reviewed and preserve partial/unsupported outcomes. Versioned source snapshots and serialization (M3), library/import/export (M4), and the complete comparison/share experience (M5) remain feature milestones. The refactor neither implements storage/accounts nor changes hosting provider.

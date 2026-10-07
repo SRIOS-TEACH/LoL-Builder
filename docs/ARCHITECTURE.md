@@ -12,7 +12,7 @@ This is a static HTML/CSS/JavaScript app with no production dependencies. Root p
 
 Data Dragon is authoritative for the selected patch's base champion stats. Community Dragon is optional and cannot replace the entire stat object. Cached API payloads must be treated as read-only; selection makes its own champion/stat objects.
 
-Champion selection commits its result only if it is still the latest request. Lookup and preview use the same request-counter pattern. A failed selection keeps the existing build and reports the failure.
+Champion selection commits its result only if it is still the latest request. Scoped detail views use their own request-counter pattern. A failed selection keeps the existing build and reports the failure.
 
 The app is a stat sandbox, not a combat simulator. Described passives are not necessarily applied. Unsupported calculations stay unavailable instead of being coerced to zero.
 
@@ -25,3 +25,22 @@ JS/data owns source loading, provenance and champion/item/rune normalization. JS
 BuildInputs, ScenarioInputs and prepared source data compose through CalculationPipeline. Stat/context evaluation, structured ability/item resolution and combo action/health-step evaluation are reusable without Builder or browser APIs. Formula-only, partial and unsupported results remain explicit. See [Phase 4 contracts and verification](REFACTOR-PHASE4.md).
 
 See [native UI contracts, ownership and reuse](REFACTOR-PHASE5.md). Each component receives containers from its owner; lists/details work without Builder and comparison candidates own separate inputs and component instances.
+## Module ownership and release boundaries
+
+| Layer | Inputs | Outputs / owner |
+|---|---|---|
+| Core | Explicit values | Copies, immutability and text operations; no page/game policy |
+| Data | Provider transport plus selected version | Prepared immutable source records and provenance |
+| Domain | Catalog plus build/scenario/query inputs | Eligibility, normalized inputs and accepted/rejected transitions |
+| Engine | Separate build/scenario snapshots plus prepared data | Full-precision structured outcomes and explicit diagnostics |
+| Presentation | Evaluated outcomes/source prose | Display text, labels and explanations |
+| UI | Caller-supplied containers, model and providers | A private draft, scoped rendering and callbacks; update/dispose |
+| Application / entry | Sources, canonical page inputs, components | Page workflows, selection races and lifecycle composition |
+
+Source catalogs can be shared read-only. Mutable build/scenario records, combo steps/health progression and component instances cannot be shared between comparison candidates. A new page composes these capabilities directly. [Extension recipes](EXTENDING.md) show the supported interfaces and owners.
+
+`npm run build` generates 71 source runtime files under both `dist/` and `dist/preview/`; generated trees are disposable. Development documentation, fixtures, tests and recovery folders are excluded. The combined Pages workflow preserves production bytes and places this artifact only under `/modular-refactor/`.
+
+`verify:refactor` reproduces local fixture/browser characterization and checks runtime/fixture immutability. `verify:release` binds passing local release evidence to normalized-text/binary-exact runtime fingerprints. CI runs units/build/fingerprint verification; the Pages composition verifier repeats the fingerprint check before upload, including deployments triggered from main. Browser, performance and backup-recovery checks require the preserved local fixtures and are not represented as browser tests executed on GitHub.
+
+The API still selects the current Data Dragon patch and optional Community Dragon `latest`. Source version pinning, serialization, storage and complete explorer/comparison products remain separate roadmap work. This structural refactor does not establish universal game accuracy or live compatibility with a newly published patch.
