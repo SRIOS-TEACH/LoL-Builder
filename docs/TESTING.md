@@ -6,7 +6,7 @@ Combo scheduling and browser coverage are described in [COMBOS.md](COMBOS.md). R
 
 Rune, haste and on-hit follow-up tests include `rune-effects.test.cjs`, `ability-items.test.cjs`, `ability-onhit.test.cjs` and added cases in the existing damage/DPS tests. The dashboard browser suite checks game time, selected rune counters and floating tooltip positioning. The passive browser suite checks separate basic/ultimate haste and Shojin with target settings on/off. The DPS browser suite checks Ezreal/Smolder Spellblade, active on-hit DPS and a passive DPS table. The broad browser suite also recognizes the intentionally disabled standalone lookup pages and verifies their Builder links.
 
-Requires Node 20 or newer, no package installation:
+Requires Node 22.13 or newer, no package installation:
 
 ```sh
 npm test
@@ -84,3 +84,46 @@ The dashboard browser test covers the five-role catalog, level growth, Mid boots
 `npm run test:pickers` checks both picker search fields, drag-out versus genuine backdrop clicks, fixed search/detail positions while result grids scroll, readable icon filters, and the Recommended tab using Aurora's captured game data. Startup tests hold rune and Community Dragon item responses pending while exercising the pickers, then fail those optional requests and verify the build remains usable. `tests/picker-data.test.cjs` covers versioned HTTP caching, shared request coalescing/retry, and recommendation context/catalog filtering.
 
 Picker readiness requires the Data Dragon champion and item indexes; rune choices and advanced item calculations arrive separately. Recommendations come from matching Summoner's Rift CLASSIC `ItemRecommendationOverrideSet` records, with Data Dragon sets as a fallback, and are filtered through the current catalog and role restrictions. No inferred recommendations are shown when those records are absent. Screenshots use placeholder artwork. Long details have their own overflow region and never move the search bar or results frame.
+
+## Reusable catalogs and input rules
+
+Run node scripts/verify-reuse.cjs with the captured fixtures above to demonstrate champion/item browsing and independent build/scenario inputs without a page. FIXTURES_DIR and REUSE_OUTPUT select input and report locations. Ten fixture-free cases in tests/catalog-reuse.test.cjs exercise catalog retention, isolated query/request state, input ownership, role/rune rules, metadata and retries. See [Phase 3 contracts](REFACTOR-PHASE3.md).
+
+## Independent calculation pipeline
+
+Run node scripts/verify-calculations.cjs with FIXTURES_DIR to compare ten protected advanced/fallback cases headlessly, including stats, attacks, abilities, combo warning states and sequential health. CALCULATION_OUTPUT selects the report. Ten fixture-free cases in tests/calculation-pipeline.test.cjs run under npm test and cover precision, aliases/forms/child selection, localization, unsupported values and A/B/A/input isolation. The ability audit now starts with the current ready seven-slot inventory and retains the 30 classified baseline calls; do not reuse the historical zero-unavailable claim. See [Phase 4 contracts](REFACTOR-PHASE4.md).
+
+## Native modules and reusable UI
+
+The unit runners load native runtime exports; production has one module entry and no compatibility globals. Older browser characterization names are provided only by the test adapter, never shipped. Local test servers serve both `.js` and `.mjs` with a JavaScript MIME type.
+
+With the fixture/browser environment above, run `npm run test:reuse-ui` for two independent sets of controls/details without Builder. Run `node tests/native-entry-browser.cjs` for the actual Builder entry without test aliases. Both checks should pass against the generated root and nested preview artifact. `native-modules.test.cjs` verifies relative import paths and two independent page controllers.
+
+## Final refactor release checks
+
+Use the preserved 16.18.1 fixture set and the browser environment above. Run from the authoritative checkout; choose a fresh output directory for each command:
+
+```powershell
+$env:REFACTOR_OUTPUT = Join-Path (Get-Location) 'test-results/release-check-new'
+npm run verify:refactor
+```
+
+The runner builds both generated routes, executes all unit tests, 32 browser checks, four five-case captures (20 exact comparisons), source/combat/ability audits, ranged/melee item-description audits, ten headless cases and catalog/input reuse. It copies JSON fixtures into its evidence directory so screenshot-producing suites cannot overwrite original fixtures. Original/copy JSON hashes and runtime bytes must remain unchanged. Advanced-data failures, latest-selection races, desktop/mobile layout, dialog focus/tooltips, component disposal and the actual native entry are covered. The full runner needs Playwright/browser/fixtures locally; `npm test` alone does not run it.
+
+Keep other browser jobs idle for the separately measured baseline comparison:
+
+```powershell
+$env:BASELINE_ROOT = '<absolute fresh checkout restored from the protected backup>'
+$env:PERFORMANCE_OUTPUT = Join-Path (Get-Location) 'test-results/performance-new.json'
+node scripts/compare-refactor-performance.cjs
+```
+
+The script verifies the fixed baseline commit, alternates five original/refactor trials per mode, and uses actual page entries. It records fresh-context and repeat-context startup, synchronous level/target edits, item-picker opening/search, ability geometry and desktop/mobile overflow. API fixtures have a fixed 20 ms delay and remote artwork is replaced. Routing disables HTTP cache, so this is not a real CDN/network cold/warm benchmark. Thresholds are declared before measurement in the script. Real-device/network profiling and new-patch compatibility remain separate checks.
+
+[Recovery instructions](REFACTOR-PROTECTION.md) restore the immutable tag from the independent bundle and verify every archive entry before restoring fixtures. Run the restored checkout's own units/browser suites; compare advanced/fallback captures to the preserved records. Use a new destination rather than resetting existing work.
+
+For a clean-source reproduction, stage the intended files, archive their Git tree into a fresh directory, then run units/build/headless/reuse/UI/native-entry checks there with FIXTURES_DIR pointing to the preserved local JSON. The checkout must not rely on ignored output or a previously generated preview. Completion documentation and release proof are added only after those checks pass; the source fingerprints bind proof to the tested runtime.
+
+`npm run verify:release` reads `docs/phase6-release.json` and verifies required passing evidence, comparison completion with no unexplained differences, and every runtime path/hash. Text fingerprints normalize Git CRLF/LF; binary bytes are exact. Missing/failed evidence, an unverified edit or an added/removed runtime file blocks deployment. Regenerate proof only from reviewed passing verification, never as an automatic part of the build. Future intentional numerical changes need an explicitly reviewed reference/difference set while preserving the historical baseline.
+
+GitHub runs units, build and release fingerprint verification. The combined Pages verifier also checks the fingerprint before upload, so a main-triggered deployment cannot publish unverified refactor changes through the older production workflow. Full browser/performance/recovery checks run with local preserved fixtures; the JSON proof is an auditable local verification record, not a claim that GitHub executed those suites. Generated refactor artifacts contain runtime files and attribution only; the legacy production tree remains unchanged.

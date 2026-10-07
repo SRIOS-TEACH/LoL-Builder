@@ -12,9 +12,14 @@
     "test:passives": "node tests/passives-browser.cjs",
     "test:targets": "node tests/target-browser.cjs",
     "test:combos": "node tests/combo-browser.cjs",
-    "test:combo-effects": "node tests/combo-effects-browser.cjs"
+    "test:combo-effects": "node tests/combo-effects-browser.cjs",
+    "build": "node scripts/build-site.cjs",
+    "build:preview": "node scripts/build-site.cjs --preview",
+    "test:reuse-ui": "node tests/ui-reuse-browser.cjs",
+    "verify:refactor": "node scripts/verify-refactor.cjs",
+    "verify:release": "node scripts/verify-release.cjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22.13"
   }
 }

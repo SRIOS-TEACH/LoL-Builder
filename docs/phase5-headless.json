@@ -1,0 +1,244 @@
+{
+  "date": "2026-10-06T13:43:48.356Z",
+  "noPageApis": true,
+  "baselineCases": [
+    {
+      "mode": "advanced",
+      "id": "ashe-basic",
+      "total": 472.5499943494797,
+      "duration": 0.7207152391973242,
+      "damageWarnings": 0,
+      "timeWarnings": 0,
+      "statsExact": true,
+      "attackExact": true,
+      "abilityNumbersMatch": true
+    },
+    {
+      "mode": "advanced",
+      "id": "ezreal-items",
+      "total": 554.1074922417477,
+      "duration": 0.6747353265269229,
+      "remainingHp": 1445.8925077582523,
+      "damageWarnings": 0,
+      "timeWarnings": 0,
+      "statsExact": true,
+      "attackExact": true,
+      "abilityNumbersMatch": true
+    },
+    {
+      "mode": "advanced",
+      "id": "veigar-health-sequence",
+      "total": 606.0991090758096,
+      "duration": 0.5,
+      "remainingHp": 1393.9008909241902,
+      "damageWarnings": 0,
+      "timeWarnings": 0,
+      "statsExact": true,
+      "attackExact": true,
+      "abilityNumbersMatch": true
+    },
+    {
+      "mode": "advanced",
+      "id": "aatrox-recasts",
+      "total": 375.9374935179949,
+      "duration": 2.600000023841858,
+      "remainingHp": 1624.0625064820051,
+      "damageWarnings": 0,
+      "timeWarnings": 0,
+      "statsExact": true,
+      "attackExact": true,
+      "abilityNumbersMatch": true
+    },
+    {
+      "mode": "advanced",
+      "id": "aurora-magic",
+      "total": 347.99999952316284,
+      "duration": 0.25,
+      "remainingHp": 1652.0000004768372,
+      "damageWarnings": 0,
+      "timeWarnings": 0,
+      "statsExact": true,
+      "attackExact": true,
+      "abilityNumbersMatch": true
+    },
+    {
+      "mode": "fallback",
+      "id": "ashe-basic",
+      "total": 59,
+      "duration": 0,
+      "damageWarnings": 2,
+      "timeWarnings": 3,
+      "statsExact": true,
+      "attackExact": true,
+      "abilityNumbersMatch": true
+    },
+    {
+      "mode": "fallback",
+      "id": "ezreal-items",
+      "total": 65.5,
+      "duration": 0,
+      "remainingHp": 1934.5,
+      "damageWarnings": 2,
+      "timeWarnings": 3,
+      "statsExact": true,
+      "attackExact": true,
+      "abilityNumbersMatch": true
+    },
+    {
+      "mode": "fallback",
+      "id": "veigar-health-sequence",
+      "total": 0,
+      "duration": 0,
+      "remainingHp": 2000,
+      "damageWarnings": 2,
+      "timeWarnings": 2,
+      "statsExact": true,
+      "attackExact": true,
+      "abilityNumbersMatch": true
+    },
+    {
+      "mode": "fallback",
+      "id": "aatrox-recasts",
+      "total": 0,
+      "duration": 2,
+      "remainingHp": 2000,
+      "damageWarnings": 3,
+      "timeWarnings": 3,
+      "statsExact": true,
+      "attackExact": true,
+      "abilityNumbersMatch": true
+    },
+    {
+      "mode": "fallback",
+      "id": "aurora-magic",
+      "total": 0,
+      "duration": 0,
+      "remainingHp": 2000,
+      "damageWarnings": 2,
+      "timeWarnings": 2,
+      "statsExact": true,
+      "attackExact": true,
+      "abilityNumbersMatch": true
+    }
+  ],
+  "numericTolerance": {
+    "relative": 1e-9,
+    "absolute": 1e-9
+  },
+  "comboComparison": "Matches protected display precision: damage/HP 1 decimal, duration 2 decimals; unrounded current results recorded above.",
+  "twoBuildsOrderIndependent": true,
+  "inputsAndFixturesUnchanged": true,
+  "equivalentExplorerContexts": true,
+  "formFixtures": [
+    {
+      "champion": "Jayce",
+      "aliases": 71,
+      "selectedQ": "Spell_JayceToTheSkies_Name"
+    },
+    {
+      "champion": "Elise",
+      "aliases": 59,
+      "selectedQ": "Spell_EliseHumanQ_Name"
+    },
+    {
+      "champion": "Nidalee",
+      "aliases": 72,
+      "selectedQ": "Spell_JavelinToss_Name"
+    },
+    {
+      "champion": "Aphelios",
+      "aliases": 96,
+      "selectedQ": null
+    }
+  ],
+  "fixtures": [
+    {
+      "name": "items.json",
+      "sha256": "0b8ddc4531607aefa4322b18a04be8569b0fc1379211c4e2bf06676d911cea6d"
+    },
+    {
+      "name": "cd-items.json",
+      "sha256": "c1cf2b0bf746d260cd960788a52e71d96c096fe298c83cef55253f556e819ffb"
+    },
+    {
+      "name": "lol.stringtable.json",
+      "sha256": "bdee3e3636feb8e1cb5ac11e09e213c9115df2b04910c1f7eb6acc3e7d0d479d"
+    },
+    {
+      "name": "runes.json",
+      "sha256": "74d1e211982f4c976f2c76c1229f5c09b6eabdf2bf76b8f1bbd6d7248a60fc44"
+    },
+    {
+      "name": "Ashe.json",
+      "sha256": "aa2ec02303c2dd14c90538bdbf19cce2c1a859ffc9c62c6fde8c968140cad1a0"
+    },
+    {
+      "name": "Ashe.bin.json",
+      "sha256": "d5aecdf76b201b075a8c77c3444abaabab3dc5a5ac0b35dc14aafaefb65d5c5d"
+    },
+    {
+      "name": "Ezreal.json",
+      "sha256": "a8123e5926c2d47f23809cb63f5ac582be3075eafdbaf025769644fd466fa570"
+    },
+    {
+      "name": "Ezreal.bin.json",
+      "sha256": "f0c46401f1b4da8805c8c27576e72b835587b779c67027fe9b3d57ff8f872f07"
+    },
+    {
+      "name": "Veigar.json",
+      "sha256": "d0e4ef21922bc780aae5409b5e1e37817fe7a76ed879e879b6b11aae98bb5e19"
+    },
+    {
+      "name": "Veigar.bin.json",
+      "sha256": "c2b2569aad187c47fb40b7278531fa1f021822594e93a55bba5d4f6dc59428b6"
+    },
+    {
+      "name": "Aatrox.json",
+      "sha256": "a6d2c2dc66e0966a6cf19ef8701e0062aa3ba863b2219bae97c6ff557328cc93"
+    },
+    {
+      "name": "Aatrox.bin.json",
+      "sha256": "6724639d000d303353ae7fffed2355aed2d0d90e263e839a7757407100d10d81"
+    },
+    {
+      "name": "Aurora.json",
+      "sha256": "bb48fd15c8204aa1c61966dc5d3e855714ab56e1b1a7d4a0a01282a4006c0f57"
+    },
+    {
+      "name": "Aurora.bin.json",
+      "sha256": "eff089fe2fea25e2376190e9d255cf28f287ab1c7ac36a5cf36c53a47b2c995f"
+    },
+    {
+      "name": "Jayce.json",
+      "sha256": "bef7583616d27ef2fb0447a06b9ad1d8bbf9a716839ef2c7948dcd87203ef8dd"
+    },
+    {
+      "name": "Jayce.bin.json",
+      "sha256": "d79d8de39f83f523ba23ae68d0cce13311615b19acba48de77576c429e197be7"
+    },
+    {
+      "name": "Elise.json",
+      "sha256": "9f63a1a7cf23eac7253d551a89e460205290e6bc30b01b2bf79179cf74137632"
+    },
+    {
+      "name": "Elise.bin.json",
+      "sha256": "12eaf191bd50069927e900efe141179c07a5ccc902ddb1ab19d5a0e8da1fe7f6"
+    },
+    {
+      "name": "Nidalee.json",
+      "sha256": "2de9f30dd8405d1cd8eea4f76e553be9f63e7fdc5e2bc2b4133a36fb8d253bbc"
+    },
+    {
+      "name": "Nidalee.bin.json",
+      "sha256": "dae8c4ace80422b35a7571315b88de565a8fa0445248eac5b00212463ff0730d"
+    },
+    {
+      "name": "Aphelios.json",
+      "sha256": "9ea8aaaee82b88a4424837f6e5159de792c226a219ff5aa2842b226a577dadcd"
+    },
+    {
+      "name": "Aphelios.bin.json",
+      "sha256": "175c64fad8aa54d82f43dd4aa56b9c5bbc26f510c08eed71ea8c32d47b55d375"
+    }
+  ]
+}

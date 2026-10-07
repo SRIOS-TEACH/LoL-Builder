@@ -1,15 +1,12 @@
+import ScenarioInputs from '../domain/scenarioInputs.js';
 /** Shared target health and mitigation rules. Damage type is explicit: AP/AD
  * scaling alone does not identify whether a damage packet is magic/physical.
  */
-(function(scope){
+
   const finite=Number.isFinite,clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
-  const numeric=(value,fallback)=>value!==null&&value!==''&&finite(Number(value))?Number(value):fallback;
   const format=value=>finite(value)?Number(value.toFixed(4)).toString():'unavailable';
-  function normalize(target={}){
-    const maxHp=Math.max(1,numeric(target?.maxHp,2000));
-    return {enabled:target?.enabled===true,maxHp,currentHp:clamp(numeric(target?.currentHp,maxHp),0,maxHp),
-      armor:numeric(target?.armor,100),mr:numeric(target?.mr,100),damageReduction:clamp(numeric(target?.damageReduction,0),0,100)};
-  }
+  const scenario=ScenarioInputs;
+  const normalize=scenario.normalizeTarget;
   function targetStats(target){
     const t=normalize(target);if(!t.enabled)return {};
     return {hp:t.maxHp,currentHp:t.currentHp,armor:t.armor,mr:t.mr,healthPercent:t.currentHp/t.maxHp,
@@ -43,6 +40,6 @@
     return {...result,value:rawValue===null?null:rawValue*multiplier,multiplier,
       text:`${format(rawValue)} raw ${normalizedType} damage; ${resistanceText}; damage${outgoingText} × ${format(resistanceMultiplier)} × (1 − ${format(t.damageReduction)}% damage reduction) = ${format(rawValue===null?null:rawValue*multiplier)}.`};
   }
-  scope.TargetDamage={normalize,targetStats,apply};
-  if(typeof module!=='undefined')module.exports=scope.TargetDamage;
-})(typeof window!=='undefined'?window:globalThis);
+  const exportedApi = {normalize,targetStats,apply};
+
+export default exportedApi;

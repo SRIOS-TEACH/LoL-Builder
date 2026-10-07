@@ -1,6 +1,10 @@
-# Ability tooltip audit â€” 2026-09-11
+# Ability tooltip audit — current refactor baseline
 
-The real Builder tooltip resolver was tested for all **173 champions**, at levels **1, 6, 11 and 18**, through every permitted rank, including passive descriptions. The latest audit reports **0 abilities containing `[value unavailable]`**, down from 14 in PR #111 and 46 before the root-spell repairs. See `ability-unavailable.json` and `tests/ability-audit.cjs`.
+The preserved fixture audit covers 173 champions at levels 1, 6, 11 and 18 and every permitted ability rank. After correcting the obsolete six-slot startup condition to the current seven-slot inventory, it reports 30 unresolved resolver calls across 13 passive descriptions. This supersedes the historical zero-unavailable claim. See [captured calls](refactor-baseline/ability-audit-readiness.json) and [classification](phase4-ability-classification.json).
+
+Ten entries are dynamic localization keys, one is an interface hotkey, and nineteen are unexported script values or qualified effect references. The audit records resolver calls; these counts do not establish how many unavailable markers survive in the final rendered description. All remain documented limitations. Phase 4 preserves their behavior rather than inventing numeric values.
+
+## Historical repairs (before the refactor)
 
 ## What caused the remaining failures
 
@@ -18,7 +22,7 @@ The real Builder tooltip resolver was tested for all **173 champions**, at level
 | Syndra W | Missing script alias to live SlowDuration. |
 | Xin Zhao E | Script attack-speed bonus. Combine live ASMod, APToASRatio and PermanentASToASRatio. |
 
-Mappings are specific to champion/spell/token; an `f1` value on one champion is never reused globally. Balance values remain in live Data Dragon/CommunityDragon payloads. Localization is fetched only for the three champions that require it and cached for the session; the full upstream table is approximately 32 MB uncompressed. If that endpoint fails, unresolved localization remains visibly unavailable rather than replaced with invented text.
+Mappings are specific to champion/spell/token; an `f1` value on one champion is never reused globally. Balance values remain in live Data Dragon/CommunityDragon payloads. Localization is fetched on demand and cached for the session; the full upstream table is approximately 32 MB uncompressed. If that endpoint fails, unresolved localization remains visibly unavailable rather than replaced with invented text.
 
 ## Champion stats now connected to abilities
 
@@ -38,7 +42,7 @@ Inputs are owned by the relevant ability, shared counters use the same key as fo
 
 ## Limits of this result
 
-Zero unavailable fields measures tooltip resolution, not completeness of a combat simulator. Enemy stats intentionally remain symbolic. Other combat-state inputs can remain unknown. This change does not automatically activate temporary abilities or implement every champion's scripted stat conversion, transformation or evolution. In particular, arbitrary temporary buffs and dependencies such as Vladimir/Ryze/Ornn/Jhin need separate mechanic bindings and validation; they are not covered by the eleven champion stat integrations above. Kai'Sa progress is displayed but does not automatically select an evolved ability branch.
+The historical zero-unavailable report did not establish completeness of a combat simulator. Enemy stats intentionally remain symbolic. Other combat-state inputs can remain unknown. This change does not automatically activate temporary abilities or implement every champion's scripted stat conversion, transformation or evolution. In particular, arbitrary temporary buffs and dependencies such as Vladimir/Ryze/Ornn/Jhin need separate mechanic bindings and validation; they are not covered by the eleven champion stat integrations above. Kai'Sa progress is displayed but does not automatically select an evolved ability branch.
 
 The earlier non-primary source defects are separate: Runaan variant 773085 has a self-referential ChampRange record, and K'Sante's Q3/R missile damage helpers reference missing Effect1 arrays. These do not appear in the primary tooltip audit and remain source limitations.
 

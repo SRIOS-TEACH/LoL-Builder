@@ -1,0 +1,886 @@
+{
+  "date": "2026-10-06T12:20:51.328Z",
+  "results": [
+    {
+      "id": "unit",
+      "exitCode": 0,
+      "seconds": 0.8
+    },
+    {
+      "id": "root-browser-fallback",
+      "exitCode": 0,
+      "seconds": 21.3
+    },
+    {
+      "id": "preview-browser-fallback",
+      "exitCode": 0,
+      "seconds": 22.6
+    },
+    {
+      "id": "root-browser-advanced",
+      "exitCode": 0,
+      "seconds": 54.3
+    },
+    {
+      "id": "preview-browser-advanced",
+      "exitCode": 0,
+      "seconds": 54.6
+    },
+    {
+      "id": "preview-dps-browser-fallback",
+      "exitCode": 0,
+      "seconds": 15.9
+    },
+    {
+      "id": "root-dps-browser-fallback",
+      "exitCode": 0,
+      "seconds": 19.1
+    },
+    {
+      "id": "preview-dps-browser-advanced",
+      "exitCode": 0,
+      "seconds": 52.3
+    },
+    {
+      "id": "root-dps-browser-advanced",
+      "exitCode": 0,
+      "seconds": 53.2
+    },
+    {
+      "id": "preview-attack-browser-fallback",
+      "exitCode": 0,
+      "seconds": 18.4
+    },
+    {
+      "id": "root-attack-browser-fallback",
+      "exitCode": 0,
+      "seconds": 18.6
+    },
+    {
+      "id": "preview-attack-browser-advanced",
+      "exitCode": 0,
+      "seconds": 53.2
+    },
+    {
+      "id": "root-attack-browser-advanced",
+      "exitCode": 0,
+      "seconds": 52.8
+    },
+    {
+      "id": "root-dps-targets",
+      "exitCode": 0,
+      "seconds": 42.2
+    },
+    {
+      "id": "root-dashboard-browser",
+      "exitCode": 0,
+      "seconds": 3.5
+    },
+    {
+      "id": "root-picker-browser",
+      "exitCode": 0,
+      "seconds": 3.6
+    },
+    {
+      "id": "root-passives-browser",
+      "exitCode": 0,
+      "seconds": 4
+    },
+    {
+      "id": "preview-dps-targets",
+      "exitCode": 0,
+      "seconds": 58.1
+    },
+    {
+      "id": "preview-dashboard-browser",
+      "exitCode": 0,
+      "seconds": 3.5
+    },
+    {
+      "id": "root-target-browser",
+      "exitCode": 0,
+      "seconds": 8.3
+    },
+    {
+      "id": "preview-picker-browser",
+      "exitCode": 0,
+      "seconds": 3.7
+    },
+    {
+      "id": "root-combo-browser",
+      "exitCode": 0,
+      "seconds": 4.8
+    },
+    {
+      "id": "preview-passives-browser",
+      "exitCode": 0,
+      "seconds": 4
+    },
+    {
+      "id": "root-combo-effects-browser",
+      "exitCode": 0,
+      "seconds": 3.1
+    },
+    {
+      "id": "root-champion-effects",
+      "exitCode": 0,
+      "seconds": 2.7
+    },
+    {
+      "id": "root-cases-advanced",
+      "exitCode": 0,
+      "seconds": 2.4
+    },
+    {
+      "id": "preview-target-browser",
+      "exitCode": 0,
+      "seconds": 8.3
+    },
+    {
+      "id": "root-cases-fallback",
+      "exitCode": 0,
+      "seconds": 1.7
+    },
+    {
+      "id": "preview-combo-browser",
+      "exitCode": 0,
+      "seconds": 4.5
+    },
+    {
+      "id": "preview-combo-effects-browser",
+      "exitCode": 0,
+      "seconds": 3.8
+    },
+    {
+      "id": "preview-champion-effects",
+      "exitCode": 0,
+      "seconds": 2.6
+    },
+    {
+      "id": "preview-cases-advanced",
+      "exitCode": 0,
+      "seconds": 2.6
+    },
+    {
+      "id": "preview-cases-fallback",
+      "exitCode": 0,
+      "seconds": 1.5
+    }
+  ],
+  "representativeCases": {
+    "trees": 2,
+    "modes": 2,
+    "casesPerRun": 5,
+    "exactBaselineMatch": true
+  },
+  "passed": true,
+  "headless": {
+    "cases": 10,
+    "noPageApis": true,
+    "statsAndAttacksExact": true,
+    "numericRelativeAndAbsoluteTolerance": 1e-09,
+    "A_B_A": true,
+    "inputAndFixtureImmutability": true
+  },
+  "unitTests": 223,
+  "audit": {
+    "champions": 173,
+    "unresolvedCalls": 30,
+    "affectedPassives": 13,
+    "exactBaselineFindings": true,
+    "combatRecords": 2809,
+    "combatScenarios": 5618,
+    "newSourceIssues": false
+  },
+  "followupCleanup": {
+    "meaning": "Unused bindings and duplicate slug normalization removed after broad tests; a whitespace-only line cleaned.",
+    "focusedTests": 22,
+    "advancedCasesExact": 5
+  },
+  "cleanSource": {
+    "unitTests": 223,
+    "buildPassed": true,
+    "headlessCases": 10,
+    "fixturesExternalReadOnly": true,
+    "note": "Final annotated source archive checked separately; original broad browser matrix passed 222 tests before the additional presentation-invariance case."
+  },
+  "publication": {
+    "verifiedRuntimeRevision": "56cf8377f388ce87900bf31b9c4cb051f8d91504",
+    "productionRevision": "191a259364ff8390e97afe84d5a6b8ac18735690",
+    "workflowRuns": [
+      {
+        "id": 37463446008,
+        "name": "Deploy production and refactor preview to Pages",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/SRIOS-TEACH/LoL-Builder/actions/runs/37463446008"
+      },
+      {
+        "id": 37463446010,
+        "name": "Regression tests",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/SRIOS-TEACH/LoL-Builder/actions/runs/37463446010"
+      }
+    ],
+    "all60RuntimeFilesMatchSavedGitBytes": true,
+    "productionFilesPreserved": [
+      "Builder.html",
+      "JS/builder.js",
+      "JS/comboUI.js",
+      "riot.txt"
+    ],
+    "baselineReferencesPreserved": true
+  },
+  "browserMatrixRuntimeFiles": [
+    {
+      "path": "Builder.html",
+      "sha256": "e907c54159fd15b0aaa0185466a0fa2dbc8932238a23f2353cbf25b9c7a3c5f2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "CSS/halfmoon-variables.css",
+      "sha256": "73e4802a23fd0ca5cc62e1b22f27d17af7e0bebd9f830f15f63889c21bcfb6f9",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "CSS/lolBuilder.css",
+      "sha256": "b0077feddb58f1e0b5f57bff8b2aea9dbde09352b2b8ce88395d108025c8bce0",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/application/catalogSession.js",
+      "sha256": "70df85bbe884caae9a4060770466bdf513088dca18571950dee34849a95ec454",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/builder.js",
+      "sha256": "15e5f83963c9fda2dd188d3d598d45c70d49412591ecb0caeecef668d130cd91",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/champLookup.js",
+      "sha256": "20f81df6edc10db342a721119d28ec0b90abfa25749d0f90cfa5d8fbd341a80c",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/comboUI.js",
+      "sha256": "66ad9392167f4ad4620c52db6a62bf877a6f499cbecded5dc7e904d9f7c546ef",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/core/records.js",
+      "sha256": "0f0770c69008ff975d94807addf4f8657cf358683dd1c9cb099eb518fda4b269",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/core/text.js",
+      "sha256": "752084639ab76aeee763b079a75e8d86ddf1a8e375661ae5d36df11756002dcd",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/data/championSource.js",
+      "sha256": "91ba055ddf4371367c5e1117dd8b019be67bc192663141f3af6e91d7e22ecf09",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/data/itemSource.js",
+      "sha256": "c489441c818fdcea6172b236e7e3d18780098d7792a4d3545a36f2d1d6e9265f",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/data/runeSource.js",
+      "sha256": "0ab35cdfe76e50edadfa16e1ec123395c6d51c75f2343139f05255b62b5e6f7f",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/data/sourceRepositories.js",
+      "sha256": "8991cc64032e6746e56660e82b1b7e29781f730961eba95df7ccbed7e7ee1f93",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/buildInputs.js",
+      "sha256": "1f6b507760eac507d9d970187a789f2a7b94dba4dc8a7400a1d1edd8c1b43d47",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/catalogQueries.js",
+      "sha256": "25353513ac09ea0daf790364ff47e6b81fb5d0337d11dfa1fe67bb21a1691fa9",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/recommendations.js",
+      "sha256": "e08dc33b854cbf091b32454eb8bf4cbcb05efb4a63aac76421e4c772172f3b6e",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/runeInputs.js",
+      "sha256": "3ab0eee4466f810c6c985769d95d8836bff1f753fc8233c666fc03bcde37af05",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/scenarioInputs.js",
+      "sha256": "6196f7aa728ca34b724c3a674c0c720fe3088471997dc695fccdf34484f8c4fe",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/abilityResolution.js",
+      "sha256": "6fb017f8a388ee2a347e7d8e1edc5fc3bf61c61c84489e34543c308abb014938",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/buildEvaluation.js",
+      "sha256": "a8f6f0ebd094b647e2ed862123b742a9104edbe99c91dc5b320781bd542c2dad",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/calculationContext.js",
+      "sha256": "116276298654913a8adb82594839009d4129a03141b4ae744e3f16e3c234a7cc",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/calculationPipeline.js",
+      "sha256": "c288db437b2ef7f0fd04c1a87996841227089b4db73778acb68c5ebd81445995",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/combatContext.js",
+      "sha256": "b63647dbf310fe63d2f9be17de2e023a804da9c060a983574e08351184376ea1",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/comboEvaluation.js",
+      "sha256": "500d5621887d30432112f2e54f73ace3f5da716916f64326ca747309d47037d6",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/itemEvaluation.js",
+      "sha256": "ee3f460feed0af6dec60a340ac7ce71e8c86ec332c9910e66c57646e422ee2ee",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/itemLookup.js",
+      "sha256": "8fe5c907ddfdbbe26146a68adaebeb14d990c078b76c66b2ed5e650944a1c2c3",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/presentation/abilityPresentation.js",
+      "sha256": "1fa0842de3d3230ddd6c6d39a0cff65e8b00c60ddf0c8bfc63e84ae770831b53",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/presentation/damagePresentation.js",
+      "sha256": "a9169b4e9863f292526628dc845570df6c1dd85ca4f56b430d851d73f31732e2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/abilityDps.js",
+      "sha256": "53fd3d99b0570a5c633ee52483feb992237b40a58c2e3f4405f469ed6838c7b0",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/abilityOnHit.js",
+      "sha256": "c25b9935bc9754cbd5ee4ea3163cfb60290f9fb6413c2749ad09eeff14b8f694",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/abilityRules.js",
+      "sha256": "7247063827759964c3668dd527c46cea9008ab6c620b84d3561c4c22d3f9525c",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/apiClient.js",
+      "sha256": "a6d81b752d5caa9ce4e6276351f9f2597124f38bc6a94be05c43cf2c8ad412b7",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/attackChampions.js",
+      "sha256": "7ecb8d837b66f05b2e6dab9a39ad79484ff3a1fb1725f7ae59fc1348a69476de",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/attackEffects.js",
+      "sha256": "73f98b1bf05acd9565cfa77476a3604a7a49a72c12ad5c7befad1cebd33cb4fb",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/buildStats.js",
+      "sha256": "1d8428999a436973b5104f3547ef5a1748102d3531c08471f64ecff7641a995d",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/calculations.js",
+      "sha256": "6b939cc2e64aa970b5973db2715215859e208931d6c5663710112bad6b3831ef",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/championEffects.js",
+      "sha256": "20a5f70bfba0c979826c839bc6c56ce2e60bd0eb4c446f0d634e604f6a168b4c",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/combatInputs.js",
+      "sha256": "6e2c78cde0525a6fb062f076d2bac93ec26912f33fd14e5fcde46067b069ef6a",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/comboTester.js",
+      "sha256": "2cb34e15c65b4f64afaaeb45330e1cc3197cc722c987c9c284c77c0d94d9f373",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/damageText.js",
+      "sha256": "c02212646257bd8574669f767f100ed72709ed6fb38d2a693f6b4c4462a4e0e6",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/itemData.js",
+      "sha256": "f9bce94cf6e102143f96f6eccdabd253efdf15908fcdd7e43883af776de7a672",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/itemDescriptions.js",
+      "sha256": "94e6ce90dcbf22678a00c9e92380c6cb83848106bb892774b9d9046537e895f2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/itemPolicy.js",
+      "sha256": "fce2d610088c0a27368c2dcef1e7fc52ada711c7ea09445120f2d651bcae0054",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/runeEffects.js",
+      "sha256": "358a9b9119ba129f02def53e2a569125567b2dbca1462d6178f2be66bae74164",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/targetDamage.js",
+      "sha256": "be85194ee0aada44400eb98c0fcb8226aada3111e766d90eabe1f5517973aec0",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/README.md",
+      "sha256": "79e46a62ce47a5c6ab57153936307671c6f2a316f34510c46b8f3d216812b275",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/all.png",
+      "sha256": "d46d36230ab6ed931ea2723550caffaa51aa0ac5d9e4a9ec017558bdb6d017e7",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/assassin.png",
+      "sha256": "4116756eac098bd1bd4e40129d9fd5d0527a52cd43f5fca27c88b8c4b985a2d7",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/fighter.png",
+      "sha256": "be453ed00a94b1733d99d5fbc7adb8e8fd3331e09b943ff23dce43fb98468753",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/gold.png",
+      "sha256": "341a3caed071860c594f9860b8f7a71fd81d33e5dbfc53c6ff0b45cb8a5136bf",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/mage.png",
+      "sha256": "c44b4ff4903f46790dcab73437aec343105f4e0aebc3003552b362c8f453b72a",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/marksman.png",
+      "sha256": "bb55fbf8bd8055046d389e6bb2512fd51f67ca6e95db2e8398df8c3f894168e8",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/recommended.png",
+      "sha256": "458b1805826e21cf81c12b11f63218e72807d7aea30be8788b26322a09a484bc",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/reset.png",
+      "sha256": "4ef986e80bdbb5f0bff7cbedb9947e2a7e39f2c112280583dbe9e0337e5b324b",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/support.png",
+      "sha256": "69f61425dcbff49a1729ecf79c73c4d80cb9b343a2438a7fbfe826033a1a3ce2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/tank.png",
+      "sha256": "f8e5d25ba1caad4a551ea112a1d5b1833c8cfec15503eec8592e901bbce35678",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "champ.html",
+      "sha256": "ebbf266b4b99997b2e19bb5e0cf0067c8eb76c1489543d22454ad2b39e5a50b3",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "index.html",
+      "sha256": "4d248ec88de2905e162d0dcb18456424c3c0a42549c7a37b5df6822acd53d534",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "itemLookup.html",
+      "sha256": "5952a7d420310457deb0748b7aabcfc1f206aaf9f3919f85a17ccee245f3cfa2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "main.html",
+      "sha256": "c71124e3f18d4bca71a1d734ae24e20a9acf49104195b92e843b30def4963b6f",
+      "generatedCopiesMatch": true
+    }
+  ],
+  "finalRuntimeFiles": [
+    {
+      "path": "Builder.html",
+      "sha256": "e907c54159fd15b0aaa0185466a0fa2dbc8932238a23f2353cbf25b9c7a3c5f2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "CSS/halfmoon-variables.css",
+      "sha256": "73e4802a23fd0ca5cc62e1b22f27d17af7e0bebd9f830f15f63889c21bcfb6f9",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "CSS/lolBuilder.css",
+      "sha256": "b0077feddb58f1e0b5f57bff8b2aea9dbde09352b2b8ce88395d108025c8bce0",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/application/catalogSession.js",
+      "sha256": "70df85bbe884caae9a4060770466bdf513088dca18571950dee34849a95ec454",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/builder.js",
+      "sha256": "478dcde338606382abc8edc573497e0327d452c62e1d67d3dfc382dcc2143f96",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/champLookup.js",
+      "sha256": "20f81df6edc10db342a721119d28ec0b90abfa25749d0f90cfa5d8fbd341a80c",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/comboUI.js",
+      "sha256": "5ac3b2684dfc8131473e76a1c625732d635cf37af2e2b322a87c386bdcdadcfa",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/core/records.js",
+      "sha256": "0f0770c69008ff975d94807addf4f8657cf358683dd1c9cb099eb518fda4b269",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/core/text.js",
+      "sha256": "752084639ab76aeee763b079a75e8d86ddf1a8e375661ae5d36df11756002dcd",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/data/championSource.js",
+      "sha256": "91ba055ddf4371367c5e1117dd8b019be67bc192663141f3af6e91d7e22ecf09",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/data/itemSource.js",
+      "sha256": "c489441c818fdcea6172b236e7e3d18780098d7792a4d3545a36f2d1d6e9265f",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/data/runeSource.js",
+      "sha256": "0ab35cdfe76e50edadfa16e1ec123395c6d51c75f2343139f05255b62b5e6f7f",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/data/sourceRepositories.js",
+      "sha256": "8991cc64032e6746e56660e82b1b7e29781f730961eba95df7ccbed7e7ee1f93",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/buildInputs.js",
+      "sha256": "1f6b507760eac507d9d970187a789f2a7b94dba4dc8a7400a1d1edd8c1b43d47",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/catalogQueries.js",
+      "sha256": "25353513ac09ea0daf790364ff47e6b81fb5d0337d11dfa1fe67bb21a1691fa9",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/recommendations.js",
+      "sha256": "e08dc33b854cbf091b32454eb8bf4cbcb05efb4a63aac76421e4c772172f3b6e",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/runeInputs.js",
+      "sha256": "3ab0eee4466f810c6c985769d95d8836bff1f753fc8233c666fc03bcde37af05",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/scenarioInputs.js",
+      "sha256": "6196f7aa728ca34b724c3a674c0c720fe3088471997dc695fccdf34484f8c4fe",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/abilityResolution.js",
+      "sha256": "f53160addd47e512cc8f8619378be9dda505b65e108b63ee2b332a9a03080692",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/buildEvaluation.js",
+      "sha256": "a8f6f0ebd094b647e2ed862123b742a9104edbe99c91dc5b320781bd542c2dad",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/calculationContext.js",
+      "sha256": "116276298654913a8adb82594839009d4129a03141b4ae744e3f16e3c234a7cc",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/calculationPipeline.js",
+      "sha256": "c288db437b2ef7f0fd04c1a87996841227089b4db73778acb68c5ebd81445995",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/combatContext.js",
+      "sha256": "b63647dbf310fe63d2f9be17de2e023a804da9c060a983574e08351184376ea1",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/comboEvaluation.js",
+      "sha256": "914b916b58cfa936b1665c7379de394d639a38f9407db085a9dd67b85fcadbe3",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/itemEvaluation.js",
+      "sha256": "7ec4248853af8420461a66783a99b5dcb76576b7ce728d36874236168515ad2a",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/itemLookup.js",
+      "sha256": "8fe5c907ddfdbbe26146a68adaebeb14d990c078b76c66b2ed5e650944a1c2c3",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/presentation/abilityPresentation.js",
+      "sha256": "e65c50bbea69807dc21d1742e59c23ed84d0910a6b2208c364584414dfda5e00",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/presentation/damagePresentation.js",
+      "sha256": "a9169b4e9863f292526628dc845570df6c1dd85ca4f56b430d851d73f31732e2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/abilityDps.js",
+      "sha256": "ea35e0accf0d586dea9107877347b99bf30125f7263d237c6e8c542b09606ec8",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/abilityOnHit.js",
+      "sha256": "c25b9935bc9754cbd5ee4ea3163cfb60290f9fb6413c2749ad09eeff14b8f694",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/abilityRules.js",
+      "sha256": "7247063827759964c3668dd527c46cea9008ab6c620b84d3561c4c22d3f9525c",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/apiClient.js",
+      "sha256": "a6d81b752d5caa9ce4e6276351f9f2597124f38bc6a94be05c43cf2c8ad412b7",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/attackChampions.js",
+      "sha256": "7ecb8d837b66f05b2e6dab9a39ad79484ff3a1fb1725f7ae59fc1348a69476de",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/attackEffects.js",
+      "sha256": "73f98b1bf05acd9565cfa77476a3604a7a49a72c12ad5c7befad1cebd33cb4fb",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/buildStats.js",
+      "sha256": "1d8428999a436973b5104f3547ef5a1748102d3531c08471f64ecff7641a995d",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/calculations.js",
+      "sha256": "6b939cc2e64aa970b5973db2715215859e208931d6c5663710112bad6b3831ef",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/championEffects.js",
+      "sha256": "20a5f70bfba0c979826c839bc6c56ce2e60bd0eb4c446f0d634e604f6a168b4c",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/combatInputs.js",
+      "sha256": "6e2c78cde0525a6fb062f076d2bac93ec26912f33fd14e5fcde46067b069ef6a",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/comboTester.js",
+      "sha256": "2cb34e15c65b4f64afaaeb45330e1cc3197cc722c987c9c284c77c0d94d9f373",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/damageText.js",
+      "sha256": "c02212646257bd8574669f767f100ed72709ed6fb38d2a693f6b4c4462a4e0e6",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/itemData.js",
+      "sha256": "f9bce94cf6e102143f96f6eccdabd253efdf15908fcdd7e43883af776de7a672",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/itemDescriptions.js",
+      "sha256": "f55ea0708b886dd219fb7a6a4ea04096c3fbf000036fe696866346040bded52e",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/itemPolicy.js",
+      "sha256": "fce2d610088c0a27368c2dcef1e7fc52ada711c7ea09445120f2d651bcae0054",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/runeEffects.js",
+      "sha256": "358a9b9119ba129f02def53e2a569125567b2dbca1462d6178f2be66bae74164",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/targetDamage.js",
+      "sha256": "be85194ee0aada44400eb98c0fcb8226aada3111e766d90eabe1f5517973aec0",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/README.md",
+      "sha256": "79e46a62ce47a5c6ab57153936307671c6f2a316f34510c46b8f3d216812b275",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/all.png",
+      "sha256": "d46d36230ab6ed931ea2723550caffaa51aa0ac5d9e4a9ec017558bdb6d017e7",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/assassin.png",
+      "sha256": "4116756eac098bd1bd4e40129d9fd5d0527a52cd43f5fca27c88b8c4b985a2d7",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/fighter.png",
+      "sha256": "be453ed00a94b1733d99d5fbc7adb8e8fd3331e09b943ff23dce43fb98468753",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/gold.png",
+      "sha256": "341a3caed071860c594f9860b8f7a71fd81d33e5dbfc53c6ff0b45cb8a5136bf",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/mage.png",
+      "sha256": "c44b4ff4903f46790dcab73437aec343105f4e0aebc3003552b362c8f453b72a",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/marksman.png",
+      "sha256": "bb55fbf8bd8055046d389e6bb2512fd51f67ca6e95db2e8398df8c3f894168e8",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/recommended.png",
+      "sha256": "458b1805826e21cf81c12b11f63218e72807d7aea30be8788b26322a09a484bc",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/reset.png",
+      "sha256": "4ef986e80bdbb5f0bff7cbedb9947e2a7e39f2c112280583dbe9e0337e5b324b",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/support.png",
+      "sha256": "69f61425dcbff49a1729ecf79c73c4d80cb9b343a2438a7fbfe826033a1a3ce2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/tank.png",
+      "sha256": "f8e5d25ba1caad4a551ea112a1d5b1833c8cfec15503eec8592e901bbce35678",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "champ.html",
+      "sha256": "ebbf266b4b99997b2e19bb5e0cf0067c8eb76c1489543d22454ad2b39e5a50b3",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "index.html",
+      "sha256": "4d248ec88de2905e162d0dcb18456424c3c0a42549c7a37b5df6822acd53d534",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "itemLookup.html",
+      "sha256": "5952a7d420310457deb0748b7aabcfc1f206aaf9f3919f85a17ccee245f3cfa2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "main.html",
+      "sha256": "c71124e3f18d4bca71a1d734ae24e20a9acf49104195b92e843b30def4963b6f",
+      "generatedCopiesMatch": true
+    }
+  ],
+  "finalPresentationChecks": [
+    {
+      "id": "preview-combo-browser",
+      "exitCode": 0
+    },
+    {
+      "id": "root-combo-browser",
+      "exitCode": 0
+    },
+    {
+      "id": "preview-combo-effects-browser",
+      "exitCode": 0
+    },
+    {
+      "id": "root-combo-effects-browser",
+      "exitCode": 0
+    },
+    {
+      "id": "root-passives-browser",
+      "exitCode": 0
+    },
+    {
+      "id": "preview-passives-browser",
+      "exitCode": 0
+    },
+    {
+      "id": "root-cases-advanced",
+      "exitCode": 0
+    },
+    {
+      "id": "preview-cases-advanced",
+      "exitCode": 0
+    },
+    {
+      "id": "root-cases-fallback",
+      "exitCode": 0
+    },
+    {
+      "id": "preview-cases-fallback",
+      "exitCode": 0
+    }
+  ],
+  "finalPresentationChecksPassed": true,
+  "preservedReferences": {
+    "mainBeforePublication": "191a259364ff8390e97afe84d5a6b8ac18735690",
+    "baselineBranchAndPeeledTag": "16d63581c385b07c7c6b3fae70f6ed9365d0b3b1"
+  }
+}

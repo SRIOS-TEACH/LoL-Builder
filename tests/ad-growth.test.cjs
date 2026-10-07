@@ -5,14 +5,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = process.env.APP_ROOT || path.join(__dirname, '..');
 
-function app() {
-  const context = vm.createContext({ document: { addEventListener() {} } });
-  context.window = context;
-  for (const file of ['shared/buildStats', 'builder']) {
-    vm.runInContext(fs.readFileSync(path.join(root, 'JS', file + '.js'), 'utf8'), context);
-  }
-  return context;
-}
+const {createTestContext}=require('./helpers/native-runtime.cjs');
+function app(fetchImpl) { return createTestContext({root,fetchImpl}); }
 
 // Character record excerpts captured from Community Dragon 16.18 alongside
 // Data Dragon 16.18.1. All six DD records publish attackdamageperlevel: 0.

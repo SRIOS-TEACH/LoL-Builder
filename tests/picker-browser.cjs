@@ -1,3 +1,4 @@
+const {installBrowserHarness}=require('./helpers/native-runtime.cjs');
 // Run with the same downloaded Data Dragon fixtures as dashboard-browser.cjs.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -13,7 +14,7 @@ const server = http.createServer((req, res) => {
   const file = path.resolve(root, '.' + decodeURIComponent(req.url.split('?')[0]));
   if (!file.startsWith(root + path.sep)) { res.writeHead(403); res.end(); return; }
   try {
-    res.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.png') ? 'image/png' : file.endsWith('.svg') ? 'image/svg+xml' : 'text/html');
+    res.setHeader('Content-Type', /\.m?js$/.test(file) ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : file.endsWith('.png') ? 'image/png' : file.endsWith('.svg') ? 'image/svg+xml' : 'text/html');
     res.end(fs.readFileSync(file));
   } catch { res.writeHead(404); res.end(); }
 });
@@ -26,6 +27,7 @@ const server = http.createServer((req, res) => {
   let recoverOptionalItems = false;
   try {
     const page = await browser.newPage({viewport: {width: 1440, height: 900}});
+ await installBrowserHarness(page,root);
     page.on('pageerror', error => errors.push(error.message));
     // Optional enrichment must not gate either picker. Hold real responses until
     // after interacting with both pickers, rather than asserting a speed budget.
@@ -38,7 +40,7 @@ const server = http.createServer((req, res) => {
     page.on('requestfailed', request => { if (isHeldUrl(request.url())) heldFailures.push(request.failure()?.errorText); });
     await page.route('**/*', async route => {
       const url = new URL(route.request().url());
-      if (url.origin === base) return route.continue();
+      if (url.origin === base) return route.fallback();
       if (!url.pathname.endsWith('.json')) return route.fulfill({contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#334155"/></svg>'});
       if (isHeldUrl(url.href)) {
         heldRequests.add(url.pathname);

@@ -1,7 +1,5 @@
 const test=require('node:test');
-const assert=require('node:assert/strict');
-require('../JS/shared/calculations.js');
-require('../JS/shared/championEffects.js');
+const assert=require('node:assert/strict');const Calculations=require('../JS/shared/calculations.js').default;const ChampionEffects=require('../JS/shared/championEffects.js').default;
 const excerpts=require('./champion-passive-excerpts.json');
 const near=(actual,expected)=>assert.ok(Number.isFinite(actual)&&Math.abs(actual-expected)<.00001,`${actual} != ${expected}`);
 const state=(name,level=1,values={})=>({selectedChampion:name,level,abilityRanks:{},combatValues:values,cdragonAbilityData:{p:excerpts[name]}});

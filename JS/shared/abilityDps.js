@@ -1,9 +1,10 @@
+import DamagePresentation from '../presentation/damagePresentation.js';
+import TargetDamage from './targetDamage.js';
 /** Damage per cooldown with separately typed damage packets. See docs/DPS.md for timing conventions. */
-(function (scope) {
+
   const finite = value => typeof value === 'number' && Number.isFinite(value);
   const fmt = value => finite(value) ? (Math.round(value * 10) / 10).toFixed(1) : 'Value unavailable';
   const plain = text => String(text || '').replace(/<[^>]*>/g, '').trim();
-  const escape = text => String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const damageType = tag => ({physicaldamage:'physical',magicdamage:'magic',truedamage:'true'}[String(tag).toLowerCase()] || null);
   const amount = (value, text, type=null) => ({value:finite(value) ? value : null, text:text || fmt(value),
     components:[{value:finite(value)?value:null,type,text:text || fmt(value)}]});
@@ -19,7 +20,7 @@
   ]):typed(a,null);
 
   function mitigated(a,target,stats) {
-    const helper=scope.TargetDamage;
+    const helper=TargetDamage;
     const amplification=finite(stats?.abilityDamageMultiplier)?stats.abilityDamageMultiplier:1;
     if(amplification!==1){
       a=multiply(a,amplification);
@@ -69,7 +70,7 @@
       if (!tokens.length && !/\d/.test(plain(raw))) continue;
       const resolved = tokens.map(m=>resolve(m[1]));
       const text = plain(raw.replace(/\{\{\s*([^}]+?)\s*\}\}/g, (_,key)=> {
-        const r=resolve(key); return r ? (finite(r.numeric) ? fmt(r.numeric)+(r.isPercent?'%':'') : plain(r.html)) : 'Value unavailable';
+        const r=resolve(key); return r ? (finite(r.numeric) ? fmt(r.numeric)+(r.isPercent?'%':'') : (r.html !== undefined ? plain(r.html) : r.text)) : 'Value unavailable';
       }));
       const skeleton = plain(raw.replace(/\{\{[^}]+\}\}/g, '#'))
         .replace(/\bmagic attack damage\b/gi,'magic damage')
@@ -196,7 +197,7 @@
       const r=resolve(name);
       const set=types.get(tokenKey(name));
       const type=typeof explicitType==='string'?explicitType:(set?.size===1?[...set][0]:set?.size>1?null:fallback);
-      return amount(r?.numeric, r ? plain(r.html) : 'Value unavailable',type);
+      return amount(r?.numeric, r ? (r.html !== undefined ? plain(r.html) : r.text) : 'Value unavailable',type);
     };
     const number = name => token(name).value;
     const fraction = name => {
@@ -226,7 +227,7 @@
       note='Combined damage includes both casts. Enter the cast interval and whether cooldown overlaps it to calculate the full cycle. Before mitigation; excludes resets and extra procs.';
     } else switch(spell.id) {
       case 'VeigarR': {
-        const health = target?.enabled ? scope.TargetDamage.targetStats(target) : null;
+        const health = target?.enabled ? TargetDamage.targetStats(target) : null;
         if (health) add('Primordial Burst',multiply(token('MinDamage'),Math.min(2,1+1.5*health.missingHealthPercent)));
         else { add('Minimum',token('MinDamage')); add('Maximum',token('MaxDamage')); }
         note='Primordial Burst scales with target missing health, up to twice its base damage. Before mitigation.';
@@ -384,24 +385,12 @@
     return {rows,status:'No enabled passive attack damage',note:'Passive damage is the average bonus per attack. DPS uses the current attack speed and configured proc cadence, including refreshed damage over time. Conditional effects use the controls in this card; target mitigation matches the Attack calculation.'};
   }
 
-  function render(result) {
-    if (!result.rows.length) return `<div class="ability-dps"><strong>Damage:</strong> ${escape(result.status)}</div>`;
-    const damage=a=>finite(a.value)?fmt(a.value):a.text;
-    const dps=(a,period)=>!finite(period)||period<=0?'Unavailable (no repeat cooldown)':finite(a.value)?fmt(a.value/period):`(${a.text}) ÷ ${period.toFixed(2)}s`;
-    const explanation=r=>[r.damage.breakdownText,r.sweet?`Sweet spot:\n${r.sweet.breakdownText}`:''].filter(Boolean).join('\n');
-    const timingExplanation=r=>{
-      if(!r.onHitDps)return finite(r.period)?`\nDamage ÷ ${r.period.toFixed(2)}s cooldown/cycle`:'\nRepeat cooldown unavailable';
-      const t=r.onHitDps;
-      const active=`\nActive DPS: bonus damage × ${fmt(t.rate)} attacks/s ÷ ${t.cadence} attacks per proc.`;
-      if(t.dot)return `\nPoison refreshes without stacking: total poison damage × min(${fmt(t.rate)} attacks/s, 1 ÷ ${fmt(t.dotDuration)}s duration).`;
-      return active+(t.passive?'':`\nOverall DPS: active DPS × ${fmt(t.duration)}s active duration ÷ (${fmt(t.duration)}s active duration + ${fmt(t.cooldown)}s cooldown). Display order: active / overall.`);
-    };
-    const renderedDps=r=>r.onHitDps
-      ?`${finite(r.onHitDps.activeDps)?fmt(r.onHitDps.activeDps):'Unavailable (damage or attack speed)'}${r.onHitDps.passive?'':` / ${finite(r.onHitDps.overallDps)?fmt(r.onHitDps.overallDps):'Unavailable (damage or timing)'}`}`
-      :r.timingMissing?'Enter recast timing':dps(r.dpsAmount||r.damage,r.period);
-    return `<div class="ability-dps"><strong>Damage</strong><table class="ability-dps-table"><thead><tr><th>Part</th><th>Damage</th><th>DPS</th></tr></thead><tbody>${result.rows.map(r=>`<tr><td>${escape(r.label)}</td><td title="${escape(explanation(r))}">${escape(damage(r.damage))}${r.sweet?` (${escape(damage(r.sweet))})`:''}</td><td title="${escape(explanation(r)+timingExplanation(r))}">${escape(renderedDps(r))}${r.sweet?` (${escape(dps(r.sweetDpsAmount||r.sweet,r.period))})`:''}</td></tr>`).join('')}</tbody></table><small>${escape(result.note)}</small></div>`;
+  function render(result){
+    const presentation=DamagePresentation;
+    return presentation.render(result);
   }
+
   const api={cooldown,cycleTime,components,profile,render,timingFields,onHitTiming,passiveProfile};
-  scope.AbilityDps=api;
-  if(typeof module!=='undefined'&&module.exports)module.exports=api;
-})(typeof window!=='undefined'?window:globalThis);
+  const exportedApi = api;
+
+export default exportedApi;

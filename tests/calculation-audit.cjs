@@ -1,5 +1,5 @@
 const fs=require('fs'),path=require('path');
-const C=require('../JS/shared/calculations.js');
+const C=require('../JS/shared/calculations.js').default;
 const stats={ap:200,baseAp:0,totalAd:180,bonusAd:80,armor:100,bonusArmor:40,mr:80,bonusMr:30,hp:3000,bonusHp:1000,mp:2000,bonusMp:1000,haste:50,attackSpeed:1,bonusAttackSpeed:.3,moveSpeed:380,critChance:.25,critDamage:1.75,cooldownReduction:1/3,lifeSteal:.1,physicalVamp:0,omniVamp:0,magicPenFlat:0,lethality:0,tenacity:0,attackRange:125,healShieldPower:0};
 const fixtures=path.resolve(process.env.FIXTURES_DIR || path.join(__dirname,'fixtures'));
 const report={total:0,numeric:0,inputs:0,unsupported:0,reasons:{},examples:{},unresolved:[]};

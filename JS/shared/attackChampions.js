@@ -1,8 +1,9 @@
+import BuildStats from './buildStats.js';
 /** Champion attack scripts. Named game-data calculations supply balance values;
  * inputs describe the combat state (form, charges, hit frequency, target health).
  * These bindings never select an arbitrary damage calculation from a spell.
  */
-(function(scope){
+
   const finite=Number.isFinite,clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   const covered=new Set('Aphelios Graves Zeri Kalista Akshan Sett Belveth Bard Braum Camille Darius DrMundo Elise Fiora Fizz Galio Gangplank Gnar Illaoi JarvanIV Jayce Jinx Kindred Nautilus Nidalee Nilah Nocturne Pantheon RekSai Renekton Rengar Rumble Sejuani Shyvana Skarner Sylas Talon Thresh Twitch Udyr Urgot Viktor Zed'.split(' '));
   function apply(a){
@@ -20,7 +21,7 @@
     if(name==='Twitch'&&active('spray')&&rank('r'))add('ad',data('r','BonusAD'));
     if(name==='Rengar'){
       const stacks=Math.floor(clamp(n('bonetooth'),0,5)),bonus=[0,.01,.04,.09,.16,.25][stacks];
-      const base=s.base.attackdamage+s.base.attackdamageperlevel*scope.BuildStats.growthFactor(s.level);
+      const base=s.base.attackdamage+s.base.attackdamageperlevel*BuildStats.growthFactor(s.level);
       add('ad',(out.ad-base)*bonus);
     }
     if(name==='Aphelios'){
@@ -30,7 +31,7 @@
     if(name==='Gnar'){
       if(active('mega')){
         for(const [stat,key]of [['ad','TotalMegaGnarAD'],['hp','TotalMegaGnarHealth'],['armor','TotalMegaGnarArmor'],['mr','TotalMegaGnarMR']])add(stat,calc('p',key,out).value);
-      }else {const bonus=calc('p','TotalAS',out).value;speed(finite(bonus)?bonus-s.base.attackspeedperlevel*scope.BuildStats.growthFactor(s.level)/100:NaN);}
+      }else {const bonus=calc('p','TotalAS',out).value;speed(finite(bonus)?bonus-s.base.attackspeedperlevel*BuildStats.growthFactor(s.level)/100:NaN);}
     }
     if(name==='Jinx'&&rank('q')){
       if(!active('rockets'))speed(clamp(n('minigun'),0,data('q','MinigunAttackSpeedStacks'))/data('q','MinigunAttackSpeedStacks')*data('q','MinigunAttackSpeedMax')/100);
@@ -63,7 +64,7 @@
     const {name,s,data,calc,rank,toggle,input,row,values,rows}=a;
     let {base,rate}=a,onHitScale=1,baseType='physical';
     const notes=[],chance=a.attackCritChance??s.critChance/100,crit=s.critDamage/100;
-    const avg=v=>finite(v)?scope.AttackEffects.averageCrit(v,chance,crit):null;
+    const avg=v=>finite(v)?a.averageCrit(v,chance,crit):null;
     const v=(slot,key,r)=>calc(slot,key,s,r).value;
     const hp=(key='hp')=>input('attack','target:'+key,'Target '+({hp:'maximum health',currentHp:'current health',bonusHp:'bonus health'}[key]||key));
     const missing=()=>{const max=hp(),current=hp('currentHp');return finite(max)&&finite(current)?Math.max(0,max-current):null;};
@@ -254,5 +255,6 @@
     }
     return {base,rate,onHitScale,baseType,notes,covered:covered.has(name)};
   }
-  scope.AttackChampions={apply,profile,covered};
-})(typeof window!=='undefined'?window:globalThis);
+  const exportedApi = {apply,profile,covered};
+
+export default exportedApi;

@@ -1,0 +1,6 @@
+PASS builder UI: champion, level, abilities, item add/remove, rune, request race
+PASS 173 champions at levels 1, 6, 11, 18 (advanced data: false)
+PASS 236 builder items: equip, stats, details; item haste fallback
+PASS disabled Item Lookup directs users to Builder
+PASS disabled Champion Lookup directs users to Builder
+PASS active-page startup failure states; no uncaught browser errors

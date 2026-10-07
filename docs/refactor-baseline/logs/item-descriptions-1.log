@@ -1,0 +1,31 @@
+ITEM DESCRIPTION AUDIT {
+  "ranged": true,
+  "total": 236,
+  "localized": 185,
+  "complete": 236,
+  "incomplete": 0,
+  "activeCount": 34,
+  "missingActives": [],
+  "report": []
+}
+✔ target defenses change Muramana physical damage without reducing its mana coefficient or Awe AD (1.1504ms)
+✔ Muramana prose combines coefficients and values for separate Awe, attack and ability effects (0.7642ms)
+✔ Lich Bane expands inherited cooldown and On-Hit prose with base-AD and AP calculations (0.2774ms)
+✔ Repeated passive labels merge their prose while inline On-Hit stays inside its effect (0.1383ms)
+✔ Missing game values remain explicit instead of becoming zero damage (0.1249ms)
+✔ Frozen Heart negative multipliers display a positive attack-speed reduction (0.1051ms)
+✔ Active-only game descriptions use their localized values and cooldown (0.1234ms)
+✔ Dynamic melee/ranged item macros preserve percentage display for Blade of the Ruined King (0.2176ms)
+✔ Inline references to another passive stay inside Death's Dance Defy explanation (0.1311ms)
+✔ Source-authored string calculations resolve ranged/melee aliases and hashed numeric formulas (0.2194ms)
+✔ Warmog vitality prose uses item health without multiplying rune or champion health (0.149ms)
+✔ structured item damage preserves single-hit and maximum alternatives without adding them (0.4956ms)
+✔ untagged active damage and full duration percent-health burns reach combo data (0.5923ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 322.5057

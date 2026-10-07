@@ -1,9 +1,12 @@
-(function () {
+import SourceRepositories from '../data/sourceRepositories.js';
+import Recommendations from '../domain/recommendations.js';
+import Calculations from './calculations.js';
+import ItemPolicy from './itemPolicy.js';
+export function createItemLookup({repository = SourceRepositories.createRepository()} = {}) {
 /**
  * Shared item data and tooltip helpers; no page initialization or DOM state.
  *
- * This module intentionally exposes a small `window.ItemLookupShared` API that Builder reuses
- * so item parsing logic is implemented once in one place.
+ * Each consumer may create an independent optional-data cache.
  */
 
 /**
@@ -15,7 +18,7 @@ let itemDataRequest = null;
 /**
  * Supported map filters for the item browser.
  */
-const MAP_OPTIONS = window.ItemPolicy.MAP_OPTIONS;
+const MAP_OPTIONS = ItemPolicy.MAP_OPTIONS;
 
 /**
  * Keyword->color rules for tooltip highlighting.
@@ -47,39 +50,30 @@ const STAT_COLOR_RULES = [
  * Returns true when an item should be considered purchasable by the app.
  */
 function isPurchasableItem(id, item) {
-  return window.ItemPolicy.isPurchasableItem(id, item);
+  return ItemPolicy.isPurchasableItem(id, item);
 }
 
 /**
  * Deduplicates item entries by normalized item name and keeps best map candidate.
  */
 function dedupeByNameWithMapPriority(itemEntries, selectedMaps = new Set([11])) {
-  return window.ItemPolicy.dedupeByNameWithMapPriority(itemEntries, selectedMaps);
+  return ItemPolicy.dedupeByNameWithMapPriority(itemEntries, selectedMaps);
 }
 
 /**
  * Loads Community Dragon item payload and indexes by numeric item id.
  */
+let itemRepository=repository;
 function loadCommunityDragonCalcs() {
   if (ITEM_DATA.status === 'ready') return Promise.resolve(true);
   if (itemDataRequest) return itemDataRequest;
-  ITEM_DATA.status = 'loading';
-  itemDataRequest = Promise.resolve().then(() => window.ApiClient.fetchCommunityDragonItems()).then(payload => {
-    const cdragonById = {};
-    Object.entries(payload || {}).forEach(([key, value]) => {
-      const id = String(key).match(/Items\/(\d+)$/)?.[1]
-        || String(value?.itemID || value?.id || "").match(/(\d+)$/)?.[1];
-      if (id) cdragonById[id] = value;
-    });
-    if (!Object.keys(cdragonById).length) throw new Error('The item calculation index is empty or invalid.');
-    ITEM_DATA.cdragonById = cdragonById;
-    ITEM_DATA.status = 'ready';
-    return true;
-  }).catch(error => {
-    ITEM_DATA.status = 'unavailable';
-    console.warn("Community Dragon item calculations unavailable", error);
-    return false;
-  }).finally(() => { itemDataRequest = null; });
+  ITEM_DATA.status='loading';
+  itemRepository ||= SourceRepositories.createRepository();
+  itemDataRequest=itemRepository.loadAdvancedItems().then(result=>{
+    ITEM_DATA.status=result.status;
+    if(result.status==='ready')ITEM_DATA.cdragonById=result.records;
+    return result.status==='ready';
+  }).finally(()=>{itemDataRequest=null;});
   return itemDataRequest;
 }
 
@@ -88,25 +82,7 @@ function loadCommunityDragonCalcs() {
  * Keep their order, exclude other modes and retired/unavailable shop items,
  * and never substitute recommendations inferred from champion tags.
  */
-function getRecommendedItems(raw, { mapId = 11, mode = 'CLASSIC', items = {} } = {}) {
-  const starting = new Set(), core = new Set();
-  const add = (target, refs) => {
-    for (const ref of refs || []) {
-      const id = typeof ref === 'string' ? ref.match(/^Items\/(\d+)$/i)?.[1] : null;
-      if (id && Object.prototype.hasOwnProperty.call(items, id)) target.add(id);
-    }
-  };
-  for (const record of Object.values(raw || {})) {
-    if (record?.__type !== 'ItemRecommendationOverrideSet') continue;
-    for (const override of record.mOverrides || []) {
-      if (!(override.mOverrideContexts || []).some(context =>
-        Number(context.mMapID) === Number(mapId) && context.mModeNameStringId === mode)) continue;
-      for (const bundle of override.StartingItemBundles || []) add(starting, bundle.items);
-      for (const range of override.mRecItemRanges || []) add(core, range.items);
-    }
-  }
-  return { starting: [...starting], core: [...core] };
-}
+function getRecommendedItems(...args) { return Recommendations.getRecommendedItems(...args); }
 
 /**
  * Resolves a token like e1/e2 from Data Dragon item effect fields.
@@ -151,7 +127,7 @@ function colorizeStatsInHtml(html) {
 }
 
 function gameCalculationToText(calcName, calc, calcMap, dataValueMap) {
-  return window.Calculations.evaluate(calc, {calculations:calcMap,dataValues:dataValueMap}).text;
+  return Calculations.evaluate(calc, {calculations:calcMap,dataValues:dataValueMap}).text;
 }
 
 /**
@@ -185,9 +161,9 @@ function buildExtractedFormulas(itemId, context = {}) {
   const item = ITEM_DATA.cdragonById[String(itemId)];
   const calculations = item?.mItemCalculations || {};
   const lines = Object.entries(calculations).map(([key, calc]) => {
-    const row=window.Calculations.evaluate(calc,{...context,calculations,dataValues:item.mDataValues || [],effects:item.mEffectAmount || []});
+    const row=Calculations.evaluate(calc,{...context,calculations,dataValues:item.mDataValues || [],effects:item.mEffectAmount || []});
     const shown=row.value===null?null:row.value*(row.displayAsPercent?100:1);
-    const formula=shown===null ? row.text : `${window.Calculations.format(shown)}${row.displayAsPercent?'%':''} (${row.text})`;
+    const formula=shown===null ? row.text : `${Calculations.format(shown)}${row.displayAsPercent?'%':''} (${row.text})`;
     return {key,name:prettyCalcName(key),formula,expression:row.text,value:shown,category:categorizeEffect(key,formula),inputs:row.inputs,unsupported:row.unsupported};
   });
   return {lines,extracted:lines};
@@ -202,7 +178,7 @@ function injectItemCalculationValues(html, rows) {
   for(const group of groups){
     const matches=rows.filter(row=>group.keys.test(row.key));
     if(matches.length!==1)continue;
-    const row=matches[0], value=row.value===null?row.expression:window.Calculations.format(row.value);
+    const row=matches[0], value=row.value===null?row.expression:Calculations.format(row.value);
     html=html.replace(group.pattern, group.noun==='Ability Power'?`Gain <scaleAP>${value} Ability Power</scaleAP>`:`a <shield>${value} Shield</shield>`);
   }
   return html;
@@ -259,7 +235,7 @@ function enhanceActiveTooltip(descriptionHtml) {
   return String(descriptionHtml || "").replace(/(ACTIVE\s*\(\s*\d+(?:\.\d+)?s\s*\))/gi, "<strong>$1</strong>");
 }
 
-window.ItemLookupShared = {
+const exportedApi = {
   MAP_OPTIONS,
   isPurchasableItem,
   dedupeByNameWithMapPriority,
@@ -277,4 +253,6 @@ window.ItemLookupShared = {
   getState: () => ITEM_DATA,
 };
 
-})();
+return exportedApi;
+}
+export default createItemLookup();

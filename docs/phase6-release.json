@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 1,
+  "releaseDate": "2026-10-08",
+  "timezone": "Australia/Sydney",
+  "passed": true,
+  "releaseTarget": "codex/modular-refactor preview; production unchanged",
+  "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
+  "checks": {
+    "unit": {
+      "passed": true,
+      "count": 227
+    },
+    "browser": {
+      "passed": true,
+      "count": 32,
+      "routes": 2,
+      "advancedAndFallback": true
+    },
+    "baseline": {
+      "passed": true,
+      "comparisons": 20,
+      "comparisonComplete": true,
+      "unexplainedDifferences": 0,
+      "exactBaselineMatch": true
+    },
+    "headless": {
+      "passed": true,
+      "cases": 10,
+      "inputIsolation": true
+    },
+    "reuse": {
+      "passed": true,
+      "catalogs": true,
+      "simultaneousUIInstances": 2,
+      "immutableInputs": true
+    },
+    "recovery": {
+      "passed": true,
+      "independentBackup": true,
+      "unitTests": 201,
+      "cases": 10
+    },
+    "performance": {
+      "passed": true,
+      "actualEntryVisits": 40,
+      "layoutEquivalent": true,
+      "note": "Controlled fixture benchmark, not real CDN/network or new-patch certification."
+    },
+    "cleanSource": {
+      "passed": true,
+      "stagedTree": "87a567d7273903bd85845a0adb59041ce6f74f24",
+      "unitTests": 227,
+      "build": true,
+      "headlessCases": 10,
+      "dataReuse": true,
+      "uiReuseRoutes": 2,
+      "actualNativeEntryRoutes": 2,
+      "performanceHarnessSyntax": true,
+      "note": "Final tooling and runtime reproduced from staged source; completion documentation and release evidence follow."
+    }
+  },
+  "runtimeFiles": [
+    {
+      "path": "Builder.html",
+      "sha256": "4e1faa97c542a49054b75b864ad2aeb9484a076a20ec056c632cd2c797b513b6"
+    },
+    {
+      "path": "CSS/halfmoon-variables.css",
+      "sha256": "0dcb5cad2292ab41b746fa0930f4218b689c9a6c973931bde0a598688d8ec6e2"
+    },
+    {
+      "path": "CSS/lolBuilder.css",
+      "sha256": "873a62d97d7340c19aad5803c51b659e27af5a327c622f2b04a5b1e8462c3455"
+    },
+    {
+      "path": "JS/application/builderPage.mjs",
+      "sha256": "1c45671825eb772b61f26f8189fcbdab92448932c004fe86628588c9e0bbc34f"
+    },
+    {
+      "path": "JS/application/catalogSession.js",
+      "sha256": "ceefb50eeaf69481cee966e8287d4446478d29d4d0f0bbd9c37190fcad74993d"
+    },
+    {
+      "path": "JS/application/runeDefaults.mjs",
+      "sha256": "576f2b2b46feb52cda0e0eb07747ae75b8beebfccc979cd9c37aca3ce837a7da"
+    },
+    {
+      "path": "JS/builder.js",
+      "sha256": "5f62fc42933ba01e8f85304d56fd64465440df919271f32ccc442772896925eb"
+    },
+    {
+      "path": "JS/core/records.js",
+      "sha256": "79086029502c95c8510238b730a620be7a3837c6a4d05f68d9aa4fd659fecdb0"
+    },
+    {
+      "path": "JS/core/text.js",
+      "sha256": "e5ab354cfc53a46171ab0393d138fcc5af6bd02c322de213f2f510ecbbf8f15c"
+    },
+    {
+      "path": "JS/data/championSource.js",
+      "sha256": "c9a136abf479354ca69c3c8a6497e1b8069aa73b0c233fb549b64e4b851a9443"
+    },
+    {
+      "path": "JS/data/itemSource.js",
+      "sha256": "860d2e732c8af3c8b99abeaa3dbb5521a831236a5e3f3b8e5cd08515f5d55c48"
+    },
+    {
+      "path": "JS/data/runeSource.js",
+      "sha256": "745de20bc70d3049d2617f3bc453d3f4c89b2696433824bf3e6b3a2dcfc89038"
+    },
+    {
+      "path": "JS/data/sourceRepositories.js",
+      "sha256": "f24ba0b502e16b570ab01e57824a97d4ff0b02010e79fea50a9556ed4de204de"
+    },
+    {
+      "path": "JS/domain/buildInputs.js",
+      "sha256": "5412e2a04e543540cf072aac39bc7a6c20473d615aea72d6379053ebeaad605d"
+    },
+    {
+      "path": "JS/domain/catalogQueries.js",
+      "sha256": "0b8bba809c600dc524d3c1b4cf28968376ff5d7f2c6694f32d4bcd5906a57468"
+    },
+    {
+      "path": "JS/domain/recommendations.js",
+      "sha256": "423376d734f67faa8917787886e1d79a175ffae91f5b4628b53c7a003bac46d2"
+    },
+    {
+      "path": "JS/domain/runeInputs.js",
+      "sha256": "f1cf754423f8b4d40e55548fb137a795d14b5684a8f98326789f33086db63375"
+    },
+    {
+      "path": "JS/domain/scenarioInputs.js",
+      "sha256": "bc6d2fabb47a6e19098f95db3b41385ce9a29b0dda46a66dd3ad339cab4d083f"
+    },
+    {
+      "path": "JS/engine/abilityResolution.js",
+      "sha256": "efb7ceb2939b3c07ebe0febd05805a0e4b3007be643b08adda4037c95d66a2a0"
+    },
+    {
+      "path": "JS/engine/buildEvaluation.js",
+      "sha256": "01fbd4ec1cdf7fa29043781e05cd943bd6ca1da60bc15abf9aa6722ed697e19a"
+    },
+    {
+      "path": "JS/engine/calculationContext.js",
+      "sha256": "037a5342e7671c5668435effc43e9a6387926d079d05334849648a42ffe3e451"
+    },
+    {
+      "path": "JS/engine/calculationPipeline.js",
+      "sha256": "ba99c146f967631e23807937eaf15153f06fdf3227e2febc3ec59428b79de96e"
+    },
+    {
+      "path": "JS/engine/combatContext.js",
+      "sha256": "7d7b4559274a7f430b03abe156cf0fe4d5675108eb89a0524f5bf6eaf512b11e"
+    },
+    {
+      "path": "JS/engine/comboEvaluation.js",
+      "sha256": "d2ad0a8978a0a6b4f65c2fda39eb5a22c584bb374028c75c8478016967f6a2f8"
+    },
+    {
+      "path": "JS/engine/itemEvaluation.js",
+      "sha256": "f6ae63a5a6f4b1538fd72a8b95913956477a78d9cc57fe0c7b51fb812d7f10c0"
+    },
+    {
+      "path": "JS/package.json",
+      "sha256": "1239d4d885dcad42201a27ed9324f8f0f760b78700d8db9ced39a511cffe7eae"
+    },
+    {
+      "path": "JS/presentation/abilityPresentation.js",
+      "sha256": "e1cc5f71cc8d4a3e82b45b603b7aba7fbcd6e890df454ba5e10b48d8d6b6926e"
+    },
+    {
+      "path": "JS/presentation/damagePresentation.js",
+      "sha256": "94c126d0e39ab7f79236cef07912513807eca60feaf9320dfccc07a0160d12dd"
+    },
+    {
+      "path": "JS/presentation/statIcons.mjs",
+      "sha256": "fccfbc5682d01d026553704f283ac30ada58080cf2a3ce51aac5f78e705888bd"
+    },
+    {
+      "path": "JS/shared/abilityDps.js",
+      "sha256": "dde86ae09851f4803852c2ff864a835ac7a7e4c7eaa6e38e577ee301fcc0510b"
+    },
+    {
+      "path": "JS/shared/abilityOnHit.js",
+      "sha256": "6a690b2c625767d55d03322cd51e71228fc9602f9f36fb78fbedf422d291224c"
+    },
+    {
+      "path": "JS/shared/abilityRules.js",
+      "sha256": "a77bbc61221328f928f13f815c99edf10af1776051032997f58e23a3924e8c5e"
+    },
+    {
+      "path": "JS/shared/apiClient.js",
+      "sha256": "1d82a58792da9ecf80fe9c776ecefbb6cdf830f37b2036b9ad4ee1ce1b3f8d74"
+    },
+    {
+      "path": "JS/shared/attackChampions.js",
+      "sha256": "a3dab0a59e960d03e713028a576669c2803953ace61364186c719a2b0a91b158"
+    },
+    {
+      "path": "JS/shared/attackEffects.js",
+      "sha256": "7cbf2875129e09f0306857e5a19ba64467aa0f53e616c21a4a793569c81733b5"
+    },
+    {
+      "path": "JS/shared/buildStats.js",
+      "sha256": "3224ac6242eb6d297f81bbc462fdc8676ae6532046cd65935eace87970ca779d"
+    },
+    {
+      "path": "JS/shared/calculations.js",
+      "sha256": "2fa469da3dda700107f45edba949114a3ee1204d3f2a0f7785315db9167c8dc2"
+    },
+    {
+      "path": "JS/shared/championEffects.js",
+      "sha256": "b02e85d005dd73dec8249084d97618292a941bcd2e87d0a309907ab7bd7916dd"
+    },
+    {
+      "path": "JS/shared/combatInputs.js",
+      "sha256": "49c8735c4a81e5d2bd9f1fc62c926e0695db308ff28f6c6253bffe3df8d158b4"
+    },
+    {
+      "path": "JS/shared/comboTester.js",
+      "sha256": "5098f9f7d34642976ef1482c2678af6b31838c01952e91021c555666005d75b7"
+    },
+    {
+      "path": "JS/shared/damageText.js",
+      "sha256": "4e80b77c8fc5b584bc95a1d0e095dd5f3260a9b6158aa2b8b1af58477f6ad573"
+    },
+    {
+      "path": "JS/shared/itemData.js",
+      "sha256": "8321422e11ad9b8b5e856802843dc0a7eea9fc0ef32035333b7225c6f1770513"
+    },
+    {
+      "path": "JS/shared/itemDescriptions.js",
+      "sha256": "4eb7b5dd7696b7204a636cfc3e65f32e3f64160d06e03d8eccd78cc180e85924"
+    },
+    {
+      "path": "JS/shared/itemPolicy.js",
+      "sha256": "1ea24bc17a399d20f077b9d08cc7c3e654415ee463d7693e8a2553eb9cd24e34"
+    },
+    {
+      "path": "JS/shared/runeEffects.js",
+      "sha256": "d95bde1a763462c00be0d4ea0476163a542e57b3c25d95d00489293b56a4fb6d"
+    },
+    {
+      "path": "JS/shared/targetDamage.js",
+      "sha256": "d0787c46ea0de81f4278958e0a2339fcf42c66ffb6d8715fed623f4a7ba84864"
+    },
+    {
+      "path": "JS/ui/abilityControls.mjs",
+      "sha256": "6801a8ae0137f1052594d5eb620e9ff34472ca595f0e2ced63336bc78e190305"
+    },
+    {
+      "path": "JS/ui/catalogList.mjs",
+      "sha256": "9bde8de63f6790fe314900cdadc8db9e8e8bfe65d3b50233277986c563340ca1"
+    },
+    {
+      "path": "JS/ui/championDetail.mjs",
+      "sha256": "d61522cffcbfedc98b9918e926439c3f30a234aab28fd1fa3b54b4b594f572ee"
+    },
+    {
+      "path": "JS/ui/comboControls.mjs",
+      "sha256": "45ea59709c9c6600879de38789c6491fd148718ae9b7e4312482dba62fb9973a"
+    },
+    {
+      "path": "JS/ui/inventory.mjs",
+      "sha256": "337482db2ca14964ccebc6a0c44c6183ce6f5f7595083500dd43e5c555b8049c"
+    },
+    {
+      "path": "JS/ui/itemDetail.mjs",
+      "sha256": "5b719ff8c47008f9971a2670e2871e7d13d06440ae4f836947f3fa7c0349f379"
+    },
+    {
+      "path": "JS/ui/lifecycle.mjs",
+      "sha256": "be04088ce9b77921a1e180125f0c55e8923b679e1d645f801ff8074ebe69ebcf"
+    },
+    {
+      "path": "JS/ui/runeControls.mjs",
+      "sha256": "ce642269c330138fd31f109e714225d925ed88aaea56d0a54f9fc0ea686cb0fb"
+    },
+    {
+      "path": "JS/ui/statsView.mjs",
+      "sha256": "3fa7ccff77617527c2839fc005d4aad0097574cf6d8742429571e50cdea08ddf"
+    },
+    {
+      "path": "JS/ui/targetControls.mjs",
+      "sha256": "af93552ecacfb1ff225e353e664408cdcd5d6d034755ca8ff10dd4b6045830aa"
+    },
+    {
+      "path": "assets/shop/README.md",
+      "sha256": "ba8b250540fa4393316a1c4390f0f746a7ce5436933cea145923d289fc2cc71a"
+    },
+    {
+      "path": "assets/shop/all.png",
+      "sha256": "d46d36230ab6ed931ea2723550caffaa51aa0ac5d9e4a9ec017558bdb6d017e7"
+    },
+    {
+      "path": "assets/shop/assassin.png",
+      "sha256": "4116756eac098bd1bd4e40129d9fd5d0527a52cd43f5fca27c88b8c4b985a2d7"
+    },
+    {
+      "path": "assets/shop/fighter.png",
+      "sha256": "be453ed00a94b1733d99d5fbc7adb8e8fd3331e09b943ff23dce43fb98468753"
+    },
+    {
+      "path": "assets/shop/gold.png",
+      "sha256": "341a3caed071860c594f9860b8f7a71fd81d33e5dbfc53c6ff0b45cb8a5136bf"
+    },
+    {
+      "path": "assets/shop/mage.png",
+      "sha256": "c44b4ff4903f46790dcab73437aec343105f4e0aebc3003552b362c8f453b72a"
+    },
+    {
+      "path": "assets/shop/marksman.png",
+      "sha256": "bb55fbf8bd8055046d389e6bb2512fd51f67ca6e95db2e8398df8c3f894168e8"
+    },
+    {
+      "path": "assets/shop/recommended.png",
+      "sha256": "458b1805826e21cf81c12b11f63218e72807d7aea30be8788b26322a09a484bc"
+    },
+    {
+      "path": "assets/shop/reset.png",
+      "sha256": "4ef986e80bdbb5f0bff7cbedb9947e2a7e39f2c112280583dbe9e0337e5b324b"
+    },
+    {
+      "path": "assets/shop/support.png",
+      "sha256": "69f61425dcbff49a1729ecf79c73c4d80cb9b343a2438a7fbfe826033a1a3ce2"
+    },
+    {
+      "path": "assets/shop/tank.png",
+      "sha256": "f8e5d25ba1caad4a551ea112a1d5b1833c8cfec15503eec8592e901bbce35678"
+    },
+    {
+      "path": "champ.html",
+      "sha256": "f9f73bf62bd3ac99c2952d0025d47a07689c0da1dca55bd3d6aa0af233ac6647"
+    },
+    {
+      "path": "index.html",
+      "sha256": "c6c393b67cd1b8bfe535c17632451e63b71a6edff08bf0418343a5c134a37ab4"
+    },
+    {
+      "path": "itemLookup.html",
+      "sha256": "1f770908f84d9fdbbfe4af5ea4ee08987b5f854f6b0e241dbff644a680103f0d"
+    },
+    {
+      "path": "main.html",
+      "sha256": "6220c82510284c6a2ace8e6a427122d47c3417c7e824174069647e1920129008"
+    }
+  ],
+  "evidence": [
+    "phase6-verification.json",
+    "phase6-performance.json",
+    "phase6-recovery.json",
+    "phase6-headless.json"
+  ],
+  "verification": "npm run verify:refactor; controlled performance comparison; independent backup restoration; clean staged-source reproduction. Full browser/performance/recovery checks ran locally with preserved fixtures."
+}

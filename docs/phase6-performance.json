@@ -1,0 +1,2084 @@
+{
+  "date": "2026-10-07T14:14:26.891Z",
+  "passed": true,
+  "browser": "154.0.4258.62",
+  "node": "v24.19.0",
+  "baselineCommit": "16d63581c385b07c7c6b3fae70f6ed9365d0b3b1",
+  "trialsPerPair": 5,
+  "ordering": "Alternating baseline/refactor per trial; fresh context then repeat context",
+  "apiDelayMs": 20,
+  "method": "Actual page entries; memory-served local assets; intercepted fixed 16.18.1 JSON and placeholder remote artwork. Routing disables HTTP cache: repeat-context is not a CDN/disk-cache benchmark. No CPU/network throttling; run other browser jobs idle.",
+  "budgets": "Startup median <= max(baseline x1.25, baseline +250ms); synchronous interaction p95 <= max(100ms, baseline p95 x1.25 +10ms). Budgets fixed before measurements. Desktop/mobile overflow and ability geometry equivalent.",
+  "summary": [
+    {
+      "mode": "fallback",
+      "visit": "fresh-context",
+      "measurements": {
+        "pickerReadyMs": {
+          "medianBaseline": 149.5,
+          "medianRefactor": 192.5,
+          "p95Baseline": 214.09999999962747,
+          "p95Refactor": 201.80000000074506,
+          "limit": 399.5,
+          "passed": true
+        },
+        "levelMs": {
+          "medianBaseline": 2.900000000372529,
+          "medianRefactor": 3.599999999627471,
+          "p95Baseline": 4.300000000745058,
+          "p95Refactor": 4.400000000372529,
+          "limit": 100,
+          "passed": true
+        },
+        "targetMs": {
+          "medianBaseline": 2.599999999627471,
+          "medianRefactor": 3.5,
+          "p95Baseline": 3.300000000745058,
+          "p95Refactor": 4.199999999254942,
+          "limit": 100,
+          "passed": true
+        },
+        "itemPickerMs": {
+          "medianBaseline": 18.899999998509884,
+          "medianRefactor": 18.300000000745058,
+          "p95Baseline": 19.5,
+          "p95Refactor": 18.59999999962747,
+          "limit": 100,
+          "passed": true
+        },
+        "itemSearchMs": {
+          "medianBaseline": 0.7999999988824129,
+          "medianRefactor": 0.900000000372529,
+          "p95Baseline": 1.1000000014901161,
+          "p95Refactor": 1.099999999627471,
+          "limit": 100,
+          "passed": true
+        }
+      },
+      "layoutEquivalent": true
+    },
+    {
+      "mode": "fallback",
+      "visit": "repeat-context",
+      "measurements": {
+        "pickerReadyMs": {
+          "medianBaseline": 134.2000000011176,
+          "medianRefactor": 176.09999999962747,
+          "p95Baseline": 140.69999999925494,
+          "p95Refactor": 183.69999999925494,
+          "limit": 384.2000000011176,
+          "passed": true
+        },
+        "levelMs": {
+          "medianBaseline": 2.099999999627471,
+          "medianRefactor": 2.600000001490116,
+          "p95Baseline": 2.700000001117587,
+          "p95Refactor": 3.799999998882413,
+          "limit": 100,
+          "passed": true
+        },
+        "targetMs": {
+          "medianBaseline": 1.900000000372529,
+          "medianRefactor": 2.599999999627471,
+          "p95Baseline": 2.400000000372529,
+          "p95Refactor": 2.800000000745058,
+          "limit": 100,
+          "passed": true
+        },
+        "itemPickerMs": {
+          "medianBaseline": 5.400000000372529,
+          "medianRefactor": 5.599999999627471,
+          "p95Baseline": 5.900000000372529,
+          "p95Refactor": 6.199999999254942,
+          "limit": 100,
+          "passed": true
+        },
+        "itemSearchMs": {
+          "medianBaseline": 0.6999999992549419,
+          "medianRefactor": 0.6000000014901161,
+          "p95Baseline": 1,
+          "p95Refactor": 0.6999999992549419,
+          "limit": 100,
+          "passed": true
+        }
+      },
+      "layoutEquivalent": true
+    },
+    {
+      "mode": "advanced",
+      "visit": "fresh-context",
+      "measurements": {
+        "pickerReadyMs": {
+          "medianBaseline": 147.89999999850988,
+          "medianRefactor": 200.69999999925494,
+          "p95Baseline": 153.69999999925494,
+          "p95Refactor": 206.2999999988824,
+          "limit": 397.8999999985099,
+          "passed": true
+        },
+        "levelMs": {
+          "medianBaseline": 21.200000001117587,
+          "medianRefactor": 15,
+          "p95Baseline": 22,
+          "p95Refactor": 22.199999999254942,
+          "limit": 100,
+          "passed": true
+        },
+        "targetMs": {
+          "medianBaseline": 4.099999999627471,
+          "medianRefactor": 13.600000001490116,
+          "p95Baseline": 5.400000000372529,
+          "p95Refactor": 14.099999999627471,
+          "limit": 100,
+          "passed": true
+        },
+        "itemPickerMs": {
+          "medianBaseline": 32.29999999888241,
+          "medianRefactor": 22.09999999962747,
+          "p95Baseline": 40.20000000111759,
+          "p95Refactor": 22.600000001490116,
+          "limit": 100,
+          "passed": true
+        },
+        "itemSearchMs": {
+          "medianBaseline": 7.599999999627471,
+          "medianRefactor": 11.100000001490116,
+          "p95Baseline": 8.199999999254942,
+          "p95Refactor": 11.199999999254942,
+          "limit": 100,
+          "passed": true
+        }
+      },
+      "layoutEquivalent": true
+    },
+    {
+      "mode": "advanced",
+      "visit": "repeat-context",
+      "measurements": {
+        "pickerReadyMs": {
+          "medianBaseline": 137.09999999962747,
+          "medianRefactor": 177.59999999962747,
+          "p95Baseline": 142.59999999962747,
+          "p95Refactor": 181.30000000074506,
+          "limit": 387.09999999962747,
+          "passed": true
+        },
+        "levelMs": {
+          "medianBaseline": 25.800000000745058,
+          "medianRefactor": 13.900000000372529,
+          "p95Baseline": 27,
+          "p95Refactor": 14.699999999254942,
+          "limit": 100,
+          "passed": true
+        },
+        "targetMs": {
+          "medianBaseline": 6.399999998509884,
+          "medianRefactor": 18.300000000745058,
+          "p95Baseline": 7.5,
+          "p95Refactor": 19.200000001117587,
+          "limit": 100,
+          "passed": true
+        },
+        "itemPickerMs": {
+          "medianBaseline": 21.700000001117587,
+          "medianRefactor": 12.099999999627471,
+          "p95Baseline": 22.5,
+          "p95Refactor": 12.5,
+          "limit": 100,
+          "passed": true
+        },
+        "itemSearchMs": {
+          "medianBaseline": 1.700000001117587,
+          "medianRefactor": 1.599999999627471,
+          "p95Baseline": 2.100000001490116,
+          "p95Refactor": 2.5,
+          "limit": 100,
+          "passed": true
+        }
+      },
+      "layoutEquivalent": true
+    }
+  ],
+  "samples": [
+    {
+      "kind": "baseline",
+      "mode": "fallback",
+      "trial": 0,
+      "visit": "fresh-context",
+      "pickerReadyMs": 214.09999999962747,
+      "levelMs": 4.300000000745058,
+      "targetMs": 2.599999999627471,
+      "itemPickerMs": 18.699999999254942,
+      "itemSearchMs": 0.7999999988824129,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "fallback",
+      "trial": 0,
+      "visit": "repeat-context",
+      "pickerReadyMs": 124.90000000037253,
+      "levelMs": 2.700000001117587,
+      "targetMs": 2.299999998882413,
+      "itemPickerMs": 4.700000001117587,
+      "itemSearchMs": 0.5,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "fallback",
+      "trial": 0,
+      "visit": "fresh-context",
+      "pickerReadyMs": 170.80000000074506,
+      "levelMs": 3.200000001117587,
+      "targetMs": 3.199999999254942,
+      "itemPickerMs": 18.5,
+      "itemSearchMs": 0.8000000007450581,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "fallback",
+      "trial": 0,
+      "visit": "repeat-context",
+      "pickerReadyMs": 138.69999999925494,
+      "levelMs": 3.799999998882413,
+      "targetMs": 2.599999999627471,
+      "itemPickerMs": 5.700000001117587,
+      "itemSearchMs": 0.599999999627471,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "fallback",
+      "trial": 1,
+      "visit": "fresh-context",
+      "pickerReadyMs": 189.40000000037253,
+      "levelMs": 4.199999999254942,
+      "targetMs": 3.400000000372529,
+      "itemPickerMs": 18.300000000745058,
+      "itemSearchMs": 0.900000000372529,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "fallback",
+      "trial": 1,
+      "visit": "repeat-context",
+      "pickerReadyMs": 176.09999999962747,
+      "levelMs": 2.600000001490116,
+      "targetMs": 2.699999999254942,
+      "itemPickerMs": 6.199999999254942,
+      "itemSearchMs": 0.6000000014901161,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "fallback",
+      "trial": 1,
+      "visit": "fresh-context",
+      "pickerReadyMs": 137,
+      "levelMs": 2.699999999254942,
+      "targetMs": 2.400000000372529,
+      "itemPickerMs": 19,
+      "itemSearchMs": 0.7999999988824129,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "fallback",
+      "trial": 1,
+      "visit": "repeat-context",
+      "pickerReadyMs": 135.30000000074506,
+      "levelMs": 2,
+      "targetMs": 1.799999998882413,
+      "itemPickerMs": 5.900000000372529,
+      "itemSearchMs": 0.7000000011175871,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "fallback",
+      "trial": 2,
+      "visit": "fresh-context",
+      "pickerReadyMs": 149.5,
+      "levelMs": 2.800000000745058,
+      "targetMs": 3,
+      "itemPickerMs": 19.5,
+      "itemSearchMs": 0.7999999988824129,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "fallback",
+      "trial": 2,
+      "visit": "repeat-context",
+      "pickerReadyMs": 134.2000000011176,
+      "levelMs": 2.099999999627471,
+      "targetMs": 2.400000000372529,
+      "itemPickerMs": 5.400000000372529,
+      "itemSearchMs": 0.5,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "fallback",
+      "trial": 2,
+      "visit": "fresh-context",
+      "pickerReadyMs": 192.5,
+      "levelMs": 3.099999999627471,
+      "targetMs": 4.099999999627471,
+      "itemPickerMs": 18.59999999962747,
+      "itemSearchMs": 1.099999999627471,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "fallback",
+      "trial": 2,
+      "visit": "repeat-context",
+      "pickerReadyMs": 183.69999999925494,
+      "levelMs": 2.599999999627471,
+      "targetMs": 2.400000000372529,
+      "itemPickerMs": 5.599999999627471,
+      "itemSearchMs": 0.6000000014901161,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "fallback",
+      "trial": 3,
+      "visit": "fresh-context",
+      "pickerReadyMs": 201.80000000074506,
+      "levelMs": 4.400000000372529,
+      "targetMs": 3.5,
+      "itemPickerMs": 18.299999998882413,
+      "itemSearchMs": 0.900000000372529,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "fallback",
+      "trial": 3,
+      "visit": "repeat-context",
+      "pickerReadyMs": 174.40000000037253,
+      "levelMs": 3.699999999254942,
+      "targetMs": 2.800000000745058,
+      "itemPickerMs": 5.5,
+      "itemSearchMs": 0.599999999627471,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "fallback",
+      "trial": 3,
+      "visit": "fresh-context",
+      "pickerReadyMs": 150.60000000149012,
+      "levelMs": 2.900000000372529,
+      "targetMs": 3.300000000745058,
+      "itemPickerMs": 18.899999998509884,
+      "itemSearchMs": 1.1000000014901161,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "fallback",
+      "trial": 3,
+      "visit": "repeat-context",
+      "pickerReadyMs": 140.69999999925494,
+      "levelMs": 2.099999999627471,
+      "targetMs": 1.900000000372529,
+      "itemPickerMs": 4.800000000745058,
+      "itemSearchMs": 0.6999999992549419,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "fallback",
+      "trial": 4,
+      "visit": "fresh-context",
+      "pickerReadyMs": 143.09999999962747,
+      "levelMs": 4.199999999254942,
+      "targetMs": 2.599999999627471,
+      "itemPickerMs": 18.700000001117587,
+      "itemSearchMs": 1,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "fallback",
+      "trial": 4,
+      "visit": "repeat-context",
+      "pickerReadyMs": 133.40000000037253,
+      "levelMs": 2,
+      "targetMs": 1.900000000372529,
+      "itemPickerMs": 5.400000000372529,
+      "itemSearchMs": 1,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "fallback",
+      "trial": 4,
+      "visit": "fresh-context",
+      "pickerReadyMs": 194.80000000074506,
+      "levelMs": 3.599999999627471,
+      "targetMs": 4.199999999254942,
+      "itemPickerMs": 18.100000001490116,
+      "itemSearchMs": 1,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "fallback",
+      "trial": 4,
+      "visit": "repeat-context",
+      "pickerReadyMs": 176.40000000037253,
+      "levelMs": 2.599999999627471,
+      "targetMs": 2.400000000372529,
+      "itemPickerMs": 5.300000000745058,
+      "itemSearchMs": 0.6999999992549419,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "advanced",
+      "trial": 0,
+      "visit": "fresh-context",
+      "pickerReadyMs": 147.89999999850988,
+      "levelMs": 21.600000001490116,
+      "targetMs": 4.099999999627471,
+      "itemPickerMs": 32.29999999888241,
+      "itemSearchMs": 7.800000000745058,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "advanced",
+      "trial": 0,
+      "visit": "repeat-context",
+      "pickerReadyMs": 131.7999999988824,
+      "levelMs": 26.59999999962747,
+      "targetMs": 6.300000000745058,
+      "itemPickerMs": 12,
+      "itemSearchMs": 1.599999999627471,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "advanced",
+      "trial": 0,
+      "visit": "fresh-context",
+      "pickerReadyMs": 206.2999999988824,
+      "levelMs": 16,
+      "targetMs": 13.600000001490116,
+      "itemPickerMs": 22.59999999962747,
+      "itemSearchMs": 11.199999999254942,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "advanced",
+      "trial": 0,
+      "visit": "repeat-context",
+      "pickerReadyMs": 181.30000000074506,
+      "levelMs": 14.699999999254942,
+      "targetMs": 18.100000001490116,
+      "itemPickerMs": 11.899999998509884,
+      "itemSearchMs": 1.700000001117587,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "advanced",
+      "trial": 1,
+      "visit": "fresh-context",
+      "pickerReadyMs": 188.90000000037253,
+      "levelMs": 14.099999999627471,
+      "targetMs": 13.699999999254942,
+      "itemPickerMs": 22.09999999962747,
+      "itemSearchMs": 11.100000001490116,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "advanced",
+      "trial": 1,
+      "visit": "repeat-context",
+      "pickerReadyMs": 180.2999999988824,
+      "levelMs": 13.900000000372529,
+      "targetMs": 19.200000001117587,
+      "itemPickerMs": 12.5,
+      "itemSearchMs": 1.599999999627471,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "advanced",
+      "trial": 1,
+      "visit": "fresh-context",
+      "pickerReadyMs": 153.69999999925494,
+      "levelMs": 22,
+      "targetMs": 4,
+      "itemPickerMs": 40.20000000111759,
+      "itemSearchMs": 1.5,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "advanced",
+      "trial": 1,
+      "visit": "repeat-context",
+      "pickerReadyMs": 138.7000000011176,
+      "levelMs": 25.799999998882413,
+      "targetMs": 7.5,
+      "itemPickerMs": 22,
+      "itemSearchMs": 1.700000001117587,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "advanced",
+      "trial": 2,
+      "visit": "fresh-context",
+      "pickerReadyMs": 145.69999999925494,
+      "levelMs": 20.59999999962747,
+      "targetMs": 5.400000000372529,
+      "itemPickerMs": 30,
+      "itemSearchMs": 8.199999999254942,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "advanced",
+      "trial": 2,
+      "visit": "repeat-context",
+      "pickerReadyMs": 137.09999999962747,
+      "levelMs": 25.300000000745058,
+      "targetMs": 7.199999999254942,
+      "itemPickerMs": 21.700000001117587,
+      "itemSearchMs": 1.799999998882413,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "advanced",
+      "trial": 2,
+      "visit": "fresh-context",
+      "pickerReadyMs": 201.5,
+      "levelMs": 14.900000000372529,
+      "targetMs": 14.099999999627471,
+      "itemPickerMs": 22.600000001490116,
+      "itemSearchMs": 11.199999999254942,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "advanced",
+      "trial": 2,
+      "visit": "repeat-context",
+      "pickerReadyMs": 171.80000000074506,
+      "levelMs": 13.799999998882413,
+      "targetMs": 18.5,
+      "itemPickerMs": 11.5,
+      "itemSearchMs": 2.5,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "advanced",
+      "trial": 3,
+      "visit": "fresh-context",
+      "pickerReadyMs": 200.69999999925494,
+      "levelMs": 22.199999999254942,
+      "targetMs": 7.800000000745058,
+      "itemPickerMs": 20.90000000037253,
+      "itemSearchMs": 1.199999999254942,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "advanced",
+      "trial": 3,
+      "visit": "repeat-context",
+      "pickerReadyMs": 177.59999999962747,
+      "levelMs": 13.5,
+      "targetMs": 14.199999999254942,
+      "itemPickerMs": 12.099999999627471,
+      "itemSearchMs": 1.5,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "advanced",
+      "trial": 3,
+      "visit": "fresh-context",
+      "pickerReadyMs": 143,
+      "levelMs": 21.200000001117587,
+      "targetMs": 4,
+      "itemPickerMs": 38.09999999962747,
+      "itemSearchMs": 2.099999999627471,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "advanced",
+      "trial": 3,
+      "visit": "repeat-context",
+      "pickerReadyMs": 142.59999999962747,
+      "levelMs": 25.800000000745058,
+      "targetMs": 6.399999998509884,
+      "itemPickerMs": 22.5,
+      "itemSearchMs": 2.100000001490116,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "advanced",
+      "trial": 4,
+      "visit": "fresh-context",
+      "pickerReadyMs": 150.80000000074506,
+      "levelMs": 21.199999999254942,
+      "targetMs": 4.900000000372529,
+      "itemPickerMs": 31.90000000037253,
+      "itemSearchMs": 7.599999999627471,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "baseline",
+      "mode": "advanced",
+      "trial": 4,
+      "visit": "repeat-context",
+      "pickerReadyMs": 126.79999999888241,
+      "levelMs": 27,
+      "targetMs": 6.099999999627471,
+      "itemPickerMs": 12.300000000745058,
+      "itemSearchMs": 1.699999999254942,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "advanced",
+      "trial": 4,
+      "visit": "fresh-context",
+      "pickerReadyMs": 192.60000000149012,
+      "levelMs": 15,
+      "targetMs": 13.300000000745058,
+      "itemPickerMs": 21.799999998882413,
+      "itemSearchMs": 11.100000001490116,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    },
+    {
+      "kind": "refactor",
+      "mode": "advanced",
+      "trial": 4,
+      "visit": "repeat-context",
+      "pickerReadyMs": 171,
+      "levelMs": 14.5,
+      "targetMs": 18.300000000745058,
+      "itemPickerMs": 12.300000000745058,
+      "itemSearchMs": 1.599999999627471,
+      "layout": {
+        "overflow": false,
+        "abilityCards": [
+          {
+            "slot": "p",
+            "width": 699,
+            "height": 159
+          },
+          {
+            "slot": "q",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "w",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "e",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "r",
+            "width": 343,
+            "height": 251
+          },
+          {
+            "slot": "attack",
+            "width": 332,
+            "height": 264
+          }
+        ],
+        "slots": 7
+      }
+    }
+  ]
+}

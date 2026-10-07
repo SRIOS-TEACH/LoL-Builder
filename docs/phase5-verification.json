@@ -1,0 +1,743 @@
+{
+  "date": "2026-10-06T13:46:45.919743+00:00",
+  "passed": true,
+  "unitTests": 225,
+  "browserRuns": 32,
+  "results": [
+    {
+      "id": "unit",
+      "exitCode": 0,
+      "seconds": 0.9
+    },
+    {
+      "id": "root-browser-fallback",
+      "exitCode": 0,
+      "seconds": 30.1
+    },
+    {
+      "id": "root-browser-advanced",
+      "exitCode": 0,
+      "seconds": 68.2
+    },
+    {
+      "id": "root-dps-browser-fallback",
+      "exitCode": 0,
+      "seconds": 24.1
+    },
+    {
+      "id": "root-dps-browser-advanced",
+      "exitCode": 0,
+      "seconds": 67.9
+    },
+    {
+      "id": "root-attack-browser-fallback",
+      "exitCode": 0,
+      "seconds": 25.7
+    },
+    {
+      "id": "root-attack-browser-advanced",
+      "exitCode": 0,
+      "seconds": 69.7
+    },
+    {
+      "id": "root-dps-targets",
+      "exitCode": 0,
+      "seconds": 60.6
+    },
+    {
+      "id": "root-dashboard-browser",
+      "exitCode": 0,
+      "seconds": 5.3
+    },
+    {
+      "id": "root-picker-browser",
+      "exitCode": 0,
+      "seconds": 4.7
+    },
+    {
+      "id": "root-passives-browser",
+      "exitCode": 0,
+      "seconds": 5.4
+    },
+    {
+      "id": "root-target-browser",
+      "exitCode": 0,
+      "seconds": 8.7
+    },
+    {
+      "id": "root-combo-browser",
+      "exitCode": 0,
+      "seconds": 6.3
+    },
+    {
+      "id": "root-combo-effects-browser",
+      "exitCode": 0,
+      "seconds": 3.5
+    },
+    {
+      "id": "root-champion-effects",
+      "exitCode": 0,
+      "seconds": 2.9
+    },
+    {
+      "id": "root-ui-reuse-browser",
+      "exitCode": 0,
+      "seconds": 1.2
+    },
+    {
+      "id": "root-native-entry-browser",
+      "exitCode": 0,
+      "seconds": 2.7
+    },
+    {
+      "id": "root-cases-advanced",
+      "exitCode": 0,
+      "seconds": 2.4
+    },
+    {
+      "id": "root-cases-fallback",
+      "exitCode": 0,
+      "seconds": 1.6
+    },
+    {
+      "id": "preview-browser-fallback",
+      "exitCode": 0,
+      "seconds": 31.1
+    },
+    {
+      "id": "preview-browser-advanced",
+      "exitCode": 0,
+      "seconds": 73.4
+    },
+    {
+      "id": "preview-dps-browser-fallback",
+      "exitCode": 0,
+      "seconds": 24.5
+    },
+    {
+      "id": "preview-dps-browser-advanced",
+      "exitCode": 0,
+      "seconds": 74.7
+    },
+    {
+      "id": "preview-attack-browser-fallback",
+      "exitCode": 0,
+      "seconds": 24.3
+    },
+    {
+      "id": "preview-attack-browser-advanced",
+      "exitCode": 0,
+      "seconds": 68.4
+    },
+    {
+      "id": "preview-dps-targets",
+      "exitCode": 0,
+      "seconds": 67.8
+    },
+    {
+      "id": "preview-dashboard-browser",
+      "exitCode": 0,
+      "seconds": 3.3
+    },
+    {
+      "id": "preview-picker-browser",
+      "exitCode": 0,
+      "seconds": 3.4
+    },
+    {
+      "id": "preview-passives-browser",
+      "exitCode": 0,
+      "seconds": 3.7
+    },
+    {
+      "id": "preview-target-browser",
+      "exitCode": 0,
+      "seconds": 9.4
+    },
+    {
+      "id": "preview-combo-browser",
+      "exitCode": 0,
+      "seconds": 4.7
+    },
+    {
+      "id": "preview-combo-effects-browser",
+      "exitCode": 0,
+      "seconds": 2.8
+    },
+    {
+      "id": "preview-champion-effects",
+      "exitCode": 0,
+      "seconds": 2.6
+    },
+    {
+      "id": "preview-ui-reuse-browser",
+      "exitCode": 0,
+      "seconds": 1.2
+    },
+    {
+      "id": "preview-native-entry-browser",
+      "exitCode": 0,
+      "seconds": 2.6
+    },
+    {
+      "id": "preview-cases-advanced",
+      "exitCode": 0,
+      "seconds": 2.3
+    },
+    {
+      "id": "preview-cases-fallback",
+      "exitCode": 0,
+      "seconds": 1.6
+    }
+  ],
+  "targetFollowup": {
+    "reason": "Synchronize target controls after external model updates while preserving typed formatting. ItemDetail changed only to remove trailing whitespace; an obsolete controller comment was removed.",
+    "changedRuntimeFiles": [
+      "JS/application/builderPage.mjs",
+      "JS/ui/itemDetail.mjs",
+      "JS/ui/targetControls.mjs"
+    ],
+    "results": [
+      {
+        "id": "unit",
+        "exitCode": 0,
+        "seconds": 0.8
+      },
+      {
+        "id": "root-attack-browser-advanced",
+        "exitCode": 0,
+        "seconds": 63.7
+      },
+      {
+        "id": "root-dps-targets",
+        "exitCode": 0,
+        "seconds": 60.6
+      },
+      {
+        "id": "root-target-browser",
+        "exitCode": 0,
+        "seconds": 8.7
+      },
+      {
+        "id": "root-ui-reuse-browser",
+        "exitCode": 0,
+        "seconds": 1.2
+      },
+      {
+        "id": "root-native-entry-browser",
+        "exitCode": 0,
+        "seconds": 2.4
+      },
+      {
+        "id": "root-cases-advanced",
+        "exitCode": 0,
+        "seconds": 2.2
+      },
+      {
+        "id": "root-cases-fallback",
+        "exitCode": 0,
+        "seconds": 1.5
+      },
+      {
+        "id": "preview-attack-browser-advanced",
+        "exitCode": 0,
+        "seconds": 68.4
+      },
+      {
+        "id": "preview-dps-targets",
+        "exitCode": 0,
+        "seconds": 67.8
+      },
+      {
+        "id": "preview-target-browser",
+        "exitCode": 0,
+        "seconds": 9.4
+      },
+      {
+        "id": "preview-ui-reuse-browser",
+        "exitCode": 0,
+        "seconds": 1.2
+      },
+      {
+        "id": "preview-native-entry-browser",
+        "exitCode": 0,
+        "seconds": 2.7
+      },
+      {
+        "id": "preview-cases-advanced",
+        "exitCode": 0,
+        "seconds": 2.3
+      },
+      {
+        "id": "preview-cases-fallback",
+        "exitCode": 0,
+        "seconds": 1.6
+      }
+    ],
+    "browserRuns": 10,
+    "supersededFailures": [
+      {
+        "id": "root-attack-browser-advanced",
+        "exitCode": 1,
+        "seconds": 69.6
+      },
+      {
+        "id": "preview-attack-browser-advanced",
+        "exitCode": 1,
+        "seconds": 69.6
+      },
+      {
+        "id": "preview-ui-reuse-browser",
+        "exitCode": 1,
+        "seconds": 1.1
+      }
+    ]
+  },
+  "bindingFollowup": {
+    "reason": "Remove the mutually importing attack modules by passing the existing averageCrit callback to champion profiles. Arithmetic unchanged. Native import graph is acyclic.",
+    "results": [
+      {
+        "id": "unit",
+        "exitCode": 0,
+        "seconds": 0.9
+      },
+      {
+        "id": "root-attack-browser-advanced",
+        "exitCode": 0,
+        "seconds": 69.7
+      },
+      {
+        "id": "root-native-entry-browser",
+        "exitCode": 0,
+        "seconds": 2.7
+      },
+      {
+        "id": "root-cases-advanced",
+        "exitCode": 0,
+        "seconds": 2.4
+      },
+      {
+        "id": "root-cases-fallback",
+        "exitCode": 0,
+        "seconds": 1.6
+      },
+      {
+        "id": "preview-native-entry-browser",
+        "exitCode": 0,
+        "seconds": 2.6
+      },
+      {
+        "id": "preview-cases-advanced",
+        "exitCode": 0,
+        "seconds": 2.3
+      },
+      {
+        "id": "preview-cases-fallback",
+        "exitCode": 0,
+        "seconds": 1.6
+      }
+    ],
+    "browserRuns": 3
+  },
+  "representativeCases": {
+    "trees": 2,
+    "modes": 2,
+    "casesPerRun": 5,
+    "exactBaselineMatch": true
+  },
+  "runtimeFiles": [
+    {
+      "path": "Builder.html",
+      "sha256": "09d04336336e9265ac4d77b0e13bd1257bbf592abd34c25d3386a1d5c88a5a01",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "CSS/halfmoon-variables.css",
+      "sha256": "73e4802a23fd0ca5cc62e1b22f27d17af7e0bebd9f830f15f63889c21bcfb6f9",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "CSS/lolBuilder.css",
+      "sha256": "b0077feddb58f1e0b5f57bff8b2aea9dbde09352b2b8ce88395d108025c8bce0",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/application/builderPage.mjs",
+      "sha256": "32e479e209b2a7a4c4127324457fd60fb474d296d88b4510db9ddce713d2e1c2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/application/catalogSession.js",
+      "sha256": "ceefb50eeaf69481cee966e8287d4446478d29d4d0f0bbd9c37190fcad74993d",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/application/runeDefaults.mjs",
+      "sha256": "6cecd3b4f4e60dc426a715d8cafb974731433b64225d095c741a483a46c641a3",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/builder.js",
+      "sha256": "5c330b66b682f8d6cab3244dd1acff8438f949e0f2c5df6d91f32c108265d60a",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/core/records.js",
+      "sha256": "79086029502c95c8510238b730a620be7a3837c6a4d05f68d9aa4fd659fecdb0",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/core/text.js",
+      "sha256": "e5ab354cfc53a46171ab0393d138fcc5af6bd02c322de213f2f510ecbbf8f15c",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/data/championSource.js",
+      "sha256": "c9a136abf479354ca69c3c8a6497e1b8069aa73b0c233fb549b64e4b851a9443",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/data/itemSource.js",
+      "sha256": "860d2e732c8af3c8b99abeaa3dbb5521a831236a5e3f3b8e5cd08515f5d55c48",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/data/runeSource.js",
+      "sha256": "745de20bc70d3049d2617f3bc453d3f4c89b2696433824bf3e6b3a2dcfc89038",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/data/sourceRepositories.js",
+      "sha256": "f24ba0b502e16b570ab01e57824a97d4ff0b02010e79fea50a9556ed4de204de",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/buildInputs.js",
+      "sha256": "5412e2a04e543540cf072aac39bc7a6c20473d615aea72d6379053ebeaad605d",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/catalogQueries.js",
+      "sha256": "0b8bba809c600dc524d3c1b4cf28968376ff5d7f2c6694f32d4bcd5906a57468",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/recommendations.js",
+      "sha256": "423376d734f67faa8917787886e1d79a175ffae91f5b4628b53c7a003bac46d2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/runeInputs.js",
+      "sha256": "f1cf754423f8b4d40e55548fb137a795d14b5684a8f98326789f33086db63375",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/domain/scenarioInputs.js",
+      "sha256": "bc6d2fabb47a6e19098f95db3b41385ce9a29b0dda46a66dd3ad339cab4d083f",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/abilityResolution.js",
+      "sha256": "efb7ceb2939b3c07ebe0febd05805a0e4b3007be643b08adda4037c95d66a2a0",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/buildEvaluation.js",
+      "sha256": "01fbd4ec1cdf7fa29043781e05cd943bd6ca1da60bc15abf9aa6722ed697e19a",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/calculationContext.js",
+      "sha256": "037a5342e7671c5668435effc43e9a6387926d079d05334849648a42ffe3e451",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/calculationPipeline.js",
+      "sha256": "ba99c146f967631e23807937eaf15153f06fdf3227e2febc3ec59428b79de96e",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/combatContext.js",
+      "sha256": "7d7b4559274a7f430b03abe156cf0fe4d5675108eb89a0524f5bf6eaf512b11e",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/comboEvaluation.js",
+      "sha256": "d2ad0a8978a0a6b4f65c2fda39eb5a22c584bb374028c75c8478016967f6a2f8",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/engine/itemEvaluation.js",
+      "sha256": "f6ae63a5a6f4b1538fd72a8b95913956477a78d9cc57fe0c7b51fb812d7f10c0",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/package.json",
+      "sha256": "ccdf8de44295f59be00f6b8cf1359959938a16a4ccf8c55940d8af1894748c5f",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/presentation/abilityPresentation.js",
+      "sha256": "e1cc5f71cc8d4a3e82b45b603b7aba7fbcd6e890df454ba5e10b48d8d6b6926e",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/presentation/damagePresentation.js",
+      "sha256": "94c126d0e39ab7f79236cef07912513807eca60feaf9320dfccc07a0160d12dd",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/presentation/statIcons.mjs",
+      "sha256": "34f9c22bdb0619712faa5c842ce0ac646c4d933e65fa9338d730d7f06968580f",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/abilityDps.js",
+      "sha256": "dde86ae09851f4803852c2ff864a835ac7a7e4c7eaa6e38e577ee301fcc0510b",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/abilityOnHit.js",
+      "sha256": "6a690b2c625767d55d03322cd51e71228fc9602f9f36fb78fbedf422d291224c",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/abilityRules.js",
+      "sha256": "a77bbc61221328f928f13f815c99edf10af1776051032997f58e23a3924e8c5e",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/apiClient.js",
+      "sha256": "e9cb0ddd347a1eef3e80afa1d64eebba08e50859f9eaf1f31aff2d8dd656e5f2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/attackChampions.js",
+      "sha256": "2bcab923ad480b2a8216849f913b94737e7cc68ceabb289a30da22b271a3a1c5",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/attackEffects.js",
+      "sha256": "1a95487cef421fddd5f09f42edd4781aa8ca666479c109b5a7a6db52b3dacec7",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/buildStats.js",
+      "sha256": "3224ac6242eb6d297f81bbc462fdc8676ae6532046cd65935eace87970ca779d",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/calculations.js",
+      "sha256": "2fa469da3dda700107f45edba949114a3ee1204d3f2a0f7785315db9167c8dc2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/championEffects.js",
+      "sha256": "b02e85d005dd73dec8249084d97618292a941bcd2e87d0a309907ab7bd7916dd",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/combatInputs.js",
+      "sha256": "bfb8c59e9f922a073721e5953b94f9ba749937530b6883d9b3feebe2119bd233",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/comboTester.js",
+      "sha256": "5098f9f7d34642976ef1482c2678af6b31838c01952e91021c555666005d75b7",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/damageText.js",
+      "sha256": "4e80b77c8fc5b584bc95a1d0e095dd5f3260a9b6158aa2b8b1af58477f6ad573",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/itemData.js",
+      "sha256": "05ffaa3621d3eb50787326cdf804b5b4a2f53a0e3c2ea06cdccd167786d438e1",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/itemDescriptions.js",
+      "sha256": "4eb7b5dd7696b7204a636cfc3e65f32e3f64160d06e03d8eccd78cc180e85924",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/itemPolicy.js",
+      "sha256": "1ea24bc17a399d20f077b9d08cc7c3e654415ee463d7693e8a2553eb9cd24e34",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/runeEffects.js",
+      "sha256": "d95bde1a763462c00be0d4ea0476163a542e57b3c25d95d00489293b56a4fb6d",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/shared/targetDamage.js",
+      "sha256": "d0787c46ea0de81f4278958e0a2339fcf42c66ffb6d8715fed623f4a7ba84864",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/ui/abilityControls.mjs",
+      "sha256": "f9b0c9291e5d5b1b03d5a7ee465ca2cdc928d7846b49e241419f2a753e7e310c",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/ui/catalogList.mjs",
+      "sha256": "bf95303179b3c5c366d9f6a2cc43f5f10959c4f9d75c3b7adb40324f6caeeb7c",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/ui/championDetail.mjs",
+      "sha256": "3033d6e0a4aa29ed6f7e890634e99028875d2fdfc506eafbab6293a278df71dc",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/ui/comboControls.mjs",
+      "sha256": "2104bb7627af490e84fed1dd3ac8f4093a405d12b734495a3b3d1eec648dde0f",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/ui/inventory.mjs",
+      "sha256": "00640b3b687df90213ff77b492a5b69cf57df1f053c34169abaf16d401aba06b",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/ui/itemDetail.mjs",
+      "sha256": "197d1f5cd023234e2131f50a08ebba881b2414dbf0e54664423ea0c297abcc3c",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/ui/lifecycle.mjs",
+      "sha256": "dad7fcce86d88170c09b97b3e08be11db5edfba3b59f24ba14683658a4e1a63c",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/ui/runeControls.mjs",
+      "sha256": "4d70aa5c5edcb79c3f93676a5f2afc9c660fbee63a39e7c9764f14cd9f3fe6f4",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/ui/statsView.mjs",
+      "sha256": "56fa47aa05b37ff244409de3f2157e80f5d305d08303974b2b0b915be57c47a2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "JS/ui/targetControls.mjs",
+      "sha256": "f67e2c84c38b1bbbe7343ecbe729a632e778e41f483bc191d8f66ce83992f1bc",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/README.md",
+      "sha256": "79e46a62ce47a5c6ab57153936307671c6f2a316f34510c46b8f3d216812b275",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/all.png",
+      "sha256": "d46d36230ab6ed931ea2723550caffaa51aa0ac5d9e4a9ec017558bdb6d017e7",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/assassin.png",
+      "sha256": "4116756eac098bd1bd4e40129d9fd5d0527a52cd43f5fca27c88b8c4b985a2d7",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/fighter.png",
+      "sha256": "be453ed00a94b1733d99d5fbc7adb8e8fd3331e09b943ff23dce43fb98468753",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/gold.png",
+      "sha256": "341a3caed071860c594f9860b8f7a71fd81d33e5dbfc53c6ff0b45cb8a5136bf",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/mage.png",
+      "sha256": "c44b4ff4903f46790dcab73437aec343105f4e0aebc3003552b362c8f453b72a",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/marksman.png",
+      "sha256": "bb55fbf8bd8055046d389e6bb2512fd51f67ca6e95db2e8398df8c3f894168e8",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/recommended.png",
+      "sha256": "458b1805826e21cf81c12b11f63218e72807d7aea30be8788b26322a09a484bc",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/reset.png",
+      "sha256": "4ef986e80bdbb5f0bff7cbedb9947e2a7e39f2c112280583dbe9e0337e5b324b",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/support.png",
+      "sha256": "69f61425dcbff49a1729ecf79c73c4d80cb9b343a2438a7fbfe826033a1a3ce2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "assets/shop/tank.png",
+      "sha256": "f8e5d25ba1caad4a551ea112a1d5b1833c8cfec15503eec8592e901bbce35678",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "champ.html",
+      "sha256": "ebbf266b4b99997b2e19bb5e0cf0067c8eb76c1489543d22454ad2b39e5a50b3",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "index.html",
+      "sha256": "4d248ec88de2905e162d0dcb18456424c3c0a42549c7a37b5df6822acd53d534",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "itemLookup.html",
+      "sha256": "5952a7d420310457deb0748b7aabcfc1f206aaf9f3919f85a17ccee245f3cfa2",
+      "generatedCopiesMatch": true
+    },
+    {
+      "path": "main.html",
+      "sha256": "c71124e3f18d4bca71a1d734ae24e20a9acf49104195b92e843b30def4963b6f",
+      "generatedCopiesMatch": true
+    }
+  ],
+  "headlessCases": 10,
+  "dataReuse": {
+    "champions": 173,
+    "items": 868,
+    "builderItems": 236
+  },
+  "standaloneUI": {
+    "instances": 2,
+    "champions": 173,
+    "items": 868,
+    "components": 10,
+    "isolated": true,
+    "latestRequestWins": true,
+    "disposal": true,
+    "uniqueIds": true,
+    "noBuilder": true,
+    "sourceImmutable": true
+  },
+  "abilityAudit": {
+    "champions": 173,
+    "findings": 30,
+    "affectedPassives": 13,
+    "exactBaselineMatch": true
+  },
+  "combatAudit": {
+    "records": 2809,
+    "scenarios": 5618,
+    "missingInputs": 0,
+    "newSourceIssues": 0
+  },
+  "cleanSource": {
+    "unitTests": 225,
+    "build": true,
+    "headlessCases": 10,
+    "standaloneUI": true,
+    "actualNativeEntry": true,
+    "note": "Clean staged-source archive includes all final runtime changes and the acyclic import check; only completion documentation follows."
+  }
+}

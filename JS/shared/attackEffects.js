@@ -1,9 +1,14 @@
+import AttackChampions from './attackChampions.js';
+import BuildStats from './buildStats.js';
+import Calculations from './calculations.js';
+import ChampionEffects from './championEffects.js';
+import TargetDamage from './targetDamage.js';
 /** Explicit attack-script bindings. Coefficients come from the loaded game data.
  * Damage packets are resolved against one champion. Procs are amortised over
  * their cadence; optional effects require an explicit activation/interval.
  */
-(function(scope){
-  const C=scope.Calculations, finite=Number.isFinite, clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+
+  const C=Calculations, finite=Number.isFinite, clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
   const averageCrit=(ad,chance,multiplier)=>ad*(1+clamp(chance,0,1)*(multiplier-1));
   const normalise=v=>v?.mName?[v]:v||[];
   // Stable source-passive keys shared with the Passives window. A control key
@@ -50,8 +55,8 @@
       return {basicHaste,ultimateHaste,abilityDamageMultiplier};
     }
     const context=(s)=>{
-      const growth=scope.BuildStats.growthFactor(level),baseAd=s.base.attackdamage+s.base.attackdamageperlevel*growth;
-      const targetStats=state.target&&scope.TargetDamage?scope.TargetDamage.targetStats(state.target):{};
+      const growth=BuildStats.growthFactor(level),baseAd=s.base.attackdamage+s.base.attackdamageperlevel*growth;
+      const targetStats=state.target&&TargetDamage?TargetDamage.targetStats(state.target):{};
       if(!state.target)for(const key of ['hp','currentHp','bonusHp'])if(finite(values['attack:target:'+key]))targetStats[key]=values['attack:target:'+key];
       const stats={totalAd:s.ad,baseAd,bonusAd:s.ad-baseAd,ap:s.ap,hp:s.hp,mp:s.mp,
         bonusHp:s.hp-s.base.hp-s.base.hpperlevel*growth,bonusMp:s.mp-s.base.mp-s.base.mpperlevel*growth,
@@ -60,7 +65,7 @@
         attackSpeed:s.asTotal,bonusAttackSpeed:(s.base.attackspeedperlevel*growth+s.item.asPct+s.rune.asPct)/100+(s.bonusAttackSpeedFromChampion||0),
         magicPenFlat:s.magicPenFlat??((s.item.mrPenFlat||0)+(s.rune.mrPenFlat||0)),
         lethality:s.armorPenFlat??s.lethality??((s.item.arPenFlat??s.item.lethality??0)+(s.rune.arPenFlat??s.rune.lethality??0))};
-      const defaults=Object.fromEntries((scope.ChampionEffects?.model(state).fields||[]).filter(f=>f.key.startsWith('buff:')).map(f=>[f.key,f.defaultValue]));
+      const defaults=Object.fromEntries((ChampionEffects?.model(state).fields||[]).filter(f=>f.key.startsWith('buff:')).map(f=>[f.key,f.defaultValue]));
       const buffs=Object.fromEntries(Object.entries({...defaults,...values}).filter(([k])=>k.startsWith('buff:')).map(([k,v])=>[k.slice(5),v]));
       if(name==='Nasus')buffs['{1b1d7345}']=values['attack:nasusStacks']??0;
       return {stats,targetStats,buffs,level,ranged:s.ranged??s.base.attackrange>300};
@@ -88,7 +93,7 @@
     const input=(slot,key,label,extra={})=>{
       // Maximum/current target health belongs to the shared Target panel. Old
       // callers without a managed target retain their explicit legacy inputs.
-      if(state.target&&['target:hp','target:currentHp'].includes(key))return scope.TargetDamage?.targetStats(state.target)[key.slice(7)];
+      if(state.target&&['target:hp','target:currentHp'].includes(key))return TargetDamage?.targetStats(state.target)[key.slice(7)];
       if(state.target&&!state.target.enabled&&key==='target:bonusHp')return undefined;
       controls.push({slot,key:'attack:'+key,label,type:'number',min:0,...extra});return values['attack:'+key];
     };
@@ -97,7 +102,7 @@
     function apply(s){
       const out={...s,championBonuses:{...s.championBonuses}};
       const earnedCrit=enabled(3032,'practice-makes-lethal')?clamp(Number(values['attack:yunTalCrit'])||0,0,itemData(3032,'CritMax')):0;
-      const rawCrit=(s.base.crit+s.base.critperlevel*scope.BuildStats.growthFactor(level))*100+s.item.critChance+s.rune.critChance+earnedCrit;
+      const rawCrit=(s.base.crit+s.base.critperlevel*BuildStats.growthFactor(level))*100+s.item.critChance+s.rune.critChance+earnedCrit;
       out.critChance=clamp(out.critChance+earnedCrit,0,100);
       if(name==='Senna'){
         const stacks=Number(values['buff:{e88568f8}'])||0,bonus=Math.floor(stacks/data('p','StacksForBonus'))*data('p','BonusCritChance');
@@ -131,12 +136,12 @@
       for(const [id,key,dataKey,passive]of [[3504,'ardent','AttackSpeedMin','sanctify'],[2512,'fiendhunter','BonusAS','opening-barrage'],[3032,'flurry','ASMod','flurry']])if(enabled(id,passive)&&values['attack:'+key]===true){
         const bonus=itemData(id,dataKey);if(finite(bonus)){out.asTotal+=(s.base.attackspeedratio??s.base.attackspeed)*bonus;out.bonusAttackSpeedFromChampion=(out.bonusAttackSpeedFromChampion||0)+bonus;}
       }
-      if(scope.AttackChampions)Object.assign(out,scope.AttackChampions.apply({name,s:out,data,calc,values,rank}));
+      if(AttackChampions)Object.assign(out,AttackChampions.apply({name,s:out,data,calc,values,rank}));
       if(name==='Jhin'){
         const reduction=data('p','CritReductionPercent');if(finite(reduction))out.critDamage*=1-reduction;
         const adBonus=calc('p','TotalADPercent',out).value;if(finite(adBonus))out.ad*=1+adBonus;
         const baseAS=data('p','BaseAttackSpeed'),perLevel=data('p','PercentAttackSpeedPerLevel');
-        if(finite(baseAS)&&finite(perLevel))out.asTotal=baseAS*(1+perLevel*scope.BuildStats.growthFactor(level));
+        if(finite(baseAS)&&finite(perLevel))out.asTotal=baseAS*(1+perLevel*BuildStats.growthFactor(level));
       }
       for(const stat of ['ad','critChance','critDamage','asTotal'])if(out[stat]!==s[stat])out.championBonuses[stat]=(out.championBonuses[stat]||0)+out[stat]-s[stat];
       return out;
@@ -256,7 +261,7 @@
       if(name==='MasterYi'&&toggle('p','doubleStrike','Repeated attacks: Double Strike'))ability('p','TotalDamage','Double Strike','physical',data('p','AttackCount'),{onHit:false,extraHit:1});
       if(name==='Kayle'&&level>=11&&toggle('p','kayleWaves','Exalted: waves active'))ability('p','PassiveWaveDamage','Divine Ascent waves','magic',1,{onHit:false});
       if(['Vayne','KogMaw'].includes(name))input('attack','target:hp','Target maximum health');
-      const extended=scope.AttackChampions?.profile({name,s,data,calc,rank,toggle,input,choice,row,values,rows,base,rate,attackCritChance:chance})||{base,rate,onHitScale:1,baseType:'physical',notes:[]};
+      const extended=AttackChampions?.profile({name,s,data,calc,rank,toggle,input,choice,row,values,rows,base,rate,attackCritChance:chance,averageCrit})||{base,rate,onHitScale:1,baseType:'physical',notes:[]};
       base=extended.base;rate=extended.rate;warnings.push(...extended.notes);
       const championRows=rows.length;
       let phantom=1;
@@ -373,7 +378,7 @@
       const unsupported={Aphelios:'weapon-specific attacks',Graves:'pellets and reload',Zeri:'charged right-click and Q attacks',Kalista:'attack timing',Akshan:'double-shot timing',Sett:'alternating-punch timing',
         Belveth:'R true damage and special attack-speed rules',Bard:'meep availability and chime scaling',Braum:'Concussive Blows',Camille:'Precision Protocol conversion',Darius:'Hemorrhage and Noxian Might',DrMundo:'Blunt Force Trauma',Elise:'spider-form attacks',Fiora:'vitals and Bladework',Fizz:'Seastone Trident',Galio:'Colossal Smash',Gangplank:'Trial by Fire',Gnar:'Hyper and transformation stats',Illaoi:'Harsh Lesson',JarvanIV:'Martial Cadence',Jayce:'stance-specific attacks',Jinx:'Switcheroo and Get Excited',Kindred:'Mounting Dread',Nautilus:'Staggering Blow and Titan’s Wrath',Nidalee:'Takedown',Nilah:'Formless Blade',Nocturne:'Umbra Blades',Pantheon:'empowered Shield Vault',RekSai:'Queen’s Wrath',Renekton:'Ruthless Predator',Rengar:'Savagery and Bonetooth Necklace',Rumble:'Overheat',Sejuani:'Icebreaker',Shyvana:'form-specific attacks',Skarner:'Shattered Earth',Sylas:'Petricite Burst',Talon:'Blade’s End',Thresh:'Flay charge',Twitch:'Deadly Venom and Spray and Pray',Udyr:'stance-specific attacks',Urgot:'Purge and shotgun legs',Viktor:'Siphon Power',Zed:'Contempt for the Weak'};
       if(unsupported[name]&&!extended.covered)warnings.push(`${name}: ${unsupported[name]} are not yet modeled; this is a partial estimate.`);
-      const mitigate=(value,type)=>scope.TargetDamage?scope.TargetDamage.apply(value,type,{target:state.target,stats:s}):{value,rawValue:value,multiplier:1,text:''};
+      const mitigate=(value,type)=>TargetDamage?TargetDamage.apply(value,type,{target:state.target,stats:s}):{value,rawValue:value,multiplier:1,text:''};
       const baseResult=mitigate(base,extended.baseType||'physical'),rawBase=base;base=baseResult.value;
       for(const r of rows){const result=mitigate(r.value,r.type);r.rawValue=result.rawValue;r.value=result.value;r.targetMultiplier=result.multiplier;r.targetExplanation=result.text;}
       let damage=base,dps=finite(base)&&finite(rate)?base*rate:null,rawDamage=rawBase,rawDps=finite(rawBase)&&finite(rate)?rawBase*rate:null;
@@ -416,5 +421,6 @@
     }
     return {apply,profile,abilityModifiers};
   }
-  scope.AttackEffects={model,averageCrit,itemPassiveBindings};
-})(typeof window!=='undefined'?window:globalThis);
+  const exportedApi = {model,averageCrit,itemPassiveBindings};
+
+export default exportedApi;

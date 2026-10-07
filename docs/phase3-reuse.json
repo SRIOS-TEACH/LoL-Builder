@@ -1,0 +1,51 @@
+{
+  "version": "16.18.1",
+  "champions": 173,
+  "fullItems": 868,
+  "builderItems": 236,
+  "noBuilderOrDom": true,
+  "twoIndependentQueries": true,
+  "twoIndependentBuilds": true,
+  "twoIndependentScenarios": true,
+  "basicProfileIncludesLoreSkinsAndAbilities": true,
+  "advancedSourcePrepared": true,
+  "sourceCatalogRetained": true,
+  "fixturesUnchanged": true,
+  "provenance": {
+    "provider": "DataDragon",
+    "version": "16.18.1",
+    "language": "en_US",
+    "url": "https://ddragon.leagueoflegends.com/cdn/16.18.1/data/en_US/item.json",
+    "immutable": true
+  },
+  "fixtures": [
+    {
+      "name": "versions.json",
+      "sha256": "8dd47f7970cc808d67afe854e7be9bb966bd7cf5141cb27354bf7b8e49d2a377"
+    },
+    {
+      "name": "champions.json",
+      "sha256": "43eb475fb9d2730a33f4d1ed30d0369edeaa6715e2039280e1d07ae29588dfda"
+    },
+    {
+      "name": "items.json",
+      "sha256": "0b8ddc4531607aefa4322b18a04be8569b0fc1379211c4e2bf06676d911cea6d"
+    },
+    {
+      "name": "Ashe.json",
+      "sha256": "aa2ec02303c2dd14c90538bdbf19cce2c1a859ffc9c62c6fde8c968140cad1a0"
+    },
+    {
+      "name": "runes.json",
+      "sha256": "74d1e211982f4c976f2c76c1229f5c09b6eabdf2bf76b8f1bbd6d7248a60fc44"
+    },
+    {
+      "name": "ashe.bin.json",
+      "sha256": "d5aecdf76b201b075a8c77c3444abaabab3dc5a5ac0b35dc14aafaefb65d5c5d"
+    },
+    {
+      "name": "cd-items.json",
+      "sha256": "c1cf2b0bf746d260cd960788a52e71d96c096fe298c83cef55253f556e819ffb"
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "total": 2809,
+  "numeric": 2672,
+  "inputs": 134,
+  "unsupported": 3,
+  "reasons": {
+    "circular calculation": 1,
+    "effect:1": 2
+  },
+  "examples": {
+    "circular calculation": {
+      "file": "cd-items.json",
+      "name": "ChampRange",
+      "calc": {
+        "mDefaultGameCalculation": "ChampRange",
+        "mConditionalGameCalculation": "ChampRange",
+        "mConditionalCalculationRequirements": {
+          "__type": "IsRangedCastRequirement"
+        },
+        "__type": "GameCalculationConditional"
+      },
+      "dataValues": [
+        {
+          "mName": "ExtraRangeonBoltCheck",
+          "mValue": 65,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "ExtraBoltDamage",
+          "mValue": 10,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "BoltPercent",
+          "mValue": 0.5,
+          "__type": "ItemDataValue"
+        },
+        {
+          "mName": "BonusTargets",
+          "mValue": 2,
+          "__type": "ItemDataValue"
+        }
+      ],
+      "effects": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "effect:1": {
+      "file": "KSante.bin.json",
+      "name": "TotalDamage",
+      "calc": {
+        "mFormulaParts": [
+          {
+            "mEffectIndex": 1,
+            "__type": "EffectValueCalculationPart"
+          },
+          {
+            "mStat": 2,
+            "mCoefficient": 1,
+            "__type": "StatByCoefficientCalculationPart"
+          }
+        ],
+        "__type": "GameCalculation"
+      }
+    }
+  },
+  "unresolved": [
+    {
+      "file": "cd-items.json",
+      "record": "Items/773085",
+      "name": "ChampRange",
+      "reasons": [
+        "circular calculation"
+      ]
+    },
+    {
+      "file": "KSante.bin.json",
+      "record": "Characters/KSante/Spells/KSanteRAbility/KSanteRMissile1/mSpell",
+      "name": "TotalDamage",
+      "reasons": [
+        "effect:1"
+      ]
+    },
+    {
+      "file": "KSante.bin.json",
+      "record": "Characters/KSante/Spells/KSanteQAbility/KSanteQ3Missile/mSpell",
+      "name": "TotalDamage",
+      "reasons": [
+        "effect:1"
+      ]
+    }
+  ]
+}

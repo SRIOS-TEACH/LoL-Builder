@@ -1,0 +1,5 @@
+page.waitForFunction: Timeout 30000ms exceeded.
+    at C:\Users\Shannon\My Drive\WORK\LOL Optimised\Codex Project\test-results\refactor-baseline-2026-09-30\snapshot\tests\ability-audit.cjs:41:13 {
+  log: [],
+  name: 'TimeoutError'
+}

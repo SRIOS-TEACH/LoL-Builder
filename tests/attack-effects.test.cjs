@@ -1,8 +1,5 @@
 const test=require('node:test');
-const assert=require('node:assert/strict');
-require('../JS/shared/calculations.js');
-require('../JS/shared/buildStats.js');
-require('../JS/shared/attackEffects.js');
+const assert=require('node:assert/strict');const Calculations=require('../JS/shared/calculations.js').default;const BuildStats=require('../JS/shared/buildStats.js').default;const AttackEffects=require('../JS/shared/attackEffects.js').default;
 const fixtures=require('./attack-excerpts.json');
 const near=(a,b)=>assert.ok(Math.abs(a-b)<0.001,`${a} != ${b}`);
 const stats=()=>({base:{attackdamage:100,attackdamageperlevel:0,attackspeed:1,attackspeedratio:1,attackspeedperlevel:0,attackrange:550,hp:1000,hpperlevel:0,mp:500,mpperlevel:0,armor:30,armorperlevel:0,crit:0,critperlevel:0},item:{critChance:25,critDamage:30,asPct:0},rune:{critChance:0,critDamage:0,asPct:0},level:18,ad:100,ap:100,hp:1000,mp:500,armor:30,mr:30,asTotal:1,critChance:25,critDamage:230,attackRange:550,championBonuses:{}});

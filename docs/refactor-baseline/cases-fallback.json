@@ -1,0 +1,1799 @@
+{
+  "kind": "captured-current-behavior",
+  "advanced": false,
+  "sourceRoot": "C:\\Users\\Shannon\\My Drive\\WORK\\LOL Optimised\\Codex Project\\test-results\\refactor-baseline-2026-09-30\\snapshot",
+  "cases": [
+    {
+      "id": "ashe-basic",
+      "inputs": {
+        "champion": "Ashe",
+        "level": 18,
+        "ranks": {
+          "q": 5,
+          "w": 5,
+          "e": 5,
+          "r": 3
+        },
+        "items": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "runes": {
+          "primaryPath": "precision",
+          "secondaryPath": "sorcery",
+          "primary": [],
+          "secondary": [],
+          "shards": []
+        },
+        "target": {
+          "enabled": false,
+          "maxHp": 2000,
+          "currentHp": 2000,
+          "armor": 100,
+          "mr": 100,
+          "damageReduction": 0
+        },
+        "combatValues": {},
+        "runeStacks": {},
+        "gameTimeMinutes": 20,
+        "disabledItemPassives": {}
+      },
+      "stats": {
+        "base": {
+          "hp": 610,
+          "hpperlevel": 101,
+          "mp": 280,
+          "mpperlevel": 35,
+          "hpregen": 3.5,
+          "hpregenperlevel": 0.55,
+          "mpregen": 7,
+          "mpregenperlevel": 0.65,
+          "attackdamage": 59,
+          "attackdamageperlevel": 0,
+          "attackspeed": 0.658,
+          "attackspeedperlevel": 3,
+          "armor": 26,
+          "armorperlevel": 4.6,
+          "spellblock": 33,
+          "spellblockperlevel": 1.1,
+          "movespeed": 325,
+          "attackrange": 600,
+          "crit": 0,
+          "critperlevel": 0,
+          "critdamage": 0
+        },
+        "item": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0
+        },
+        "rune": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0,
+          "basicHaste": 0,
+          "ultimateHaste": 0,
+          "hpPct": 0,
+          "armorPct": 0,
+          "mrPct": 0
+        },
+        "level": 18,
+        "hp": 2327,
+        "hp5": 12.850000000000001,
+        "mp": 875,
+        "mp5": 18.05,
+        "ad": 59,
+        "ap": 0,
+        "armor": 104.19999999999999,
+        "mr": 51.7,
+        "asTotal": 0.99358,
+        "abilityHaste": 0,
+        "basicHaste": 0,
+        "ultimateHaste": 0,
+        "critChance": 0,
+        "critDamage": 200,
+        "attackRange": 600,
+        "moveSpeed": 325,
+        "passiveLedger": {
+          "passiveEffects": [
+            {
+              "source": "Champion",
+              "owner": "Ashe",
+              "label": "Frost Shot",
+              "impact": "Champion passive identified"
+            }
+          ],
+          "statMods": {
+            "ad": 0,
+            "ap": 0,
+            "hp": 0
+          },
+          "apMultiplier": 1
+        },
+        "armorPenPct": 0,
+        "magicPenPct": 0,
+        "armorPenFlat": 0,
+        "magicPenFlat": 0,
+        "championBonuses": {},
+        "championPenetration": {}
+      },
+      "attack": {
+        "baseAttackDamage": 59,
+        "baseAttackType": "physical",
+        "autoAttackDamage": 59,
+        "attackDps": 58.62122,
+        "rawAutoAttackDamage": 59,
+        "rawAttackDps": 58.62122,
+        "attackRange": 600,
+        "rate": 0.99358,
+        "rows": [],
+        "controls": [
+          {
+            "slot": "p",
+            "key": "attack:frost",
+            "label": "Target affected by Frost Shot",
+            "type": "toggle",
+            "disabled": false
+          },
+          {
+            "slot": "q",
+            "key": "attack:asheQ",
+            "label": "Ranger’s Focus active",
+            "type": "toggle",
+            "disabled": false
+          }
+        ],
+        "warnings": [],
+        "partial": false,
+        "breakdown": "Average attack = 59.00 AD × (1 + 0.00% × (2.000 − 1))\nAttack rate = 0.994 attacks/s\nStats: 59.00 base AD + 0.00 bonus AD; 0.00 AP; 2327.00 own HP; 875.00 own mana.\nFrost Shot replaces the ordinary critical-strike formula. Only frosted targets receive its damage bonus; Ranger’s Focus multiplies that attack when enabled.\nAttack contribution after champion rules = 59.00\nDPS = average on-attack damage × effective attacks per second. Before mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included."
+      },
+      "abilities": [
+        {
+          "slot": "q",
+          "spellId": "AsheQ",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "empowered damage",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "Target settings off: damage before mitigation.",
+                      "rawValue": null,
+                      "multiplier": 1
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable damage\nTarget settings off: damage before mitigation."
+                },
+                "sweet": null,
+                "period": null
+              }
+            ],
+            "note": "Damage ÷ cooldown; before mitigation. Separate outcomes are not added together. Target-dependent or unresolved damage stays symbolic."
+          }
+        },
+        {
+          "slot": "w",
+          "spellId": "Volley",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "total damage",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable physical damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "Target settings off: damage before mitigation.",
+                      "rawValue": null,
+                      "multiplier": 1
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable physical damage\nTarget settings off: damage before mitigation."
+                },
+                "sweet": null,
+                "period": 4
+              }
+            ],
+            "note": "Damage ÷ cooldown; before mitigation. Separate outcomes are not added together. Target-dependent or unresolved damage stays symbolic."
+          }
+        },
+        {
+          "slot": "e",
+          "spellId": "AsheSpiritOfTheHawk",
+          "rank": 5,
+          "result": {
+            "status": "No direct damage",
+            "rows": []
+          }
+        },
+        {
+          "slot": "r",
+          "spellId": "EnchantedCrystalArrow",
+          "rank": 3,
+          "result": {
+            "rows": [
+              {
+                "label": "rmain damage",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable magic damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "magic",
+                      "text": "Target settings off: damage before mitigation.",
+                      "rawValue": null,
+                      "multiplier": 1
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable magic damage\nTarget settings off: damage before mitigation."
+                },
+                "sweet": null,
+                "period": 60
+              }
+            ],
+            "note": "Damage ÷ cooldown; before mitigation. Separate outcomes are not added together. Target-dependent or unresolved damage stays symbolic."
+          }
+        }
+      ],
+      "status": "Basic stats loaded. Advanced ability data is unavailable.",
+      "requestedSequence": [
+        "aa",
+        "q",
+        "w"
+      ],
+      "unavailableSequenceActions": [],
+      "comboDisplay": "Total damage\n59.0!\nMissing damage counts as 0; unknown damage types are flagged.\nMinimum time\n0.00 s!\nMissing timing counts as 0. Check flagged steps for timing or order.\nBefore target defences · 3 actions · estimate",
+      "comboSteps": "🗡️\n59!\n×\n↑\n↓\nQ\n0!\n×\n↑\n↓\nW\n0!\n×\n↑\n↓",
+      "targetAfter": {
+        "enabled": false,
+        "maxHp": 2000,
+        "currentHp": 2000,
+        "armor": 100,
+        "mr": 100,
+        "damageReduction": 0
+      }
+    },
+    {
+      "id": "ezreal-items",
+      "inputs": {
+        "champion": "Ezreal",
+        "level": 18,
+        "ranks": {
+          "q": 5,
+          "w": 5,
+          "e": 5,
+          "r": 3
+        },
+        "items": [
+          "3078",
+          "3042",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "runes": {
+          "primaryPath": "precision",
+          "secondaryPath": "sorcery",
+          "primary": [],
+          "secondary": [],
+          "shards": []
+        },
+        "target": {
+          "enabled": true,
+          "maxHp": 2000,
+          "currentHp": 2000,
+          "armor": 100,
+          "mr": 100,
+          "damageReduction": 0
+        },
+        "combatValues": {},
+        "runeStacks": {},
+        "gameTimeMinutes": 20,
+        "disabledItemPassives": {}
+      },
+      "stats": {
+        "base": {
+          "hp": 600,
+          "hpperlevel": 102,
+          "mp": 375,
+          "mpperlevel": 70,
+          "hpregen": 4,
+          "hpregenperlevel": 0.65,
+          "mpregen": 8.5,
+          "mpregenperlevel": 1,
+          "attackdamage": 60,
+          "attackdamageperlevel": 0,
+          "attackspeed": 0.625,
+          "attackspeedperlevel": 2.5,
+          "armor": 24,
+          "armorperlevel": 4.2,
+          "spellblock": 33,
+          "spellblockperlevel": 1.1,
+          "movespeed": 325,
+          "attackrange": 550,
+          "crit": 0,
+          "critperlevel": 0,
+          "critdamage": 0
+        },
+        "item": {
+          "hp": 333,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 1000,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 71,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 30,
+          "asPct": 30,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0
+        },
+        "rune": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0,
+          "basicHaste": 0,
+          "ultimateHaste": 0,
+          "hpPct": 0,
+          "armorPct": 0,
+          "mrPct": 0
+        },
+        "level": 18,
+        "hp": 2667,
+        "hp5": 15.05,
+        "mp": 2565,
+        "mp5": 25.5,
+        "ad": 131,
+        "ap": 0,
+        "armor": 95.4,
+        "mr": 51.7,
+        "asTotal": 1.078125,
+        "abilityHaste": 30,
+        "basicHaste": 0,
+        "ultimateHaste": 0,
+        "critChance": 0,
+        "critDamage": 200,
+        "attackRange": 550,
+        "moveSpeed": 325,
+        "passiveLedger": {
+          "passiveEffects": [
+            {
+              "source": "Item",
+              "owner": "Trinity Force",
+              "label": "Spellblade",
+              "impact": "After using an Ability, your next Attack deals bonus physical damage"
+            },
+            {
+              "source": "Item",
+              "owner": "Trinity Force",
+              "label": "On-Hit",
+              "impact": "."
+            },
+            {
+              "source": "Item",
+              "owner": "Trinity Force",
+              "label": "Quicken",
+              "impact": "Attacking grants 20 Move Speed for 2 seconds."
+            },
+            {
+              "source": "Item",
+              "owner": "Muramana",
+              "label": "Awe",
+              "impact": "Gain 2% max Mana as bonus Attack Damage ."
+            },
+            {
+              "source": "Item",
+              "owner": "Muramana",
+              "label": "Shock",
+              "impact": "Attacks against champions deal 1.2% max Mana as bonus physical damage"
+            },
+            {
+              "source": "Item",
+              "owner": "Muramana",
+              "label": "On-Hit",
+              "impact": ". Damaging Abilities against champions deal 3% - 4% max Mana as bonus physical damage ."
+            },
+            {
+              "source": "Champion",
+              "owner": "Ezreal",
+              "label": "Rising Spell Force",
+              "impact": "Champion passive identified"
+            }
+          ],
+          "statMods": {
+            "ad": 0,
+            "ap": 0,
+            "hp": 0
+          },
+          "apMultiplier": 1
+        },
+        "armorPenPct": 0,
+        "magicPenPct": 0,
+        "armorPenFlat": 0,
+        "magicPenFlat": 0,
+        "championBonuses": {},
+        "championPenetration": {}
+      },
+      "attack": {
+        "baseAttackDamage": 65.5,
+        "baseAttackType": "physical",
+        "autoAttackDamage": null,
+        "attackDps": null,
+        "rawAutoAttackDamage": null,
+        "rawAttackDps": null,
+        "attackRange": 550,
+        "rate": 1.078125,
+        "rows": [
+          {
+            "label": "Muramana",
+            "value": null,
+            "type": "physical",
+            "cadence": 1,
+            "formula": "Calculation unavailable",
+            "itemId": 3042,
+            "passiveKey": "shock-on-hit",
+            "source": "item",
+            "rawValue": null,
+            "targetMultiplier": 0.5,
+            "targetExplanation": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+            "rawPerHit": null,
+            "rawPerSecond": null,
+            "perHit": null,
+            "perSecond": null
+          }
+        ],
+        "controls": [
+          {
+            "slot": "attack",
+            "key": "attack:spellblade",
+            "label": "Spellblade procs enabled",
+            "type": "toggle",
+            "disabled": false
+          }
+        ],
+        "warnings": [],
+        "partial": false,
+        "breakdown": "Average attack = 131.00 AD × (1 + 0.00% × (2.000 − 1))\nAttack rate = 1.078 attacks/s\nStats: 60.00 base AD + 71.00 bonus AD; 0.00 AP; 2667.00 own HP; 2565.00 own mana.\nTarget: hp = 2000, currentHp = 2000, armor = 100, mr = 100, healthPercent = 1, missingHp = 0, missingHealthPercent = 0\nAttack contribution after champion rules = 131.00\nAttack target calculation: 131 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 65.5.\nMuramana: Calculation unavailable → unavailable (enter required inputs / load data) physical per attack\n  unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.\nDPS = average on-attack damage × effective attacks per second. After target mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included."
+      },
+      "abilities": [
+        {
+          "slot": "q",
+          "spellId": "EzrealQ",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable physical damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable physical damage\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 3.4615384615384612
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction. Target-dependent or unresolved damage stays symbolic."
+          }
+        },
+        {
+          "slot": "w",
+          "spellId": "EzrealW",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable magic damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "magic",
+                      "text": "unavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable magic damage\nunavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 6.153846153846153
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction. Target-dependent or unresolved damage stays symbolic."
+          }
+        },
+        {
+          "slot": "e",
+          "spellId": "EzrealE",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable magic damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "magic",
+                      "text": "unavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable magic damage\nunavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 10.769230769230768
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction. Target-dependent or unresolved damage stays symbolic."
+          }
+        },
+        {
+          "slot": "r",
+          "spellId": "EzrealR",
+          "rank": 3,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable magic damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "magic",
+                      "text": "unavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable magic damage\nunavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 69.23076923076923
+              },
+              {
+                "label": "damage minionmonster",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable magic damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "magic",
+                      "text": "unavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable magic damage\nunavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 69.23076923076923
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction. Target-dependent or unresolved damage stays symbolic."
+          }
+        }
+      ],
+      "status": "Basic stats loaded. Advanced ability data is unavailable.",
+      "requestedSequence": [
+        "q",
+        "aa",
+        "w"
+      ],
+      "unavailableSequenceActions": [],
+      "comboDisplay": "Total damage\n65.5!\nMissing damage counts as 0; unknown damage types are flagged.\nMinimum time\n0.00 s!\nMissing timing counts as 0. Check flagged steps for timing or order.\nTarget HP remaining\n1934.5\nHealth effects update per action. Damage includes overkill. Against target · 3 actions · estimate",
+      "comboSteps": "Q\n0!\n2000.0 HP left\n×\n↑\n↓\n🗡️\n65.5!\n1934.5 HP left\n×\n↑\n↓\nW\n0!\n1934.5 HP left\n×\n↑\n↓",
+      "targetAfter": {
+        "enabled": true,
+        "maxHp": 2000,
+        "currentHp": 2000,
+        "armor": 100,
+        "mr": 100,
+        "damageReduction": 0
+      }
+    },
+    {
+      "id": "veigar-health-sequence",
+      "inputs": {
+        "champion": "Veigar",
+        "level": 18,
+        "ranks": {
+          "q": 5,
+          "w": 5,
+          "e": 5,
+          "r": 3
+        },
+        "items": [
+          "3089",
+          "4645",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "runes": {
+          "primaryPath": "precision",
+          "secondaryPath": "sorcery",
+          "primary": [],
+          "secondary": [],
+          "shards": []
+        },
+        "target": {
+          "enabled": true,
+          "maxHp": 2000,
+          "currentHp": 2000,
+          "armor": 100,
+          "mr": 100,
+          "damageReduction": 0
+        },
+        "combatValues": {},
+        "runeStacks": {},
+        "gameTimeMinutes": 20,
+        "disabledItemPassives": {}
+      },
+      "stats": {
+        "base": {
+          "hp": 580,
+          "hpperlevel": 108,
+          "mp": 490,
+          "mpperlevel": 26,
+          "hpregen": 6.5,
+          "hpregenperlevel": 0.6,
+          "mpregen": 8,
+          "mpregenperlevel": 0.8,
+          "attackdamage": 52,
+          "attackdamageperlevel": 0,
+          "attackspeed": 0.625,
+          "attackspeedperlevel": 2.24,
+          "armor": 18,
+          "armorperlevel": 5.2,
+          "spellblock": 32,
+          "spellblockperlevel": 1.3,
+          "movespeed": 340,
+          "attackrange": 550,
+          "crit": 0,
+          "critperlevel": 0,
+          "critdamage": 0
+        },
+        "item": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 240,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 15,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0
+        },
+        "rune": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0,
+          "basicHaste": 0,
+          "ultimateHaste": 0,
+          "hpPct": 0,
+          "armorPct": 0,
+          "mrPct": 0
+        },
+        "level": 18,
+        "hp": 2416,
+        "hp5": 16.7,
+        "mp": 932,
+        "mp5": 21.6,
+        "ad": 52,
+        "ap": 240,
+        "armor": 106.4,
+        "mr": 54.1,
+        "asTotal": 0.863,
+        "abilityHaste": 0,
+        "basicHaste": 0,
+        "ultimateHaste": 0,
+        "critChance": 0,
+        "critDamage": 200,
+        "attackRange": 550,
+        "moveSpeed": 340,
+        "passiveLedger": {
+          "passiveEffects": [
+            {
+              "source": "Item",
+              "owner": "Rabadon's Deathcap",
+              "label": "Magical Opus",
+              "impact": "Increases your total Ability Power by 30% ."
+            },
+            {
+              "source": "Item",
+              "owner": "Shadowflame",
+              "label": "Cinderbloom",
+              "impact": "Magic and true damage Critically Strike enemies below 40% Health, dealing 20% increased damage."
+            },
+            {
+              "source": "Champion",
+              "owner": "Veigar",
+              "label": "Phenomenal Evil Power",
+              "impact": "Champion passive identified"
+            }
+          ],
+          "statMods": {
+            "ad": 0,
+            "ap": 0,
+            "hp": 0
+          },
+          "apMultiplier": 1
+        },
+        "armorPenPct": 0,
+        "magicPenPct": 0,
+        "armorPenFlat": 0,
+        "magicPenFlat": 15,
+        "championBonuses": {},
+        "championPenetration": {}
+      },
+      "attack": {
+        "baseAttackDamage": 26,
+        "baseAttackType": "physical",
+        "autoAttackDamage": 26,
+        "attackDps": 22.438,
+        "rawAutoAttackDamage": 52,
+        "rawAttackDps": 44.876,
+        "attackRange": 550,
+        "rate": 0.863,
+        "rows": [],
+        "controls": [],
+        "warnings": [],
+        "partial": false,
+        "breakdown": "Average attack = 52.00 AD × (1 + 0.00% × (2.000 − 1))\nAttack rate = 0.863 attacks/s\nStats: 52.00 base AD + 0.00 bonus AD; 240.00 AP; 2416.00 own HP; 932.00 own mana.\nTarget: hp = 2000, currentHp = 2000, armor = 100, mr = 100, healthPercent = 1, missingHp = 0, missingHealthPercent = 0\nAttack contribution after champion rules = 52.00\nAttack target calculation: 52 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 26.\nDPS = average on-attack damage × effective attacks per second. After target mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included."
+      },
+      "abilities": [
+        {
+          "slot": "q",
+          "spellId": "VeigarBalefulStrike",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "total damage",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable magic damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "magic",
+                      "text": "unavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 15 flat penetration = 85 effective magic resistance (minimum 0); damage × 0.5405 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5405405405405406
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable magic damage\nunavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 15 flat penetration = 85 effective magic resistance (minimum 0); damage × 0.5405 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 4
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction. Target-dependent or unresolved damage stays symbolic."
+          }
+        },
+        {
+          "slot": "w",
+          "spellId": "VeigarDarkMatter",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "total damage",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable magic damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "magic",
+                      "text": "unavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 15 flat penetration = 85 effective magic resistance (minimum 0); damage × 0.5405 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5405405405405406
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable magic damage\nunavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 15 flat penetration = 85 effective magic resistance (minimum 0); damage × 0.5405 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": null
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction. Target-dependent or unresolved damage stays symbolic."
+          }
+        },
+        {
+          "slot": "e",
+          "spellId": "VeigarEventHorizon",
+          "rank": 5,
+          "result": {
+            "status": "No direct damage",
+            "rows": []
+          }
+        },
+        {
+          "slot": "r",
+          "spellId": "VeigarR",
+          "rank": 3,
+          "result": {
+            "rows": [
+              {
+                "label": "Primordial Burst",
+                "damage": {
+                  "value": null,
+                  "text": "1.0 × (Value unavailable)",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "magic",
+                      "text": "unavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 15 flat penetration = 85 effective magic resistance (minimum 0); damage × 0.5405 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5405405405405406
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "1.0 × (Value unavailable)\nunavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 15 flat penetration = 85 effective magic resistance (minimum 0); damage × 0.5405 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 60
+              }
+            ],
+            "note": "Primordial Burst scales with target missing health, up to twice its base damage. after target mitigation. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction. Target-dependent or unresolved damage stays symbolic."
+          }
+        }
+      ],
+      "status": "Basic stats loaded. Advanced ability data is unavailable.",
+      "requestedSequence": [
+        "q",
+        "r"
+      ],
+      "unavailableSequenceActions": [],
+      "comboDisplay": "Total damage\n0.0!\nMissing damage counts as 0; unknown damage types are flagged.\nMinimum time\n0.00 s!\nMissing timing counts as 0. Check flagged steps for timing or order.\nTarget HP remaining\n2000.0\nHealth effects update per action. Damage includes overkill. Against target · 2 actions · estimate",
+      "comboSteps": "Q\n0!\n2000.0 HP left\n×\n↑\n↓\nR\n0!\n2000.0 HP left\n×\n↑\n↓",
+      "targetAfter": {
+        "enabled": true,
+        "maxHp": 2000,
+        "currentHp": 2000,
+        "armor": 100,
+        "mr": 100,
+        "damageReduction": 0
+      }
+    },
+    {
+      "id": "aatrox-recasts",
+      "inputs": {
+        "champion": "Aatrox",
+        "level": 18,
+        "ranks": {
+          "q": 5,
+          "w": 5,
+          "e": 5,
+          "r": 3
+        },
+        "items": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "runes": {
+          "primaryPath": "precision",
+          "secondaryPath": "sorcery",
+          "primary": [],
+          "secondary": [],
+          "shards": []
+        },
+        "target": {
+          "enabled": true,
+          "maxHp": 2000,
+          "currentHp": 2000,
+          "armor": 100,
+          "mr": 100,
+          "damageReduction": 0
+        },
+        "combatValues": {},
+        "runeStacks": {},
+        "gameTimeMinutes": 20,
+        "disabledItemPassives": {}
+      },
+      "stats": {
+        "base": {
+          "hp": 650,
+          "hpperlevel": 114,
+          "mp": 0,
+          "mpperlevel": 0,
+          "hpregen": 3,
+          "hpregenperlevel": 0.5,
+          "mpregen": 0,
+          "mpregenperlevel": 0,
+          "attackdamage": 60,
+          "attackdamageperlevel": 0,
+          "attackspeed": 0.651,
+          "attackspeedperlevel": 2.5,
+          "armor": 38,
+          "armorperlevel": 4.8,
+          "spellblock": 32,
+          "spellblockperlevel": 2.05,
+          "movespeed": 345,
+          "attackrange": 175,
+          "crit": 0,
+          "critperlevel": 0,
+          "critdamage": 0
+        },
+        "item": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0
+        },
+        "rune": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0,
+          "basicHaste": 0,
+          "ultimateHaste": 0,
+          "hpPct": 0,
+          "armorPct": 0,
+          "mrPct": 0
+        },
+        "level": 18,
+        "hp": 2588,
+        "hp5": 11.5,
+        "mp": 0,
+        "mp5": 0,
+        "ad": 60,
+        "ap": 0,
+        "armor": 119.6,
+        "mr": 66.85,
+        "asTotal": 0.927675,
+        "abilityHaste": 0,
+        "basicHaste": 0,
+        "ultimateHaste": 0,
+        "critChance": 0,
+        "critDamage": 200,
+        "attackRange": 175,
+        "moveSpeed": 345,
+        "passiveLedger": {
+          "passiveEffects": [
+            {
+              "source": "Champion",
+              "owner": "Aatrox",
+              "label": "Deathbringer Stance",
+              "impact": "Champion passive identified"
+            }
+          ],
+          "statMods": {
+            "ad": 0,
+            "ap": 0,
+            "hp": 0
+          },
+          "apMultiplier": 1
+        },
+        "armorPenPct": 0,
+        "magicPenPct": 0,
+        "armorPenFlat": 0,
+        "magicPenFlat": 0,
+        "championBonuses": {},
+        "championPenetration": {}
+      },
+      "attack": {
+        "baseAttackDamage": 30,
+        "baseAttackType": "physical",
+        "autoAttackDamage": 30,
+        "attackDps": 27.83025,
+        "rawAutoAttackDamage": 60,
+        "rawAttackDps": 55.6605,
+        "attackRange": 175,
+        "rate": 0.927675,
+        "rows": [],
+        "controls": [
+          {
+            "slot": "p",
+            "key": "attack:deathbringer",
+            "label": "Deathbringer Stance procs enabled",
+            "type": "toggle",
+            "disabled": false
+          }
+        ],
+        "warnings": [],
+        "partial": false,
+        "breakdown": "Average attack = 60.00 AD × (1 + 0.00% × (2.000 − 1))\nAttack rate = 0.928 attacks/s\nStats: 60.00 base AD + 0.00 bonus AD; 0.00 AP; 2588.00 own HP; 0.00 own mana.\nTarget: hp = 2000, currentHp = 2000, armor = 100, mr = 100, healthPercent = 1, missingHp = 0, missingHealthPercent = 0\nAttack contribution after champion rules = 60.00\nAttack target calculation: 60 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 30.\nDPS = average on-attack damage × effective attacks per second. After target mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included."
+      },
+      "abilities": [
+        {
+          "slot": "q",
+          "spellId": "AatroxQ",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "Q1 / minimum",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": {
+                  "value": null,
+                  "text": "Value unavailable",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "period": 6
+              },
+              {
+                "label": "Q2",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": {
+                  "value": null,
+                  "text": "Value unavailable",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "period": 6
+              },
+              {
+                "label": "Q3",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": {
+                  "value": null,
+                  "text": "Value unavailable",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "period": 6
+              },
+              {
+                "label": "Combined total",
+                "damage": {
+                  "value": null,
+                  "text": "(Value unavailable) + (Value unavailable) + (Value unavailable)",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    },
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    },
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "(Value unavailable) + (Value unavailable) + (Value unavailable)\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": {
+                  "value": null,
+                  "text": "(Value unavailable) + (Value unavailable) + (Value unavailable)",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    },
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    },
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "(Value unavailable) + (Value unavailable) + (Value unavailable)\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "period": 8
+              }
+            ],
+            "note": "Combined cycle: 6.00s cooldown + 1.00 + 1.00s between casts. after target mitigation. Parentheses: sweet spot. Q2/Q3 use 1 + 1/2 × the live ramp bonus. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction. Target-dependent or unresolved damage stays symbolic."
+          }
+        },
+        {
+          "slot": "w",
+          "spellId": "AatroxW",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "Initial hit / minimum",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 12
+              },
+              {
+                "label": "Hit + pull",
+                "damage": {
+                  "value": null,
+                  "text": "2.0 × (Value unavailable)",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "physical",
+                      "text": "unavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "2.0 × (Value unavailable)\nunavailable raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 12
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction. Target-dependent or unresolved damage stays symbolic."
+          }
+        },
+        {
+          "slot": "e",
+          "spellId": "AatroxE",
+          "rank": 5,
+          "result": {
+            "status": "No direct damage",
+            "rows": []
+          }
+        },
+        {
+          "slot": "r",
+          "spellId": "AatroxR",
+          "rank": 3,
+          "result": {
+            "status": "No direct damage",
+            "rows": []
+          }
+        }
+      ],
+      "status": "Basic stats loaded. Advanced ability data is unavailable.",
+      "requestedSequence": [
+        "q",
+        "q:1",
+        "q:2"
+      ],
+      "unavailableSequenceActions": [],
+      "comboDisplay": "Total damage\n0.0!\nMissing damage counts as 0; unknown damage types are flagged.\nMinimum time\n2.00 s!\nMissing timing counts as 0. Check flagged steps for timing or order.\nTarget HP remaining\n2000.0\nHealth effects update per action. Damage includes overkill. Against target · 3 actions · estimate",
+      "comboSteps": "Q\n0!\n2000.0 HP left\n×\n↑\n↓\nQ2\n0!\n2000.0 HP left\n×\n↑\n↓\nQ3\n0!\n2000.0 HP left\n×\n↑\n↓",
+      "targetAfter": {
+        "enabled": true,
+        "maxHp": 2000,
+        "currentHp": 2000,
+        "armor": 100,
+        "mr": 100,
+        "damageReduction": 0
+      }
+    },
+    {
+      "id": "aurora-magic",
+      "inputs": {
+        "champion": "Aurora",
+        "level": 18,
+        "ranks": {
+          "q": 5,
+          "w": 5,
+          "e": 5,
+          "r": 3
+        },
+        "items": [
+          "6655",
+          "6653",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ],
+        "runes": {
+          "primaryPath": "precision",
+          "secondaryPath": "sorcery",
+          "primary": [],
+          "secondary": [],
+          "shards": []
+        },
+        "target": {
+          "enabled": true,
+          "maxHp": 2000,
+          "currentHp": 2000,
+          "armor": 100,
+          "mr": 100,
+          "damageReduction": 0
+        },
+        "combatValues": {},
+        "runeStacks": {},
+        "gameTimeMinutes": 20,
+        "disabledItemPassives": {}
+      },
+      "stats": {
+        "base": {
+          "hp": 607,
+          "hpperlevel": 110,
+          "mp": 475,
+          "mpperlevel": 30,
+          "hpregen": 6,
+          "hpregenperlevel": 0.55,
+          "mpregen": 8,
+          "mpregenperlevel": 0.8,
+          "attackdamage": 53,
+          "attackdamageperlevel": 0,
+          "attackspeed": 0.668,
+          "attackspeedperlevel": 2,
+          "armor": 23,
+          "armorperlevel": 4.5,
+          "spellblock": 32,
+          "spellblockperlevel": 1.3,
+          "movespeed": 335,
+          "attackrange": 550,
+          "crit": 0,
+          "critperlevel": 0,
+          "critdamage": 0
+        },
+        "item": {
+          "hp": 300,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 600,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 160,
+          "armor": 0,
+          "mr": 0,
+          "haste": 10,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0
+        },
+        "rune": {
+          "hp": 0,
+          "hp5": 0,
+          "hp5PctBase": 0,
+          "mp": 0,
+          "mp5": 0,
+          "mp5PctBase": 0,
+          "ad": 0,
+          "ap": 0,
+          "armor": 0,
+          "mr": 0,
+          "haste": 0,
+          "asPct": 0,
+          "critChance": 0,
+          "critDamage": 0,
+          "attackRange": 0,
+          "msFlat": 0,
+          "msPct": 0,
+          "arPenFlat": 0,
+          "arPenPct": 0,
+          "mrPenFlat": 0,
+          "mrPenPct": 0,
+          "physicalVamp": 0,
+          "omniVamp": 0,
+          "tenacity": 0,
+          "basicHaste": 0,
+          "ultimateHaste": 0,
+          "hpPct": 0,
+          "armorPct": 0,
+          "mrPct": 0
+        },
+        "level": 18,
+        "hp": 2777,
+        "hp5": 15.350000000000001,
+        "mp": 1585,
+        "mp5": 21.6,
+        "ad": 53,
+        "ap": 160,
+        "armor": 99.5,
+        "mr": 54.1,
+        "asTotal": 0.89512,
+        "abilityHaste": 10,
+        "basicHaste": 0,
+        "ultimateHaste": 0,
+        "critChance": 0,
+        "critDamage": 200,
+        "attackRange": 550,
+        "moveSpeed": 335,
+        "passiveLedger": {
+          "passiveEffects": [
+            {
+              "source": "Item",
+              "owner": "Luden's Echo",
+              "label": "Echo",
+              "impact": "Damaging Abilities fire 6 Echoes that deal bonus magic damage to the target and nearby enemies. Remaining Echoes fire on the primary target, dealing 20% damage."
+            },
+            {
+              "source": "Item",
+              "owner": "Liandry's Torment",
+              "label": "Torment",
+              "impact": "Damaging Abilities burn enemies for 2% max Health magic damage per second for 3 seconds."
+            },
+            {
+              "source": "Item",
+              "owner": "Liandry's Torment",
+              "label": "Suffering",
+              "impact": "For each second in combat with enemy champions, deal 2% bonus damage, up to 6%."
+            },
+            {
+              "source": "Champion",
+              "owner": "Aurora",
+              "label": "Spirit Abjuration",
+              "impact": "Champion passive identified"
+            }
+          ],
+          "statMods": {
+            "ad": 0,
+            "ap": 0,
+            "hp": 0
+          },
+          "apMultiplier": 1
+        },
+        "armorPenPct": 0,
+        "magicPenPct": 0,
+        "armorPenFlat": 0,
+        "magicPenFlat": 0,
+        "championBonuses": {},
+        "championPenetration": {}
+      },
+      "attack": {
+        "baseAttackDamage": 26.5,
+        "baseAttackType": "physical",
+        "autoAttackDamage": 26.5,
+        "attackDps": 23.72068,
+        "rawAutoAttackDamage": 53,
+        "rawAttackDps": 47.44136,
+        "attackRange": 550,
+        "rate": 0.89512,
+        "rows": [],
+        "controls": [],
+        "warnings": [],
+        "partial": false,
+        "breakdown": "Average attack = 53.00 AD × (1 + 0.00% × (2.000 − 1))\nAttack rate = 0.895 attacks/s\nStats: 53.00 base AD + 0.00 bonus AD; 160.00 AP; 2777.00 own HP; 1585.00 own mana.\nTarget: hp = 2000, currentHp = 2000, armor = 100, mr = 100, healthPercent = 1, missingHp = 0, missingHealthPercent = 0\nAttack contribution after champion rules = 53.00\nAttack target calculation: 53 raw physical damage; 100 armor × (1 − 0% penetration) − 0 flat penetration = 100 effective armor (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = 26.5.\nDPS = average on-attack damage × effective attacks per second. After target mitigation; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included."
+      },
+      "abilities": [
+        {
+          "slot": "q",
+          "spellId": "AuroraQ",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable magic damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "magic",
+                      "text": "unavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable magic damage\nunavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 6.363636363636363
+              },
+              {
+                "label": "q2 damage max",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable magic damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "magic",
+                      "text": "unavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable magic damage\nunavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 6.363636363636363
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction. Target-dependent or unresolved damage stays symbolic."
+          }
+        },
+        {
+          "slot": "w",
+          "spellId": "AuroraW",
+          "rank": 5,
+          "result": {
+            "status": "No direct damage",
+            "rows": []
+          }
+        },
+        {
+          "slot": "e",
+          "spellId": "AuroraE",
+          "rank": 5,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable magic damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "magic",
+                      "text": "unavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable magic damage\nunavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 10
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction. Target-dependent or unresolved damage stays symbolic."
+          }
+        },
+        {
+          "slot": "r",
+          "spellId": "AuroraR",
+          "rank": 3,
+          "result": {
+            "rows": [
+              {
+                "label": "damage",
+                "damage": {
+                  "value": null,
+                  "text": "Value unavailable magic damage",
+                  "components": [
+                    {
+                      "value": null,
+                      "type": "magic",
+                      "text": "unavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable.",
+                      "rawValue": null,
+                      "multiplier": 0.5
+                    }
+                  ],
+                  "rawValue": null,
+                  "breakdownText": "Value unavailable magic damage\nunavailable raw magic damage; 100 magic resistance × (1 − 0% penetration) − 0 flat penetration = 100 effective magic resistance (minimum 0); damage × 0.5 × (1 − 0% damage reduction) = unavailable."
+                },
+                "sweet": null,
+                "period": 90.9090909090909
+              }
+            ],
+            "note": "Damage ÷ cooldown; after target mitigation. Separate outcomes are not added together. Physical and magic portions use their own resistance; true damage bypasses resistance and damage reduction. Target-dependent or unresolved damage stays symbolic."
+          }
+        }
+      ],
+      "status": "Basic stats loaded. Advanced ability data is unavailable.",
+      "requestedSequence": [
+        "q",
+        "r"
+      ],
+      "unavailableSequenceActions": [],
+      "comboDisplay": "Total damage\n0.0!\nMissing damage counts as 0; unknown damage types are flagged.\nMinimum time\n0.00 s!\nMissing timing counts as 0. Check flagged steps for timing or order.\nTarget HP remaining\n2000.0\nHealth effects update per action. Damage includes overkill. Against target · 2 actions · estimate",
+      "comboSteps": "Q\n0!\n2000.0 HP left\n×\n↑\n↓\nR\n0!\n2000.0 HP left\n×\n↑\n↓",
+      "targetAfter": {
+        "enabled": true,
+        "maxHp": 2000,
+        "currentHp": 2000,
+        "armor": 100,
+        "mr": 100,
+        "damageReduction": 0
+      }
+    }
+  ]
+}

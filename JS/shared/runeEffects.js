@@ -1,8 +1,9 @@
+import TargetDamage from './targetDamage.js';
 /* Rune stack bindings. Numeric values come from the selected patch's Data Dragon
  * rune descriptions. Each parser requires a known, explicit numeric clause;
  * missing or changed clauses stay unmodeled instead of using old balance values.
  * Source: https://developer.riotgames.com/docs/lol#data-dragon */
-(function(scope) {
+
   const clean = text => String(text || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   const number = (text, pattern, group = 1) => {
     const match = text.match(pattern);
@@ -177,7 +178,7 @@
       }
       if(!known)continue;
       const make=(suffix,label,value)=>{
-        const hit=scope.TargetDamage.apply(value,type,{target:state.target,stats});
+        const hit=TargetDamage.apply(value,type,{target:state.target,stats});
         actions.push({id:`rune:${id}${suffix}`,group:`rune:${id}`,runeId:id,label:`Rune · ${meta.name || id}${label}`,shortcut:'?',iconUrl:meta.icon,
           damage:hit.value,damageType:type,castTime:0,cooldown:cd,
           note:text+' '+note+' One explicit proc; add it at the point it triggers. Trigger prerequisites, impact delays and stacks are not automatically simulated.'});
@@ -190,5 +191,6 @@
     }
     return actions;
   }
-  scope.RuneEffects = {selected, fields, definition, normalize, minutes, calculate, damageActions};
-})(typeof window !== 'undefined' ? window : globalThis);
+  const exportedApi = {selected, fields, definition, normalize, minutes, calculate, damageActions};
+
+export default exportedApi;

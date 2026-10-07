@@ -35,6 +35,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Verify and generate production site
+        working-directory: _production
+        run: |
+          if [ -f scripts/build-site.cjs ]; then
+            npm test
+            npm run build
+            npm run verify:release
+          fi
       - name: Verify and generate refactor site
         working-directory: _refactor
         run: |
@@ -45,9 +53,12 @@ jobs:
         run: |
           mkdir _site
           git -C _production archive HEAD | tar -x -C _site
+          if [ -d _production/dist/preview ]; then
+            cp -R _production/dist/preview _site/preview
+          fi
           mkdir _site/modular-refactor
           cp -R _refactor/dist/. _site/modular-refactor/
-          node _refactor/scripts/verify-pages.cjs _production _refactor/dist _site
+          node _production/scripts/verify-pages.cjs _production _refactor/dist _site
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload combined artifact

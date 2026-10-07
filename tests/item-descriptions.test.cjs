@@ -1,13 +1,9 @@
 const test=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
-const path=require('node:path');
-require('../JS/shared/calculations.js');
-require('../JS/shared/targetDamage.js');
-require('../JS/shared/damageText.js');
-require('../JS/shared/abilityDps.js');
-const ItemDescriptions=require('../JS/shared/itemDescriptions.js');
-const ItemPolicy=require('../JS/shared/itemPolicy.js');
+const path=require('node:path');const Calculations=require('../JS/shared/calculations.js').default;const TargetDamage=require('../JS/shared/targetDamage.js').default;const DamageText=require('../JS/shared/damageText.js').default;const AbilityDps=require('../JS/shared/abilityDps.js').default;
+const ItemDescriptions=require('../JS/shared/itemDescriptions.js').default;
+const ItemPolicy=require('../JS/shared/itemPolicy.js').default;
 const excerpts=require('./attack-excerpts.json');
 const plain=html=>html.replace(/<[^>]*>/g,'');
 const context=(ranged=true)=>({level:18,ranged,targetFormulaOnly:true,automaticSelfStats:true,

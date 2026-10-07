@@ -5,14 +5,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const root = process.env.APP_ROOT || path.join(__dirname, '..');
 
-function app(fetchImpl) {
-  const context = vm.createContext({ fetch: fetchImpl, AbortController, setTimeout, clearTimeout, console: { warn() {} } });
-  context.window = context;
-  for (const file of ['apiClient', 'itemPolicy', 'itemData']) {
-    vm.runInContext(fs.readFileSync(path.join(root, 'JS/shared', file + '.js'), 'utf8'), context);
-  }
-  return context;
-}
+const {createTestContext}=require('./helpers/native-runtime.cjs');
+function app(fetchImpl) { return createTestContext({root,fetchImpl}); }
 
 test('versioned picker indexes reuse disk cache without pinning latest game data', async () => {
   const calls = [];

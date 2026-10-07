@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-07T14:00:45.124Z",
+  "passed": true,
+  "baselineCommit": "16d63581c385b07c7c6b3fae70f6ed9365d0b3b1",
+  "independentBundleClone": true,
+  "backupHashesMatch": true,
+  "archiveEntriesVerified": 1336,
+  "fixturesRestored": 377,
+  "unitTests": 201,
+  "browserRuns": 2,
+  "exactCases": 10,
+  "trackedSourceUnchanged": true,
+  "fsck": true,
+  "results": [
+    {
+      "id": "browser-advanced",
+      "passed": true,
+      "seconds": 70.375
+    },
+    {
+      "id": "cases-advanced",
+      "passed": true,
+      "seconds": 2.306
+    },
+    {
+      "id": "browser-fallback",
+      "passed": true,
+      "seconds": 27.184
+    },
+    {
+      "id": "cases-fallback",
+      "passed": true,
+      "seconds": 1.563
+    }
+  ]
+}

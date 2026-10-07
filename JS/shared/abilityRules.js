@@ -1,7 +1,8 @@
+
 /**
  * Ability rank constraints for level-gated skill points.
  */
-(function initAbilityRules(globalScope) {
+
   function normalizeLevel(level) {
     return Math.max(1, Math.min(18, Math.floor(Number(level) || 1)));
   }
@@ -36,6 +37,6 @@
   }
 
   const api = { abilityMaxByLevel, enforceAbilityRules };
-  globalScope.AbilityRules = api;
-  if (typeof module !== 'undefined' && module.exports) module.exports = api;
-})(typeof window !== 'undefined' ? window : globalThis);
+  const exportedApi = api;
+
+export default exportedApi;

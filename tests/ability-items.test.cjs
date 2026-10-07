@@ -1,8 +1,5 @@
 const test=require('node:test');
-const assert=require('node:assert/strict');
-require('../JS/shared/calculations.js');
-require('../JS/shared/buildStats.js');
-require('../JS/shared/attackEffects.js');
+const assert=require('node:assert/strict');const Calculations=require('../JS/shared/calculations.js').default;const BuildStats=require('../JS/shared/buildStats.js').default;const AttackEffects=require('../JS/shared/attackEffects.js').default;
 const {items}=require('./ability-item-excerpts.json');
 const state=()=>({itemSlots:['3161','3118','3073'],combatValues:{'attack:shojinStacks':4}});
 const near=(a,b)=>assert.ok(Math.abs(a-b)<.00001,`${a} != ${b}`);

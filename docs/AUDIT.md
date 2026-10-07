@@ -1,5 +1,7 @@
 # Reliability audit — 9 September 2026
 
+Current structural handover, 8 October 2026: see [Phase 6](REFACTOR-PHASE6.md) and [the protected baseline](REFACTOR-BASELINE.md). The dated notes below retain their historical scope. Shared target/combo health-step evaluation and supported rune/item combo effects now exist; they do not imply a universal simulation. The repaired audit retains 30 classified resolver findings across 13 passive descriptions, and the three known source defects remain unsupported.
+
 ## Outcome
 
 14 September target settings update: explicit target health, defenses and percentage reduction now feed shared typed mitigation for attacks, abilities and descriptions. Raw mode remains available. See [TARGETS.md](TARGETS.md) for penetration, hybrid/true damage, source bindings and regression coverage. These are fixed-state comparisons; shields, automatic resistance debuffs, health consumption over a sequence and previously unsupported ability-triggered item procs remain outside the model.

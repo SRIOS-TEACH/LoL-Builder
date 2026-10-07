@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "runtimeFiles": 71,
+  "generatedFiles": 142,
+  "developmentFilesIncluded": false,
+  "zipSha256": "7b81127eb2e243bdb14707cba6720fb5c1c76514c5a2b6d495c15c02516905fd",
+  "archive": "Ignored local test-results/phase6-runtime-artifact-verified.zip; deterministic entry metadata and exact Git bytes.",
+  "runtimeMatchesPhase5Commit": "6c9d7cc16b4b756a279a5012094a5912e627446f",
+  "combinedPagesRehearsal": {
+    "productionFilesPreserved": 133,
+    "refactorFilesVerified": 142,
+    "releaseFingerprintGate": true,
+    "productionCommit": "191a259364ff8390e97afe84d5a6b8ac18735690"
+  },
+  "lineEndings": "Windows local archive rehearsal first rejected CRLF/LF mismatch as intended. Recreated with core.autocrlf=false; all production Git bytes and generated refactor bytes then verified exactly. Release fingerprints normalize text only; ZIP entries retain exact Git blob bytes, including any stored CRLF."
+}

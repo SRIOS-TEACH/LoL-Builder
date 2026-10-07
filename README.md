@@ -25,6 +25,14 @@ Open pages directly:
 - `http://127.0.0.1:8000/Builder.html`
 
 
+### Generated preview and deployment
+
+Root HTML, JS, CSS and assets are the only runtime source. Run `npm run build:preview` to generate local `/preview/` pages before serving the repository. Run it again after source changes. Do not edit generated files.
+
+Run `npm run build` to create `dist/` with both the main site and the same preview routes. The Pages workflow verifies that artifact and publishes it under /modular-refactor/ alongside unchanged production files from main. Generated output is ignored by Git. See [delivery and deletion evidence](docs/REFACTOR-PHASE2.md).
+
+[Open the modular refactor preview](https://srios-teach.github.io/LoL-Builder/modular-refactor/Builder.html). Pushes to the refactoring branch update it automatically after checks pass; see [Pages setup](docs/REFACTOR-PAGES.md).
+
 ### Tests and current limits
 
 Run `npm test` with Node 20+ for dependency-free regression tests. See [Testing](docs/TESTING.md) for the browser suite and fixture downloads.
@@ -52,7 +60,16 @@ Read the [reliability audit](docs/AUDIT.md) for fixed defects, test coverage and
 - `JS/itemLookup.js` — controls item search, filters and selection, using shared data/formatting helpers.
 - `JS/builder.js` — champion/item/level setup logic, item modal UX, ability rank validation, and stat rendering.
 
+- JS/data/ — read-only source repositories and champion/item/rune adapters with provenance.
+- JS/domain/ — catalog queries, recommendations and independent build/rune/scenario rules.
+- JS/application/catalogSession.js — isolated browsing sessions for future explorers.
+- JS/core/ — shared plain-record and text operations with explicit semantics.
+
+The Builder delegates these responsibilities to reusable capabilities. See [Phase 3 contracts](docs/REFACTOR-PHASE3.md) for reuse examples and remaining calculation/UI work.
+
 ### Additional docs
+
+- `docs/ROADMAP.md` — milestones for saved profiles, targets, combos, build imports and a controlled v1.0 release.
 - `docs/ARCHITECTURE.md` — high-level ownership and module boundaries.
 - `docs/CONTRIBUTING.md` — coding conventions and contributor workflow.
 - `docs/DATA_SOURCES.md` — external payload inventory and purpose.
@@ -80,3 +97,11 @@ Read the [reliability audit](docs/AUDIT.md) for fixed defects, test coverage and
   - Rune/perk icons: `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/perk-images/styles/`
 
 ---
+
+## Reusable calculation pipeline
+
+Stat, ability/item and combo calculations now accept independent build/scenario inputs and prepared data. They can run without the Builder page for future explorers and build comparison. See [Phase 4 contracts](docs/REFACTOR-PHASE4.md) and [completion checklist](docs/REFACTOR-ACTIONS.md).
+
+Phase 5: [reusable UI, native modules and composition contracts](docs/REFACTOR-PHASE5.md).
+
+Refactor handover: [Phase 6 release checks](docs/REFACTOR-PHASE6.md), [extension recipes](docs/EXTENDING.md), [contributor workflow](docs/CONTRIBUTING.md), and [recovery](docs/REFACTOR-PROTECTION.md).
