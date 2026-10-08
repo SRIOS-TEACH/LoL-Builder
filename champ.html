@@ -5,29 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Champion Explorer | LoL Buildsmith</title>
 <link rel="stylesheet" href="CSS/foundation.css">
-<link rel="stylesheet" href="CSS/lolBuilder.css">
+<link rel="stylesheet" href="CSS/lolBuilder.css?v=champ-explorer-2">
+<link rel="stylesheet" href="CSS/pages/champion-explorer.css?v=2">
 </head>
-<body class="dark-mode explorer-view site-page ">
+<body class="dark-mode explorer-view site-page champion-explorer-view">
 <div class="page-wrapper with-navbar">
 <nav class="navbar" aria-label="Main navigation"><a href="main.html" class="navbar-brand">LoL Buildsmith</a><ul class="navbar-nav site-nav"><li class="nav-item"><a href="main.html" class="nav-link">Home</a></li><li class="nav-item"><a href="Builder.html" class="nav-link">Builder</a></li><li class="nav-item active"><a href="champ.html" class="nav-link" aria-current="page">Champion Explorer</a></li><li class="nav-item"><a href="itemLookup.html" class="nav-link">Item Explorer</a></li><li class="nav-item"><a href="Comparator.html" class="nav-link">Build Comparator</a></li></ul></nav>
 <main class="content-wrapper">
 <div class="explorer-page">
 <header class="explorer-heading"><div><p class="explorer-eyebrow">THE ROSTER</p><h1>Champion Explorer</h1><p>Get to know your next main. Explore their story, stats, and abilities.</p></div><span id="champPatch" class="patch-badge">Loading patch…</span></header>
-<section class="explorer-panel explorer-searchbar" aria-label="Find a champion">
-<div class="explorer-field"><label for="champSearch">Search champions</label><input id="champSearch" class="form-control" type="search" placeholder="Search by name or role…"></div>
-<div class="explorer-field"><label for="champSelect">Champion</label><select id="champSelect" class="form-control" aria-label="Champion"></select></div>
-<p id="champCount" class="explorer-muted" role="status">Loading roster…</p>
-</section>
-<div id="champRoster" class="champion-roster" aria-label="Champion roster"></div>
+<details id="champPicker" class="explorer-panel champion-picker" open><summary><span id="champPickerLabel">Select a champion</span><span class="explorer-muted">Browse roster</span></summary><div class="champ-modal-toolbar"><input id="champSearch" class="form-control" type="search" placeholder="Search champions" aria-label="Search champions"><div id="champFilters" class="tag-filters champ-filter-row" aria-label="Champion roles"></div></div><p id="champCount" class="explorer-muted" role="status">Loading roster…</p><div id="champRoster" class="item-icon-grid champ-icon-grid" aria-label="Champion roster"></div></details>
 <p id="champStatus" class="explorer-message" role="status" hidden></p>
-<div id="champDetails">
-<section id="champHeroCard" class="champion-hero" aria-labelledby="champName">
+<div id="champDetails" hidden>
+<section id="champHeroCard" class="champion-hero" aria-labelledby="champName" tabindex="-1">
 <div class="champion-hero-copy"><p id="champTitle" class="explorer-eyebrow">CHAMPION PROFILE</p><h2 id="champName">Loading champions…</h2><div id="champTags" class="explorer-badges"></div><a class="explorer-text-link" href="#abilitiesSection">Explore abilities <span aria-hidden="true">↓</span></a></div>
-<span class="art-caption">Original splash art · Riot Games</span>
+<p id="champLore" class="champion-hero-lore"></p><span class="art-caption">Original splash art · Riot Games</span>
 </section>
-<section class="explorer-panel stats-panel" aria-labelledby="statsHeading"><div class="explorer-section-heading"><h2 id="statsHeading">Champion stats</h2><span class="explorer-muted">Base values · level 1</span></div><div id="champStats" class="explorer-stats"></div></section>
+<div class="champion-info-columns"><section class="explorer-panel stats-panel" aria-labelledby="statsHeading"><div class="explorer-section-heading"><h2 id="statsHeading">Champion stats</h2><span class="explorer-muted">Base values · level 1</span></div><div id="champStats" class="champion-stats-table"></div></section>
 <section id="abilitiesSection" aria-labelledby="abilitiesHeading"><div class="explorer-section-heading"><div><p class="explorer-eyebrow">THE KIT</p><h2 id="abilitiesHeading">Abilities</h2></div><span class="explorer-muted">Passive + Q / W / E / R</span></div><div id="abilities" class="ability-grid"></div></section>
-<section class="explorer-panel champion-story"><div><p class="explorer-eyebrow">BEHIND THE CHAMPION</p><h2>The story</h2></div><p id="champLore"></p></section>
+</div>
+
 </div>
 <footer class="explorer-footer"><p>Explore the latest balance changes in the official patch notes.</p><a class="explorer-text-link" href="https://www.leagueoflegends.com/en-us/news/tags/patch-notes/" target="_blank" rel="noopener">Read patch notes ↗</a></footer>
 </div>

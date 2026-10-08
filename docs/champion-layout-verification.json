@@ -1,101 +1,78 @@
 {
-  "schemaVersion": 1,
-  "releaseDate": "2026-10-09",
-  "timezone": "Australia/Sydney",
+  "date": "2026-10-09",
   "passed": true,
-  "releaseTarget": "main: compact Champion Explorer with shared Builder picker/stats",
-  "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
-  "checks": {
-    "unit": {
+  "scope": "Champion Explorer starts with Builder catalog grid and role filters, explicitly selected profile collapses/reopens picker, splash/lore banner, compact shared stat table and desktop two-column profile.",
+  "unitTests": 235,
+  "currentBrowserSuites": 4,
+  "checks": [
+    {
+      "name": "units",
       "passed": true,
-      "count": 235,
-      "evidence": "docs/champion-layout-verification.json"
+      "summary": [
+        "ℹ tests 235",
+        "ℹ fail 0"
+      ],
+      "log": "test-results/champion-layout/units.log"
     },
-    "browser": {
+    {
+      "name": "styles",
       "passed": true,
-      "count": 32,
-      "routes": 2,
-      "advancedAndFallback": true,
-      "evidence": "docs/champion-layout-verification.json",
-      "currentSuites": 4,
-      "inheritedFullSuiteEvidence": "docs/pre-champion-layout-release.json",
-      "scope": "Current generated root/preview explorers, Builder picker and all-page theme checks. Historical full-suite count retained in previous evidence."
+      "summary": [
+        "PASS stylesheet dependencies: {\"stylesheets\":18,\"customProperties\":296}"
+      ],
+      "log": "test-results/champion-layout/styles.log"
     },
-    "baseline": {
+    {
+      "name": "explorers-root",
       "passed": true,
-      "comparisons": 20,
-      "comparisonComplete": true,
-      "unexplainedDifferences": 0,
-      "exactBaselineMatch": false,
-      "evidence": "docs/css-refactor-verification.json",
-      "scope": "Historical numeric comparison for unchanged calculator modules; rendered theme differs intentionally."
+      "summary": [
+        "PASS explorer design: search, role roster, latest selection, named items, filters, keyboard focus, empty/error states and 390/768/1440px layouts"
+      ],
+      "log": "test-results/champion-layout/explorers-root.log"
     },
-    "headless": {
+    {
+      "name": "explorers-preview",
       "passed": true,
-      "cases": 10,
-      "inputIsolation": true,
-      "evidence": "docs/editable-comparator-verification.json"
+      "summary": [
+        "PASS explorer design: search, role roster, latest selection, named items, filters, keyboard focus, empty/error states and 390/768/1440px layouts"
+      ],
+      "log": "test-results/champion-layout/explorers-preview.log"
     },
-    "reuse": {
+    {
+      "name": "pickers",
       "passed": true,
-      "catalogs": true,
-      "simultaneousUIInstances": 2,
-      "immutableInputs": true,
-      "evidence": "docs/explorer-release-verification.json"
+      "summary": [
+        "Nonblocking startup, optional-data failure, picker interactions, shop filters, retained detail prices and build gold including role-slot moves passed"
+      ],
+      "log": "test-results/champion-layout/pickers.log"
     },
-    "recovery": {
+    {
+      "name": "theme",
       "passed": true,
-      "independentBackup": true,
-      "unitTests": 201,
-      "cases": 10,
-      "evidence": "docs/phase6-recovery.json",
-      "scope": "Protected pre-refactor baseline and its independent backup remain unchanged. Historical recovery proof retained; current CSS source reproduced separately."
-    },
-    "performance": {
-      "passed": true,
-      "actualEntryVisits": 40,
-      "layoutEquivalent": true,
-      "baselineCommit": "dec545072a02196260df10837258b857caa805f0",
-      "evidence": "docs/css-refactor-performance.json",
-      "note": "Controlled pre-CSS-refactor fixture benchmark; not real CDN/network performance.",
-      "scope": "Preserved historical benchmark for unchanged calculator modules; new pages are not benchmarked."
-    },
-    "cleanSource": {
-      "passed": true,
-      "unitTests": 235,
-      "build": true,
-      "generatedCopiesMatch": true,
-      "evidence": "docs/champion-layout-verification.json"
-    },
-    "css": {
-      "passed": true,
-      "requiredVariablesResolve": true,
-      "evidence": "docs/champion-layout-verification.json",
-      "scope": "Shared grid styles keep Builder appearance; reviewed fully loaded roster, collapsed/reopened picker, splash/lore, paired stats/abilities columns, mobile layout and theme at four widths."
+      "summary": [
+        "PASS coherent theme: all five native pages, matching navigation, one active link, no document/content overflow at 390/768/1440/1920px, real build cards and shared modal styling"
+      ],
+      "log": "test-results/champion-layout/theme.log"
     }
-  },
-  "evidence": [
-    "phase6-verification.json",
-    "phase6-performance.json",
-    "phase6-recovery.json",
-    "phase6-headless.json",
-    "explorer-release-verification.json",
-    "save-toolbar-verification.json",
-    "inline-toolbar-verification.json",
-    "editable-comparator-verification.json",
-    "explorer-design-verification.json",
-    "saved-data-verification.json",
-    "coherent-theme-verification.json",
-    "pre-item-shop-release.json",
-    "item-shop-verification.json",
-    "pre-item-layout-fix-release.json",
-    "item-layout-fix-verification.json",
-    "pre-champion-layout-release.json",
-    "champion-layout-verification.json"
   ],
-  "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
-  "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
-  "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
+  "visualReview": {
+    "passed": true,
+    "realArtwork": true,
+    "widths": [
+      390,
+      768,
+      1440,
+      1920
+    ],
+    "screenshots": [
+      "test-results/explorer-design/champion-picker-desktop.png",
+      "test-results/explorer-design/champion-desktop.png",
+      "test-results/explorer-design/champion-mobile.png",
+      "test-results/site-theme/champion-picker.png"
+    ],
+    "reviewed": "Fully loaded roster, Aatrox splash/lore, shared paired stats without rune shards, ability cards, desktop and mobile profiles, Builder picker regression."
+  },
+  "generatedCopiesMatch": true,
   "runtimeFiles": [
     {
       "path": "Builder.html",
@@ -497,5 +474,7 @@
       "path": "main.html",
       "sha256": "34b332237cb99025bede5bba4ecba0089d8eaa98ca95857c6db3b0acc689a9ba"
     }
-  ]
+  ],
+  "inheritedEvidence": "docs/pre-champion-layout-release.json",
+  "calculatorScope": "No engine/data module edits. Explorer composes existing calculation pipeline and stats view with level 1 and empty rune choices."
 }

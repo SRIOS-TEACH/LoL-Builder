@@ -260,7 +260,7 @@
 }
 
 #modalItemGrid,
-#modalChampGrid {
+:is(#modalChampGrid,.champ-icon-grid) {
   overflow: auto;
   overscroll-behavior: contain;
   min-height: 0;
@@ -350,12 +350,12 @@
   min-height: 0;
 }
 
-#modalChampGrid {
+:is(#modalChampGrid,.champ-icon-grid) {
   grid-template-columns: repeat(auto-fill,minmax(78px,1fr));
   gap: 12px 8px;
 }
 
-#modalChampGrid .item-button-icon {
+:is(#modalChampGrid,.champ-icon-grid) .item-button-icon {
   flex-direction: column;
   background: transparent;
   border-color: transparent;
@@ -364,12 +364,12 @@
   padding: 3px;
 }
 
-#modalChampGrid .item-button-icon:hover {
+:is(#modalChampGrid,.champ-icon-grid) .item-button-icon:hover {
   border-color: #cbb478;
   background: #20333d;
 }
 
-#modalChampGrid .item-icon {
+:is(#modalChampGrid,.champ-icon-grid) .item-icon {
   width: 64px;
   height: 64px;
   margin: 0;
@@ -450,11 +450,11 @@
     gap: 8px;
   }
 
-  #modalChampGrid {
+  :is(#modalChampGrid,.champ-icon-grid) {
     grid-template-columns: repeat(auto-fill,minmax(58px,1fr));
   }
 
-  #modalChampGrid .item-icon {
+  :is(#modalChampGrid,.champ-icon-grid) .item-icon {
     width: 48px;
     height: 48px;
   }

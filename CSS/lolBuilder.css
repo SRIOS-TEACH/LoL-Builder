@@ -3,7 +3,7 @@
 @import url("./shared/dialogs.css");
 @import url("./components/stats.css");
 @import url("./components/inventory.css");
-@import url("./components/catalog.css");
+@import url("./components/catalog.css?v=champ-grid-2");
 @import url("./components/runes.css");
 @import url("./components/abilities.css");
 @import url("./components/combat.css");

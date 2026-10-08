@@ -3,23 +3,23 @@
   "releaseDate": "2026-10-09",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: compact Champion Explorer with shared Builder picker/stats",
+  "releaseTarget": "main: repair Item Explorer stylesheet loading and inline search/maps",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
       "count": 235,
-      "evidence": "docs/champion-layout-verification.json"
+      "evidence": "docs/item-layout-fix-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/champion-layout-verification.json",
+      "evidence": "docs/item-layout-fix-verification.json",
       "currentSuites": 4,
-      "inheritedFullSuiteEvidence": "docs/pre-champion-layout-release.json",
-      "scope": "Current generated root/preview explorers, Builder picker and all-page theme checks. Historical full-suite count retained in previous evidence."
+      "inheritedFullSuiteEvidence": "docs/pre-item-layout-fix-release.json",
+      "scope": "Current root/preview explorer checks with old-manifest simulation, theme suite, and real-art explorer review. Earlier full-suite coverage retained in prior evidence."
     },
     "baseline": {
       "passed": true,
@@ -65,13 +65,13 @@
       "unitTests": 235,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/champion-layout-verification.json"
+      "evidence": "docs/item-layout-fix-verification.json"
     },
     "css": {
       "passed": true,
       "requiredVariablesResolve": true,
-      "evidence": "docs/champion-layout-verification.json",
-      "scope": "Shared grid styles keep Builder appearance; reviewed fully loaded roster, collapsed/reopened picker, splash/lore, paired stats/abilities columns, mobile layout and theme at four widths."
+      "evidence": "docs/item-layout-fix-verification.json",
+      "scope": "Versioned direct stylesheet loading, stat rail/grid geometry, inline search/map controls at tablet/desktop widths, actual artwork review and all-page theme regression."
     }
   },
   "evidence": [
@@ -89,9 +89,7 @@
     "pre-item-shop-release.json",
     "item-shop-verification.json",
     "pre-item-layout-fix-release.json",
-    "item-layout-fix-verification.json",
-    "pre-champion-layout-release.json",
-    "champion-layout-verification.json"
+    "item-layout-fix-verification.json"
   ],
   "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
   "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
@@ -107,7 +105,7 @@
     },
     {
       "path": "CSS/components/catalog.css",
-      "sha256": "69aee7d06ca18b3f291b6a64c53fc7200a1e7c7d19e836792b81cc51b5b10458"
+      "sha256": "19b5c86400025603b30f8d94c4dc8b1522cd4ba3598a67ec3f877ab080e4b49f"
     },
     {
       "path": "CSS/components/combat.css",
@@ -135,15 +133,11 @@
     },
     {
       "path": "CSS/lolBuilder.css",
-      "sha256": "8bdbaef42ba081a52b8d9a194d138a3b09d616f3d265acf6922074e825d9aaaf"
+      "sha256": "f6b8fafe573a9b4c6034a1024ab304785736c20ba615e4ba14cbbd378b39bfee"
     },
     {
       "path": "CSS/pages/builder.css",
       "sha256": "1d572a0c8cbbceb0ca007dd385d06fdbcfb9a5150a52a7f0b2b460431bc51251"
-    },
-    {
-      "path": "CSS/pages/champion-explorer.css",
-      "sha256": "22bef95828cb00f461c09c199bec59ceb88328a67c39bceeece4a578e644e46c"
     },
     {
       "path": "CSS/pages/explorer-design.css",
@@ -207,7 +201,7 @@
     },
     {
       "path": "JS/championExplorer.js",
-      "sha256": "7d8e7650d53122d8ed43a1598fcd676d12000bef98d5b88d419771c90e30683d"
+      "sha256": "0244fab4091851143cb90339383a391490ebc8cf7f2af48cb88dc4c36329bb12"
     },
     {
       "path": "JS/comparator.js",
@@ -483,7 +477,7 @@
     },
     {
       "path": "champ.html",
-      "sha256": "ab6eb39b1d031b1333320988b7afc868fd236dbac6a493c734f3ccf397d9bb4d"
+      "sha256": "614dd88e16bdc52ba4b4fe692e7ce547fd36b630590b805fce248b9a853fa00a"
     },
     {
       "path": "index.html",

@@ -41,19 +41,22 @@ const server=http.createServer((req,res)=>{
  });
 
  await page.goto(base+'/champ.html');
- await page.waitForFunction(()=>document.querySelectorAll('#abilities .ability-card').length===5);
+ await page.waitForFunction(()=>document.querySelectorAll('#champRoster button').length>0);
  assert.equal(await page.locator('#champRoster button').count(),Object.keys(index).length);
- await page.locator('#champSearch').fill('Aurora');await page.waitForFunction(()=>document.querySelector('#champName').textContent==='Aurora');
- assert.match(await page.locator('#champHeroCard').getAttribute('style'),/Aurora_0/);
- assert.equal(await page.locator('#champStats .champion-stat').count(),10);
- assert.equal(await page.locator('#champRoster [aria-pressed="true"]').count(),1);
- await page.locator('#champSearch').fill('not-a-champion');assert.equal(await page.locator('#champDetails').isVisible(),false);assert.match(await page.locator('#champStatus').innerText(),/No champions/);
- await page.locator('#champSearch').fill('');await page.locator('#champSelect').selectOption('Ahri');await page.locator('#champSelect').selectOption('Garen');await page.waitForFunction(()=>document.querySelector('#champName').textContent==='Garen');
- await page.locator('#champRoster [data-champion="Aurora"]').click();await page.waitForFunction(()=>document.querySelector('#champName').textContent==='Aurora');
+ assert.equal(await page.locator('#champPicker').getAttribute('open'),'');assert.equal(await page.locator('#champDetails').isVisible(),false);
+ fs.mkdirSync('test-results/explorer-design',{recursive:true});await readyArtwork();await page.screenshot({path:'test-results/explorer-design/champion-picker-desktop.png',fullPage:true});
+ const roster=await page.locator('#champRoster').evaluate(el=>({columns:getComputedStyle(el).gridTemplateColumns.split(' ').length,overflow:el.scrollWidth>el.clientWidth}));assert.ok(roster.columns>=8&&!roster.overflow);
+ await page.locator('#champFilters input[value="Mage"]').check();const mageIds=await page.locator('#champRoster [data-champ]').evaluateAll(bs=>bs.map(b=>b.dataset.champ));assert.ok(mageIds.length>0&&mageIds.every(id=>index[id].tags.includes('Mage')));await page.locator('#champFilters input[value="Mage"]').uncheck();
+ await page.locator('#champSearch').fill('not-a-champion');assert.match(await page.locator('#champStatus').innerText(),/No champions/);
+ await page.locator('#champSearch').fill('Aurora');assert.equal(await page.locator('#champDetails').isVisible(),false);await page.locator('#champRoster [data-champ="Aurora"]').click();await page.waitForFunction(()=>document.querySelector('#champName').textContent==='Aurora'&&!document.querySelector('#champDetails').hidden);
+ assert.equal(await page.locator('#champPicker').getAttribute('open'),null);assert.match(await page.locator('#champHeroCard').getAttribute('style'),/Aurora_0/);assert.equal(await page.locator('#champStats .stats-table tr').count(),9);assert.equal(await page.locator('#champRoster [aria-pressed="true"]').count(),1);
+ await page.locator('#champPicker summary').click();await page.locator('#champSearch').fill('');await page.locator('#champRoster [data-champ="Ahri"]').click();await page.locator('#champPicker summary').click();await page.locator('#champRoster [data-champ="Garen"]').click();await page.waitForFunction(()=>document.querySelector('#champName').textContent==='Garen');
+ await page.locator('#champPicker summary').click();await page.locator('#champRoster [data-champ="Aatrox"]').click();await page.waitForFunction(()=>document.querySelector('#champName').textContent==='Aatrox');assert.equal(await page.locator('#champStats .stats-value').nth(4).innerText(),Number(index.Aatrox.stats.attackdamage).toFixed(1));
+ const layout=await page.evaluate(()=>{const stats=document.querySelector('.stats-panel').getBoundingClientRect(),abilities=document.querySelector('#abilitiesSection').getBoundingClientRect(),lore=document.querySelector('#champLore').getBoundingClientRect(),hero=document.querySelector('#champHeroCard').getBoundingClientRect();return stats.right<=abilities.left&&Math.abs(stats.top-abilities.top)<2&&lore.top>=hero.top&&lore.bottom<=hero.bottom;});assert.ok(layout,'stats/abilities columns and lore inside splash');
  if(process.env.REAL_ART)await page.waitForFunction(()=>[...document.images].filter(i=>{const r=i.getBoundingClientRect();return r.top<innerHeight&&r.bottom>0&&r.left<innerWidth&&r.right>0;}).every(i=>i.complete));
  fs.mkdirSync('test-results/explorer-design',{recursive:true});
  await readyArtwork();await page.screenshot({path:'test-results/explorer-design/champion-desktop.png',fullPage:true});
- for(const width of [390,768,1440]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'champion overflow '+width);assert.ok(await page.evaluate(()=>document.querySelector('.navbar').getBoundingClientRect().bottom<=document.querySelector('.explorer-heading').getBoundingClientRect().top),'navigation overlaps content');if(width===390)await readyArtwork();await page.screenshot({path:'test-results/explorer-design/champion-mobile.png',fullPage:true});}
+ for(const width of [390,768,1440]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'champion overflow '+width);assert.ok(await page.evaluate(()=>document.querySelector('.navbar').getBoundingClientRect().bottom<=document.querySelector('.explorer-heading').getBoundingClientRect().top),'navigation overlaps content');if(width===390){await readyArtwork();await page.screenshot({path:'test-results/explorer-design/champion-mobile.png',fullPage:true});}}
  await page.goto(base+'/itemLookup.html');await page.waitForFunction(()=>document.querySelectorAll('#itemGrid button').length>0);
  assert.equal(await page.locator('#explorerItemRoles button').count(),6);
  assert.equal(await page.locator('#itemFilters [data-item-filter]').count(),14);
