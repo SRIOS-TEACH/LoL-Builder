@@ -1,0 +1,13 @@
+/* Visibility and status utilities. Load last so component display defaults cannot reopen hidden panels. */
+
+.hidden {
+  display: none;
+}
+
+.status-text {
+  margin-bottom: 0.8rem;
+}
+
+.status-error {
+  color: #ff7f7f;
+}

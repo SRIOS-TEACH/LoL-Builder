@@ -1,0 +1,406 @@
+/* Combo sequences, action choices, editing and damage tooltips. */
+
+.combo-panel {
+  overflow: auto;
+  min-height: 180px;
+}
+
+.combo-panel > p {
+  font-size: 13px;
+}
+
+.combo-quick {
+  display: grid;
+  grid-template-columns: repeat(6,minmax(0,1fr));
+  gap: 6px;
+  margin: 12px 0;
+}
+
+.combo-quick-button {
+  display: block;
+  padding: 0;
+  aspect-ratio: 1;
+  border: 1px solid #657187;
+  border-radius: 6px;
+  background: #111e31;
+  overflow: hidden;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.combo-quick-button:hover:not(:disabled),
+.combo-quick-button:focus-visible {
+  border-color: #eed18e;
+  outline: 2px solid #b39b5e;
+  outline-offset: 2px;
+}
+
+.combo-quick-button:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.combo-action-icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1;
+  position: relative;
+  overflow: hidden;
+  background: #142235;
+  border-radius: 4px;
+}
+
+.combo-action-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.combo-key {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgba(255,255,255,.8);
+  font-size: clamp(19px,1.8vw,29px);
+  font-weight: 800;
+  text-shadow: 0 2px 5px #071019;
+}
+
+.combo-league-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: #c7a95e;
+  padding: 3px;
+  opacity: .55;
+}
+
+.combo-ad-symbol {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: 27px;
+}
+
+.combo-sequence {
+  color: #e8cf97;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  min-height: 24px;
+  margin: 6px 0 10px;
+}
+
+.combo-steps {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0;
+}
+
+.combo-steps > li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 9px 0;
+  min-width: 0;
+}
+
+.combo-step-box {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+  border: 1px solid #47566d;
+  border-radius: 9px;
+  padding: 7px;
+  background: #111c2d;
+}
+
+.combo-step-edit {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  color: #e5eaf3;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.combo-step-edit .combo-action-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border: 1px solid #64728b;
+}
+
+.combo-step-edit .combo-key {
+  font-size: 24px;
+}
+
+.combo-step-edit:hover {
+  color: #f1d58b;
+}
+
+.combo-step-damage {
+  font-size: 19px;
+  font-weight: 650;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.combo-icon-button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 32px;
+  flex-shrink: 0;
+  padding: 4px;
+  border: 1px solid #44526a;
+  background: #202e43;
+  border-radius: 5px;
+  color: #cad4e4;
+  font-size: 23px;
+  cursor: pointer;
+}
+
+.combo-icon-button svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+.combo-icon-button:hover {
+  background: #35445e;
+  color: white;
+}
+
+.combo-step-move {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.combo-step-move button {
+  background: transparent;
+  border: 0;
+  color: #bdc9dc;
+  font-size: 23px;
+  line-height: 24px;
+  padding: 0 3px;
+  cursor: pointer;
+}
+
+.combo-step-move button:disabled {
+  opacity: .2;
+  cursor: default;
+}
+
+.combo-step-move button:hover:not(:disabled) {
+  color: #f0d38f;
+}
+
+.combo-fields {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+  gap: 16px;
+  margin: 18px 0;
+}
+
+.combo-fields label {
+  min-width: 0;
+}
+
+.combo-fields input {
+  width: 100%;
+}
+
+.combo-result {
+  border-top: 1px solid #44516a;
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.combo-result > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.combo-result strong {
+  color: #e8cc8b;
+  font-size: 19px;
+}
+
+.combo-result small {
+  color: #abb8ca;
+  font-size: 12px;
+}
+
+.combo-result .combo-result-note {
+  display: block;
+  color: #f0b0a9;
+  line-height: 1.45;
+  margin: -2px 0 10px;
+}
+
+.combo-alert {
+  display: inline-block;
+  font-weight: 900;
+  color: #ff5252;
+  font-size: 21px;
+  margin-left: 6px;
+  line-height: 1;
+  cursor: help;
+}
+
+[data-combo-breakdown] {
+  cursor: help;
+}
+
+.combo-step-edit[data-combo-breakdown] {
+  cursor: pointer;
+}
+
+.combo-damage-tooltip {
+  position: fixed;
+  z-index: 100000;
+  width: 235px;
+  max-width: calc(100vw - 16px);
+  padding: 13px;
+  border: 1px solid #647085;
+  border-radius: 9px;
+  color: #edf3ff;
+  background: #101a29;
+  box-shadow: 0 10px 30px #0009;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.combo-damage-tooltip[hidden] {
+  display: none;
+}
+
+.combo-damage-tooltip > strong {
+  display: block;
+  margin-bottom: 9px;
+}
+
+.combo-damage-tooltip > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 3px 0;
+}
+
+.combo-type-physical {
+  color: #f4b67b;
+}
+
+.combo-type-magic {
+  color: #7fbbff;
+}
+
+.combo-type-true {
+  color: #fff6d9;
+}
+
+.combo-type-untyped {
+  color: #b4b8c2;
+}
+
+.combo-picker-action {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  text-align: left;
+  width: 100%;
+  border: 1px solid #40516d;
+  border-radius: 7px;
+  padding: 10px;
+  margin: 8px 0;
+  background: #111e30;
+  color: var(--ui-dialog-text, #e6edf5);
+  cursor: pointer;
+}
+
+.combo-picker-action:hover:not(:disabled) {
+  border-color: #d3b878;
+  background: #223047;
+}
+
+.combo-picker-action:disabled {
+  opacity: .45;
+}
+
+.combo-picker-action > span:last-child {
+  flex: 1;
+  min-width: 0;
+}
+
+.combo-picker-action strong,
+.combo-picker-action small {
+  display: block;
+}
+
+.combo-picker-action .combo-action-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.combo-picker-action .combo-key {
+  font-size: 25px;
+}
+
+.combo-picker-action small {
+  color: #9eafc7;
+  margin-top: 4px;
+}
+
+.combo-custom-choice {
+  margin-top: 24px;
+  border-style: dashed;
+}
+
+.combo-edit-note,
+.combo-edit-warnings {
+  color: #b4c4d9;
+}
+
+.combo-edit-warnings {
+  color: #f0b0a9;
+}
+
+@media(max-width:640px) {
+  .combo-key {
+    font-size: 27px;
+  }
+
+  .combo-fields {
+    gap: 12px;
+  }
+}
+
+.combo-step-hp {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted, #aab8c5);
+  line-height: 1.4;
+}

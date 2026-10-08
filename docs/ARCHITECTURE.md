@@ -39,8 +39,12 @@ See [native UI contracts, ownership and reuse](REFACTOR-PHASE5.md). Each compone
 
 Source catalogs can be shared read-only. Mutable build/scenario records, combo steps/health progression and component instances cannot be shared between comparison candidates. A new page composes these capabilities directly. [Extension recipes](EXTENDING.md) show the supported interfaces and owners.
 
-`npm run build` generates 71 source runtime files under both `dist/` and `dist/preview/`; generated trees are disposable. Development documentation, fixtures, tests and recovery folders are excluded. The combined Pages workflow preserves production bytes and places this artifact only under `/modular-refactor/`.
+`npm run build` generates 82 source runtime files under both `dist/` and `dist/preview/`; generated trees are disposable. Development documentation, fixtures, tests and recovery folders are excluded. The combined Pages workflow preserves production bytes and places this artifact only under `/modular-refactor/`.
 
 `verify:refactor` reproduces local fixture/browser characterization and checks runtime/fixture immutability. `verify:release` binds passing local release evidence to normalized-text/binary-exact runtime fingerprints. CI runs units/build/fingerprint verification; the Pages composition verifier repeats the fingerprint check before upload, including deployments triggered from main. Browser, performance and backup-recovery checks require the preserved local fixtures and are not represented as browser tests executed on GitHub.
 
 The API still selects the current Data Dragon patch and optional Community Dragon `latest`. Source version pinning, serialization, storage and complete explorer/comparison products remain separate roadmap work. This structural refactor does not establish universal game accuracy or live compatibility with a newly published patch.
+
+## Stylesheet ownership
+
+The pages load the maintained Halfmoon foundation subset and the explicit project import manifest. Shared theme/state/dialogs, reusable component styles and Builder composition have separate owners. Visibility utilities load last; component imports stay local and resolve on both generated routes. See [Styles](STYLES.md) for composition, supported utilities, reuse dependencies and visual verification. The current release proof is `docs/release.json` when present; the historical Phase 6 proof remains unchanged.

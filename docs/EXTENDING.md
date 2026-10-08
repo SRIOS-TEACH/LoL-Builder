@@ -90,3 +90,7 @@ const comboB = ComboEvaluation.evaluate({build: buildB, scenario: scenarioB, dat
 ```
 
 Read metrics from structured results with stable IDs/units and full precision. Preserve partial/unsupported diagnostics and incompatibilities; do not compare a fabricated zero to an available result. Use the same approved data baseline for a meaningful difference. Versioned serialization, local saves, share codes and the complete comparison page remain roadmap features.
+
+## Add page or component styles
+
+Compose the foundation, shared appearance/state and required component styles described in [Styles](STYLES.md). Explorer pages do not need Builder dashboard composition. Numeric stat icons can be used by catalog filters as well as stat tables. Keep page placement separate from control appearance, and define any new generated class explicitly rather than assuming the full Halfmoon library is available. Run `npm run check:styles` and the relevant browser/layout checks before updating current release evidence.

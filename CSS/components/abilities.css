@@ -1,0 +1,207 @@
+/* Ability cards, descriptions, damage tables and attack displays. */
+
+.ability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 0.55rem;
+}
+
+.ability-card {
+  border: 1px solid var(--ui-control-border, #35538a);
+  border-radius: 8px;
+  padding: 0.55rem;
+  background: var(--ui-control-surface, #182541);
+}
+
+.ability-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.ability-passive-card {
+  grid-column: 1;
+}
+
+.ability-attack-card {
+  grid-column: 2;
+}
+
+.ability-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ability-head .ability-icon {
+  margin: 0;
+  width: 44px;
+  height: 44px;
+}
+
+.ability-rank-row {
+  margin: 0.35rem 0;
+}
+
+.ability-rank-row select {
+  width: 100%;
+}
+
+.ability-detail-number {
+  color: #ffcd85;
+  font-weight: 600;
+}
+
+.ability-detail-eq {
+  color: #9cc7ff;
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+.ability-detail-missing {
+  color: #b6c8eb;
+  border-bottom: 1px dotted #6f88be;
+}
+
+.ability-damage-physical {
+  color: #ff9d4d;
+}
+
+.ability-damage-magic {
+  color: #9ac0ff;
+}
+
+.ability-damage-true {
+  color: #f1f1f1;
+}
+
+.ability-healing {
+  color: #7ff3b3;
+}
+
+.ability-status {
+  color: #ffe17d;
+}
+
+@media (max-width: 991px) {
+  .ability-passive-card,
+  .ability-attack-card {
+    grid-column: 1;
+  }
+}
+
+.ability-inputs .form-control {
+  max-width: 100%;
+}
+
+.ability-dps {
+  margin-top: 0.75rem;
+}
+
+.ability-dps-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.ability-dps-table th,
+.ability-dps-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.3rem;
+  overflow-wrap: anywhere;
+}
+
+.ability-dps-table th:first-child {
+  width: 36%;
+}
+
+.ability-dps small {
+  display: block;
+  opacity: 0.8;
+}
+
+.attack-result {
+  cursor: help;
+  border-bottom: 1px dotted currentColor;
+}
+
+.attack-result:focus-visible {
+  outline: 2px solid #c89b3c;
+  outline-offset: 3px;
+}
+
+.attack-control {
+  margin-top: .65rem;
+}
+
+.attack-control label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+}
+
+.attack-control input {
+  width: 9rem;
+  max-width: 100%;
+}
+
+.attack-control button {
+  white-space: normal;
+  text-align: left;
+}
+
+.attack-control button[aria-pressed="true"] {
+  outline: 2px solid #c89b3c;
+}
+
+.ability-attack-card details {
+  margin-top: .7rem;
+}
+
+.ability-attack-card summary {
+  cursor: pointer;
+}
+
+#attackSummary .ability-head {
+  margin-bottom: 12px;
+}
+
+#attackSummary [data-attack-result] {
+  display: block;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #f0ce86;
+  width: fit-content;
+}
+
+#attackSummary small {
+  display: block;
+  color: #a6b5ca;
+  margin-top: 8px;
+}
+
+.ability-description [hidden] {
+  display: none !important;
+}
+
+#attackSummary [data-attack-result] {
+  font-size: 26px;
+}
+
+#attackSummary .ability-head strong {
+  font-size: 16px;
+}
+
+.ability-description {
+  margin: 5px 0;
+}
+
+.attack-settings-heading {
+  font-size: 14px;
+  margin: 14px 0 4px;
+  padding-top: 10px;
+  border-top: 1px solid #34445a;
+}

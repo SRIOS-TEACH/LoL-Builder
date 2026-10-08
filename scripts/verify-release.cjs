@@ -9,7 +9,8 @@ function fingerprint(sourceRoot){
  });
 }
 function verifyRelease({sourceRoot=path.resolve(__dirname,'..'),report}={}){
- report ||= JSON.parse(fs.readFileSync(path.join(sourceRoot,'docs/phase6-release.json'),'utf8'));
+ const evidenceFile=fs.existsSync(path.join(sourceRoot,'docs/release.json'))?'docs/release.json':'docs/phase6-release.json';
+ report ||= JSON.parse(fs.readFileSync(path.join(sourceRoot,evidenceFile),'utf8'));
  assert.equal(report.schemaVersion,1,'Unsupported release evidence schema');
  assert.equal(report.passed,true,'Release verification did not pass');
  for(const name of ['unit','browser','baseline','headless','reuse','recovery','performance','cleanSource'])assert.equal(report.checks[name]?.passed,true,'Missing or failed release check: '+name);

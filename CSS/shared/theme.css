@@ -1,0 +1,45 @@
+/* Shared theme, surfaces, visibility and status. Component styles use these tokens with local fallbacks. */
+
+:root {
+  --ui-control-border: #35538a;
+  --ui-control-surface: #182541;
+  --ui-text: #e5ecff;
+  --ui-dialog-text: #e6edf5;
+  --ui-dialog-surface: #151d2b;
+}
+
+body {
+  --builder-splash-url: none;
+  background-image: linear-gradient(rgba(7, 12, 24, 0.78), rgba(8, 12, 24, 0.92)), var(--builder-splash-url);
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  color: var(--ui-text, #e5ecff);
+}
+
+.page-wrapper,
+.content-wrapper {
+  background: transparent !important;
+}
+
+.hero-card,
+.section-card {
+  margin-top: 1rem;
+  border: 1px solid #2c3f65;
+  background: rgba(16, 24, 45, 0.72);
+}
+
+.ability-icon,
+.item-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  margin: 0.4rem 0;
+}
+
+.section-card,
+.hero-card,
+.item-modal-body,
+.item-detail-panel {
+  background: rgba(10, 22, 45, 0.7) !important;
+}
