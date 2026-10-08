@@ -1,9 +1,10 @@
+import './shared/savedDataControls.js';
 import SavedBuilds from './shared/savedBuilds.js';
 import {orderBuilds,moveBuild,statLabels} from './domain/comparisonOrder.js';
 import {createBuildDraft} from './application/comparisonEditor.mjs';
 const status=document.getElementById('compareStatus'),grid=document.getElementById('compareGrid'),pinnedHost=document.getElementById('pinnedBuild');
 const dialog=document.getElementById('quickBuildEditor'),editorHost=document.getElementById('quickBuildHost'),editStatus=document.getElementById('quickBuildStatus'),apply=document.getElementById('applyBuildChanges');
-const preferenceKey='lol-buildsmith.compare.v1';let upgrading=false;let preferences={order:[],pinned:null,sort:'manual',direction:'desc'},draft=null,ticket=0,returnFocus=null;
+const preferenceKey='lol-buildsmith.compare.v1';let upgrading=false;let dataGeneration=0;let preferences={order:[],pinned:null,sort:'manual',direction:'desc'},draft=null,ticket=0,returnFocus=null;
 try{const saved=JSON.parse(localStorage.getItem(preferenceKey)||'null');if(saved)preferences={...preferences,...saved,order:Array.isArray(saved.order)?saved.order:[]};}catch{status.textContent='Comparison preferences could not be restored.';}
 const node=(tag,text,className)=>{const el=document.createElement(tag);el.textContent=text;if(className)el.className=className;return el;};
 function button(text,action,label=text){const b=node('button',text,'btn');b.type='button';b.setAttribute('aria-label',label);b.onclick=()=>Promise.resolve().then(action).catch(error=>status.textContent=error.message);return b;}
@@ -36,16 +37,23 @@ function render(){try{
  const builds=orderBuilds(all,preferences);grid.replaceChildren();pinnedHost.replaceChildren();for(const b of builds){if(b.id===preferences.pinned)pinnedHost.append(card(b));else if((b.name+' '+b.championName).toLowerCase().includes(query))grid.append(card(b));}pinnedHost.hidden=!pinnedHost.children.length;
  status.textContent=all.length?`${all.length} saved builds. ${all.some(b=>!b.metrics)?'Older cards gain sortable values when edited and applied.':''}`:'No saved builds yet. Create a build in Builder to start.';
  const selector=document.getElementById('buildSort');const options={manual:'Manual order',name:'Name',comboDamage:'Combo damage',attackDamage:'Attack damage',dps:'DPS',cost:'Cost',...statLabels};for(const b of all)for(const key of Object.keys(b.metrics||{}))if(!(key in options))options[key]=key.replace(/([A-Z])/g,' $1');selector.replaceChildren(...Object.entries(options).map(([value,label])=>new Option(label,value)));selector.value=preferences.sort;document.getElementById('sortDirection').value=preferences.direction;
- if(upgrading){status.textContent='Updating older builds for numeric comparison…';document.querySelectorAll('.comparison-stage button').forEach(button=>button.disabled=true);}
+ if(upgrading&&all.length){status.textContent='Updating older builds for numeric comparison…';document.querySelectorAll('.comparison-stage button').forEach(button=>button.disabled=true);}
 }catch(error){status.textContent='Could not read saved builds: '+error.message;}}
-document.getElementById('buildSearch').addEventListener('input',render);document.getElementById('buildSort').onchange=event=>{preferences.sort=event.target.value;persist();render();};document.getElementById('sortDirection').onchange=event=>{preferences.direction=event.target.value;persist();render();};document.getElementById('previousBuild').onclick=()=>cycle(-1);document.getElementById('nextBuild').onclick=()=>cycle(1);window.addEventListener('storage',render);render();
+document.getElementById('buildSearch').addEventListener('input',render);document.getElementById('buildSort').onchange=event=>{preferences.sort=event.target.value;persist();render();};document.getElementById('sortDirection').onchange=event=>{preferences.direction=event.target.value;persist();render();};document.getElementById('previousBuild').onclick=()=>cycle(-1);document.getElementById('nextBuild').onclick=()=>cycle(1);function resetSavedData(){
+ dataGeneration++;
+ if(dialog.open)close();
+ try{preferences={order:[],pinned:null,sort:'manual',direction:'desc',...JSON.parse(localStorage.getItem(preferenceKey)||'{}')};}catch{preferences={order:[],pinned:null,sort:'manual',direction:'desc'};}
+ document.getElementById('buildSearch').value='';render();
+}
+window.addEventListener('saved-data-cleared',resetSavedData);
+window.addEventListener('storage',event=>{if(event.key===null||(event.key==='lol-buildsmith.builds.v1'||event.key===preferenceKey)&&event.newValue===null)resetSavedData();else render();});render();
 
 async function upgradeLegacy(refreshAll=false){
  if(upgrading)return;const legacy=SavedBuilds.read().filter(build=>refreshAll||!build.metrics);if(!legacy.length)return;
- upgrading=true;render();let failed=0;
+ const generation=dataGeneration;upgrading=true;render();let failed=0;
  const host=document.createElement('div');host.hidden=true;document.body.append(host);
- try{for(const build of legacy){let session;try{session=await createBuildDraft(host,build);const current=SavedBuilds.read().find(b=>b.id===build.id);if(current?.savedAt===build.savedAt)SavedBuilds.save(session.capture());}catch{failed++;}finally{session?.dispose();}}}
- finally{host.remove();upgrading=false;render();status.textContent=failed?'Some older builds could not be refreshed. Check your connection and use Refresh values to retry.':'Older builds refreshed using the current patch. Numeric sorting is ready.';}
+ try{for(const build of legacy){if(generation!==dataGeneration)break;let session;try{session=await createBuildDraft(host,build);const current=SavedBuilds.read().find(b=>b.id===build.id);if(generation===dataGeneration&&current?.savedAt===build.savedAt)SavedBuilds.save(session.capture());}catch{failed++;}finally{session?.dispose();}}}
+ finally{host.remove();upgrading=false;render();if(generation===dataGeneration)status.textContent=failed?'Some older builds could not be refreshed. Check your connection and use Refresh values to retry.':'Older builds refreshed using the current patch. Numeric sorting is ready.';}
 }
 document.getElementById('refreshBuildValues').onclick=()=>upgradeLegacy(true).catch(error=>status.textContent=error.message);
 upgradeLegacy().catch(error=>status.textContent=error.message);

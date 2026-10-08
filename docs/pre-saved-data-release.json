@@ -3,23 +3,23 @@
   "releaseDate": "2026-10-09",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: user-facing saved data controls",
+  "releaseTarget": "main: polished Champion and Item Explorers",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
       "count": 235,
-      "evidence": "docs/saved-data-verification.json"
+      "evidence": "docs/explorer-design-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/saved-data-verification.json",
-      "currentSuites": 2,
-      "inheritedFullSuiteEvidence": "docs/pre-saved-data-release.json",
-      "scope": "Fresh native comparator suites on both generated routes, including all deletion/cancellation flows on Home and Comparator. The 32-suite count is historical retained coverage."
+      "evidence": "docs/explorer-design-verification.json",
+      "currentSuites": 4,
+      "inheritedFullSuiteEvidence": "docs/pre-explorer-design-release.json",
+      "scope": "Fresh explorer root/fallback and preview/advanced suites plus comparator/advanced and broad browser/fallback. The count of 32 refers to retained historical full-suite proof, not current suites."
     },
     "baseline": {
       "passed": true,
@@ -64,13 +64,13 @@
       "unitTests": 235,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/saved-data-verification.json"
+      "evidence": "docs/explorer-design-verification.json"
     },
     "css": {
       "passed": true,
       "requiredVariablesResolve": true,
-      "evidence": "docs/saved-data-verification.json",
-      "scope": "Saved-data disclosure and native confirmation dialog styles; dependencies verified. Existing explorer visual review retained."
+      "evidence": "docs/explorer-design-verification.json",
+      "scope": "Dedicated explorer stylesheet; 390/768/1440px layouts, no horizontal overflow, mobile navigation containment, keyboard focus and current selection, and live artwork visual review."
     }
   },
   "evidence": [
@@ -82,11 +82,10 @@
     "save-toolbar-verification.json",
     "inline-toolbar-verification.json",
     "editable-comparator-verification.json",
-    "explorer-design-verification.json",
-    "saved-data-verification.json"
+    "explorer-design-verification.json"
   ],
-  "verification": "235 unit tests; full native comparator suite on root with advanced data and preview with fallback data, including saved-data controls on Home and Comparator. Prior explorer, calculator and historical full-suite evidence retained.",
-  "previousReleaseEvidence": "docs/pre-saved-data-release.json",
+  "verification": "235 current unit tests, native explorer checks on both generated routes with fallback and advanced data, editable-comparator regression and full broad browser regression. Real Riot artwork reviewed at desktop/mobile widths. Historical calculator baseline, recovery and performance evidence retained for unchanged runtime modules.",
+  "previousReleaseEvidence": "docs/pre-explorer-design-release.json",
   "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
   "runtimeFiles": [
     {
@@ -139,7 +138,7 @@
     },
     {
       "path": "CSS/pages/explorers.css",
-      "sha256": "a5e1c93b953cd148e560bd17ad973343ca1350e551db454fe40effd094208e23"
+      "sha256": "7e2b043b3c7927552f8a414e15ed936760dd753ded0cd4287cf2706776b17b73"
     },
     {
       "path": "CSS/shared/dialogs.css",
@@ -155,7 +154,7 @@
     },
     {
       "path": "Comparator.html",
-      "sha256": "2dd8b01b3acc265219a1e6ccaf6f58cc6a99541dcb44b866e8dec84d58e9312e"
+      "sha256": "70135260d5c2b448ff94f96b07bd01a67d2090869696bc2b8699a62e3a3a65ae"
     },
     {
       "path": "JS/application/buildSnapshot.mjs",
@@ -191,7 +190,7 @@
     },
     {
       "path": "JS/comparator.js",
-      "sha256": "7d8055c0bf17bcf2f7fde79e990bfe964abd3fb803dc3c09463092897e6a39d1"
+      "sha256": "f480eb9b18967fe7df2343563bf019b3c4c4a16107fd70000c0cc3a26d67001a"
     },
     {
       "path": "JS/core/records.js",
@@ -362,10 +361,6 @@
       "sha256": "31d0d4b9433e507d328f22b80a4970f5c1a4a1ba5c4130579a163536e73efff7"
     },
     {
-      "path": "JS/shared/savedDataControls.js",
-      "sha256": "070e96a4c40a5c8bede59d79cdac5ecb9c071df648ea025c7c9ac718d8e6ed6e"
-    },
-    {
       "path": "JS/shared/targetDamage.js",
       "sha256": "d0787c46ea0de81f4278958e0a2339fcf42c66ffb6d8715fed623f4a7ba84864"
     },
@@ -467,7 +462,7 @@
     },
     {
       "path": "main.html",
-      "sha256": "1297d9677a956222556e5d116e3645645b9bcda06030bace2d09365a3593eb4e"
+      "sha256": "8771a8812e3f64e6f39754bc33d390f1fb59804120f0bb3ab4013aa915bcadf6"
     }
   ]
 }

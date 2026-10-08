@@ -79,3 +79,16 @@
 .comparison-editor .combo-panel {height:auto;max-height:none;overflow:visible;}
 .compare-stat {display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid #ffffff14;}
 .compare-stat strong {color:#efd286;}
+.saved-data-settings {margin-top:24px;padding:16px 20px;border:1px solid #334b69;border-radius:10px;background:#101c30;color:#bdcde2;}
+.saved-data-settings summary {font-weight:600;cursor:pointer;color:#dce7f7;}
+.saved-data-actions {display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+.saved-data-status:empty,.saved-data-error:empty {display:none;}
+.saved-data-status {color:#a4ddbe;margin:14px 0 0;}
+.saved-data-dialog {width:min(480px,calc(100vw - 32px));max-height:90dvh;overflow:auto;padding:24px;color:#e5ecff;background:#101c30;border:1px solid #56718f;border-radius:14px;box-shadow:0 20px 80px #0008;}
+.saved-data-dialog::backdrop {background:#030914c9;}
+.saved-data-dialog h2 {font-size:22px;line-height:1.3;margin:0 0 16px;}
+.saved-data-dialog p {line-height:1.6;}
+.saved-data-dialog .saved-data-confirm {background:#753541;color:#fff;border-color:#bf7885;}
+.saved-data-dialog .saved-data-confirm:hover {background:#914450;}
+.saved-data-dialog .saved-data-error {color:#ffc5ce;}
+.saved-data-dialog button:focus-visible,.saved-data-settings :is(button,summary):focus-visible {outline:2px solid #83d9ed;outline-offset:3px;}

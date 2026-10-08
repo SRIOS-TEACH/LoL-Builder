@@ -1,93 +1,42 @@
 {
-  "schemaVersion": 1,
-  "releaseDate": "2026-10-09",
-  "timezone": "Australia/Sydney",
+  "date": "2026-10-09",
   "passed": true,
-  "releaseTarget": "main: user-facing saved data controls",
-  "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
-  "checks": {
-    "unit": {
-      "passed": true,
-      "count": 235,
-      "evidence": "docs/saved-data-verification.json"
+  "scope": "User-facing saved data controls on Home and Comparator. Confirmation and Cancel, build-only removal, full reset of comparison preferences, app-key-only deletion, invalid saved-data recovery, and invalidation of background refreshes after clear.",
+  "unitTests": 235,
+  "browserSuites": [
+    {
+      "name": "comparator-root",
+      "code": 0,
+      "log": "test-results\\saved-data\\comparator-root.log",
+      "summary": [
+        "PASS editable comparator: independent items, ranks, target, combo, cancel, pin, sort, manual order persistence and mobile layout",
+        "PASS saved data controls: cancel and Escape preserve builds, delete builds keeps preferences, full reset repairs corrupt data, only app keys removed, available on Home and Comparator",
+        "PASS actual native entry: champion, ranks, inventory, target and combo without injected test globals"
+      ]
     },
-    "browser": {
-      "passed": true,
-      "count": 32,
-      "routes": 2,
-      "advancedAndFallback": true,
-      "evidence": "docs/saved-data-verification.json",
-      "currentSuites": 2,
-      "inheritedFullSuiteEvidence": "docs/pre-saved-data-release.json",
-      "scope": "Fresh native comparator suites on both generated routes, including all deletion/cancellation flows on Home and Comparator. The 32-suite count is historical retained coverage."
-    },
-    "baseline": {
-      "passed": true,
-      "comparisons": 20,
-      "comparisonComplete": true,
-      "unexplainedDifferences": 0,
-      "exactBaselineMatch": true,
-      "evidence": "docs/css-refactor-verification.json"
-    },
-    "headless": {
-      "passed": true,
-      "cases": 10,
-      "inputIsolation": true,
-      "evidence": "docs/editable-comparator-verification.json"
-    },
-    "reuse": {
-      "passed": true,
-      "catalogs": true,
-      "simultaneousUIInstances": 2,
-      "immutableInputs": true,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "recovery": {
-      "passed": true,
-      "independentBackup": true,
-      "unitTests": 201,
-      "cases": 10,
-      "evidence": "docs/phase6-recovery.json",
-      "scope": "Protected pre-refactor baseline and its independent backup remain unchanged. Historical recovery proof retained; current CSS source reproduced separately."
-    },
-    "performance": {
-      "passed": true,
-      "actualEntryVisits": 40,
-      "layoutEquivalent": true,
-      "baselineCommit": "dec545072a02196260df10837258b857caa805f0",
-      "evidence": "docs/css-refactor-performance.json",
-      "note": "Controlled pre-CSS-refactor fixture benchmark; not real CDN/network performance.",
-      "scope": "Preserved historical benchmark for unchanged calculator modules; new pages are not benchmarked."
-    },
-    "cleanSource": {
-      "passed": true,
-      "unitTests": 235,
-      "build": true,
-      "generatedCopiesMatch": true,
-      "evidence": "docs/saved-data-verification.json"
-    },
-    "css": {
-      "passed": true,
-      "requiredVariablesResolve": true,
-      "evidence": "docs/saved-data-verification.json",
-      "scope": "Saved-data disclosure and native confirmation dialog styles; dependencies verified. Existing explorer visual review retained."
+    {
+      "name": "comparator-preview",
+      "code": 0,
+      "log": "test-results\\saved-data\\comparator-preview.log",
+      "summary": [
+        "PASS editable comparator: independent items, ranks, target, combo, cancel, pin, sort, manual order persistence and mobile layout",
+        "PASS saved data controls: cancel and Escape preserve builds, delete builds keeps preferences, full reset repairs corrupt data, only app keys removed, available on Home and Comparator",
+        "PASS actual native entry: champion, ranks, inventory, target and combo without injected test globals"
+      ]
     }
-  },
-  "evidence": [
-    "phase6-verification.json",
-    "phase6-performance.json",
-    "phase6-recovery.json",
-    "phase6-headless.json",
-    "explorer-release-verification.json",
-    "save-toolbar-verification.json",
-    "inline-toolbar-verification.json",
-    "editable-comparator-verification.json",
-    "explorer-design-verification.json",
-    "saved-data-verification.json"
   ],
-  "verification": "235 unit tests; full native comparator suite on root with advanced data and preview with fallback data, including saved-data controls on Home and Comparator. Prior explorer, calculator and historical full-suite evidence retained.",
-  "previousReleaseEvidence": "docs/pre-saved-data-release.json",
-  "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
+  "styles": {
+    "stylesheets": 15,
+    "customProperties": 282
+  },
+  "generatedCopiesMatch": true,
+  "changedRuntimeFiles": [
+    "CSS/pages/explorers.css",
+    "Comparator.html",
+    "JS/comparator.js",
+    "JS/shared/savedDataControls.js",
+    "main.html"
+  ],
   "runtimeFiles": [
     {
       "path": "Builder.html",
@@ -469,5 +418,9 @@
       "path": "main.html",
       "sha256": "1297d9677a956222556e5d116e3645645b9bcda06030bace2d09365a3593eb4e"
     }
-  ]
+  ],
+  "inheritedChecks": {
+    "evidence": "docs/pre-saved-data-release.json",
+    "scope": "Calculator and explorer runtime unchanged; retain prior baseline, headless, recovery and performance evidence."
+  }
 }
