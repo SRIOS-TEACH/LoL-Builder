@@ -16,7 +16,7 @@ function filterChampions() {
   const matches = Object.entries(state.champions).filter(([,c]) => `${c.name} ${(c.tags || []).join(' ')}`.toLowerCase().includes(query)).sort((a,b) => a[1].name.localeCompare(b[1].name));
   el('champSelect').replaceChildren(...matches.map(([id,c]) => new Option(c.name,id)));
   el('champSelect').disabled = !matches.length;
-  el('champCount').textContent = `${matches.length} champions`;
+  el('champCount').textContent = `${matches.length} ${matches.length === 1 ? 'champion' : 'champions'}`;
   el('champRoster').innerHTML = matches.map(([id,c]) => `<button type="button" data-champion="${escape(id)}" aria-label="View ${escape(c.name)}" aria-pressed="false"><img src="${image('champion',c.image.full)}" alt="" loading="lazy"><span>${escape(c.name)}</span></button>`).join('');
   if (!matches.length) {
     ++state.requestId;

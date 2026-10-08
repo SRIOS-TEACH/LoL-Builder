@@ -1,3 +1,4 @@
+import './shared/siteNavigation.js';
 import {createBuilderPage} from './application/builderPage.mjs';
 const root=document.body;
 const elements=Object.fromEntries([...root.querySelectorAll('[id]')].map(node=>[node.id,node]));

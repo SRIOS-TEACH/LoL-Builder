@@ -132,7 +132,7 @@ function applyItemFilters() {
  */
 function renderItemGrid() {
   const grid = document.getElementById("itemGrid");
-  document.getElementById("itemCount").textContent = `${ITEM_STATE.filteredIds.length} items`;
+  document.getElementById("itemCount").textContent = `${ITEM_STATE.filteredIds.length} ${ITEM_STATE.filteredIds.length === 1 ? 'item' : 'items'}`;
   grid.innerHTML = ITEM_STATE.filteredIds.length ? ITEM_STATE.filteredIds.map((id) => {
     const item = ITEM_STATE.items[id];
     const selected = ITEM_STATE.selectedId === id;

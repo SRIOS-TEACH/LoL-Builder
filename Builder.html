@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LoL Buildsmith</title>
+  <title>Builder | LoL Buildsmith</title>
   <link href="CSS/foundation.css" rel="stylesheet">
   <link href="CSS/lolBuilder.css" rel="stylesheet">
 </head>
-<body class="dark-mode compact-dashboard">
+<body class="dark-mode compact-dashboard site-page ">
   <div class="page-wrapper with-navbar with-transitions">
-    <nav class="navbar"><a href="main.html" class="navbar-brand">LoL Buildsmith</a><ul class="navbar-nav site-nav"><li class="nav-item "><a href="main.html" class="nav-link" >Home</a></li><li class="nav-item active"><a href="Builder.html" class="nav-link">Builder</a></li><li class="nav-item "><a href="champ.html" class="nav-link" >Champion Explorer</a></li><li class="nav-item "><a href="itemLookup.html" class="nav-link" >Item Explorer</a></li><li class="nav-item "><a href="Comparator.html" class="nav-link" >Build Comparator</a></li></ul></nav>
+    <nav class="navbar" aria-label="Main navigation"><a href="main.html" class="navbar-brand">LoL Buildsmith</a><ul class="navbar-nav site-nav"><li class="nav-item"><a href="main.html" class="nav-link">Home</a></li><li class="nav-item active"><a href="Builder.html" class="nav-link" aria-current="page">Builder</a></li><li class="nav-item"><a href="champ.html" class="nav-link">Champion Explorer</a></li><li class="nav-item"><a href="itemLookup.html" class="nav-link">Item Explorer</a></li><li class="nav-item"><a href="Comparator.html" class="nav-link">Build Comparator</a></li></ul></nav>
 
     <div class="content-wrapper">
       <main class="container-fluid builder-dashboard">
         <header id="builderHeroCard" class="dashboard-toolbar section-card">
           <div id="selectedChampionBadge" class="selected-champion-badge">
             <button id="championPickerBtn" class="champion-picker-icon-btn" type="button" aria-label="Select champion">+</button>
-            <div><strong id="dashboardChampionName">Select champion</strong><small id="dashboardChampionTitle"></small></div>
+            <div><span class="site-eyebrow builder-workspace-label">BUILDER</span><strong id="dashboardChampionName">Select champion</strong><small id="dashboardChampionTitle"></small></div>
           </div>
           <label class="champ-level-control toolbar-level">Level <select id="builderLevel" class="form-control"></select></label>
           <div class="toolbar-build"><div class="toolbar-items-label"><span class="dashboard-label">Items</span><span class="build-gold" aria-label="Total build cost: 0 gold" title="Total build cost"><img src="assets/shop/gold.png" alt="" aria-hidden="true"><span id="buildGoldCost">0</span></span></div><div id="itemSlots" class="item-slots item-slots-icons"></div></div>

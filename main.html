@@ -7,26 +7,22 @@
   <link href="CSS/foundation.css" rel="stylesheet" />
   <link href="CSS/lolBuilder.css" rel="stylesheet" />
 </head>
-<body class="dark-mode">
+<body class="dark-mode site-page home-view">
   <!-- Page purpose: top-level navigation to each tool page -->
   <div class="page-wrapper with-navbar with-transitions">
     <!-- Shared navigation -->
-    <nav class="navbar"><a href="main.html" class="navbar-brand">LoL Buildsmith</a><ul class="navbar-nav site-nav"><li class="nav-item "><a href="main.html" class="nav-link" >Home</a></li><li class="nav-item active"><a href="Builder.html" class="nav-link">Builder</a></li><li class="nav-item "><a href="champ.html" class="nav-link" >Champion Explorer</a></li><li class="nav-item "><a href="itemLookup.html" class="nav-link" >Item Explorer</a></li><li class="nav-item "><a href="Comparator.html" class="nav-link" >Build Comparator</a></li></ul></nav>
+    <nav class="navbar" aria-label="Main navigation"><a href="main.html" class="navbar-brand">LoL Buildsmith</a><ul class="navbar-nav site-nav"><li class="nav-item active"><a href="main.html" class="nav-link" aria-current="page">Home</a></li><li class="nav-item"><a href="Builder.html" class="nav-link">Builder</a></li><li class="nav-item"><a href="champ.html" class="nav-link">Champion Explorer</a></li><li class="nav-item"><a href="itemLookup.html" class="nav-link">Item Explorer</a></li><li class="nav-item"><a href="Comparator.html" class="nav-link">Build Comparator</a></li></ul></nav>
 
     <!-- Main page content -->
     <div class="content-wrapper">
-      <div class="container-fluid">
-        <div class="card hero-card">
-          <h1 class="content-title">LoL Buildsmith</h1>
-          <p>Explore champions, craft your build, and compare damage with LoL Buildsmith.</p>
-          <div class="mt-20">
-            <a class="btn btn-primary" href="Builder.html">Open Builder</a>
-          </div>
-        </div>
-        <section data-saved-data-controls aria-label="Manage saved data"></section>
-      </div>
+      <main class="site-content">
+<header class="site-hero home-hero"><div><p class="site-eyebrow">EXPLORE · BUILD · COMPARE</p><h1>LoL Buildsmith</h1><p>Know your champion. Find your power spike.<br>Make every build your own.</p><a class="btn btn-primary" href="Builder.html">Open Builder →</a></div><span class="site-art-credit">Artwork · Riot Games</span></header>
+<section class="home-tools" aria-label="Buildsmith tools"><a class="home-tool" href="Builder.html"><span class="site-eyebrow">01 / CREATE</span><h2>Builder</h2><p>Equip items, choose runes, and test your damage.</p><span class="tool-link">Start a build →</span></a><a class="home-tool" href="champ.html"><span class="site-eyebrow">02 / DISCOVER</span><h2>Champion Explorer</h2><p>Meet the roster. Explore stats, abilities, and lore.</p><span class="tool-link">Explore champions →</span></a><a class="home-tool" href="itemLookup.html"><span class="site-eyebrow">03 / EQUIP</span><h2>Item Explorer</h2><p>Browse the armory and inspect item effects.</p><span class="tool-link">Explore items →</span></a><a class="home-tool" href="Comparator.html"><span class="site-eyebrow">04 / REFINE</span><h2>Build Comparator</h2><p>Compare saved builds and refine them side by side.</p><span class="tool-link">Compare builds →</span></a></section>
+<section data-saved-data-controls aria-label="Manage saved data"></section>
+</main>
     </div>
   </div>
 <script type="module" src="JS/shared/savedDataControls.js"></script>
+<script type="module" src="JS/shared/siteNavigation.js"></script>
 </body>
 </html>

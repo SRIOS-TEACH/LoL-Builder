@@ -6,13 +6,15 @@ The CSS refactor preserves the existing UI while removing unused framework featu
 
 `CSS/foundation.css` is a maintained project subset of Halfmoon 1.1.1, preserving its copyright, MIT license and Bootstrap attribution. It supplies the reset, base typography, navigation, forms, buttons, cards and utility classes used by the current pages and generated controls. It retains referenced custom properties and their transitive dependencies, including light/dark values and interactive states. It is **not the complete Halfmoon API**. The unused library should not be copied back wholesale when a new component is added.
 
-`CSS/lolBuilder.css` is the explicit import manifest. It loads shared theme defaults, reusable components, Builder composition, and finally visibility/status utilities. Imports must remain before style declarations. Each imported file can also be composed into another page without importing Builder layout.
+`CSS/lolBuilder.css` is the explicit import manifest. It loads shared theme defaults, reusable components, Builder composition, explorer layouts, and the shared site appearance layer. Visibility/status rules keep hidden states explicit. Imports must remain before style declarations. Each imported file can also be composed into another page without importing Builder layout.
 
 | Owner | File | Responsibility |
 |---|---|---|
 | Shared appearance | `CSS/shared/theme.css` | Theme tokens, page backgrounds, common surfaces and icons |
 | Shared dialogs | `CSS/shared/dialogs.css` | Target/combo frames, backdrops and headers; reusable `.tool-dialog`/`.dialog-header` names retain compatibility with existing classes |
-| Shared state | `CSS/shared/state.css` | Visibility and status; loaded last so display defaults do not reopen hidden panels |
+| Shared site theme | `CSS/shared/site.css` | Consistent navigation, typography, surfaces, controls, dialogs and artwork treatment across all five pages; loaded after page styles |
+| Explorer layout | `CSS/pages/explorer-design.css` | Champion/item layout, roster, ability cards and catalog/detail composition |
+| Shared state | `CSS/shared/state.css` | Visibility and status; explicit hidden states so page layouts do not reopen hidden panels |
 | Stats | `CSS/components/stats.css` | Stat tables, labels, numeric values and icons |
 | Inventory | `CSS/components/inventory.css` | Equipment slots, empty states and build cost |
 | Catalogs | `CSS/components/catalog.css` | Champion/item list/detail controls, picker frames, filters and responsive regions |
@@ -43,3 +45,9 @@ The removal review used selectors from all public HTML, native modules and gener
 For controlled timing, run the existing performance harness with a clean checkout of the pre-CSS-refactor commit, `BASELINE_ROOT` pointing to it and `BASELINE_COMMIT=dec545072a02196260df10837258b857caa805f0`. The default remains the original protected baseline for historical checks. Run timing separately while other browser jobs are idle. The fixture/local-asset benchmark does not measure real CDN caching, fonts, artwork or network performance.
 
 Release fingerprints must be refreshed from reviewed passing checks for the changed CSS/HTML; the build must not silently bless new source bytes. `docs/release.json` contains the current proof; the verifier falls back to the preserved `docs/phase6-release.json` for historical checkouts. Historical evidence is retained separately. Generated `dist/` and `preview/` remain disposable.
+
+## Site theme
+
+All public pages use `.site-page`, the same navigation markup, and the `--site-*` palette in `shared/theme.css`. `shared/site.css` supplies the final shared appearance. Keep layout/density differences in page styles: the Builder is a compact workspace, explorers are readable catalogs, and the Comparator uses a card carousel. Reuse the theme tokens for new surfaces and controls.
+
+`npm run test:theme` checks all five native pages at 390, 768, 1440 and 1920 pixels, active navigation visibility, consistent navigation styling, horizontal bounds, restored build cards and shared picker appearance. Set `REAL_ART=1` for actual Riot artwork in visual review, and `THEME_SCREENSHOTS` for an output directory. The historic CSS pixel-equivalence suite characterizes the prior refactor; this intentional visual redesign is checked with new screenshots and interaction suites rather than claiming identical pixels.

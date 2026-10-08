@@ -3,32 +3,31 @@
   "releaseDate": "2026-10-09",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: coherent navy/gold theme across all five pages",
+  "releaseTarget": "main: user-facing saved data controls",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
       "count": 235,
-      "evidence": "docs/coherent-theme-verification.json"
+      "evidence": "docs/saved-data-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/coherent-theme-verification.json",
-      "currentSuites": 8,
-      "inheritedFullSuiteEvidence": "docs/pre-coherent-theme-release.json",
-      "scope": "Eight fresh suites on generated root/preview routes, including real artwork review. The historical count of 32 is retained earlier full-suite coverage."
+      "evidence": "docs/saved-data-verification.json",
+      "currentSuites": 2,
+      "inheritedFullSuiteEvidence": "docs/pre-saved-data-release.json",
+      "scope": "Fresh native comparator suites on both generated routes, including all deletion/cancellation flows on Home and Comparator. The 32-suite count is historical retained coverage."
     },
     "baseline": {
       "passed": true,
       "comparisons": 20,
       "comparisonComplete": true,
       "unexplainedDifferences": 0,
-      "exactBaselineMatch": false,
-      "evidence": "docs/css-refactor-verification.json",
-      "scope": "Historical numeric comparison for unchanged calculator modules; rendered theme differs intentionally."
+      "exactBaselineMatch": true,
+      "evidence": "docs/css-refactor-verification.json"
     },
     "headless": {
       "passed": true,
@@ -65,13 +64,13 @@
       "unitTests": 235,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/coherent-theme-verification.json"
+      "evidence": "docs/saved-data-verification.json"
     },
     "css": {
       "passed": true,
       "requiredVariablesResolve": true,
-      "evidence": "docs/coherent-theme-verification.json",
-      "scope": "New visual review, shared navigation style checks and no page/content horizontal overflow at 390/768/1440/1920px. Historic CSS pixel-equivalence describes the pre-theme refactor, not this intentional redesign."
+      "evidence": "docs/saved-data-verification.json",
+      "scope": "Saved-data disclosure and native confirmation dialog styles; dependencies verified. Existing explorer visual review retained."
     }
   },
   "evidence": [
@@ -84,16 +83,15 @@
     "inline-toolbar-verification.json",
     "editable-comparator-verification.json",
     "explorer-design-verification.json",
-    "saved-data-verification.json",
-    "coherent-theme-verification.json"
+    "saved-data-verification.json"
   ],
-  "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
-  "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
+  "verification": "235 unit tests; full native comparator suite on root with advanced data and preview with fallback data, including saved-data controls on Home and Comparator. Prior explorer, calculator and historical full-suite evidence retained.",
+  "previousReleaseEvidence": "docs/pre-saved-data-release.json",
   "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
   "runtimeFiles": [
     {
       "path": "Builder.html",
-      "sha256": "f4e4f415dd22ebc35932c094cc39a12ce31f559a0a21152f472f28917865b2c4"
+      "sha256": "193fd141c84902d7889250a5449a454857aa0c7d51bb20154a8e9adb83371a5f"
     },
     {
       "path": "CSS/components/abilities.css",
@@ -129,7 +127,7 @@
     },
     {
       "path": "CSS/lolBuilder.css",
-      "sha256": "f6b8fafe573a9b4c6034a1024ab304785736c20ba615e4ba14cbbd378b39bfee"
+      "sha256": "9281036aebb3d57afb3102437dc6c5e901c715fefb489fca84c00d0d87efd65f"
     },
     {
       "path": "CSS/pages/builder.css",
@@ -137,7 +135,7 @@
     },
     {
       "path": "CSS/pages/explorer-design.css",
-      "sha256": "9a2561da0002fa940748d4d6b5d893af3034669587f3dcb6280266debc4d892e"
+      "sha256": "d4edb7aa8b286391ee56c50fb81ef2b48c66d6de74e53a9a72fc6c1d88027000"
     },
     {
       "path": "CSS/pages/explorers.css",
@@ -148,20 +146,16 @@
       "sha256": "e051201594697e817f58833af5f6647167f5460a509c78d6ad5e0f4a853766ff"
     },
     {
-      "path": "CSS/shared/site.css",
-      "sha256": "f88dc46085f3c249c7f036500bf67e884bcc991ed128ebf77ca5b69c9d3d7b0b"
-    },
-    {
       "path": "CSS/shared/state.css",
       "sha256": "42a944e086178785e4d1222dd3ddaaeaf53ef466d659f78197941b012caca4bb"
     },
     {
       "path": "CSS/shared/theme.css",
-      "sha256": "4ccd74b204f0fb18ad5e6b07528e984c82024893088599e186c1ad6e3b5185d4"
+      "sha256": "05ba9bd83aba7ef04225f29601483093ffa892f2e2608ba8448eac51b8c0fe71"
     },
     {
       "path": "Comparator.html",
-      "sha256": "1bba3071f22d1ef48df75cacb37f9875c370f829df55871738c090f84829be85"
+      "sha256": "2dd8b01b3acc265219a1e6ccaf6f58cc6a99541dcb44b866e8dec84d58e9312e"
     },
     {
       "path": "JS/application/buildSnapshot.mjs",
@@ -189,15 +183,15 @@
     },
     {
       "path": "JS/builder.js",
-      "sha256": "6d16a89e544905e3518ddd4a8f82d1dd87047ee21a722b64ab4dd02283984b7d"
+      "sha256": "543d10169d8d67a36e2cdc8383b303113d85380158e030d77892b5286fa1b5aa"
     },
     {
       "path": "JS/championExplorer.js",
-      "sha256": "0244fab4091851143cb90339383a391490ebc8cf7f2af48cb88dc4c36329bb12"
+      "sha256": "9c4d0abff328cf178708eb5a01d6c8a20e42938e7d232738a2a14a863337330c"
     },
     {
       "path": "JS/comparator.js",
-      "sha256": "017985581231a53f5bc6e319c9b0bf01bcd2f24bc8e3b492eac590c7c819d476"
+      "sha256": "7d8055c0bf17bcf2f7fde79e990bfe964abd3fb803dc3c09463092897e6a39d1"
     },
     {
       "path": "JS/core/records.js",
@@ -277,7 +271,7 @@
     },
     {
       "path": "JS/itemExplorer.js",
-      "sha256": "7d4dfc1d211e68050233b6bd3b7e93de7e3c0f0cb47b24ede72f336f1ebf198c"
+      "sha256": "3901757ac46f526f320b983fcdfd2ff5ad52603e71dd3ed2d22e6933f4c36b16"
     },
     {
       "path": "JS/package.json",
@@ -372,10 +366,6 @@
       "sha256": "070e96a4c40a5c8bede59d79cdac5ecb9c071df648ea025c7c9ac718d8e6ed6e"
     },
     {
-      "path": "JS/shared/siteNavigation.js",
-      "sha256": "2ab22b321228f9dfde854e3e33d20044e18f7bbf3e23b3e6d00e70597b52a8c1"
-    },
-    {
       "path": "JS/shared/targetDamage.js",
       "sha256": "d0787c46ea0de81f4278958e0a2339fcf42c66ffb6d8715fed623f4a7ba84864"
     },
@@ -465,7 +455,7 @@
     },
     {
       "path": "champ.html",
-      "sha256": "614dd88e16bdc52ba4b4fe692e7ce547fd36b630590b805fce248b9a853fa00a"
+      "sha256": "cb5877fd35236500331b9f48198a7082c0224f1cf1ef0de8868539831f549afa"
     },
     {
       "path": "index.html",
@@ -473,11 +463,11 @@
     },
     {
       "path": "itemLookup.html",
-      "sha256": "932b0ef1c2efa8612349f068514db4b04b8ac13ef7581dbc049f89b2c9e6aaab"
+      "sha256": "f2f9a723d7858fb3a82346a57121ca2e9f54ce4441306ea84488ad9ba8400483"
     },
     {
       "path": "main.html",
-      "sha256": "34b332237cb99025bede5bba4ecba0089d8eaa98ca95857c6db3b0acc689a9ba"
+      "sha256": "1297d9677a956222556e5d116e3645645b9bcda06030bace2d09365a3593eb4e"
     }
   ]
 }

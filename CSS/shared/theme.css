@@ -1,6 +1,20 @@
 /* Shared theme, surfaces, visibility and status. Component styles use these tokens with local fallbacks. */
 
 :root {
+  --site-bg: #080f1c;
+  --site-surface: #0f1c30;
+  --site-surface-raised: #14243b;
+  --site-surface-inset: #091525;
+  --site-panel: linear-gradient(140deg, #122239, #0d182b);
+  --site-border: #30455f;
+  --site-border-hover: #647e9c;
+  --site-text: #e5ecff;
+  --site-muted: #a6b7cf;
+  --site-gold: #dfc180;
+  --site-gold-border: #b89a59;
+  --site-accent: #95d5e5;
+  --site-radius: 12px;
+  --site-shadow: 0 8px 24px #0003;
   --ui-control-border: #35538a;
   --ui-control-surface: #182541;
   --ui-text: #e5ecff;

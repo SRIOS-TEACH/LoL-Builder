@@ -1,4 +1,4 @@
-/* Explorer-only composition. Shared Builder and Comparator controls stay scoped to their pages. */
+/* Explorer layout and content. The final shared site layer supplies common visual treatment. */
 .explorer-view {background-color:#080f1c;background-image:radial-gradient(ellipse at 10% 0%,#16304766,transparent 60%);font-size:14px;}
 .explorer-view .explorer-page {max-width:1440px;padding:32px 40px 24px;}
 .explorer-view .explorer-heading {display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:24px;}

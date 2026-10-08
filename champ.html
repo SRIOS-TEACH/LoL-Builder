@@ -6,30 +6,10 @@
 <title>Champion Explorer | LoL Buildsmith</title>
 <link rel="stylesheet" href="CSS/foundation.css">
 <link rel="stylesheet" href="CSS/lolBuilder.css">
-<link rel="stylesheet" href="CSS/pages/explorer-design.css">
 </head>
-<body class="dark-mode explorer-view">
+<body class="dark-mode explorer-view site-page ">
 <div class="page-wrapper with-navbar">
-<nav class="navbar">
-<a href="main.html" class="navbar-brand">LoL Buildsmith</a>
-<ul class="navbar-nav site-nav">
-<li class="nav-item ">
-<a href="main.html" class="nav-link" >Home</a>
-</li>
-<li class="nav-item ">
-<a href="Builder.html" class="nav-link" >Builder</a>
-</li>
-<li class="nav-item active">
-<a href="champ.html" class="nav-link" aria-current="page">Champion Explorer</a>
-</li>
-<li class="nav-item ">
-<a href="itemLookup.html" class="nav-link" >Item Explorer</a>
-</li>
-<li class="nav-item ">
-<a href="Comparator.html" class="nav-link" >Build Comparator</a>
-</li>
-</ul>
-</nav>
+<nav class="navbar" aria-label="Main navigation"><a href="main.html" class="navbar-brand">LoL Buildsmith</a><ul class="navbar-nav site-nav"><li class="nav-item"><a href="main.html" class="nav-link">Home</a></li><li class="nav-item"><a href="Builder.html" class="nav-link">Builder</a></li><li class="nav-item active"><a href="champ.html" class="nav-link" aria-current="page">Champion Explorer</a></li><li class="nav-item"><a href="itemLookup.html" class="nav-link">Item Explorer</a></li><li class="nav-item"><a href="Comparator.html" class="nav-link">Build Comparator</a></li></ul></nav>
 <main class="content-wrapper">
 <div class="explorer-page">
 <header class="explorer-heading"><div><p class="explorer-eyebrow">THE ROSTER</p><h1>Champion Explorer</h1><p>Get to know your next main. Explore their story, stats, and abilities.</p></div><span id="champPatch" class="patch-badge">Loading patch…</span></header>
@@ -55,5 +35,6 @@
 </div>
 
 
-<script type="module" src="JS/championExplorer.js"></script></body>
+<script type="module" src="JS/championExplorer.js"></script><script type="module" src="JS/shared/siteNavigation.js"></script>
+</body>
 </html>
