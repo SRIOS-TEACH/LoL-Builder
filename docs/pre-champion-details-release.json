@@ -3,23 +3,23 @@
   "releaseDate": "2026-10-09",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: compact Champion Explorer with level selector and symbolic detailed views",
+  "releaseTarget": "main: compact Champion Explorer with shared Builder picker/stats",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
-      "count": 237,
-      "evidence": "docs/champion-details-verification.json"
+      "count": 235,
+      "evidence": "docs/champion-layout-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/champion-details-verification.json",
-      "currentSuites": 3,
-      "inheritedFullSuiteEvidence": "docs/pre-champion-details-release.json",
-      "scope": "Current generated root/preview explorer checks, level/formula toggles and all-page theme suite. Earlier full-suite count retained in prior evidence."
+      "evidence": "docs/champion-layout-verification.json",
+      "currentSuites": 4,
+      "inheritedFullSuiteEvidence": "docs/pre-champion-layout-release.json",
+      "scope": "Current generated root/preview explorers, Builder picker and all-page theme checks. Historical full-suite count retained in previous evidence."
     },
     "baseline": {
       "passed": true,
@@ -62,16 +62,16 @@
     },
     "cleanSource": {
       "passed": true,
-      "unitTests": 237,
+      "unitTests": 235,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/champion-details-verification.json"
+      "evidence": "docs/champion-layout-verification.json"
     },
     "css": {
       "passed": true,
       "requiredVariablesResolve": true,
-      "evidence": "docs/champion-details-verification.json",
-      "scope": "Reviewed compact header, collapsed picker, 30/70 split, level selector, text toggles and mobile stacking."
+      "evidence": "docs/champion-layout-verification.json",
+      "scope": "Shared grid styles keep Builder appearance; reviewed fully loaded roster, collapsed/reopened picker, splash/lore, paired stats/abilities columns, mobile layout and theme at four widths."
     }
   },
   "evidence": [
@@ -91,9 +91,7 @@
     "pre-item-layout-fix-release.json",
     "item-layout-fix-verification.json",
     "pre-champion-layout-release.json",
-    "champion-layout-verification.json",
-    "pre-champion-details-release.json",
-    "champion-details-verification.json"
+    "champion-layout-verification.json"
   ],
   "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
   "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
@@ -145,7 +143,7 @@
     },
     {
       "path": "CSS/pages/champion-explorer.css",
-      "sha256": "5d473064778a0de200301a8e597c410fefa83f845f7fbf740507769c02cc09e9"
+      "sha256": "22bef95828cb00f461c09c199bec59ceb88328a67c39bceeece4a578e644e46c"
     },
     {
       "path": "CSS/pages/explorer-design.css",
@@ -209,7 +207,7 @@
     },
     {
       "path": "JS/championExplorer.js",
-      "sha256": "8a9ebe1056d5d84b01d7a7bbf25ea55bddf92295085e64b36f8b0b78854ebc02"
+      "sha256": "7d8e7650d53122d8ed43a1598fcd676d12000bef98d5b88d419771c90e30683d"
     },
     {
       "path": "JS/comparator.js",
@@ -298,10 +296,6 @@
     {
       "path": "JS/package.json",
       "sha256": "1239d4d885dcad42201a27ed9324f8f0f760b78700d8db9ced39a511cffe7eae"
-    },
-    {
-      "path": "JS/presentation/abilityFormulaView.mjs",
-      "sha256": "6368873d3ba1d53eb0be57d245045f6526a3c1513c45222e1cc397b9788708f6"
     },
     {
       "path": "JS/presentation/abilityPresentation.js",
@@ -489,7 +483,7 @@
     },
     {
       "path": "champ.html",
-      "sha256": "9dd18eb3d23396288e23b0c931db8fa2eef6ae2fe6ae2471ff6fba73ed8b0f12"
+      "sha256": "d441431226614d1bddc826fb340236a6829cbc3af5b6d4e4d570ef7275027c38"
     },
     {
       "path": "index.html",

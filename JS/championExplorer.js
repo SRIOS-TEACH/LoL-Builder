@@ -3,6 +3,11 @@ import CatalogQueries from './domain/catalogQueries.js';
 import {createCatalogList} from './ui/catalogList.mjs';
 import {createStatsView} from './ui/statsView.mjs';
 import CalculationPipeline from './engine/calculationPipeline.js';
+import SourceRepositories from './data/sourceRepositories.js';
+import {renderFormulaDescription} from './presentation/abilityFormulaView.mjs';
+const repository=SourceRepositories.createRepository();
+let championRecord, formulaRequest, localizationRequest;
+const detailedSlots=new Set();
 const state = {version:'', champions:{}, selected:'', requestId:0};
 const el = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -40,11 +45,10 @@ async function renderChampion(id) {
     el('champTitle').textContent = champ.title;
     el('champLore').textContent = champ.lore || champ.blurb;
     el('champTags').innerHTML = [...(champ.tags || []),champ.partype].filter(Boolean).map(tag=>`<span>${escape(tag)}</span>`).join('');
-    const evaluation=CalculationPipeline.create({build:{selectedChampion:id,level:1,runeSelections:{primaryPath:'',secondaryPath:'',primary:[],secondary:[],shards:[]}},data:{champion:champ}});
-    const computed=evaluation.stats.computeDerivedBuildStats();
-    statsView.update({computed,summary:evaluation.stats.summary(computed),rangeBonus:evaluation.stats.getChampionPassiveRangeBonus()});
+    championRecord=champ; formulaRequest=null; detailedSlots.clear();
+    renderStats();
     const abilities = [{...champ.passive,key:'P',kind:'Passive',folder:'passive'},...champ.spells.map((spell,i)=>({...spell,key:['Q','W','E','R'][i],kind:i===3?'Ultimate':'Ability',folder:'spell'}))];
-    el('abilities').innerHTML = abilities.map(ability=>`<article class="ability-card"><div class="explorer-ability-heading"><img class="ability-icon" src="${image(ability.folder,ability.image.full)}" alt=""><div><small>${ability.key} · ${ability.kind}</small><h3>${escape(ability.name)}</h3></div></div><p>${ability.description}</p>${ability.key==='P'?'':`<dl class="explorer-ability-values"><div><dt>Cooldown (seconds)</dt><dd>${escape(ability.cooldownBurn)}</dd></div><div><dt>Cost</dt><dd>${escape(ability.costBurn || 'No cost')}</dd></div><div><dt>Range</dt><dd>${escape(ability.rangeBurn)}</dd></div></dl>`}</article>`).join('');
+    el('abilities').innerHTML = abilities.map(ability=>`<article class="ability-card"><div class="explorer-ability-heading"><img class="ability-icon" src="${image(ability.folder,ability.image.full)}" alt=""><div><small>${ability.key} · ${ability.kind}</small><h3>${escape(ability.name)}</h3></div></div><div class="explorer-ability-description">${ability.description}</div>${ability.key==='P'?'':`<dl class="explorer-ability-values"><div><dt>Cooldown (seconds)</dt><dd>${escape(ability.cooldownBurn)}</dd></div><div><dt>Cost</dt><dd>${escape(ability.costBurn || 'No cost')}</dd></div><div><dt>Range</dt><dd>${escape(ability.rangeBurn)}</dd></div></dl>`}<button type="button" class="ability-view-toggle" data-ability-view="${ability.key.toLowerCase()}" aria-pressed="false">Detailed View</button></article>`).join('');
     el('champDetails').hidden = false;
     message('');
     el('champHeroCard').focus({preventScroll:true});
@@ -55,8 +59,27 @@ async function renderChampion(id) {
     console.warn('Champion details failed',error);
   }
 }
+function renderStats(){
+ if(!championRecord)return;
+ const evaluation=CalculationPipeline.create({build:{selectedChampion:state.selected,level:Number(el('champLevel').value),runeSelections:{primaryPath:'',secondaryPath:'',primary:[],secondary:[],shards:[]}},data:{champion:championRecord}});
+ const computed=evaluation.stats.computeDerivedBuildStats();
+ statsView.update({computed,summary:evaluation.stats.summary(computed),rangeBonus:evaluation.stats.getChampionPassiveRangeBonus()});
+}
+async function toggleAbilityView(button){
+ const slot=button.dataset.abilityView, ticket=state.requestId;
+ const description=button.closest('.ability-card').querySelector('.explorer-ability-description');
+ const summary=slot==='p'?championRecord.passive.description:championRecord.spells[['q','w','e','r'].indexOf(slot)].description;
+ if(detailedSlots.has(slot)){detailedSlots.delete(slot);description.innerHTML=summary;button.textContent='Detailed View';button.setAttribute('aria-pressed','false');return;}
+ detailedSlots.add(slot);button.textContent='Summary View';button.setAttribute('aria-pressed','true');description.textContent='Loading detailed description…';
+ localizationRequest ||= repository.loadLocalization();
+ formulaRequest ||= Promise.all([repository.loadChampion(state.version,state.selected),localizationRequest]);
+ try{const [prepared,localization]=await formulaRequest;if(ticket!==state.requestId||!detailedSlots.has(slot))return;description.innerHTML=renderFormulaDescription({prepared,strings:localization.entries || {},id:state.selected,slot});}
+ catch{if(ticket===state.requestId&&detailedSlots.has(slot))description.innerHTML=summary+'<p class="explorer-muted">Detailed formulas are currently unavailable.</p>';formulaRequest=null;}
+}
 async function init() {
   el('champSearch').addEventListener('input',filterChampions);
+  el('champLevel').addEventListener('change',renderStats);
+  el('abilities').addEventListener('click',event=>{const button=event.target.closest('[data-ability-view]');if(button)toggleAbilityView(button);});
   championList=createCatalogList({root:el('champRoster'),kind:'champion',onSelect:renderChampion});
   statsView=createStatsView({root:el('champStats')});
   el('champFilters').addEventListener('change',filterChampions);

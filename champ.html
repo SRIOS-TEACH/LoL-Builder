@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Champion Explorer | LoL Buildsmith</title>
 <link rel="stylesheet" href="CSS/foundation.css">
-<link rel="stylesheet" href="CSS/lolBuilder.css?v=champ-explorer-2">
-<link rel="stylesheet" href="CSS/pages/champion-explorer.css?v=2">
+<link rel="stylesheet" href="CSS/lolBuilder.css?v=champ-explorer-3">
+<link rel="stylesheet" href="CSS/pages/champion-explorer.css?v=3">
 </head>
 <body class="dark-mode explorer-view site-page champion-explorer-view">
 <div class="page-wrapper with-navbar">
 <nav class="navbar" aria-label="Main navigation"><a href="main.html" class="navbar-brand">LoL Buildsmith</a><ul class="navbar-nav site-nav"><li class="nav-item"><a href="main.html" class="nav-link">Home</a></li><li class="nav-item"><a href="Builder.html" class="nav-link">Builder</a></li><li class="nav-item active"><a href="champ.html" class="nav-link" aria-current="page">Champion Explorer</a></li><li class="nav-item"><a href="itemLookup.html" class="nav-link">Item Explorer</a></li><li class="nav-item"><a href="Comparator.html" class="nav-link">Build Comparator</a></li></ul></nav>
 <main class="content-wrapper">
 <div class="explorer-page">
-<header class="explorer-heading"><div><p class="explorer-eyebrow">THE ROSTER</p><h1>Champion Explorer</h1><p>Get to know your next main. Explore their story, stats, and abilities.</p></div><span id="champPatch" class="patch-badge">Loading patch…</span></header>
+<header class="explorer-heading"><div><p class="explorer-eyebrow">THE ROSTER</p><h1>Champion Explorer</h1></div><span id="champPatch" class="patch-badge">Loading patch…</span></header>
 <details id="champPicker" class="explorer-panel champion-picker" open><summary><span id="champPickerLabel">Select a champion</span><span class="explorer-muted">Browse roster</span></summary><div class="champ-modal-toolbar"><input id="champSearch" class="form-control" type="search" placeholder="Search champions" aria-label="Search champions"><div id="champFilters" class="tag-filters champ-filter-row" aria-label="Champion roles"></div></div><p id="champCount" class="explorer-muted" role="status">Loading roster…</p><div id="champRoster" class="item-icon-grid champ-icon-grid" aria-label="Champion roster"></div></details>
 <p id="champStatus" class="explorer-message" role="status" hidden></p>
 <div id="champDetails" hidden>
@@ -21,7 +21,7 @@
 <div class="champion-hero-copy"><p id="champTitle" class="explorer-eyebrow">CHAMPION PROFILE</p><h2 id="champName">Loading champions…</h2><div id="champTags" class="explorer-badges"></div><a class="explorer-text-link" href="#abilitiesSection">Explore abilities <span aria-hidden="true">↓</span></a></div>
 <p id="champLore" class="champion-hero-lore"></p><span class="art-caption">Original splash art · Riot Games</span>
 </section>
-<div class="champion-info-columns"><section class="explorer-panel stats-panel" aria-labelledby="statsHeading"><div class="explorer-section-heading"><h2 id="statsHeading">Champion stats</h2><span class="explorer-muted">Base values · level 1</span></div><div id="champStats" class="champion-stats-table"></div></section>
+<div class="champion-info-columns"><section class="explorer-panel stats-panel" aria-labelledby="statsHeading"><div class="explorer-section-heading"><h2 id="statsHeading">Champion stats</h2><label class="champ-level-label" for="champLevel">Level <select id="champLevel" aria-label="Champion level"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option><option value="17">17</option><option value="18">18</option></select></label></div><div id="champStats" class="champion-stats-table"></div></section>
 <section id="abilitiesSection" aria-labelledby="abilitiesHeading"><div class="explorer-section-heading"><div><p class="explorer-eyebrow">THE KIT</p><h2 id="abilitiesHeading">Abilities</h2></div><span class="explorer-muted">Passive + Q / W / E / R</span></div><div id="abilities" class="ability-grid"></div></section>
 </div>
 
@@ -32,6 +32,6 @@
 </div>
 
 
-<script type="module" src="JS/championExplorer.js?v=2"></script><script type="module" src="JS/shared/siteNavigation.js"></script>
+<script type="module" src="JS/championExplorer.js?v=3"></script><script type="module" src="JS/shared/siteNavigation.js"></script>
 </body>
 </html>
