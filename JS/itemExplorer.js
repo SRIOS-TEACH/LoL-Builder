@@ -1,13 +1,15 @@
+import CatalogQueries from './domain/catalogQueries.js';
+import STAT_ICONS from './presentation/statIcons.mjs';
+import {SHOP_FILTER_GROUPS,SHOP_ROLES} from './presentation/shopFilters.mjs';
 import ApiClient from './shared/apiClient.js';
 import ItemLookupShared from './shared/itemData.js';
-import ItemPolicy from './shared/itemPolicy.js';
 import CombatInputs from './shared/combatInputs.js';
 /** Item Lookup page state and DOM rendering. Shared parsing lives in shared/itemData.js. */
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const ITEM_STATE = {
   combatValues:{},
-  version: '', items: {}, filteredIds: [], tags: new Set(),
-  selectedTags: new Set(), selectedMaps: new Set([11]), selectedId: null,
+  version: '', items: {}, filteredIds: [],
+  itemRole: '', selectedTags: new Set(), selectedMaps: new Set([11]), selectedId: null,
 };
 const {
   MAP_OPTIONS, isPurchasableItem, resolveDescriptionFormulas, colorizeStatsInHtml,
@@ -15,13 +17,6 @@ const {
   enhanceActiveTooltip, inferActiveCooldownSeconds, injectActiveCooldown,
   loadCommunityDragonCalcs, injectItemCalculationValues,
 } = ItemLookupShared;
-function itemMatchesSelectedMaps(item) {
-  return Array.from(ITEM_STATE.selectedMaps).some(id => item.maps?.[id]);
-}
-function dedupeByNameWithMapPriority(entries) {
-  return ItemPolicy.dedupeByNameWithMapPriority(entries, ITEM_STATE.selectedMaps);
-}
-
 async function initItemLookup() {
   if (!document.getElementById("itemSearch")) return;
   document.getElementById("itemCount").textContent = "Loading items...";
@@ -30,11 +25,6 @@ async function initItemLookup() {
   document.getElementById('itemPatch').textContent = 'Patch ' + ITEM_STATE.version;
   const itemJson = await ApiClient.fetchItemIndex(ITEM_STATE.version);
   ITEM_STATE.items = Object.fromEntries(Object.entries(itemJson.data || {}).filter(([id, item]) => isPurchasableItem(id, item)));
-
-  await loadCommunityDragonCalcs();
-
-  ITEM_STATE.tags = new Set();
-  Object.values(ITEM_STATE.items).forEach((item) => (item.tags || []).forEach((tag) => ITEM_STATE.tags.add(tag)));
 
   document.getElementById("itemSearch").addEventListener("input", applyItemFilters);
   document.getElementById("itemGrid").addEventListener("click", (event) => {
@@ -45,13 +35,16 @@ async function initItemLookup() {
   });
   document.getElementById('resetItemFilters').addEventListener('click', () => {
     document.getElementById('itemSearch').value = '';
-    document.querySelectorAll('#itemFilters input').forEach(input => input.checked = false);
+    document.querySelectorAll('#itemFilters button').forEach(button => button.setAttribute('aria-pressed','false'));
+    ITEM_STATE.itemRole = '';
     document.querySelectorAll('#mapFilters input').forEach(input => input.checked = input.value === '11');
     applyItemFilters();
   });
-  renderTagFilters("itemFilters", applyItemFilters);
+  renderShopFilters();
   renderMapFilters("mapFilters", applyItemFilters);
   applyItemFilters();
+  // Core browsing is usable while optional class/formula data loads.
+  loadCommunityDragonCalcs().then(() => applyItemFilters()).catch(() => updateRoleFilters());
   } catch (error) {
     document.getElementById('itemPatch').textContent = 'Data unavailable';
     document.getElementById('itemGrid').innerHTML = '<p class="catalog-empty">The item catalog could not be loaded. Refresh to retry.</p>';
@@ -60,16 +53,35 @@ async function initItemLookup() {
   }
 }
 
-/**
- * Renders tag filter checkboxes and binds their change handler.
- */
-function renderTagFilters(targetId, onChange) {
-  const root = document.getElementById(targetId);
-  root.innerHTML = Array.from(ITEM_STATE.tags)
-    .sort((a, b) => a.localeCompare(b))
-    .map((tag) => `<label class="tag-pill"><input type="checkbox" value="${tag}" class="tag-checkbox"> ${tag}</label>`)
-    .join("");
-  root.querySelectorAll(".tag-checkbox").forEach((cb) => cb.addEventListener("change", onChange));
+/** Use the same role tabs and stat groups as the Builder's shop. */
+function renderShopFilters() {
+  const filters = document.getElementById('itemFilters');
+  filters.innerHTML = SHOP_FILTER_GROUPS.map(([name,entries]) => `<div class="shop-filter-group" role="group" aria-label="${name}">${entries.map(([tag,label,stat]) => `<button type="button" class="shop-filter" data-item-filter="${tag}" aria-label="${label}" title="${label}" aria-pressed="false"><span class="stat-icon" aria-hidden="true">${STAT_ICONS[stat]}</span></button>`).join('')}</div>`).join('');
+  filters.addEventListener('click',event => {
+    const button = event.target.closest('[data-item-filter]');
+    if (!button) return;
+    button.setAttribute('aria-pressed',String(button.getAttribute('aria-pressed')!=='true'));
+    applyItemFilters();
+  });
+  const roles = document.getElementById('explorerItemRoles');
+  roles.innerHTML = SHOP_ROLES.map(([name]) => `<button type="button" class="shop-category" data-item-role="${name}" aria-label="${name}" title="${name}" aria-pressed="false"><img src="assets/shop/${name.toLowerCase()}.png" alt=""><span>${name}</span></button>`).join('');
+  roles.addEventListener('click',event => {
+    const button = event.target.closest('[data-item-role]');
+    if (!button || button.disabled) return;
+    ITEM_STATE.itemRole = ITEM_STATE.itemRole===button.dataset.itemRole ? '' : button.dataset.itemRole;
+    applyItemFilters();
+  });
+  document.getElementById('explorerAllItems').onclick = () => {ITEM_STATE.itemRole='';applyItemFilters();};
+}
+function updateRoleFilters() {
+  const {status} = ItemLookupShared.getState();
+  document.querySelectorAll('#explorerItemRoles button').forEach(button => {
+    button.disabled = status !== 'ready';
+    button.setAttribute('aria-pressed',String(ITEM_STATE.itemRole===button.dataset.itemRole));
+    button.title = status==='ready' ? button.dataset.itemRole : button.dataset.itemRole+' — '+(status==='unavailable' ? 'class data unavailable' : 'loading item classes');
+  });
+  document.getElementById('explorerAllItems').setAttribute('aria-pressed',String(!ITEM_STATE.itemRole));
+  document.getElementById('itemRoleStatus').textContent = status==='ready' ? '' : status==='unavailable' ? 'Role filters are unavailable. You can still search items and filter by stats.' : 'Loading role filters…';
 }
 
 /**
@@ -94,32 +106,18 @@ function getSelectedMaps() {
 }
 
 /**
- * Returns selected tag values from a given filter container.
- */
-function getSelectedTags(rootId) {
-  const checked = Array.from(document.querySelectorAll(`#${rootId} .tag-checkbox:checked`)).map((cb) => cb.value);
-  return new Set(checked);
-}
-
-/**
  * Applies search/tag/map filters to item catalog and updates selection.
  */
 function applyItemFilters() {
-  ITEM_STATE.selectedTags = getSelectedTags("itemFilters");
+  ITEM_STATE.selectedTags = new Set([...document.querySelectorAll('#itemFilters [aria-pressed="true"]')].map(button => button.dataset.itemFilter));
   ITEM_STATE.selectedMaps = getSelectedMaps();
-  const searchText = String(document.getElementById("itemSearch").value || "").trim().toLowerCase();
-
-  const filteredEntries = Object.entries(ITEM_STATE.items)
-    .filter(([, item]) => itemMatchesSelectedMaps(item))
-    .filter(([, item]) => {
-      const nameOk = !searchText || item.name.toLowerCase().includes(searchText);
-      const tagsOk = !ITEM_STATE.selectedTags.size || Array.from(ITEM_STATE.selectedTags).every((tag) => item.tags?.includes(tag));
-      return nameOk && tagsOk;
-    });
-
-  ITEM_STATE.filteredIds = dedupeByNameWithMapPriority(filteredEntries)
-    .sort((a, b) => a[1].name.localeCompare(b[1].name))
-    .map(([id]) => id);
+  updateRoleFilters();
+  const roleValue = SHOP_ROLES.find(([name]) => name===ITEM_STATE.itemRole)?.[1];
+  ITEM_STATE.filteredIds = CatalogQueries.queryItems(ITEM_STATE.items, {
+    search:document.getElementById('itemSearch').value,
+    tags:ITEM_STATE.selectedTags, maps:ITEM_STATE.selectedMaps, dedupe:true,
+    sort:'price',shopTags:true,roleValue,advanced:ItemLookupShared.getState().cdragonById,
+  });
 
   const stillSelected = ITEM_STATE.selectedId && ITEM_STATE.filteredIds.includes(ITEM_STATE.selectedId);
   if (!stillSelected) ITEM_STATE.selectedId = ITEM_STATE.filteredIds[0] || null;
@@ -136,7 +134,7 @@ function renderItemGrid() {
   grid.innerHTML = ITEM_STATE.filteredIds.length ? ITEM_STATE.filteredIds.map((id) => {
     const item = ITEM_STATE.items[id];
     const selected = ITEM_STATE.selectedId === id;
-    return `<button type="button" class="item-button-icon${selected ? ' item-button-selected' : ''}" data-item-id="${id}" aria-pressed="${selected}" aria-label="${escape(item.name)}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png" alt="" loading="lazy"><span class="item-catalog-name">${escape(item.name)}</span><span class="item-catalog-cost">${item.gold?.total ?? 0} gold</span></button>`;
+    return `<button type="button" class="item-button-icon${selected ? ' item-button-selected' : ''}" data-item-id="${id}" aria-pressed="${selected}" aria-label="${escape(item.name)}" title="${escape(item.name)}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png" alt="" loading="lazy"><span class="item-catalog-name">${escape(item.name)}</span></button>`;
   }).join('') : '<p class="catalog-empty">No matching items.<br>Try another name or reset your filters.</p>';
 }
 
@@ -178,8 +176,6 @@ function showItem(id) {
   const withDamage = injectItemCalculationValues(withCooldown, lines);
   const withHeaders = emphasizeAbilityHeaders(withDamage);
   const tooltipMain = colorizeStatsInHtml(enhanceActiveTooltip(withHeaders));
-
-
 
   document.getElementById("itemName").textContent = item.name;
   document.getElementById("itemIcon").src = `https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png`;

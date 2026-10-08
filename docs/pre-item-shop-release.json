@@ -3,23 +3,23 @@
   "releaseDate": "2026-10-09",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: compact League-style Item Explorer",
+  "releaseTarget": "main: coherent navy/gold theme across all five pages",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
       "count": 235,
-      "evidence": "docs/item-shop-verification.json"
+      "evidence": "docs/coherent-theme-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/item-shop-verification.json",
-      "currentSuites": 6,
-      "inheritedFullSuiteEvidence": "docs/pre-item-shop-release.json",
-      "scope": "Five current regression suites plus a generated-preview real-artwork explorer run. Historical full-suite count retained from prior evidence."
+      "evidence": "docs/coherent-theme-verification.json",
+      "currentSuites": 8,
+      "inheritedFullSuiteEvidence": "docs/pre-coherent-theme-release.json",
+      "scope": "Eight fresh suites on generated root/preview routes, including real artwork review. The historical count of 32 is retained earlier full-suite coverage."
     },
     "baseline": {
       "passed": true,
@@ -65,13 +65,13 @@
       "unitTests": 235,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/item-shop-verification.json"
+      "evidence": "docs/coherent-theme-verification.json"
     },
     "css": {
       "passed": true,
       "requiredVariablesResolve": true,
-      "evidence": "docs/item-shop-verification.json",
-      "scope": "Dense tiles, 20% narrower desktop details, combined role/stat filters, fallback browsing, and responsive layouts reviewed. Shared theme regression verifies all five pages at four viewport sizes."
+      "evidence": "docs/coherent-theme-verification.json",
+      "scope": "New visual review, shared navigation style checks and no page/content horizontal overflow at 390/768/1440/1920px. Historic CSS pixel-equivalence describes the pre-theme refactor, not this intentional redesign."
     }
   },
   "evidence": [
@@ -85,9 +85,7 @@
     "editable-comparator-verification.json",
     "explorer-design-verification.json",
     "saved-data-verification.json",
-    "coherent-theme-verification.json",
-    "pre-item-shop-release.json",
-    "item-shop-verification.json"
+    "coherent-theme-verification.json"
   ],
   "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
   "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
@@ -131,7 +129,7 @@
     },
     {
       "path": "CSS/lolBuilder.css",
-      "sha256": "c1b5ab279ca02fa731d03e6af471b5ac5a28e64b0b282dfc5201701c407a8a5e"
+      "sha256": "f6b8fafe573a9b4c6034a1024ab304785736c20ba615e4ba14cbbd378b39bfee"
     },
     {
       "path": "CSS/pages/builder.css",
@@ -144,10 +142,6 @@
     {
       "path": "CSS/pages/explorers.css",
       "sha256": "a5e1c93b953cd148e560bd17ad973343ca1350e551db454fe40effd094208e23"
-    },
-    {
-      "path": "CSS/pages/item-explorer.css",
-      "sha256": "5f0ab8326d6dcdda49aca63d2f54288051f99b7021130600e126d73d65e2f52c"
     },
     {
       "path": "CSS/shared/dialogs.css",
@@ -175,7 +169,7 @@
     },
     {
       "path": "JS/application/builderPage.mjs",
-      "sha256": "d3349b7a4a1bbf98b78315bd0558585783cb0905f818b0d059c63fad9955b9af"
+      "sha256": "9ae746a1f003571704eacaf4033a7c96bc7dcc01aa182425d786a614b684cade"
     },
     {
       "path": "JS/application/catalogSession.js",
@@ -283,7 +277,7 @@
     },
     {
       "path": "JS/itemExplorer.js",
-      "sha256": "5c97425e88eedcc171c0b56532275a096236396c92447359b22297307c7decd5"
+      "sha256": "7d4dfc1d211e68050233b6bd3b7e93de7e3c0f0cb47b24ede72f336f1ebf198c"
     },
     {
       "path": "JS/package.json",
@@ -300,10 +294,6 @@
     {
       "path": "JS/presentation/damagePresentation.js",
       "sha256": "94c126d0e39ab7f79236cef07912513807eca60feaf9320dfccc07a0160d12dd"
-    },
-    {
-      "path": "JS/presentation/shopFilters.mjs",
-      "sha256": "2c8bcfa689ff4da27cf8dbbb6f400fef23d8c38b9cbae2ec6f4a65806d915251"
     },
     {
       "path": "JS/presentation/statIcons.mjs",
@@ -483,7 +473,7 @@
     },
     {
       "path": "itemLookup.html",
-      "sha256": "964a65e3108f86bfdf3cb6937744cfd76a30b715b00e2b8618aeb31a86f0ba51"
+      "sha256": "932b0ef1c2efa8612349f068514db4b04b8ac13ef7581dbc049f89b2c9e6aaab"
     },
     {
       "path": "main.html",

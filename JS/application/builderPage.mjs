@@ -1,3 +1,4 @@
+import {SHOP_FILTER_GROUPS,SHOP_ROLES} from '../presentation/shopFilters.mjs';
 import STAT_ICONS from '../presentation/statIcons.mjs';
 import {createStatsView} from '../ui/statsView.mjs';
 import ItemSource from '../data/itemSource.js';
@@ -297,13 +298,7 @@ function clearModalFilters() {
 }
 
 // Keep the client's filter order, while sharing artwork with Champion Stats.
-const SHOP_FILTER_GROUPS = [
-  ['Physical', [['Damage','Attack Damage','AD'],['CriticalStrike','Critical Strike','Crit %'],['AttackSpeed','Attack Speed','AS'],['OnHit','On-hit','On-hit'],['ArmorPenetration','Armor Penetration','ARPen']]],
-  ['Magic', [['SpellDamage','Ability Power','AP'],['Mana','Mana & Mana Regen','MP'],['MagicPenetration','Magic Penetration','MRPen']]],
-  ['Defense', [['Health','Health & Health Regen','HP'],['Armor','Armor','Arm'],['SpellBlock','Magic Resist','MR']]],
-  ['Utility', [['AbilityHaste','Ability Haste','AH'],['NonbootsMovement','Move Speed','MS'],['LifeSteal','Lifesteal & Omnivamp','Lifesteal']]],
-];
-const SHOP_ROLES = [['Fighter',1],['Marksman',2],['Assassin',4],['Mage',16],['Tank',8],['Support',32]];
+
 
 function renderBuilderTagFilters() {
   const root=document.getElementById('modalItemFilters');

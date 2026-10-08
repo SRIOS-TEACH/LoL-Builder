@@ -1,97 +1,73 @@
 {
-  "schemaVersion": 1,
-  "releaseDate": "2026-10-09",
-  "timezone": "Australia/Sydney",
+  "date": "2026-10-09",
   "passed": true,
-  "releaseTarget": "main: compact League-style Item Explorer",
-  "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
-  "checks": {
-    "unit": {
-      "passed": true,
-      "count": 235,
-      "evidence": "docs/item-shop-verification.json"
+  "scope": "Compact League-style Item Explorer using the Builder shop roles and stat metadata; named icon tiles without grid prices; desktop item details 20% narrower.",
+  "unitTests": 235,
+  "currentBrowserSuites": 6,
+  "browserSuites": [
+    {
+      "name": "explorer-root-fallback",
+      "code": 0,
+      "log": "test-results/item-shop/explorer-root-fallback.log",
+      "summary": [
+        "PASS explorer design: search, role roster, latest selection, named items, filters, keyboard focus, empty/error states and 390/768/1440px layouts"
+      ]
     },
-    "browser": {
-      "passed": true,
-      "count": 32,
-      "routes": 2,
-      "advancedAndFallback": true,
-      "evidence": "docs/item-shop-verification.json",
-      "currentSuites": 6,
-      "inheritedFullSuiteEvidence": "docs/pre-item-shop-release.json",
-      "scope": "Five current regression suites plus a generated-preview real-artwork explorer run. Historical full-suite count retained from prior evidence."
+    {
+      "name": "explorer-preview-advanced",
+      "code": 0,
+      "log": "test-results/item-shop/explorer-preview-advanced.log",
+      "summary": [
+        "PASS explorer design: search, role roster, latest selection, named items, filters, keyboard focus, empty/error states and 390/768/1440px layouts"
+      ]
     },
-    "baseline": {
-      "passed": true,
-      "comparisons": 20,
-      "comparisonComplete": true,
-      "unexplainedDifferences": 0,
-      "exactBaselineMatch": false,
-      "evidence": "docs/css-refactor-verification.json",
-      "scope": "Historical numeric comparison for unchanged calculator modules; rendered theme differs intentionally."
+    {
+      "name": "pickers",
+      "code": 0,
+      "log": "test-results/item-shop/pickers.log",
+      "summary": [
+        "Nonblocking startup, optional-data failure, picker interactions, shop filters, retained detail prices and build gold including role-slot moves passed"
+      ]
     },
-    "headless": {
-      "passed": true,
-      "cases": 10,
-      "inputIsolation": true,
-      "evidence": "docs/editable-comparator-verification.json"
+    {
+      "name": "comparator",
+      "code": 0,
+      "log": "test-results/item-shop/comparator.log",
+      "summary": [
+        "PASS editable comparator: independent items, ranks, target, combo, cancel, pin, sort, manual order persistence and mobile layout",
+        "PASS saved data controls: cancel and Escape preserve builds, delete builds keeps preferences, full reset repairs corrupt data, only app keys removed, available on Home and Comparator",
+        "PASS actual native entry: champion, ranks, inventory, target and combo without injected test globals"
+      ]
     },
-    "reuse": {
-      "passed": true,
-      "catalogs": true,
-      "simultaneousUIInstances": 2,
-      "immutableInputs": true,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "recovery": {
-      "passed": true,
-      "independentBackup": true,
-      "unitTests": 201,
-      "cases": 10,
-      "evidence": "docs/phase6-recovery.json",
-      "scope": "Protected pre-refactor baseline and its independent backup remain unchanged. Historical recovery proof retained; current CSS source reproduced separately."
-    },
-    "performance": {
-      "passed": true,
-      "actualEntryVisits": 40,
-      "layoutEquivalent": true,
-      "baselineCommit": "dec545072a02196260df10837258b857caa805f0",
-      "evidence": "docs/css-refactor-performance.json",
-      "note": "Controlled pre-CSS-refactor fixture benchmark; not real CDN/network performance.",
-      "scope": "Preserved historical benchmark for unchanged calculator modules; new pages are not benchmarked."
-    },
-    "cleanSource": {
-      "passed": true,
-      "unitTests": 235,
-      "build": true,
-      "generatedCopiesMatch": true,
-      "evidence": "docs/item-shop-verification.json"
-    },
-    "css": {
-      "passed": true,
-      "requiredVariablesResolve": true,
-      "evidence": "docs/item-shop-verification.json",
-      "scope": "Dense tiles, 20% narrower desktop details, combined role/stat filters, fallback browsing, and responsive layouts reviewed. Shared theme regression verifies all five pages at four viewport sizes."
+    {
+      "name": "theme",
+      "code": 0,
+      "log": "test-results/item-shop/theme.log",
+      "summary": [
+        "PASS coherent theme: all five native pages, matching navigation, one active link, no document/content overflow at 390/768/1440/1920px, real build cards and shared modal styling"
+      ]
     }
-  },
-  "evidence": [
-    "phase6-verification.json",
-    "phase6-performance.json",
-    "phase6-recovery.json",
-    "phase6-headless.json",
-    "explorer-release-verification.json",
-    "save-toolbar-verification.json",
-    "inline-toolbar-verification.json",
-    "editable-comparator-verification.json",
-    "explorer-design-verification.json",
-    "saved-data-verification.json",
-    "coherent-theme-verification.json",
-    "pre-item-shop-release.json",
-    "item-shop-verification.json"
   ],
-  "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
-  "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
-  "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
+  "artworkCheck": {
+    "passed": true,
+    "route": "dist/preview",
+    "advancedData": true,
+    "screenshots": "test-results/explorer-design",
+    "reviewed": [
+      "items-desktop.png",
+      "items-mobile.png"
+    ],
+    "widths": [
+      390,
+      768,
+      1440
+    ]
+  },
+  "styles": {
+    "stylesheets": 17,
+    "customProperties": 296
+  },
+  "generatedCopiesMatch": true,
   "runtimeFiles": [
     {
       "path": "Builder.html",
@@ -489,5 +465,9 @@
       "path": "main.html",
       "sha256": "34b332237cb99025bede5bba4ecba0089d8eaa98ca95857c6db3b0acc689a9ba"
     }
-  ]
+  ],
+  "inheritedChecks": {
+    "evidence": "docs/pre-item-shop-release.json",
+    "scope": "Calculator/data logic unchanged. Builder metadata extracted unchanged into a shared presentation module. Historical numeric baseline, recovery and performance checks retained; intentional catalog layout differences reviewed visually."
+  }
 }

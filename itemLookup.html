@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="CSS/foundation.css">
 <link rel="stylesheet" href="CSS/lolBuilder.css">
 </head>
-<body class="dark-mode explorer-view site-page ">
+<body class="dark-mode explorer-view site-page item-shop-view">
 <div class="page-wrapper with-navbar">
 <nav class="navbar" aria-label="Main navigation"><a href="main.html" class="navbar-brand">LoL Buildsmith</a><ul class="navbar-nav site-nav"><li class="nav-item"><a href="main.html" class="nav-link">Home</a></li><li class="nav-item"><a href="Builder.html" class="nav-link">Builder</a></li><li class="nav-item"><a href="champ.html" class="nav-link">Champion Explorer</a></li><li class="nav-item active"><a href="itemLookup.html" class="nav-link" aria-current="page">Item Explorer</a></li><li class="nav-item"><a href="Comparator.html" class="nav-link">Build Comparator</a></li></ul></nav>
 <main class="content-wrapper">
@@ -16,11 +16,10 @@
 <div class="item-explorer-layout">
 <section class="explorer-panel item-catalog" aria-label="Item catalog">
 <div class="explorer-section-heading"><h2>Browse items</h2><span id="itemCount" class="explorer-muted" role="status">Loading items…</span></div>
-<div class="explorer-field"><label for="itemSearch">Search items</label><input id="itemSearch" class="form-control" type="search" placeholder="Search by item name…"></div>
-<fieldset class="explorer-filter-group"><legend>Map</legend><div id="mapFilters" class="explorer-filter-chips"></div></fieldset>
-<details class="explorer-filter-details"><summary>Filter by stats and effects</summary><div id="itemFilters" class="explorer-filter-chips"></div></details>
-<div class="catalog-tools"><span class="explorer-muted">Select an item to inspect it</span><button id="resetItemFilters" class="explorer-text-button" type="button">Reset filters</button></div>
-<div id="itemGrid" class="item-grid" aria-label="Matching items"></div>
+<div class="item-shop-toolbar"><div class="explorer-field"><label for="itemSearch">Search items</label><input id="itemSearch" class="form-control" type="search" placeholder="Search by item name…"></div><fieldset class="item-shop-maps"><legend>Map</legend><div id="mapFilters" class="explorer-filter-chips"></div></fieldset></div>
+<div class="shop-category-row"><button id="resetItemFilters" class="shop-filter shop-reset" type="button" aria-label="Reset all filters" title="Reset all filters"><img src="assets/shop/reset.png" alt=""></button><div class="shop-tabs" aria-label="Item classes"><button id="explorerAllItems" class="shop-category" type="button" aria-label="All items" title="All items" aria-pressed="true"><img src="assets/shop/all.png" alt=""></button><div id="explorerItemRoles" class="shop-role-filters"></div></div></div>
+<p id="itemRoleStatus" class="item-role-status explorer-muted" role="status"></p>
+<div class="item-shop-results"><div id="itemFilters" class="shop-filter-rail" aria-label="Filter items by stats"></div><div id="itemGrid" class="item-grid" aria-label="Matching items"></div></div>
 </section>
 <section class="explorer-panel item-inspector" aria-labelledby="itemName">
 <p class="explorer-eyebrow">ITEM DETAILS</p><div class="item-inspector-heading"><img id="itemIcon" class="item-icon" alt="" hidden><div><h2 id="itemName">Choose an item</h2><div id="itemCost"></div></div></div>
