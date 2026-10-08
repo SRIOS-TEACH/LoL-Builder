@@ -131,3 +131,9 @@ GitHub runs units, build and release fingerprint verification. The combined Page
 ## CSS changes and current release evidence
 
 `npm run check:styles` verifies the public stylesheet graph and variable dependencies. `npm run test:styles` compares computed styles, pseudo-elements, geometry and screenshots against a preserved pre-change source; see [Styles](STYLES.md) for environment variables and limitations. The current evidence file is `docs/release.json` when present; `docs/phase6-release.json` remains the unchanged historical proof and fallback. Changes to CSS or public HTML require reviewed visual/behavior verification before refreshing current runtime fingerprints.
+
+## Explorer visual checks
+
+`npm run test:explorers` checks the native Champion and Item Explorer entries: search and selection, stale champion requests, empty and failed loads, map/stat filters, selected item focus, and layouts at 390, 768 and 1440 pixels. Use the same fixture and browser environment as the other browser suites. Set `REAL_ART=1` to load Riot artwork from the CDN for visual review; otherwise images use fixture placeholders. `APP_ROOT=dist/preview` exercises the generated preview route.
+
+Explorer page styling is isolated in `CSS/pages/explorer-design.css`; the shared Builder and Comparator theme remains unchanged.

@@ -3,6 +3,7 @@ import ItemLookupShared from './shared/itemData.js';
 import ItemPolicy from './shared/itemPolicy.js';
 import CombatInputs from './shared/combatInputs.js';
 /** Item Lookup page state and DOM rendering. Shared parsing lives in shared/itemData.js. */
+const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const ITEM_STATE = {
   combatValues:{},
   version: '', items: {}, filteredIds: [], tags: new Set(),
@@ -26,6 +27,7 @@ async function initItemLookup() {
   document.getElementById("itemCount").textContent = "Loading items...";
   try {
   ITEM_STATE.version = await ApiClient.fetchLatestVersion();
+  document.getElementById('itemPatch').textContent = 'Patch ' + ITEM_STATE.version;
   const itemJson = await ApiClient.fetchItemIndex(ITEM_STATE.version);
   ITEM_STATE.items = Object.fromEntries(Object.entries(itemJson.data || {}).filter(([id, item]) => isPurchasableItem(id, item)));
 
@@ -39,11 +41,20 @@ async function initItemLookup() {
     const btn = event.target.closest("[data-item-id]");
     if (!btn) return;
     showItem(btn.dataset.itemId);
+    if (matchMedia('(max-width:700px)').matches) document.querySelector('.item-inspector').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
+  });
+  document.getElementById('resetItemFilters').addEventListener('click', () => {
+    document.getElementById('itemSearch').value = '';
+    document.querySelectorAll('#itemFilters input').forEach(input => input.checked = false);
+    document.querySelectorAll('#mapFilters input').forEach(input => input.checked = input.value === '11');
+    applyItemFilters();
   });
   renderTagFilters("itemFilters", applyItemFilters);
   renderMapFilters("mapFilters", applyItemFilters);
   applyItemFilters();
   } catch (error) {
+    document.getElementById('itemPatch').textContent = 'Data unavailable';
+    document.getElementById('itemGrid').innerHTML = '<p class="catalog-empty">The item catalog could not be loaded. Refresh to retry.</p>';
     console.warn("Item lookup failed", error);
     document.getElementById("itemCount").textContent = "Could not load items. Check your connection and refresh to retry.";
   }
@@ -110,11 +121,10 @@ function applyItemFilters() {
     .sort((a, b) => a[1].name.localeCompare(b[1].name))
     .map(([id]) => id);
 
-  renderItemGrid();
   const stillSelected = ITEM_STATE.selectedId && ITEM_STATE.filteredIds.includes(ITEM_STATE.selectedId);
   if (!stillSelected) ITEM_STATE.selectedId = ITEM_STATE.filteredIds[0] || null;
-  if (ITEM_STATE.selectedId) showItem(ITEM_STATE.selectedId);
-  else clearItemDetails();
+  if (ITEM_STATE.selectedId) { renderItemGrid(); showItem(ITEM_STATE.selectedId); }
+  else { renderItemGrid(); clearItemDetails(); }
 }
 
 /**
@@ -123,11 +133,11 @@ function applyItemFilters() {
 function renderItemGrid() {
   const grid = document.getElementById("itemGrid");
   document.getElementById("itemCount").textContent = `${ITEM_STATE.filteredIds.length} items`;
-  grid.innerHTML = ITEM_STATE.filteredIds.map((id) => {
+  grid.innerHTML = ITEM_STATE.filteredIds.length ? ITEM_STATE.filteredIds.map((id) => {
     const item = ITEM_STATE.items[id];
-    const selectedClass = ITEM_STATE.selectedId === id ? " item-button-selected" : "";
-    return `<button class="item-button-icon${selectedClass}" data-item-id="${id}" title="${item.name}" aria-label="${item.name}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png" alt="${item.name}"></button>`;
-  }).join("");
+    const selected = ITEM_STATE.selectedId === id;
+    return `<button type="button" class="item-button-icon${selected ? ' item-button-selected' : ''}" data-item-id="${id}" aria-pressed="${selected}" aria-label="${escape(item.name)}"><img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png" alt="" loading="lazy"><span class="item-catalog-name">${escape(item.name)}</span><span class="item-catalog-cost">${item.gold?.total ?? 0} gold</span></button>`;
+  }).join('') : '<p class="catalog-empty">No matching items.<br>Try another name or reset your filters.</p>';
 }
 
 /**
@@ -137,6 +147,7 @@ function clearItemDetails() {
   document.getElementById("combatInputs").replaceChildren();
   document.getElementById("itemName").textContent = "No item selected";
   document.getElementById("itemIcon").removeAttribute("src");
+  document.getElementById("itemIcon").hidden = true;
   document.getElementById("itemCost").textContent = "";
   document.getElementById("itemMeta").textContent = "";
   document.getElementById("itemTooltipMain").innerHTML = "Try changing search or filters.";
@@ -151,7 +162,11 @@ function showItem(id) {
 
   ITEM_STATE.selectedId = id;
   document.getElementById("itemIcon").hidden = false;
-  renderItemGrid();
+  document.querySelectorAll('#itemGrid [data-item-id]').forEach(button => {
+    const selected = button.dataset.itemId === id;
+    button.classList.toggle('item-button-selected', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
 
   const resolvedDescription = resolveDescriptionFormulas(item, item.description || "");
   const source=CombatInputs.itemSource(id,ItemLookupShared.getState().cdragonById[id],item.name);
@@ -168,12 +183,13 @@ function showItem(id) {
 
   document.getElementById("itemName").textContent = item.name;
   document.getElementById("itemIcon").src = `https://ddragon.leagueoflegends.com/cdn/${ITEM_STATE.version}/img/item/${id}.png`;
-  document.getElementById("itemCost").innerHTML = `<strong>Cost:</strong> ${item.gold?.total ?? 0}g`;
-  document.getElementById("itemMeta").innerHTML = `<strong>Tags:</strong> ${(item.tags || []).join(", ") || "-"}`;
+  document.getElementById("itemCost").innerHTML = `${item.gold?.total ?? 0} gold <span class="explorer-muted">· Sells for ${item.gold?.sell ?? 0}</span>`;
+  document.getElementById("itemMeta").innerHTML = (item.tags || []).map(tag => `<span>${escape(tag.replace(/([a-z])([A-Z])/g, '$1 $2'))}</span>`).join('');
   document.getElementById("itemTooltipMain").innerHTML = tooltipMain;
-  const effects=document.createElement('div');effects.className='mt-10';
+  const effects=document.createElement('details');effects.className='item-formulas';
+  const heading=document.createElement('summary');heading.textContent='Effect calculations';effects.append(heading);
   for(const line of lines){const row=document.createElement('div');row.textContent=`${line.name}: ${line.formula}`;effects.append(row);}
-  document.getElementById('itemTooltipMain').append(effects);
+  if(lines.length) document.getElementById('itemTooltipMain').append(effects);
 }
 
 document.addEventListener("DOMContentLoaded", initItemLookup);

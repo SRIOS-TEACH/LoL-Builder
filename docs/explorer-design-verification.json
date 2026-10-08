@@ -1,92 +1,71 @@
 {
-  "schemaVersion": 1,
-  "releaseDate": "2026-10-09",
-  "timezone": "Australia/Sydney",
+  "date": "2026-10-09",
   "passed": true,
-  "releaseTarget": "main: polished Champion and Item Explorers",
-  "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
-  "checks": {
-    "unit": {
-      "passed": true,
-      "count": 235,
-      "evidence": "docs/explorer-design-verification.json"
+  "scope": "Champion and Item Explorer visual refresh. Dedicated explorer stylesheet, splash hero and roster, organized stats and abilities, named item catalog, sticky detail panel and responsive layouts.",
+  "unitTests": 235,
+  "browserSuites": [
+    {
+      "name": "explorer-root",
+      "code": 0,
+      "log": "test-results\\explorer-final\\explorer-root.log",
+      "summary": [
+        "PASS explorer design: search, role roster, latest selection, named items, filters, keyboard focus, empty/error states and 390/768/1440px layouts"
+      ]
     },
-    "browser": {
-      "passed": true,
-      "count": 32,
-      "routes": 2,
-      "advancedAndFallback": true,
-      "evidence": "docs/explorer-design-verification.json",
-      "currentSuites": 4,
-      "inheritedFullSuiteEvidence": "docs/pre-explorer-design-release.json",
-      "scope": "Fresh explorer root/fallback and preview/advanced suites plus comparator/advanced and broad browser/fallback. The count of 32 refers to retained historical full-suite proof, not current suites."
+    {
+      "name": "explorer-preview-advanced",
+      "code": 0,
+      "log": "test-results\\explorer-final\\explorer-preview-advanced.log",
+      "summary": [
+        "PASS explorer design: search, role roster, latest selection, named items, filters, keyboard focus, empty/error states and 390/768/1440px layouts"
+      ]
     },
-    "baseline": {
-      "passed": true,
-      "comparisons": 20,
-      "comparisonComplete": true,
-      "unexplainedDifferences": 0,
-      "exactBaselineMatch": true,
-      "evidence": "docs/css-refactor-verification.json"
+    {
+      "name": "comparator",
+      "code": 0,
+      "log": "test-results\\explorer-final\\comparator.log",
+      "summary": [
+        "PASS editable comparator: independent items, ranks, target, combo, cancel, pin, sort, manual order persistence and mobile layout",
+        "PASS actual native entry: champion, ranks, inventory, target and combo without injected test globals"
+      ]
     },
-    "headless": {
-      "passed": true,
-      "cases": 10,
-      "inputIsolation": true,
-      "evidence": "docs/editable-comparator-verification.json"
-    },
-    "reuse": {
-      "passed": true,
-      "catalogs": true,
-      "simultaneousUIInstances": 2,
-      "immutableInputs": true,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "recovery": {
-      "passed": true,
-      "independentBackup": true,
-      "unitTests": 201,
-      "cases": 10,
-      "evidence": "docs/phase6-recovery.json",
-      "scope": "Protected pre-refactor baseline and its independent backup remain unchanged. Historical recovery proof retained; current CSS source reproduced separately."
-    },
-    "performance": {
-      "passed": true,
-      "actualEntryVisits": 40,
-      "layoutEquivalent": true,
-      "baselineCommit": "dec545072a02196260df10837258b857caa805f0",
-      "evidence": "docs/css-refactor-performance.json",
-      "note": "Controlled pre-CSS-refactor fixture benchmark; not real CDN/network performance.",
-      "scope": "Preserved historical benchmark for unchanged calculator modules; new pages are not benchmarked."
-    },
-    "cleanSource": {
-      "passed": true,
-      "unitTests": 235,
-      "build": true,
-      "generatedCopiesMatch": true,
-      "evidence": "docs/explorer-design-verification.json"
-    },
-    "css": {
-      "passed": true,
-      "requiredVariablesResolve": true,
-      "evidence": "docs/explorer-design-verification.json",
-      "scope": "Dedicated explorer stylesheet; 390/768/1440px layouts, no horizontal overflow, mobile navigation containment, keyboard focus and current selection, and live artwork visual review."
+    {
+      "name": "browser",
+      "code": 0,
+      "log": "test-results\\explorer-final\\browser.log",
+      "summary": [
+        "PASS builder UI: champion, level, abilities, item add/remove, rune, request race",
+        "PASS 173 champions at levels 1, 6, 11, 18 (advanced data: false)",
+        "PASS 236 builder items: equip, stats, details; item haste fallback",
+        "PASS saved builds: save, compare, copy, reopen, search, delete",
+        "PASS 600 item tooltips; empty search and map filters",
+        "PASS champion lookup: 173 champions and selection race",
+        "PASS active-page startup failure states; no uncaught browser errors"
+      ]
     }
-  },
-  "evidence": [
-    "phase6-verification.json",
-    "phase6-performance.json",
-    "phase6-recovery.json",
-    "phase6-headless.json",
-    "explorer-release-verification.json",
-    "save-toolbar-verification.json",
-    "inline-toolbar-verification.json",
-    "editable-comparator-verification.json",
-    "explorer-design-verification.json"
   ],
-  "verification": "235 current unit tests, native explorer checks on both generated routes with fallback and advanced data, editable-comparator regression and full broad browser regression. Real Riot artwork reviewed at desktop/mobile widths. Historical calculator baseline, recovery and performance evidence retained for unchanged runtime modules.",
-  "previousReleaseEvidence": "docs/pre-explorer-design-release.json",
-  "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
+  "visualReview": {
+    "passed": true,
+    "liveRiotArtwork": true,
+    "widths": [
+      390,
+      768,
+      1440
+    ],
+    "notes": "Reviewed champion splash, all ability icons, Ornn armory header, item icons, selection, detail layout and mobile navigation. Fixed the inherited mobile navbar overlap before final validation. Offscreen catalog images load lazily."
+  },
+  "styles": {
+    "stylesheets": 15,
+    "customProperties": 282
+  },
+  "generatedCopiesMatch": true,
+  "changedRuntimeFiles": [
+    "CSS/pages/explorer-design.css",
+    "JS/championExplorer.js",
+    "JS/itemExplorer.js",
+    "champ.html",
+    "itemLookup.html"
+  ],
   "runtimeFiles": [
     {
       "path": "Builder.html",
@@ -464,5 +443,9 @@
       "path": "main.html",
       "sha256": "8771a8812e3f64e6f39754bc33d390f1fb59804120f0bb3ab4013aa915bcadf6"
     }
-  ]
+  ],
+  "inheritedChecks": {
+    "evidence": "docs/pre-explorer-design-release.json",
+    "scope": "Calculator modules, data sources, Builder and Comparator runtime files unchanged. Historical baseline, headless, recovery and performance evidence retained; these are not new explorer benchmarks."
+  }
 }

@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "releaseDate": "2026-10-09",
+  "releaseDate": "2026-10-08",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: polished Champion and Item Explorers",
+  "releaseTarget": "main: editable build comparator and Builder usability fixes",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
       "count": 235,
-      "evidence": "docs/explorer-design-verification.json"
+      "evidence": "docs/editable-comparator-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/explorer-design-verification.json",
-      "currentSuites": 4,
-      "inheritedFullSuiteEvidence": "docs/pre-explorer-design-release.json",
-      "scope": "Fresh explorer root/fallback and preview/advanced suites plus comparator/advanced and broad browser/fallback. The count of 32 refers to retained historical full-suite proof, not current suites."
+      "evidence": "docs/editable-comparator-verification.json",
+      "currentSuites": 9,
+      "inheritedFullSuiteEvidence": "docs/css-release.json",
+      "scope": "Fresh comparator runs on both generated routes with advanced and fallback data, UI reuse on both routes, broad browser regression, combo editor and combo effects. Historical full 32-suite coverage remains in previous evidence."
     },
     "baseline": {
       "passed": true,
@@ -64,13 +64,13 @@
       "unitTests": 235,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/explorer-design-verification.json"
+      "evidence": "docs/editable-comparator-verification.json"
     },
     "css": {
       "passed": true,
       "requiredVariablesResolve": true,
-      "evidence": "docs/explorer-design-verification.json",
-      "scope": "Dedicated explorer stylesheet; 390/768/1440px layouts, no horizontal overflow, mobile navigation containment, keyboard focus and current selection, and live artwork visual review."
+      "evidence": "docs/editable-comparator-verification.json",
+      "scope": "Intentional carousel and inline-editor layouts; checked save-layout stability, card isolation, mobile bounds and pinned position."
     }
   },
   "evidence": [
@@ -81,11 +81,10 @@
     "explorer-release-verification.json",
     "save-toolbar-verification.json",
     "inline-toolbar-verification.json",
-    "editable-comparator-verification.json",
-    "explorer-design-verification.json"
+    "editable-comparator-verification.json"
   ],
-  "verification": "235 current unit tests, native explorer checks on both generated routes with fallback and advanced data, editable-comparator regression and full broad browser regression. Real Riot artwork reviewed at desktop/mobile widths. Historical calculator baseline, recovery and performance evidence retained for unchanged runtime modules.",
-  "previousReleaseEvidence": "docs/pre-explorer-design-release.json",
+  "verification": "Reviewed current unit, headless and data reuse checks; four broad browser runs and native-entry/UI-reuse checks on both generated routes. Historical full baseline, performance and recovery proof retained for unchanged modules.",
+  "previousReleaseEvidence": "docs/pre-editable-comparator-release.json",
   "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
   "runtimeFiles": [
     {
@@ -131,10 +130,6 @@
     {
       "path": "CSS/pages/builder.css",
       "sha256": "1d572a0c8cbbceb0ca007dd385d06fdbcfb9a5150a52a7f0b2b460431bc51251"
-    },
-    {
-      "path": "CSS/pages/explorer-design.css",
-      "sha256": "d4edb7aa8b286391ee56c50fb81ef2b48c66d6de74e53a9a72fc6c1d88027000"
     },
     {
       "path": "CSS/pages/explorers.css",
@@ -186,7 +181,7 @@
     },
     {
       "path": "JS/championExplorer.js",
-      "sha256": "9c4d0abff328cf178708eb5a01d6c8a20e42938e7d232738a2a14a863337330c"
+      "sha256": "14be33e5563217e7c5d830b6aa4db7c9d224bb83b3d985c540a8ace8893bea20"
     },
     {
       "path": "JS/comparator.js",
@@ -270,7 +265,7 @@
     },
     {
       "path": "JS/itemExplorer.js",
-      "sha256": "3901757ac46f526f320b983fcdfd2ff5ad52603e71dd3ed2d22e6933f4c36b16"
+      "sha256": "e1752c01953f642c9a40fdd70d6df463032f36281013aa31f3da1658c86b5acc"
     },
     {
       "path": "JS/package.json",
@@ -450,7 +445,7 @@
     },
     {
       "path": "champ.html",
-      "sha256": "cb5877fd35236500331b9f48198a7082c0224f1cf1ef0de8868539831f549afa"
+      "sha256": "cefd7c1df42ef0ad0c76ce2dad300c5c3aa953395f1a3d39032e5242dc42d088"
     },
     {
       "path": "index.html",
@@ -458,7 +453,7 @@
     },
     {
       "path": "itemLookup.html",
-      "sha256": "f2f9a723d7858fb3a82346a57121ca2e9f54ce4441306ea84488ad9ba8400483"
+      "sha256": "565aad7c4eb92dc3fc007b48095ea30381abb076b6a547801d1605329399f036"
     },
     {
       "path": "main.html",

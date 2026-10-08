@@ -20,7 +20,8 @@
     "verify:release": "node scripts/verify-release.cjs",
     "check:styles": "node scripts/check-styles.cjs",
     "test:styles": "node tests/css-browser.cjs",
-    "test:comparator": "node tests/comparator-browser.cjs"
+    "test:comparator": "node tests/comparator-browser.cjs",
+    "test:explorers": "node tests/explorer-design-browser.cjs"
   },
   "engines": {
     "node": ">=22.13"

@@ -196,7 +196,7 @@ const server=http.createServer((req,res)=>{
  }
  await page.goto(base+'/champ.html');
  if(await page.locator('#abilities').count()){
- lookupPages.push(['champ.html','#champName']);
+ lookupPages.push(['champ.html','#champStatus']);
  await page.waitForFunction(()=>document.querySelectorAll('#abilities .ability-card').length===5);
  await page.evaluate(async()=>{await Promise.all([renderChampion('Ahri'),renderChampion('Garen')]);});
  assert.match(await page.locator('#champName').textContent(),/Garen/);

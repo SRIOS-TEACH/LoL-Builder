@@ -1,94 +1,81 @@
 import ApiClient from './shared/apiClient.js';
-/**
- * Champion lookup page controller.
- *
- * Loads champion list/details from Data Dragon and renders:
- * - splash
- * - name/lore
- * - passive + Q/W/E/R cards
- *
- * Flow:
- * 1) `initChampionLookup` loads latest game version + champion index.
- * 2) The champion dropdown is rendered and wired to change events.
- * 3) `renderChampion` fetches full champion details and paints the UI.
- */
-const CHAMP_STATE = { version: "", champions: {}, selected: "", requestId: 0 };
+const state = {version:'', champions:{}, selected:'', requestId:0};
+const el = id => document.getElementById(id);
+const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const image = (folder, name) => `https://ddragon.leagueoflegends.com/cdn/${state.version}/img/${folder}/${name}`;
 
-/**
- * Bootstraps the Champion Lookup page by loading versions/champions and wiring UI events.
- */
-async function initChampionLookup() {
+function message(text) {
+  el('champStatus').textContent = text;
+  el('champStatus').hidden = !text;
+}
+function highlightChampion() {
+  el('champRoster').querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.champion === state.selected)));
+}
+function filterChampions() {
+  const query = el('champSearch').value.trim().toLowerCase();
+  const matches = Object.entries(state.champions).filter(([,c]) => `${c.name} ${(c.tags || []).join(' ')}`.toLowerCase().includes(query)).sort((a,b) => a[1].name.localeCompare(b[1].name));
+  el('champSelect').replaceChildren(...matches.map(([id,c]) => new Option(c.name,id)));
+  el('champSelect').disabled = !matches.length;
+  el('champCount').textContent = `${matches.length} champions`;
+  el('champRoster').innerHTML = matches.map(([id,c]) => `<button type="button" data-champion="${escape(id)}" aria-label="View ${escape(c.name)}" aria-pressed="false"><img src="${image('champion',c.image.full)}" alt="" loading="lazy"><span>${escape(c.name)}</span></button>`).join('');
+  if (!matches.length) {
+    ++state.requestId;
+    el('champDetails').hidden = true;
+    message('No champions found. Try another name or role, such as Mage or Support.');
+    return;
+  }
+  const selected = matches.some(([id]) => id === state.selected) ? state.selected : matches[0][0];
+  el('champSelect').value = selected;
+  renderChampion(selected);
+}
+const statDefinitions = [
+  ['hp','Health','hpperlevel'],['mp','Resource','mpperlevel'],['attackdamage','Attack damage','attackdamageperlevel'],['armor','Armor','armorperlevel'],['spellblock','Magic resist','spellblockperlevel'],
+  ['attackspeed','Attack speed','attackspeedperlevel','%'],['movespeed','Move speed'],['attackrange','Attack range'],['hpregen','Health regen / 5s','hpregenperlevel'],['mpregen','Resource regen / 5s','mpregenperlevel'],
+];
+async function renderChampion(id) {
+  const requestId = ++state.requestId;
+  state.selected = id;
+  el('champSelect').value = id;
+  highlightChampion();
+  message(`Loading ${state.champions[id].name}…`);
+  el('champDetails').hidden = true;
   try {
-  CHAMP_STATE.version = await ApiClient.fetchLatestVersion();
-  const championJson = await ApiClient.fetchChampionIndex(CHAMP_STATE.version);
-  CHAMP_STATE.champions = championJson.data;
-
-  const select = document.getElementById("champSelect");
-  select.innerHTML = Object.keys(CHAMP_STATE.champions)
-    .sort((a, b) => a.localeCompare(b))
-    .map((name) => `<option value="${name}">${CHAMP_STATE.champions[name].name}</option>`)
-    .join("");
-
-  document.getElementById('champSearch').addEventListener('input', event => {
-    const query = event.target.value.trim().toLowerCase();
-    const matches = Object.entries(CHAMP_STATE.champions).filter(([, c]) => (c.name+' '+(c.tags||[]).join(' ')).toLowerCase().includes(query));
-    select.replaceChildren(...matches.sort((a,b)=>a[1].name.localeCompare(b[1].name)).map(([id,c])=>new Option(c.name,id)));
-    document.getElementById('champCount').textContent = matches.length+' champions';
-    if(matches.length) renderChampion(select.value);
-  });
-  select.addEventListener("change", () => renderChampion(select.value));
-  await renderChampion(select.value);
-  } catch (error) {
-    document.getElementById("champName").textContent = "Could not load champions. Check your connection and refresh to retry.";
-    console.warn('Champion lookup failed', error);
+    const data = await ApiClient.fetchChampionDetails(state.version,id);
+    if (requestId !== state.requestId) return;
+    const champ = data.data[id];
+    el('champHeroCard').style.setProperty('--champ-splash-url',`url("https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${id}_0.jpg")`);
+    el('champName').textContent = champ.name;
+    el('champTitle').textContent = champ.title;
+    el('champLore').textContent = champ.lore || champ.blurb;
+    el('champTags').innerHTML = [...(champ.tags || []),champ.partype].filter(Boolean).map(tag=>`<span>${escape(tag)}</span>`).join('');
+    const stats = [...statDefinitions];
+    if (champ.stats.crit || champ.stats.critperlevel) stats.push(['crit','Critical chance','critperlevel','%']);
+    el('champStats').innerHTML = stats.map(([key,label,growth,suffix='']) => `<div class="champion-stat"><span>${escape(label)}</span><strong>${escape(champ.stats[key] ?? '—')}</strong><small>${growth ? `+${escape(champ.stats[growth] ?? 0)}${suffix} per level` : 'Base stat'}</small></div>`).join('');
+    const abilities = [{...champ.passive,key:'P',kind:'Passive',folder:'passive'},...champ.spells.map((spell,i)=>({...spell,key:['Q','W','E','R'][i],kind:i===3?'Ultimate':'Ability',folder:'spell'}))];
+    el('abilities').innerHTML = abilities.map(ability=>`<article class="ability-card"><div class="explorer-ability-heading"><img class="ability-icon" src="${image(ability.folder,ability.image.full)}" alt=""><div><small>${ability.key} · ${ability.kind}</small><h3>${escape(ability.name)}</h3></div></div><p>${ability.description}</p>${ability.key==='P'?'':`<dl class="explorer-ability-values"><div><dt>Cooldown (seconds)</dt><dd>${escape(ability.cooldownBurn)}</dd></div><div><dt>Cost</dt><dd>${escape(ability.costBurn || 'No cost')}</dd></div><div><dt>Range</dt><dd>${escape(ability.rangeBurn)}</dd></div></dl>`}</article>`).join('');
+    el('champDetails').hidden = false;
+    message('');
+  } catch(error) {
+    if (requestId !== state.requestId) return;
+    message(`Could not load ${state.champions[id].name}. Select the champion again to retry.`);
+    console.warn('Champion details failed',error);
   }
 }
-
-/**
- * Fetches and renders a single champion's detail payload into splash/lore/ability cards.
- * @param {string} name Data Dragon champion key (e.g. "Ahri").
- */
-async function renderChampion(name) {
-  const requestId = ++CHAMP_STATE.requestId;
+async function init() {
+  el('champSearch').addEventListener('input',filterChampions);
+  el('champSelect').addEventListener('change',event=>renderChampion(event.target.value));
+  el('champRoster').addEventListener('click',event=>{const button=event.target.closest('[data-champion]');if(button)renderChampion(button.dataset.champion);});
   try {
-  CHAMP_STATE.selected = name;
-  const details = await ApiClient.fetchChampionDetails(CHAMP_STATE.version, name);
-  if (requestId !== CHAMP_STATE.requestId) return;
-  const champ = details.data[name];
-
-  document.getElementById("champSelect").value = name;
-  document.getElementById("champHeroCard").style.setProperty("--champ-splash-url", `url(https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${name}_0.jpg)`);
-  document.getElementById("champName").textContent = `${champ.name} — ${champ.title}`;
-  document.getElementById("champLore").textContent = champ.lore || champ.blurb;
-  document.getElementById("champPatch").textContent = `Data patch ${CHAMP_STATE.version}`;
-  const stats = document.getElementById("champStats"); stats.replaceChildren();
-  for(const [key,value] of Object.entries(champ.stats || {})){const row=document.createElement("div");row.textContent=`${({hp:'Health',hpperlevel:'Health per level',mp:'Resource',mpperlevel:'Resource per level',movespeed:'Movement speed',armor:'Armor',armorperlevel:'Armor per level',spellblock:'Magic resist',spellblockperlevel:'Magic resist per level',attackrange:'Attack range',hpregen:'Health regeneration',hpregenperlevel:'Health regeneration per level',mpregen:'Resource regeneration',mpregenperlevel:'Resource regeneration per level',crit:'Critical chance',critperlevel:'Critical chance per level',attackdamage:'Attack damage',attackdamageperlevel:'Attack damage per level',attackspeed:'Attack speed',attackspeedperlevel:'Attack speed per level'})[key]||key}: ${value}`;stats.append(row);}
-
-  const passiveCard = `<div class="ability-card"><strong>Passive - ${champ.passive.name}</strong>
-    <img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${CHAMP_STATE.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}">
-    <p>${champ.passive.description}</p></div>`;
-
-  const spellCards = champ.spells
-    .map((spell, idx) => `<div class="ability-card">
-      <strong>${["Q", "W", "E", "R"][idx]} - ${spell.name}</strong>
-      <img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${CHAMP_STATE.version}/img/spell/${spell.image.full}" alt="${spell.name}">
-      <p>${spell.description}</p>
-      <div><strong>Cooldown:</strong> ${spell.cooldownBurn}</div>
-      <div><strong>Cost:</strong> ${spell.costBurn || "No cost"}</div>
-      <div><strong>Range:</strong> ${spell.rangeBurn}</div>
-    </div>`)
-    .join("");
-
-  document.getElementById("abilities").innerHTML = passiveCard + spellCards;
-  } catch (error) {
-    if (requestId !== CHAMP_STATE.requestId) return;
-    document.getElementById("champName").textContent = `Could not load ${name}. Choose a champion to retry.`;
-    document.getElementById("champLore").textContent = '';
-    document.getElementById("abilities").textContent = '';
-    document.getElementById('champStats').replaceChildren();
-    document.getElementById('champPatch').textContent='';
-    console.warn('Champion details failed', error);
+    state.version = await ApiClient.fetchLatestVersion();
+    state.champions = (await ApiClient.fetchChampionIndex(state.version)).data;
+    el('champPatch').textContent = `Patch ${state.version}`;
+    filterChampions();
+  } catch(error) {
+    el('champDetails').hidden = true;
+    el('champCount').textContent = 'Roster unavailable';
+    el('champPatch').textContent = 'Patch unavailable';
+    message('Could not load champions. Check your connection and refresh to retry.');
+    console.warn('Champion explorer failed',error);
   }
 }
-
-document.addEventListener("DOMContentLoaded", initChampionLookup);
+document.addEventListener('DOMContentLoaded',init);

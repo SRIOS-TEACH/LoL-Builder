@@ -6,8 +6,9 @@
 <title>Item Explorer | LoL Buildsmith</title>
 <link rel="stylesheet" href="CSS/foundation.css">
 <link rel="stylesheet" href="CSS/lolBuilder.css">
+<link rel="stylesheet" href="CSS/pages/explorer-design.css">
 </head>
-<body class="dark-mode">
+<body class="dark-mode explorer-view">
 <div class="page-wrapper with-navbar">
 <nav class="navbar">
 <a href="main.html" class="navbar-brand">LoL Buildsmith</a>
@@ -30,39 +31,23 @@
 </ul>
 </nav>
 <main class="content-wrapper">
-<div class="container-fluid explorer-page">
-<h1>Item Explorer</h1>
-<section class="section-card explorer-controls">
-<label for="itemSearch">Search items</label>
-<input id="itemSearch" class="form-control" type="search" placeholder="Item name">
-<h2>Maps</h2>
-<div id="mapFilters">
-</div>
-<details>
-<summary>Stat and item filters</summary>
-<div id="itemFilters">
-</div>
-</details>
-<p id="itemCount" role="status">
-</p>
+<div class="explorer-page">
+<header class="explorer-heading item-explorer-hero"><div><p class="explorer-eyebrow">THE ARMORY</p><h1>Item Explorer</h1><p>Find the right tools for your build. Inspect stats, passives, and effects.</p></div><span id="itemPatch" class="patch-badge">Loading patch…</span></header>
+<div class="item-explorer-layout">
+<section class="explorer-panel item-catalog" aria-label="Item catalog">
+<div class="explorer-section-heading"><h2>Browse items</h2><span id="itemCount" class="explorer-muted" role="status">Loading items…</span></div>
+<div class="explorer-field"><label for="itemSearch">Search items</label><input id="itemSearch" class="form-control" type="search" placeholder="Search by item name…"></div>
+<fieldset class="explorer-filter-group"><legend>Map</legend><div id="mapFilters" class="explorer-filter-chips"></div></fieldset>
+<details class="explorer-filter-details"><summary>Filter by stats and effects</summary><div id="itemFilters" class="explorer-filter-chips"></div></details>
+<div class="catalog-tools"><span class="explorer-muted">Select an item to inspect it</span><button id="resetItemFilters" class="explorer-text-button" type="button">Reset filters</button></div>
+<div id="itemGrid" class="item-grid" aria-label="Matching items"></div>
 </section>
-<div class="explorer-columns">
-<section class="section-card">
-<div id="itemGrid" class="item-grid">
-</div>
-</section>
-<section class="section-card">
-<img id="itemIcon" class="item-icon" alt="Selected item" hidden>
-<h2 id="itemName">No item selected</h2>
-<div id="itemCost">
-</div>
-<div id="itemMeta">
-</div>
-<div id="combatInputs">
-</div>
-<div id="itemTooltipMain">Choose an item to inspect its stats and effects.</div>
+<section class="explorer-panel item-inspector" aria-labelledby="itemName">
+<p class="explorer-eyebrow">ITEM DETAILS</p><div class="item-inspector-heading"><img id="itemIcon" class="item-icon" alt="" hidden><div><h2 id="itemName">Choose an item</h2><div id="itemCost"></div></div></div>
+<div id="itemMeta" class="explorer-badges"></div><div id="itemTooltipMain" class="item-explorer-tooltip">Choose an item to inspect its stats and effects.</div><div id="combatInputs"></div>
 </section>
 </div>
+<footer class="explorer-footer"><p>Found your next power spike? Put it to the test.</p><a class="explorer-text-link" href="Builder.html">Open Builder →</a></footer>
 </div>
 </main>
 </div>
