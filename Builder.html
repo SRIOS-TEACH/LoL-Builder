@@ -20,10 +20,11 @@
           </div>
           <label class="champ-level-control toolbar-level">Level <select id="builderLevel" class="form-control"></select></label>
           <div class="toolbar-build"><div class="toolbar-items-label"><span class="dashboard-label">Items</span><span class="build-gold" aria-label="Total build cost: 0 gold" title="Total build cost"><img src="assets/shop/gold.png" alt="" aria-hidden="true"><span id="buildGoldCost">0</span></span></div><div id="itemSlots" class="item-slots item-slots-icons"></div></div>
+          <div class="save-build-controls"><label for="buildName">Build name</label><input id="buildName" class="form-control" maxlength="80" placeholder="My build"><button id="saveBuild" class="btn" type="button" disabled>Save build</button><a class="btn" href="Comparator.html">Compare builds</a><span id="saveStatus" role="status"></span></div>
           <div class="toolbar-target"><button id="targetSettingsBtn" class="btn btn-sm" type="button">Target settings</button><button id="targetEnabled" class="btn btn-sm" type="button" aria-label="Apply target settings" aria-pressed="false">Off</button></div>
           <label class="toolbar-skin">Skin<select id="skinSelector" class="form-control" disabled><option>Original</option></select></label>
           <div class="toolbar-conditions"><button id="passiveToggleBtn" class="btn btn-sm" type="button">Passives</button><label class="game-time-control" for="gameTime">Game time <span><input id="gameTime" class="form-control" type="number" min="0" step="any" value="0" aria-label="Game time in minutes"> min</span></label></div>
-          <div class="save-build-controls"><label for="buildName">Build name</label><input id="buildName" class="form-control" maxlength="80" placeholder="My build"><button id="saveBuild" class="btn" type="button" disabled>Save build</button><a class="btn" href="Comparator.html">Compare builds</a><span id="saveStatus" role="status"></span></div><p id="builderStatus" class="status-text" role="status"></p>
+          <p id="builderStatus" class="status-text" role="status"></p>
         </header>
         <aside class="dashboard-left">
           <section class="section-card dashboard-panel"><h2>Champion stats</h2><div id="statsTable" class="stats-table-wrap"></div></section>

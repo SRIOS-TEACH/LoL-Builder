@@ -70,8 +70,8 @@
     "css": {
       "passed": true,
       "requiredVariablesResolve": true,
-      "evidence": "docs/inline-toolbar-verification.json",
-      "scope": "Inline save-controls ordering, alignment and containment verified on both routes at four widths; existing evidence retained for unchanged calculation and page workflows."
+      "evidence": "docs/save-toolbar-verification.json",
+      "scope": "Save-control containment and alignment verified at four widths on root and generated preview. Existing evidence retained for unchanged runtime."
     }
   },
   "evidence": [
@@ -80,16 +80,15 @@
     "phase6-recovery.json",
     "phase6-headless.json",
     "explorer-release-verification.json",
-    "save-toolbar-verification.json",
-    "inline-toolbar-verification.json"
+    "save-toolbar-verification.json"
   ],
   "verification": "Reviewed current unit, headless and data reuse checks; four broad browser runs and native-entry/UI-reuse checks on both generated routes. Historical full baseline, performance and recovery proof retained for unchanged modules.",
-  "previousReleaseEvidence": "docs/toolbar-row-release.json",
+  "previousReleaseEvidence": "docs/explorer-release.json",
   "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
   "runtimeFiles": [
     {
       "path": "Builder.html",
-      "sha256": "193fd141c84902d7889250a5449a454857aa0c7d51bb20154a8e9adb83371a5f"
+      "sha256": "dc4bdd68ee5deca1171665f8cd6e510f23a72ed8d5f8d958122af27f96024034"
     },
     {
       "path": "CSS/components/abilities.css",
@@ -133,7 +132,7 @@
     },
     {
       "path": "CSS/pages/explorers.css",
-      "sha256": "4341c4e130a7a11d520440fd0cf9da94c9e743ee9042f2fd5f598b734841bd8f"
+      "sha256": "d8399b21e918f76d0c752fc9184fdaf10651d2ab4649430bc9d4c311e1b2a254"
     },
     {
       "path": "CSS/shared/dialogs.css",
