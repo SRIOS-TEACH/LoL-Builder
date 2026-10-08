@@ -1,0 +1,36 @@
+/* Reusable stat tables, labels and icons. Page-specific sizing belongs in pages/builder.css. */
+
+.stat-colored {
+  font-weight: 600;
+}
+
+.stats-table {
+  width: auto;
+  border-collapse: collapse;
+  font-size: 1.5rem;
+}
+
+.stats-table td {
+  border: 1px solid rgba(116, 148, 214, 0.45);
+  padding: 0.35rem 0.45rem;
+  width: 7.2rem;
+}
+
+.stats-label {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.stats-value {
+  text-align: right;
+  font-weight: 400;
+}
+
+.stat-icon {
+  margin-right: 0.35rem;
+  font-size: 0.9em;
+}
+
+.stats-table-wrap {
+  overflow-x: auto;
+}

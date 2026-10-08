@@ -1,0 +1,66 @@
+/* Reusable inventory slots and build-cost display. The page owns toolbar placement. */
+
+.item-slots {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.item-slot-btn {
+  border-radius: 8px;
+  color: var(--ui-text, #e5ecff);
+  text-align: center;
+}
+
+.item-slot-icon {
+  border: 1px solid var(--ui-control-border, #35538a);
+}
+
+.item-slot-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+.item-slots {
+  grid-template-columns: repeat(6, minmax(48px, 1fr));
+}
+
+.item-slot-btn {
+  background: transparent !important;
+  border: 2px dashed #6f88be !important;
+  min-height: 52px;
+  padding: 0.2rem;
+}
+
+.item-slot-empty {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  color: #90a6d5;
+}
+
+.item-slot-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 4px;
+}
+
+.build-gold {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #dac58b;
+  font-size: 13px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.build-gold img {
+  width: 19px;
+  height: 19px;
+  object-fit: contain;
+}

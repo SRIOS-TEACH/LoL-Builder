@@ -7,7 +7,7 @@ const root=path.resolve(__dirname,'..'),baseline=path.resolve(process.env.BASELI
 const fixtures=path.resolve(process.env.FIXTURES_DIR||path.join(root,'tests/fixtures')),output=path.resolve(process.env.PERFORMANCE_OUTPUT||path.join(root,'test-results/performance-'+Date.now()+'.json'));
 if(!process.env.BASELINE_ROOT)throw Error('Set BASELINE_ROOT to an isolated restored protected baseline.');
 if(fs.existsSync(output))throw Error('Use a fresh PERFORMANCE_OUTPUT.');
-const baselineCommit=execFileSync('git',['rev-parse','HEAD'],{cwd:baseline,encoding:'utf8'}).trim();assert.equal(baselineCommit,'16d63581c385b07c7c6b3fae70f6ed9365d0b3b1');execFileSync('git',['diff','--exit-code'],{cwd:baseline});
+const baselineCommit=execFileSync('git',['rev-parse','HEAD'],{cwd:baseline,encoding:'utf8'}).trim();assert.equal(baselineCommit,process.env.BASELINE_COMMIT||'16d63581c385b07c7c6b3fae70f6ed9365d0b3b1');execFileSync('git',['diff','--exit-code'],{cwd:baseline});
 const names=new Map(fs.readdirSync(fixtures).filter(name=>name.endsWith('.json')).map(name=>[name.toLowerCase(),name]));
 const files=new Map();for(const [kind,folder]of [['baseline',baseline],['refactor',candidate]])for(const name of runtimeFiles(folder))files.set('/'+kind+'/'+name,fs.readFileSync(path.join(folder,name)));
 const server=http.createServer((req,res)=>{const name=decodeURIComponent(req.url.split('?')[0]),bytes=files.get(name);if(!bytes){res.writeHead(404);res.end();return;}res.setHeader('Content-Type',/.m?js$/.test(name)?'text/javascript':name.endsWith('.css')?'text/css':name.endsWith('.png')?'image/png':'text/html');res.end(bytes);});

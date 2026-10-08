@@ -15,3 +15,15 @@ test('release gate tolerates Git text line endings and rejects changed or added 
  fs.appendFileSync(entry,'// unverified change');assert.throws(()=>verifyRelease({sourceRoot:source,report}),/Runtime differs/);
  fs.writeFileSync(entry,text);fs.writeFileSync(path.join(source,'JS/unverified.js'),'export default 1;');assert.throws(()=>verifyRelease({sourceRoot:source,report}),/Runtime differs/);
 });
+
+test('current release proof takes precedence over preserved historical proof',t=>{
+ const source=fs.mkdtempSync(path.join(os.tmpdir(),'lol-release-proof-'));t.after(()=>fs.rmSync(source,{recursive:true,force:true}));
+ const report=evidence();for(const {path:name}of report.runtimeFiles){const file=path.join(source,name);fs.mkdirSync(path.dirname(file),{recursive:true});fs.copyFileSync(path.join(root,name),file);}
+ fs.mkdirSync(path.join(source,'docs'));
+ fs.writeFileSync(path.join(source,'docs/phase6-release.json'),JSON.stringify(report));
+ assert.equal(verifyRelease({sourceRoot:source}).passed,true);
+ fs.writeFileSync(path.join(source,'docs/release.json'),JSON.stringify({...report,passed:false}));
+ assert.throws(()=>verifyRelease({sourceRoot:source}),/did not pass/);
+ fs.writeFileSync(path.join(source,'docs/release.json'),JSON.stringify(report));
+ assert.equal(verifyRelease({sourceRoot:source}).passed,true);
+});

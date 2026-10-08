@@ -1,0 +1,42 @@
+/* Shared target/combo dialog frames. tool-dialog/dialog-header are reusable names; legacy classes remain supported. */
+
+:is(.tool-dialog,.combo-dialog) {
+  color: var(--ui-dialog-text, #e6edf5);
+  background: var(--ui-dialog-surface, #151d2b);
+  border: 1px solid #647085;
+  border-radius: 12px;
+  padding: 22px;
+  width: min(570px,calc(100vw - 28px));
+  max-height: 85dvh;
+  overflow: auto;
+}
+
+:is(.tool-dialog,.combo-dialog)::backdrop {
+  background: rgba(0,0,0,.75);
+}
+
+:is(.tool-dialog,.combo-dialog) :is(.dialog-header,.item-modal-header) {
+  position: sticky;
+  top: -22px;
+  padding: 12px 0;
+  margin-top: -12px;
+  background: var(--ui-dialog-surface, #151d2b);
+  z-index: 1;
+}
+
+:is(.tool-dialog,.combo-dialog) h4 {
+  color: #c5a86c;
+  font-size: 15px;
+  letter-spacing: .04em;
+  margin: 22px 0 10px;
+}
+
+@media(max-width:640px) {
+  :is(.tool-dialog,.combo-dialog) {
+    padding: 16px;
+  }
+
+  :is(.tool-dialog,.combo-dialog) :is(.dialog-header,.item-modal-header) {
+    top: -16px;
+  }
+}

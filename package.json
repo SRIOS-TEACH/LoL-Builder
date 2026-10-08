@@ -17,7 +17,9 @@
     "build:preview": "node scripts/build-site.cjs --preview",
     "test:reuse-ui": "node tests/ui-reuse-browser.cjs",
     "verify:refactor": "node scripts/verify-refactor.cjs",
-    "verify:release": "node scripts/verify-release.cjs"
+    "verify:release": "node scripts/verify-release.cjs",
+    "check:styles": "node scripts/check-styles.cjs",
+    "test:styles": "node tests/css-browser.cjs"
   },
   "engines": {
     "node": ">=22.13"

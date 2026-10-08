@@ -1,0 +1,151 @@
+/* Combat inputs, target settings, passive controls and their dialogs. */
+
+.passive-modal-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.combat-inputs {
+  margin-bottom: 1rem;
+}
+
+.combat-inputs summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.combat-inputs p {
+  font-size: .9em;
+}
+
+.combat-input-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(180px,1fr));
+  gap: .75rem;
+}
+
+.combat-input-grid label {
+  font-size: .9em;
+  overflow-wrap: anywhere;
+}
+
+.ability-inputs .combat-input-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.target-hint {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.passive-effect-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+
+.passive-effect-heading .btn {
+  flex: 0 0 auto;
+}
+
+.passive-effect-heading .btn[aria-pressed="true"] {
+  border-color: #b8a16b;
+  color: #f0d99b;
+  background: #273a37;
+}
+
+.passive-disabled .passive-description {
+  opacity: .5;
+}
+
+.passive-current-value {
+  display: block;
+  margin-top: 10px;
+}
+
+.passive-description {
+  line-height: 1.5;
+}
+
+.target-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.target-heading h2 {
+  margin: 0;
+}
+
+.target-heading button[aria-pressed="true"] {
+  border-color: #c8aa6e;
+  color: #f0ce86;
+  background: #35433d;
+}
+
+.target-fields {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 7px 9px;
+}
+
+.target-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  line-height: 1.3;
+  margin: 0;
+  min-width: 0;
+}
+
+.target-fields .form-control {
+  height: 30px;
+  min-width: 0;
+  padding: 4px 6px;
+  font-size: 13px;
+}
+
+.target-reduction {
+  grid-column: 1/-1;
+}
+
+.target-inactive {
+  opacity: .7;
+}
+
+.target-damage-number {
+  font-variant-numeric: tabular-nums;
+  cursor: help;
+}
+
+#targetEnabled[aria-pressed="true"] {
+  border-color: #c6a667;
+  color: #e8cc8b;
+  background: #3c3424;
+}
+
+.target-modal {
+  color: var(--ui-dialog-text, #e6edf5);
+  background: var(--ui-dialog-surface, #151d2b);
+  border: 1px solid #53617a;
+  border-radius: 12px;
+  padding: 20px;
+  width: min(560px,calc(100vw - 28px));
+  max-height: 85vh;
+  overflow: auto;
+}
+
+.target-modal::backdrop {
+  background: rgba(0,0,0,.7);
+}
+
+.target-modal .target-fields {
+  margin-top: 16px;
+  grid-template-columns: 1fr 1fr;
+}
