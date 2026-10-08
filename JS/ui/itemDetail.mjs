@@ -1,10 +1,11 @@
 import CombatInputs from '../shared/combatInputs.js';
 import {createLifecycle} from './lifecycle.mjs';
 export function createItemDetail({root,onSelect,onCombatChange,describe}) {
-const life=createLifecycle();let controls=null;
+const life=createLifecycle();let controls=null,currentId=null;
 life.on(root,'click',event=>{const button=event.target.closest('[data-set-item-id]');if(button&&root.contains(button))onSelect(button.dataset.setItemId);});
 function update({id,item,version,source,base,values}) {
 if(life.disposed)return;
+const expanded=id===currentId&&!!controls?.querySelector('details')?.open;currentId=id;
 if(controls)CombatInputs.dispose(controls);controls=null;
 values={...values};
 
@@ -68,7 +69,7 @@ values={...values};
   const resolvedDescription = describe(item,id);
   const enhancedDescription = resolvedDescription.html;
   root.innerHTML = `<h3>${item.name}</h3><img class='item-detail-icon' src='https://ddragon.leagueoflegends.com/cdn/${version}/img/item/${id}.png' alt='${item.name}'><p><strong>Cost:</strong> ${item.gold?.total ?? 0}g</p><div>${statLines}</div><div class='mt-10 item-description'>${enhancedDescription}</div><button class='btn btn-sm mt-10' data-set-item-id='${id}'>Select this item</button><button class='btn btn-sm mt-10 ml-5' data-set-item-id=''>Clear slot</button>`;
-  controls=root.ownerDocument.createElement('div');controls.className='combat-inputs';controls.dataset.open='true';root.append(controls);
+  controls=root.ownerDocument.createElement('div');controls.className='combat-inputs';controls.dataset.open=String(expanded);root.append(controls);
   CombatInputs.render(controls,{
     sources:[CombatInputs.itemSource(id,source,item.name)],
     base:base,values:values,

@@ -1,3 +1,4 @@
+import shortcut from '../presentation/comboLabels.js';
 import TextValues from '../core/text.js';
 import BuildInputs from '../domain/buildInputs.js';
 import ComboEvaluation from '../engine/comboEvaluation.js';
@@ -29,7 +30,7 @@ export function createComboControls({elements,events,initial,evaluate}) {
       : action.itemId ? `https://ddragon.leagueoflegends.com/cdn/${model.version}/img/item/${action.itemId}.png` : null);
     return `<span class="combo-action-icon" aria-hidden="true">${action.group === 'aa'
       ? `<span class="combo-ad-symbol">${'🗡️'}</span>`
-      : `${url ? `<img src="${escape(url)}" alt="">` : leagueMark}<span class="combo-key">${escape(action.shortcut || '?')}</span>`}</span>`;
+      : `${url ? `<img src="${escape(url)}" alt="">` : leagueMark}<span class="combo-key">${escape(shortcut(action))}</span>`}</span>`;
   }
   function selectedActions(entries=catalog) { return ComboEvaluation.selectActions(steps,entries,customBase); }
   function simulate() {
@@ -42,7 +43,7 @@ export function createComboControls({elements,events,initial,evaluate}) {
   function render() {
     hideDamageTooltip();
     const result = simulate(), selected = result.timeline.map(row => row.action);
-    document.getElementById('comboSequence').textContent = selected.length ? selected.map(a => a.shortcut || '?').join(' → ') : 'Build your combo';
+    document.getElementById('comboSequence').textContent = selected.length ? selected.map(shortcut).join(' → ') : 'Build your combo';
     document.getElementById('comboSteps').innerHTML = selected.map((action,index) => {
       const step = steps[index], row = result.timeline[index];
       return `<li data-step="${step.id}"><div class="combo-step-box">
@@ -178,5 +179,5 @@ export function createComboControls({elements,events,initial,evaluate}) {
     refresh();
   }
   mount();
-  return {snapshot:()=>structuredClone(steps),restore(saved){refresh();steps=structuredClone(saved);nextId=Math.max(1,...steps.map(s=>(Number(s.id)||0)+1));render();},update(next){if(life.disposed)return;model=next;refresh();},dispose(){life.dispose();hideDamageTooltip();for(const name of ['comboActionModal','comboEditModal'])document.getElementById(name).close();}};
+  return {snapshot:()=>structuredClone(steps),result:simulate,restore(saved){refresh();steps=structuredClone(saved);nextId=Math.max(1,...steps.map(s=>(Number(s.id)||0)+1));render();},update(next){if(life.disposed)return;model=next;refresh();},dispose(){life.dispose();hideDamageTooltip();for(const name of ['comboActionModal','comboEditModal'])document.getElementById(name).close();}};
 }

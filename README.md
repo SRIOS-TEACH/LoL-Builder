@@ -111,3 +111,11 @@ Refactor handover: [Phase 6 release checks](docs/REFACTOR-PHASE6.md), [extension
 Champion Explorer (`champ.html`) searches by name or role and shows lore, abilities and patch base stats. Item Explorer (`itemLookup.html`) reuses the shared filters and calculation inputs. The patch-notes link opens Riot's official archive; automatic champion-specific patch history is not currently supplied.
 
 Save a named build in Builder, then open `Comparator.html` to compare portrait cards, copy a build or reopen it for editing. Builds are saved in this browser's local storage, independently for each site origin. Cards capture the Builder's results at save time, including patch, combat settings and combo. Reopening recalculates with the currently loaded patch; saving updates that card. These results inherit the Builder's calculation limits. Only the Builder's single current combo is captured per build.
+
+## Editing comparisons
+
+The comparator scrolls horizontally with Previous/Next controls, pins one reference card on the left and stores manual card order in the browser. Sort direction and the selected numeric stat are stored separately. Missing numeric values sort last. Older saved builds are upgraded through the shared calculation engine on the current data patch; Refresh values retries failed upgrades or recalculates all cards.
+
+Click an item slot, ability, level, target summary or Edit combo to open an isolated draft within the comparator. Apply recalculates and saves that card; Cancel discards the draft. The editor composes the existing scoped build controls and calculation pipeline. Numeric sort keys come directly from evaluated values, never parsed tooltip text. New snapshots also carry rune names and combo warnings.
+
+Combo action labels use I for item/bonus effects, M for rune/mastery effects, and ? for custom or uncategorized actions. Ability and attack labels remain unchanged. Expandable controls start collapsed, and saving shows a notification outside the toolbar layout.

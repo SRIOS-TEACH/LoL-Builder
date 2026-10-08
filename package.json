@@ -19,7 +19,8 @@
     "verify:refactor": "node scripts/verify-refactor.cjs",
     "verify:release": "node scripts/verify-release.cjs",
     "check:styles": "node scripts/check-styles.cjs",
-    "test:styles": "node tests/css-browser.cjs"
+    "test:styles": "node tests/css-browser.cjs",
+    "test:comparator": "node tests/comparator-browser.cjs"
   },
   "engines": {
     "node": ">=22.13"

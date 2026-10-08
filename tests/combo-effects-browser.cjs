@@ -43,7 +43,7 @@ const server = http.createServer((request, response) => {
       return route.fulfill({ contentType: 'application/json', body: read(name) });
     });
     await page.goto(base + '/Builder.html');
-    await page.waitForFunction(() => BUILDER.uiReady);
+    await page.waitForFunction(() => globalThis.BUILDER?.uiReady);
     await page.evaluate(() => BUILDER.enrichmentReady);
 
     const select = async name => page.evaluate(async name => {

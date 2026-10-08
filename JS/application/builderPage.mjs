@@ -93,6 +93,7 @@ async function initBuilder() {
     renderAbilityCards();
     renderStats();
     wireBuilderUiEvents();
+    root.querySelectorAll('details').forEach(el=>el.open=false);
     state.uiReady=true;
     life.on(document.getElementById("passiveModal"),"click", (event) => {
       if (event.target === document.getElementById("passiveModal")) closePassiveModal();

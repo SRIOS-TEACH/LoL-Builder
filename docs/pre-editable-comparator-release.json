@@ -3,23 +3,23 @@
   "releaseDate": "2026-10-08",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: editable build comparator and Builder usability fixes",
+  "releaseTarget": "main: Champion Explorer, Item Explorer and Build Comparator",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
-      "count": 235,
-      "evidence": "docs/editable-comparator-verification.json"
+      "count": 233,
+      "evidence": "docs/explorer-release-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/editable-comparator-verification.json",
-      "currentSuites": 9,
+      "evidence": "docs/explorer-release-verification.json",
+      "currentSuites": 8,
       "inheritedFullSuiteEvidence": "docs/css-release.json",
-      "scope": "Fresh comparator runs on both generated routes with advanced and fallback data, UI reuse on both routes, broad browser regression, combo editor and combo effects. Historical full 32-suite coverage remains in previous evidence."
+      "scope": "Fresh root/preview advanced/fallback broad suite, actual native entry with save/copy/reopen/explorers and independent reusable UI. Historical 32-suite refactor coverage retained separately."
     },
     "baseline": {
       "passed": true,
@@ -33,7 +33,7 @@
       "passed": true,
       "cases": 10,
       "inputIsolation": true,
-      "evidence": "docs/editable-comparator-verification.json"
+      "evidence": "docs/explorer-release-verification.json"
     },
     "reuse": {
       "passed": true,
@@ -61,16 +61,17 @@
     },
     "cleanSource": {
       "passed": true,
-      "unitTests": 235,
+      "unitTests": 233,
       "build": true,
-      "generatedCopiesMatch": true,
-      "evidence": "docs/editable-comparator-verification.json"
+      "generatedRoutes": 2,
+      "actualNativeEntryRoutes": 2,
+      "evidence": "docs/explorer-release-verification.json"
     },
     "css": {
       "passed": true,
       "requiredVariablesResolve": true,
-      "evidence": "docs/editable-comparator-verification.json",
-      "scope": "Intentional carousel and inline-editor layouts; checked save-layout stability, card isolation, mobile bounds and pinned position."
+      "evidence": "docs/inline-toolbar-verification.json",
+      "scope": "Inline save-controls ordering, alignment and containment verified on both routes at four widths; existing evidence retained for unchanged calculation and page workflows."
     }
   },
   "evidence": [
@@ -80,11 +81,10 @@
     "phase6-headless.json",
     "explorer-release-verification.json",
     "save-toolbar-verification.json",
-    "inline-toolbar-verification.json",
-    "editable-comparator-verification.json"
+    "inline-toolbar-verification.json"
   ],
   "verification": "Reviewed current unit, headless and data reuse checks; four broad browser runs and native-entry/UI-reuse checks on both generated routes. Historical full baseline, performance and recovery proof retained for unchanged modules.",
-  "previousReleaseEvidence": "docs/pre-editable-comparator-release.json",
+  "previousReleaseEvidence": "docs/toolbar-row-release.json",
   "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
   "runtimeFiles": [
     {
@@ -133,7 +133,7 @@
     },
     {
       "path": "CSS/pages/explorers.css",
-      "sha256": "7e2b043b3c7927552f8a414e15ed936760dd753ded0cd4287cf2706776b17b73"
+      "sha256": "4341c4e130a7a11d520440fd0cf9da94c9e743ee9042f2fd5f598b734841bd8f"
     },
     {
       "path": "CSS/shared/dialogs.css",
@@ -149,23 +149,15 @@
     },
     {
       "path": "Comparator.html",
-      "sha256": "70135260d5c2b448ff94f96b07bd01a67d2090869696bc2b8699a62e3a3a65ae"
-    },
-    {
-      "path": "JS/application/buildSnapshot.mjs",
-      "sha256": "c8786b0cf75161041f71e6816dbdb712cc19f21e890384893ff15e871e98002f"
+      "sha256": "dff84fe2450821cde82a2b4ebdcce6dd7b4a284f5f1ec98fe56ddd7f04214177"
     },
     {
       "path": "JS/application/builderPage.mjs",
-      "sha256": "9ae746a1f003571704eacaf4033a7c96bc7dcc01aa182425d786a614b684cade"
+      "sha256": "98846e29add1b3e9b78c719c8f8e8d62f2ca8ef474eef6d391213f8cb184caa9"
     },
     {
       "path": "JS/application/catalogSession.js",
       "sha256": "ceefb50eeaf69481cee966e8287d4446478d29d4d0f0bbd9c37190fcad74993d"
-    },
-    {
-      "path": "JS/application/comparisonEditor.mjs",
-      "sha256": "9b1afd669c0c70aab7df86a095c1048ba8eea9c053b68e6386e041a678219010"
     },
     {
       "path": "JS/application/runeDefaults.mjs",
@@ -173,7 +165,7 @@
     },
     {
       "path": "JS/application/savedBuildControls.mjs",
-      "sha256": "ab78c1fcfdec06333c12495b232ad592291ac0d0204b12e878559c96c37186f2"
+      "sha256": "b2c21b0f3414f81ce37d36bc3cef63d32397bfd8701fe81d13f40fcae336ad0b"
     },
     {
       "path": "JS/builder.js",
@@ -185,7 +177,7 @@
     },
     {
       "path": "JS/comparator.js",
-      "sha256": "f480eb9b18967fe7df2343563bf019b3c4c4a16107fd70000c0cc3a26d67001a"
+      "sha256": "3d50ec11b89b9218fbcd7dc686f2ce74211f699539159ce1c3e927576f877e8b"
     },
     {
       "path": "JS/core/records.js",
@@ -218,10 +210,6 @@
     {
       "path": "JS/domain/catalogQueries.js",
       "sha256": "0b8bba809c600dc524d3c1b4cf28968376ff5d7f2c6694f32d4bcd5906a57468"
-    },
-    {
-      "path": "JS/domain/comparisonOrder.js",
-      "sha256": "4f95ddc9c012f6f3550cf0c208ede9c3a833fc3daa7156a808763cc58008a20d"
     },
     {
       "path": "JS/domain/recommendations.js",
@@ -274,10 +262,6 @@
     {
       "path": "JS/presentation/abilityPresentation.js",
       "sha256": "e1cc5f71cc8d4a3e82b45b603b7aba7fbcd6e890df454ba5e10b48d8d6b6926e"
-    },
-    {
-      "path": "JS/presentation/comboLabels.js",
-      "sha256": "3a6cff5472db9b250b5d8b50231d83359a4a16a63875e6052f1252a41fa96719"
     },
     {
       "path": "JS/presentation/damagePresentation.js",
@@ -373,7 +357,7 @@
     },
     {
       "path": "JS/ui/comboControls.mjs",
-      "sha256": "925f44eeeb27d02c73ae6d3639dbbd6bab042f462d85e567fb88d370d7dcba71"
+      "sha256": "eb0a61a3eee9cca05410d1d1b3664afbc751eb17615197bde4365c2ea81bdb4c"
     },
     {
       "path": "JS/ui/inventory.mjs",
@@ -381,7 +365,7 @@
     },
     {
       "path": "JS/ui/itemDetail.mjs",
-      "sha256": "7c36ba17ba83e3f872bba3665a0f8e520128ab0051d51630533eab55bf8666a8"
+      "sha256": "5b719ff8c47008f9971a2670e2871e7d13d06440ae4f836947f3fa7c0349f379"
     },
     {
       "path": "JS/ui/lifecycle.mjs",

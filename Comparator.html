@@ -40,13 +40,15 @@
 <p id="compareStatus" role="status">
 </p>
 </section>
-<p>Results are snapshots from the saved patch and combat settings. Open a build in Builder to tweak it and save fresh results.</p>
-<div id="compareGrid" class="compare-grid">
+<p>Click an item, ability or target setting to edit a card. Apply changes to recalculate its results. Pin a reference build while cycling through the others.</p>
+<div class="comparison-tools"><label>Sort by <select id="buildSort" class="form-control"></select></label><label>Direction <select id="sortDirection" class="form-control"><option value="desc">Highest first / Z–A</option><option value="asc">Lowest first / A–Z</option></select></label><button id="refreshBuildValues" class="btn">Refresh values</button><button id="previousBuild" class="btn" aria-label="Previous build">←</button><button id="nextBuild" class="btn" aria-label="Next build">→</button></div><div class="comparison-stage"><aside id="pinnedBuild" aria-label="Pinned build" hidden></aside>
+<div id="compareGrid" class="compare-grid" aria-label="Build cards">
 </div>
 </div>
-</main>
+</div></main>
 </div>
 
+<dialog id="quickBuildEditor" aria-labelledby="quickBuildTitle"><header class="quick-build-header"><h2 id="quickBuildTitle">Edit build</h2><button id="cancelBuildChanges" class="btn">Cancel</button><button id="applyBuildChanges" class="btn btn-primary" disabled>Apply changes</button><p id="quickBuildStatus" role="status"></p></header><div id="quickBuildHost"></div></dialog>
 <script type="module" src="JS/comparator.js">
 </script>
 </body>
