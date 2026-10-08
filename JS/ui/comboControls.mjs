@@ -178,5 +178,5 @@ export function createComboControls({elements,events,initial,evaluate}) {
     refresh();
   }
   mount();
-  return {update(next){if(life.disposed)return;model=next;refresh();},dispose(){life.dispose();hideDamageTooltip();for(const name of ['comboActionModal','comboEditModal'])document.getElementById(name).close();}};
+  return {snapshot:()=>structuredClone(steps),restore(saved){refresh();steps=structuredClone(saved);nextId=Math.max(1,...steps.map(s=>(Number(s.id)||0)+1));render();},update(next){if(life.disposed)return;model=next;refresh();},dispose(){life.dispose();hideDamageTooltip();for(const name of ['comboActionModal','comboEditModal'])document.getElementById(name).close();}};
 }

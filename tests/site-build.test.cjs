@@ -43,7 +43,7 @@ test('build refuses output symlinks and preserves existing output when a source 
   fs.writeFileSync(path.join(source,'dist','keep.txt'),'keep');
   assert.throws(() => buildSite({sourceRoot:source}), /ENOENT/);
   assert.equal(fs.readFileSync(path.join(source,'dist','keep.txt'),'utf8'),'keep');
-  for (const name of ['index.html','main.html','Builder.html','champ.html','itemLookup.html']) fs.writeFileSync(path.join(source,name),'');
+  for (const name of ['index.html','main.html','Builder.html','champ.html','itemLookup.html','Comparator.html']) fs.writeFileSync(path.join(source,name),'');
   const linkRoot = fs.mkdtempSync(path.join(os.tmpdir(),'lol-link-'));
   t.after(() => fs.rmSync(linkRoot,{recursive:true,force:true}));
   fs.symlinkSync(linkRoot,path.join(source,'preview'),process.platform==='win32'?'junction':'dir');

@@ -495,5 +495,5 @@ function dispose(){
 
 let startRequest=null;
 const start=()=>life.disposed?Promise.resolve():startRequest||(startRequest=initBuilder());
-return {start,dispose,get state(){return state;},runes:RUNE_DATA,inspect:{resolveItemDescriptionHtml,setChampion,setSlotItem,renderItemSlots,refreshSlotLabels,renderStats,renderAbilityCards,renderRunePanel,renderModalItemDetail,renderModalItemGrid,renderChampionModalGrid,renderChampionModalDetail,openChampionModal,closeChampionModal,openItemModal,closeItemModal,renderPassivePanel,togglePassivePanel,closePassiveModal,ensureGameText,enforceAbilityRules,builderEvaluation,getItemLookupShared,isApAdaptiveChampion}};
+return {start,dispose,get combo(){return comboControls;},get state(){return state;},runes:RUNE_DATA,inspect:{resolveItemDescriptionHtml,setChampion,setSlotItem,renderItemSlots,refreshSlotLabels,renderStats,renderAbilityCards,renderRunePanel,renderModalItemDetail,renderModalItemGrid,renderChampionModalGrid,renderChampionModalDetail,openChampionModal,closeChampionModal,openItemModal,closeItemModal,renderPassivePanel,togglePassivePanel,closePassiveModal,ensureGameText,enforceAbilityRules,builderEvaluation,getItemLookupShared,isApAdaptiveChampion}};
 }

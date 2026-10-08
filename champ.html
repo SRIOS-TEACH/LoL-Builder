@@ -1,21 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="robots" content="noindex">
-  <title>Champion Lookup temporarily unavailable | LoL Buildsmith</title>
-  <link href="CSS/foundation.css" rel="stylesheet">
-  <link href="CSS/lolBuilder.css" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Champion Explorer | LoL Buildsmith</title>
+<link rel="stylesheet" href="CSS/foundation.css">
+<link rel="stylesheet" href="CSS/lolBuilder.css">
 </head>
 <body class="dark-mode">
-  <div class="page-wrapper with-navbar with-transitions">
-    <nav class="navbar"><a href="main.html" class="navbar-brand">LoL Buildsmith</a></nav>
-    <main class="content-wrapper"><div class="container-fluid"><div class="card hero-card">
-      <h1 class="content-title">Champion Lookup is temporarily unavailable</h1>
-      <p>You can still select champions and items in the build calculator.</p>
-      <a class="btn btn-primary" href="Builder.html">Open Builder</a>
-    </div></div></main>
-  </div>
-</body>
+<div class="page-wrapper with-navbar">
+<nav class="navbar">
+<a href="main.html" class="navbar-brand">LoL Buildsmith</a>
+<ul class="navbar-nav site-nav">
+<li class="nav-item ">
+<a href="main.html" class="nav-link" >Home</a>
+</li>
+<li class="nav-item ">
+<a href="Builder.html" class="nav-link" >Builder</a>
+</li>
+<li class="nav-item active">
+<a href="champ.html" class="nav-link" aria-current="page">Champion Explorer</a>
+</li>
+<li class="nav-item ">
+<a href="itemLookup.html" class="nav-link" >Item Explorer</a>
+</li>
+<li class="nav-item ">
+<a href="Comparator.html" class="nav-link" >Build Comparator</a>
+</li>
+</ul>
+</nav>
+<main class="content-wrapper">
+<div class="container-fluid explorer-page">
+<h1>Champion Explorer</h1>
+<section class="section-card explorer-controls">
+<label for="champSearch">Search champions</label>
+<input id="champSearch" class="form-control" type="search" placeholder="Name or role">
+<label for="champSelect">Champion</label>
+<select id="champSelect" class="form-control">
+</select>
+<p id="champCount" role="status">
+</p>
+</section>
+<section id="champHeroCard" class="section-card explorer-hero">
+<h2 id="champName">Loading champions…</h2>
+<p id="champLore">
+</p>
+<p id="champPatch">
+</p>
+<a href="https://www.leagueoflegends.com/en-us/news/tags/patch-notes/" target="_blank" rel="noopener">Official patch notes ↗</a>
+</section>
+<section class="section-card">
+<h2>Base stats · level 1</h2>
+<div id="champStats" class="explorer-stats">
+</div>
+</section>
+<h2>Abilities</h2>
+<div id="abilities" class="ability-grid">
+</div>
+</div>
+</main>
+</div>
+
+
+<script type="module" src="JS/championExplorer.js"></script></body>
 </html>

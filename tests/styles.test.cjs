@@ -20,7 +20,7 @@ test('stylesheet verification catches missing nested imports, cycles and missing
   const source = fs.mkdtempSync(path.join(os.tmpdir(), 'lol-css-bad-'));
   t.after(() => fs.rmSync(source, {recursive:true, force:true}));
   for (const directory of ['CSS', 'JS', 'assets']) fs.mkdirSync(path.join(source, directory));
-  for (const name of ['index.html', 'main.html', 'Builder.html', 'champ.html', 'itemLookup.html']) fs.writeFileSync(path.join(source, name), '<link rel="stylesheet" href="CSS/entry.css">');
+  for (const name of ['index.html', 'main.html', 'Builder.html', 'champ.html', 'itemLookup.html','Comparator.html']) fs.writeFileSync(path.join(source, name), '<link rel="stylesheet" href="CSS/entry.css">');
   const entry = path.join(source, 'CSS/entry.css');
   fs.writeFileSync(entry, '@import url("missing.css");');
   assert.throws(() => checkStyles({sourceRoot:source}), /Missing stylesheet/);

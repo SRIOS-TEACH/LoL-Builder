@@ -9,13 +9,7 @@
 </head>
 <body class="dark-mode compact-dashboard">
   <div class="page-wrapper with-navbar with-transitions">
-    <nav class="navbar">
-      <a href="main.html" class="navbar-brand">LoL Buildsmith</a>
-      <ul class="navbar-nav d-none d-md-flex">
-        <li class="nav-item"><a href="main.html" class="nav-link">Home</a></li>
-        <li class="nav-item active"><a href="Builder.html" class="nav-link">Builder</a></li>
-      </ul>
-    </nav>
+    <nav class="navbar"><a href="main.html" class="navbar-brand">LoL Buildsmith</a><ul class="navbar-nav site-nav"><li class="nav-item "><a href="main.html" class="nav-link" >Home</a></li><li class="nav-item active"><a href="Builder.html" class="nav-link">Builder</a></li><li class="nav-item "><a href="champ.html" class="nav-link" >Champion Explorer</a></li><li class="nav-item "><a href="itemLookup.html" class="nav-link" >Item Explorer</a></li><li class="nav-item "><a href="Comparator.html" class="nav-link" >Build Comparator</a></li></ul></nav>
 
     <div class="content-wrapper">
       <main class="container-fluid builder-dashboard">
@@ -29,7 +23,7 @@
           <div class="toolbar-target"><button id="targetSettingsBtn" class="btn btn-sm" type="button">Target settings</button><button id="targetEnabled" class="btn btn-sm" type="button" aria-label="Apply target settings" aria-pressed="false">Off</button></div>
           <label class="toolbar-skin">Skin<select id="skinSelector" class="form-control" disabled><option>Original</option></select></label>
           <div class="toolbar-conditions"><button id="passiveToggleBtn" class="btn btn-sm" type="button">Passives</button><label class="game-time-control" for="gameTime">Game time <span><input id="gameTime" class="form-control" type="number" min="0" step="any" value="0" aria-label="Game time in minutes"> min</span></label></div>
-          <p id="builderStatus" class="status-text" role="status"></p>
+          <div class="save-build-controls"><label for="buildName">Build name</label><input id="buildName" class="form-control" maxlength="80" placeholder="My build"><button id="saveBuild" class="btn" type="button" disabled>Save build</button><a class="btn" href="Comparator.html">Compare builds</a><span id="saveStatus" role="status"></span></div><p id="builderStatus" class="status-text" role="status"></p>
         </header>
         <aside class="dashboard-left">
           <section class="section-card dashboard-panel"><h2>Champion stats</h2><div id="statsTable" class="stats-table-wrap"></div></section>

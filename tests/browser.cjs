@@ -143,6 +143,24 @@ const server=http.createServer((req,res)=>{
    return ids.length;
  });
  console.log(`PASS ${builderItems} builder items: equip, stats, details; item haste fallback`);
+ await page.locator('#buildName').fill('Regression build');
+ const savedLevel=await page.evaluate(()=>String(BUILDER.level));
+ await page.locator('#saveBuild').click();
+ assert.match(await page.locator('#saveStatus').innerText(),/Build saved/);
+ await page.goto(base+'/Comparator.html');
+ assert.equal(await page.locator('.compare-card').count(),1);
+ await page.getByRole('button',{name:'Copy',exact:true}).click();
+ assert.equal(await page.locator('.compare-card').count(),2);
+ await page.locator('.compare-card').first().getByRole('link',{name:'Open & tweak'}).click();
+ await page.waitForFunction(()=>document.querySelector('#saveStatus').textContent.includes('loaded'));
+ assert.equal(await page.locator('#buildName').inputValue(),'Regression build');
+ assert.equal(await page.locator('#builderLevel').inputValue(),savedLevel);
+ await page.goto(base+'/Comparator.html');
+ await page.locator('#buildSearch').fill('(copy)');
+ assert.equal(await page.locator('.compare-card').count(),1);
+ await page.getByRole('button',{name:'Delete',exact:true}).click();
+ assert.equal(await page.locator('.compare-card').count(),0);
+ console.log('PASS saved builds: save, compare, copy, reopen, search, delete');
  await page.goto(base+'/itemLookup.html');
  const lookupPages=[];
  if(await page.locator('#itemSearch').count()){

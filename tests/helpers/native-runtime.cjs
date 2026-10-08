@@ -57,12 +57,13 @@ function createTestContext({root,fetchImpl=async()=>({ok:true,json:async()=>({})
 }
 async function installBrowserHarness(page,root) {
  const fs=require('node:fs');
+ for(const [file,expose]of [['championExplorer.js','Object.assign(globalThis,{renderChampion,CHAMP_STATE});'],['itemExplorer.js','Object.assign(globalThis,{showItem,ITEM_STATE});']])await page.route('**/JS/'+file,async route=>{await route.fulfill({contentType:'text/javascript',body:fs.readFileSync(path.join(root,'JS',file),'utf8')+'\n'+expose});});
  await page.route('**/JS/builder.js',async route=>{
   let entry=fs.readFileSync(path.join(root,'JS/builder.js'),'utf8').replace('await builderPage.start();','');
   entry+='\nconst testServices={};\n';
   for(const [name,file]of Object.entries(modules))entry+=`testServices.${name}=(await import('./${file.slice(3)}')).default;\n`;
   entry+='const createPageAdapter='+createPageAdapter.toString()+';\n';
-  entry+='Object.assign(globalThis,testServices,createPageAdapter(builderPage,testServices,{resolve:(...args)=>globalThis.resolveAbilityToken(...args)}),{BUILDER:builderPage.state,RUNE_DATA:builderPage.runes,ItemLookupShared:builderPage.inspect.getItemLookupShared()});\nawait builderPage.start();\n';
+  entry+='Object.assign(globalThis,testServices,createPageAdapter(builderPage,testServices,{resolve:(...args)=>globalThis.resolveAbilityToken(...args)}),{BUILDER:builderPage.state,RUNE_DATA:builderPage.runes,ItemLookupShared:builderPage.inspect.getItemLookupShared()});\nawait builderPage.start();\nawait initSavedBuildControls(builderPage);\n';
   await route.fulfill({contentType:'text/javascript',body:entry});
  });
 }

@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const pages = ['index.html', 'main.html', 'Builder.html', 'champ.html', 'itemLookup.html'];
+const pages = ['index.html', 'main.html', 'Builder.html', 'champ.html', 'itemLookup.html', 'Comparator.html'];
 const directories = ['CSS', 'JS', 'assets'];
 function runtimeFiles(sourceRoot) {
   const files = [...pages];

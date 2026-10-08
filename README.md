@@ -105,3 +105,9 @@ Stat, ability/item and combo calculations now accept independent build/scenario 
 Phase 5: [reusable UI, native modules and composition contracts](docs/REFACTOR-PHASE5.md).
 
 Refactor handover: [Phase 6 release checks](docs/REFACTOR-PHASE6.md), [extension recipes](docs/EXTENDING.md), [contributor workflow](docs/CONTRIBUTING.md), and [recovery](docs/REFACTOR-PROTECTION.md).
+
+## Explorers and saved builds
+
+Champion Explorer (`champ.html`) searches by name or role and shows lore, abilities and patch base stats. Item Explorer (`itemLookup.html`) reuses the shared filters and calculation inputs. The patch-notes link opens Riot's official archive; automatic champion-specific patch history is not currently supplied.
+
+Save a named build in Builder, then open `Comparator.html` to compare portrait cards, copy a build or reopen it for editing. Builds are saved in this browser's local storage, independently for each site origin. Cards capture the Builder's results at save time, including patch, combat settings and combo. Reopening recalculates with the currently loaded patch; saving updates that card. These results inherit the Builder's calculation limits. Only the Builder's single current combo is captured per build.
