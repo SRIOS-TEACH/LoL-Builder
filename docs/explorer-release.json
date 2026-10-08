@@ -70,8 +70,8 @@
     "css": {
       "passed": true,
       "requiredVariablesResolve": true,
-      "evidence": "docs/save-toolbar-verification.json",
-      "scope": "Save-control containment and alignment verified at four widths on root and generated preview. Existing evidence retained for unchanged runtime."
+      "scope": "Stylesheet graph unit coverage passes. Historical CSS equivalence applies to pre-explorer styles; the new pages intentionally add layouts.",
+      "historicalEvidence": "docs/css-release.json"
     }
   },
   "evidence": [
@@ -79,11 +79,10 @@
     "phase6-performance.json",
     "phase6-recovery.json",
     "phase6-headless.json",
-    "explorer-release-verification.json",
-    "save-toolbar-verification.json"
+    "explorer-release-verification.json"
   ],
   "verification": "Reviewed current unit, headless and data reuse checks; four broad browser runs and native-entry/UI-reuse checks on both generated routes. Historical full baseline, performance and recovery proof retained for unchanged modules.",
-  "previousReleaseEvidence": "docs/explorer-release.json",
+  "previousReleaseEvidence": "docs/css-release.json",
   "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
   "runtimeFiles": [
     {
@@ -132,7 +131,7 @@
     },
     {
       "path": "CSS/pages/explorers.css",
-      "sha256": "d8399b21e918f76d0c752fc9184fdaf10651d2ab4649430bc9d4c311e1b2a254"
+      "sha256": "ae3d8d2586f5de9c81c9b3268e0ae8c5bab0993359f1fa7ac4af37eb952a059a"
     },
     {
       "path": "CSS/shared/dialogs.css",

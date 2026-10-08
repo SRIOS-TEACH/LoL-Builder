@@ -1,90 +1,32 @@
 {
-  "schemaVersion": 1,
-  "releaseDate": "2026-10-08",
-  "timezone": "Australia/Sydney",
+  "date": "2026-10-08T05:07:12.081Z",
   "passed": true,
-  "releaseTarget": "main: Champion Explorer, Item Explorer and Build Comparator",
-  "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
-  "checks": {
-    "unit": {
-      "passed": true,
-      "count": 233,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "browser": {
-      "passed": true,
-      "count": 32,
-      "routes": 2,
-      "advancedAndFallback": true,
-      "evidence": "docs/explorer-release-verification.json",
-      "currentSuites": 8,
-      "inheritedFullSuiteEvidence": "docs/css-release.json",
-      "scope": "Fresh root/preview advanced/fallback broad suite, actual native entry with save/copy/reopen/explorers and independent reusable UI. Historical 32-suite refactor coverage retained separately."
-    },
-    "baseline": {
-      "passed": true,
-      "comparisons": 20,
-      "comparisonComplete": true,
-      "unexplainedDifferences": 0,
-      "exactBaselineMatch": true,
-      "evidence": "docs/css-refactor-verification.json"
-    },
-    "headless": {
-      "passed": true,
-      "cases": 10,
-      "inputIsolation": true,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "reuse": {
-      "passed": true,
-      "catalogs": true,
-      "simultaneousUIInstances": 2,
-      "immutableInputs": true,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "recovery": {
-      "passed": true,
-      "independentBackup": true,
-      "unitTests": 201,
-      "cases": 10,
-      "evidence": "docs/phase6-recovery.json",
-      "scope": "Protected pre-refactor baseline and its independent backup remain unchanged. Historical recovery proof retained; current CSS source reproduced separately."
-    },
-    "performance": {
-      "passed": true,
-      "actualEntryVisits": 40,
-      "layoutEquivalent": true,
-      "baselineCommit": "dec545072a02196260df10837258b857caa805f0",
-      "evidence": "docs/css-refactor-performance.json",
-      "note": "Controlled pre-CSS-refactor fixture benchmark; not real CDN/network performance.",
-      "scope": "Preserved historical benchmark for unchanged calculator modules; new pages are not benchmarked."
-    },
-    "cleanSource": {
-      "passed": true,
-      "unitTests": 233,
-      "build": true,
-      "generatedRoutes": 2,
-      "actualNativeEntryRoutes": 2,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "css": {
-      "passed": true,
-      "requiredVariablesResolve": true,
-      "evidence": "docs/save-toolbar-verification.json",
-      "scope": "Save-control containment and alignment verified at four widths on root and generated preview. Existing evidence retained for unchanged runtime."
+  "scope": "Save toolbar CSS alignment only",
+  "changedRuntimeFiles": [
+    {
+      "path": "CSS/pages/explorers.css",
+      "sha256": "d8399b21e918f76d0c752fc9184fdaf10651d2ab4649430bc9d4c311e1b2a254"
     }
-  },
-  "evidence": [
-    "phase6-verification.json",
-    "phase6-performance.json",
-    "phase6-recovery.json",
-    "phase6-headless.json",
-    "explorer-release-verification.json",
-    "save-toolbar-verification.json"
   ],
-  "verification": "Reviewed current unit, headless and data reuse checks; four broad browser runs and native-entry/UI-reuse checks on both generated routes. Historical full baseline, performance and recovery proof retained for unchanged modules.",
-  "previousReleaseEvidence": "docs/explorer-release.json",
-  "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
+  "unitTests": 233,
+  "checkedWidths": [
+    390,
+    800,
+    1100,
+    1440
+  ],
+  "browserRoutes": [
+    "root",
+    "dist/preview"
+  ],
+  "checks": [
+    "all save controls inside toolbar bounds",
+    "aligned control row at panel and desktop widths",
+    "native save/copy/reopen/champion and item explorer workflows",
+    "no uncaught browser errors"
+  ],
+  "visualReview": "1100px screenshot reviewed: save controls occupy their own row inside the toolbar; height adapts to wrapped toolbar content.",
+  "inheritedEvidence": "docs/explorer-release.json",
   "runtimeFiles": [
     {
       "path": "Builder.html",

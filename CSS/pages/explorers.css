@@ -32,3 +32,16 @@
 .compare-ability small {font-size:1rem;}
 
 .explorer-hero {--champ-splash-url:none;}
+
+/* Saved build actions share a complete toolbar row at every panel width. */
+.dashboard-toolbar {flex-wrap:wrap;}
+.dashboard-toolbar .save-build-controls {flex:1 0 100%;min-width:0;gap:8px;padding-top:8px;border-top:1px solid rgba(130,159,199,.2);font-size:12px;}
+.save-build-controls label {margin:0;white-space:nowrap;}
+.dashboard-toolbar .save-build-controls :is(.form-control,.btn) {height:32px;min-height:32px;margin:0;font-size:12px;line-height:1.5;}
+.dashboard-toolbar .save-build-controls input {flex:0 1 200px;min-width:100px;width:200px;}
+.save-build-controls .btn {display:inline-flex;align-items:center;justify-content:center;white-space:nowrap;}
+.save-build-controls #saveStatus:empty {display:none;}
+.save-build-controls #saveStatus:not(:empty) {flex-basis:100%;}
+@media(min-width:1051px) and (min-height:721px) {
+  .compact-dashboard .builder-dashboard {grid-template-rows:auto minmax(0,1fr);}
+}
