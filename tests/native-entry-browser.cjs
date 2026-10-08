@@ -48,6 +48,11 @@ const server=http.createServer((req,res)=>{
  await page.locator('[aria-label="Add AA no crit"]').click();assert.equal(await page.locator('#comboSteps li').count(),1);
  assert.doesNotMatch(await page.locator('#statsTable').innerText(),/NaN|undefined/);
  assert.deepEqual(await page.evaluate(()=>['BUILDER','ComboUI','CalculationPipeline','SourceRepositories','BuildStats'].filter(name=>name in window)),[]);
+ await page.locator('#buildName').fill('Native saved build');await page.locator('#saveBuild').click();assert.match(await page.locator('#saveStatus').innerText(),/Build saved/);
+ await page.goto(base+'/Comparator.html');await page.waitForFunction(()=>document.querySelectorAll('.compare-card').length===1);await page.getByRole('button',{name:'Copy',exact:true}).click();assert.equal(await page.locator('.compare-card').count(),2);
+ await page.locator('.compare-card').first().getByRole('link',{name:'Open & tweak'}).click();await page.waitForFunction(()=>document.querySelector('#saveStatus').textContent.includes('loaded'));assert.equal(await page.locator('#builderLevel').inputValue(),'6');assert.equal(await page.locator('#comboSteps li').count(),1);
+ await page.goto(base+'/champ.html');await page.waitForFunction(()=>document.querySelectorAll('#abilities .ability-card').length===5);await page.locator('#champSearch').fill('Aurora');await page.waitForFunction(()=>document.querySelector('#champName').textContent.includes('Aurora'));
+ await page.goto(base+'/itemLookup.html');await page.waitForFunction(()=>document.querySelectorAll('#itemGrid button').length>0);await page.locator('#itemSearch').fill('Long Sword');await page.locator('#itemGrid button').first().click();assert.match(await page.locator('#itemName').innerText(),/Long Sword/);
  assert.deepEqual(errors,[]);console.log('PASS actual native entry: champion, ranks, inventory, target and combo without injected test globals');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>server.close());

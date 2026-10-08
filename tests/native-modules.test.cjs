@@ -31,3 +31,10 @@ test('two native page controllers own separate input records and dispose indepen
  for(const name of ['BUILDER','ComboUI','CalculationPipeline','BuildStats','SourceRepositories'])assert.equal(globalThis[name],undefined,name+' remains private');
  b.dispose();
 });
+
+test('every public page loads native JavaScript with module script tags',()=>{
+ for(const file of runtimeFiles(root).filter(name=>name.endsWith('.html'))){
+  const html=fs.readFileSync(path.join(root,file),'utf8');
+  for(const [tag]of html.matchAll(/<script\b[^>]*\bsrc="JS\/[^"]+"[^>]*>/g))assert.match(tag,/\btype="module"/,file+' has a classic script tag for a native module');
+ }
+});

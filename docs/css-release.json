@@ -3,23 +3,19 @@
   "releaseDate": "2026-10-08",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: Champion Explorer, Item Explorer and Build Comparator",
+  "releaseTarget": "CSS refactor branch; review candidate, not deployed",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
-      "count": 233,
-      "evidence": "docs/explorer-release-verification.json"
+      "count": 230
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/explorer-release-verification.json",
-      "currentSuites": 8,
-      "inheritedFullSuiteEvidence": "docs/css-release.json",
-      "scope": "Fresh root/preview advanced/fallback broad suite, actual native entry with save/copy/reopen/explorers and independent reusable UI. Historical 32-suite refactor coverage retained separately."
+      "evidence": "docs/css-refactor-verification.json"
     },
     "baseline": {
       "passed": true,
@@ -33,14 +29,14 @@
       "passed": true,
       "cases": 10,
       "inputIsolation": true,
-      "evidence": "docs/explorer-release-verification.json"
+      "evidence": "docs/css-refactor-verification.json"
     },
     "reuse": {
       "passed": true,
       "catalogs": true,
       "simultaneousUIInstances": 2,
       "immutableInputs": true,
-      "evidence": "docs/explorer-release-verification.json"
+      "evidence": "docs/css-refactor-verification.json"
     },
     "recovery": {
       "passed": true,
@@ -56,38 +52,44 @@
       "layoutEquivalent": true,
       "baselineCommit": "dec545072a02196260df10837258b857caa805f0",
       "evidence": "docs/css-refactor-performance.json",
-      "note": "Controlled pre-CSS-refactor fixture benchmark; not real CDN/network performance.",
-      "scope": "Preserved historical benchmark for unchanged calculator modules; new pages are not benchmarked."
+      "note": "Controlled pre-CSS-refactor fixture benchmark; not real CDN/network performance."
     },
     "cleanSource": {
+      "stagedTree": "9d938e3225a333fa854d8d08066c438d85d93c59",
       "passed": true,
-      "unitTests": 233,
+      "unitTests": 230,
       "build": true,
-      "generatedRoutes": 2,
+      "stylesheets": 13,
+      "headlessCases": 10,
+      "dataReuse": true,
+      "uiReuseRoutes": 2,
       "actualNativeEntryRoutes": 2,
-      "evidence": "docs/explorer-release-verification.json"
+      "note": "Final staged source reproduced independently; runtime fingerprints follow reviewed checks."
     },
     "css": {
       "passed": true,
+      "cases": 60,
+      "computedStylesMatch": true,
+      "geometryMatches": true,
+      "screenshotPixelsChanged": 0,
+      "stylesheets": 13,
       "requiredVariablesResolve": true,
-      "scope": "Stylesheet graph unit coverage passes. Historical CSS equivalence applies to pre-explorer styles; the new pages intentionally add layouts.",
-      "historicalEvidence": "docs/css-release.json"
+      "evidence": "docs/css-refactor-review.json"
     }
   },
   "evidence": [
     "phase6-verification.json",
     "phase6-performance.json",
     "phase6-recovery.json",
-    "phase6-headless.json",
-    "explorer-release-verification.json"
+    "phase6-headless.json"
   ],
-  "verification": "Reviewed current unit, headless and data reuse checks; four broad browser runs and native-entry/UI-reuse checks on both generated routes. Historical full baseline, performance and recovery proof retained for unchanged modules.",
-  "previousReleaseEvidence": "docs/css-release.json",
+  "verification": "npm run verify:refactor; controlled performance comparison; independent backup restoration; clean staged-source reproduction. Full browser/performance/recovery checks ran locally with preserved fixtures.",
+  "previousReleaseEvidence": "docs/phase6-release.json",
   "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
   "runtimeFiles": [
     {
       "path": "Builder.html",
-      "sha256": "dc4bdd68ee5deca1171665f8cd6e510f23a72ed8d5f8d958122af27f96024034"
+      "sha256": "f023bf2a5a5ffd1ac3e4b9185bf53530b4332967f0128a3d5aa16be0be7fc7f7"
     },
     {
       "path": "CSS/components/abilities.css",
@@ -123,15 +125,11 @@
     },
     {
       "path": "CSS/lolBuilder.css",
-      "sha256": "9281036aebb3d57afb3102437dc6c5e901c715fefb489fca84c00d0d87efd65f"
+      "sha256": "0feef75c895400227319f3f9460fbe6d1ddc0f975e77f7b650523fc94078d488"
     },
     {
       "path": "CSS/pages/builder.css",
       "sha256": "1d572a0c8cbbceb0ca007dd385d06fdbcfb9a5150a52a7f0b2b460431bc51251"
-    },
-    {
-      "path": "CSS/pages/explorers.css",
-      "sha256": "ae3d8d2586f5de9c81c9b3268e0ae8c5bab0993359f1fa7ac4af37eb952a059a"
     },
     {
       "path": "CSS/shared/dialogs.css",
@@ -146,12 +144,8 @@
       "sha256": "05ba9bd83aba7ef04225f29601483093ffa892f2e2608ba8448eac51b8c0fe71"
     },
     {
-      "path": "Comparator.html",
-      "sha256": "dff84fe2450821cde82a2b4ebdcce6dd7b4a284f5f1ec98fe56ddd7f04214177"
-    },
-    {
       "path": "JS/application/builderPage.mjs",
-      "sha256": "98846e29add1b3e9b78c719c8f8e8d62f2ca8ef474eef6d391213f8cb184caa9"
+      "sha256": "1c45671825eb772b61f26f8189fcbdab92448932c004fe86628588c9e0bbc34f"
     },
     {
       "path": "JS/application/catalogSession.js",
@@ -162,20 +156,8 @@
       "sha256": "576f2b2b46feb52cda0e0eb07747ae75b8beebfccc979cd9c37aca3ce837a7da"
     },
     {
-      "path": "JS/application/savedBuildControls.mjs",
-      "sha256": "b2c21b0f3414f81ce37d36bc3cef63d32397bfd8701fe81d13f40fcae336ad0b"
-    },
-    {
       "path": "JS/builder.js",
-      "sha256": "543d10169d8d67a36e2cdc8383b303113d85380158e030d77892b5286fa1b5aa"
-    },
-    {
-      "path": "JS/championExplorer.js",
-      "sha256": "14be33e5563217e7c5d830b6aa4db7c9d224bb83b3d985c540a8ace8893bea20"
-    },
-    {
-      "path": "JS/comparator.js",
-      "sha256": "3d50ec11b89b9218fbcd7dc686f2ce74211f699539159ce1c3e927576f877e8b"
+      "sha256": "5f62fc42933ba01e8f85304d56fd64465440df919271f32ccc442772896925eb"
     },
     {
       "path": "JS/core/records.js",
@@ -248,10 +230,6 @@
     {
       "path": "JS/engine/itemEvaluation.js",
       "sha256": "f6ae63a5a6f4b1538fd72a8b95913956477a78d9cc57fe0c7b51fb812d7f10c0"
-    },
-    {
-      "path": "JS/itemExplorer.js",
-      "sha256": "e1752c01953f642c9a40fdd70d6df463032f36281013aa31f3da1658c86b5acc"
     },
     {
       "path": "JS/package.json",
@@ -334,10 +312,6 @@
       "sha256": "d95bde1a763462c00be0d4ea0476163a542e57b3c25d95d00489293b56a4fb6d"
     },
     {
-      "path": "JS/shared/savedBuilds.js",
-      "sha256": "31d0d4b9433e507d328f22b80a4970f5c1a4a1ba5c4130579a163536e73efff7"
-    },
-    {
       "path": "JS/shared/targetDamage.js",
       "sha256": "d0787c46ea0de81f4278958e0a2339fcf42c66ffb6d8715fed623f4a7ba84864"
     },
@@ -355,7 +329,7 @@
     },
     {
       "path": "JS/ui/comboControls.mjs",
-      "sha256": "eb0a61a3eee9cca05410d1d1b3664afbc751eb17615197bde4365c2ea81bdb4c"
+      "sha256": "45ea59709c9c6600879de38789c6491fd148718ae9b7e4312482dba62fb9973a"
     },
     {
       "path": "JS/ui/inventory.mjs",
@@ -427,7 +401,7 @@
     },
     {
       "path": "champ.html",
-      "sha256": "cefd7c1df42ef0ad0c76ce2dad300c5c3aa953395f1a3d39032e5242dc42d088"
+      "sha256": "3e5fac8710d7d270261ae0bc50e20fec79e1dc150e2da62c544b2c52e536b2b4"
     },
     {
       "path": "index.html",
@@ -435,11 +409,11 @@
     },
     {
       "path": "itemLookup.html",
-      "sha256": "565aad7c4eb92dc3fc007b48095ea30381abb076b6a547801d1605329399f036"
+      "sha256": "7a1facf1adfefd1c4cfb02f3ae6912631bf153ba5662d72d53fc815072d91de4"
     },
     {
       "path": "main.html",
-      "sha256": "8771a8812e3f64e6f39754bc33d390f1fb59804120f0bb3ab4013aa915bcadf6"
+      "sha256": "54e99dfdd655bb2af79a7effa8832a82a960a86bdddd6ed2f3f37565babd997f"
     }
   ]
 }

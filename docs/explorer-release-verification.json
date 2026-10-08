@@ -1,89 +1,10 @@
 {
-  "schemaVersion": 1,
-  "releaseDate": "2026-10-08",
-  "timezone": "Australia/Sydney",
+  "date": "2026-10-08T04:20:29.635Z",
   "passed": true,
-  "releaseTarget": "main: Champion Explorer, Item Explorer and Build Comparator",
-  "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
-  "checks": {
-    "unit": {
-      "passed": true,
-      "count": 233,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "browser": {
-      "passed": true,
-      "count": 32,
-      "routes": 2,
-      "advancedAndFallback": true,
-      "evidence": "docs/explorer-release-verification.json",
-      "currentSuites": 8,
-      "inheritedFullSuiteEvidence": "docs/css-release.json",
-      "scope": "Fresh root/preview advanced/fallback broad suite, actual native entry with save/copy/reopen/explorers and independent reusable UI. Historical 32-suite refactor coverage retained separately."
-    },
-    "baseline": {
-      "passed": true,
-      "comparisons": 20,
-      "comparisonComplete": true,
-      "unexplainedDifferences": 0,
-      "exactBaselineMatch": true,
-      "evidence": "docs/css-refactor-verification.json"
-    },
-    "headless": {
-      "passed": true,
-      "cases": 10,
-      "inputIsolation": true,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "reuse": {
-      "passed": true,
-      "catalogs": true,
-      "simultaneousUIInstances": 2,
-      "immutableInputs": true,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "recovery": {
-      "passed": true,
-      "independentBackup": true,
-      "unitTests": 201,
-      "cases": 10,
-      "evidence": "docs/phase6-recovery.json",
-      "scope": "Protected pre-refactor baseline and its independent backup remain unchanged. Historical recovery proof retained; current CSS source reproduced separately."
-    },
-    "performance": {
-      "passed": true,
-      "actualEntryVisits": 40,
-      "layoutEquivalent": true,
-      "baselineCommit": "dec545072a02196260df10837258b857caa805f0",
-      "evidence": "docs/css-refactor-performance.json",
-      "note": "Controlled pre-CSS-refactor fixture benchmark; not real CDN/network performance.",
-      "scope": "Preserved historical benchmark for unchanged calculator modules; new pages are not benchmarked."
-    },
-    "cleanSource": {
-      "passed": true,
-      "unitTests": 233,
-      "build": true,
-      "generatedRoutes": 2,
-      "actualNativeEntryRoutes": 2,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "css": {
-      "passed": true,
-      "requiredVariablesResolve": true,
-      "scope": "Stylesheet graph unit coverage passes. Historical CSS equivalence applies to pre-explorer styles; the new pages intentionally add layouts.",
-      "historicalEvidence": "docs/css-release.json"
-    }
-  },
-  "evidence": [
-    "phase6-verification.json",
-    "phase6-performance.json",
-    "phase6-recovery.json",
-    "phase6-headless.json",
-    "explorer-release-verification.json"
-  ],
-  "verification": "Reviewed current unit, headless and data reuse checks; four broad browser runs and native-entry/UI-reuse checks on both generated routes. Historical full baseline, performance and recovery proof retained for unchanged modules.",
-  "previousReleaseEvidence": "docs/css-release.json",
-  "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
+  "unitTests": 233,
+  "sourceCommit": "f4556c047c6dcf627ba3132f68fefff3a820baa3",
+  "scope": "New explorer pages, saved build persistence, native entry and generated root/preview routes. Calculation, source, domain and presentation module hashes match the preserved CSS release.",
+  "generatedCopiesMatch": true,
   "runtimeFiles": [
     {
       "path": "Builder.html",
@@ -441,5 +362,125 @@
       "path": "main.html",
       "sha256": "8771a8812e3f64e6f39754bc33d390f1fb59804120f0bb3ab4013aa915bcadf6"
     }
-  ]
+  ],
+  "results": [
+    {
+      "id": "data-reuse",
+      "exitCode": 0,
+      "log": "test-results/explorer-release-1791433128904/data-reuse.log",
+      "summary": [
+        "PASS headless reuse: 173 champions, 868 full items, 236 Builder items; isolated queries/builds/scenarios."
+      ]
+    },
+    {
+      "id": "unit",
+      "exitCode": 0,
+      "log": "test-results/explorer-release-1791433128904/unit.log",
+      "summary": []
+    },
+    {
+      "id": "headless",
+      "exitCode": 0,
+      "log": "test-results/explorer-release-1791433128904/headless.log",
+      "summary": [
+        "PASS 10 headless baseline cases; exact stats/attacks, ability numbers and statuses, rounded combo baselines, A/B/A and immutable inputs."
+      ]
+    },
+    {
+      "id": "preview-browser-fallback",
+      "exitCode": 0,
+      "log": "test-results/explorer-release-1791433128904/preview-browser-fallback.log",
+      "summary": [
+        "PASS builder UI: champion, level, abilities, item add/remove, rune, request race",
+        "PASS 173 champions at levels 1, 6, 11, 18 (advanced data: false)",
+        "PASS 236 builder items: equip, stats, details; item haste fallback",
+        "PASS saved builds: save, compare, copy, reopen, search, delete",
+        "PASS 600 item tooltips; empty search and map filters",
+        "PASS champion lookup: 173 champions and selection race",
+        "PASS active-page startup failure states; no uncaught browser errors"
+      ]
+    },
+    {
+      "id": "root-browser-fallback",
+      "exitCode": 0,
+      "log": "test-results/explorer-release-1791433128904/root-browser-fallback.log",
+      "summary": [
+        "PASS builder UI: champion, level, abilities, item add/remove, rune, request race",
+        "PASS 173 champions at levels 1, 6, 11, 18 (advanced data: false)",
+        "PASS 236 builder items: equip, stats, details; item haste fallback",
+        "PASS saved builds: save, compare, copy, reopen, search, delete",
+        "PASS 600 item tooltips; empty search and map filters",
+        "PASS champion lookup: 173 champions and selection race",
+        "PASS active-page startup failure states; no uncaught browser errors"
+      ]
+    },
+    {
+      "id": "root-native-entry-browser",
+      "exitCode": 0,
+      "log": "test-results/explorer-release-1791433128904/root-native-entry-browser.log",
+      "summary": [
+        "PASS actual native entry: champion, ranks, inventory, target and combo without injected test globals"
+      ]
+    },
+    {
+      "id": "root-ui-reuse-browser",
+      "exitCode": 0,
+      "log": "test-results/explorer-release-1791433128904/root-ui-reuse-browser.log",
+      "summary": [
+        "PASS standalone native components: {\"instances\":2,\"champions\":173,\"items\":868,\"components\":10,\"isolated\":true,\"latestRequestWins\":true,\"disposal\":true,\"uniqueIds\":true,\"noBuilder\":true,\"sourceImmutable\":true}"
+      ]
+    },
+    {
+      "id": "preview-native-entry-browser",
+      "exitCode": 0,
+      "log": "test-results/explorer-release-1791433128904/preview-native-entry-browser.log",
+      "summary": [
+        "PASS actual native entry: champion, ranks, inventory, target and combo without injected test globals"
+      ]
+    },
+    {
+      "id": "preview-ui-reuse-browser",
+      "exitCode": 0,
+      "log": "test-results/explorer-release-1791433128904/preview-ui-reuse-browser.log",
+      "summary": [
+        "PASS standalone native components: {\"instances\":2,\"champions\":173,\"items\":868,\"components\":10,\"isolated\":true,\"latestRequestWins\":true,\"disposal\":true,\"uniqueIds\":true,\"noBuilder\":true,\"sourceImmutable\":true}"
+      ]
+    },
+    {
+      "id": "root-browser-advanced",
+      "exitCode": 0,
+      "log": "test-results/explorer-release-1791433128904/root-browser-advanced.log",
+      "summary": [
+        "PASS builder UI: champion, level, abilities, item add/remove, rune, request race",
+        "PASS live-data Feast and Seraph integration: Feast 719.5000000745058",
+        "PASS shared Smolder stacks, per-ability controls and formula-only target scaling",
+        "PASS 173 champions at levels 1, 6, 11, 18 (advanced data: true)",
+        "PASS 236 builder items: equip, stats, details; item haste fallback",
+        "PASS saved builds: save, compare, copy, reopen, search, delete",
+        "PASS standalone item inputs update shield and AP values",
+        "PASS 600 item tooltips; empty search and map filters",
+        "PASS champion lookup: 173 champions and selection race",
+        "PASS active-page startup failure states; no uncaught browser errors"
+      ]
+    },
+    {
+      "id": "preview-browser-advanced",
+      "exitCode": 0,
+      "log": "test-results/explorer-release-1791433128904/preview-browser-advanced.log",
+      "summary": [
+        "PASS builder UI: champion, level, abilities, item add/remove, rune, request race",
+        "PASS live-data Feast and Seraph integration: Feast 719.5000000745058",
+        "PASS shared Smolder stacks, per-ability controls and formula-only target scaling",
+        "PASS 173 champions at levels 1, 6, 11, 18 (advanced data: true)",
+        "PASS 236 builder items: equip, stats, details; item haste fallback",
+        "PASS saved builds: save, compare, copy, reopen, search, delete",
+        "PASS standalone item inputs update shield and AP values",
+        "PASS 600 item tooltips; empty search and map filters",
+        "PASS champion lookup: 173 champions and selection race",
+        "PASS active-page startup failure states; no uncaught browser errors"
+      ]
+    }
+  ],
+  "inheritedEvidence": "docs/css-release.json",
+  "inheritedScope": "Full historical calculation/browser baseline, controlled performance and independent backup recovery. Not represented as fresh runs for new pages."
 }
