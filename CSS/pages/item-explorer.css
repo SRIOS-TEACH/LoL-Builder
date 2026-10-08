@@ -2,8 +2,8 @@
 .item-shop-view .item-explorer-layout {grid-template-columns:minmax(0,1.875fr) minmax(280px,1fr);gap:24px;}
 .item-shop-view .item-catalog {padding:20px;}
 .item-shop-toolbar {display:flex;gap:20px;align-items:end;margin-bottom:18px;}
-.item-shop-toolbar .explorer-field {flex:1;}
-.item-shop-maps {border:0;padding:0;margin:0;min-width:0;}
+.item-shop-toolbar .explorer-field {flex:1 1 180px;max-width:300px;min-width:120px;}
+.item-shop-maps {flex:0 0 auto;border:0;padding:0;margin:0;min-width:0;}
 .item-shop-maps legend {font-size:11px;color:var(--site-muted);margin-bottom:8px;}
 .item-shop-view .item-shop-maps .tag-pill {font-size:11px;padding:6px 8px;gap:4px;}
 .item-shop-view .shop-category-row {grid-template-columns:40px minmax(0,1fr);gap:12px;margin-bottom:14px;}
@@ -32,5 +32,7 @@
 .item-shop-view .item-inspector h2 {font-size:22px;}
 .item-shop-view #itemCost {font-size:12px;}
 .item-shop-view .item-explorer-tooltip {font-size:13px;}
-@media(max-width:1100px) {.item-shop-toolbar{flex-direction:column;align-items:stretch;gap:12px;}.item-shop-maps .explorer-filter-chips{gap:6px;}.item-shop-view .item-explorer-layout{gap:16px;}.item-shop-view .item-catalog{padding:16px;}.item-shop-view .item-inspector{padding:18px;}}
+@media(max-width:1100px) {.item-shop-toolbar{gap:12px;}.item-shop-maps .explorer-filter-chips{gap:6px;}.item-shop-view .item-explorer-layout{gap:16px;}.item-shop-view .item-catalog{padding:16px;}.item-shop-view .item-inspector{padding:18px;}}
+@media(max-width:1000px) {.item-shop-view .item-explorer-layout{grid-template-columns:1fr;}.item-shop-view .item-inspector{position:static;}}
+@media(max-width:600px) {.item-shop-toolbar{flex-wrap:wrap;}.item-shop-toolbar .explorer-field{max-width:100%;flex-basis:100%;}}
 @media(max-width:700px) {.item-shop-view .item-explorer-layout{grid-template-columns:1fr;}.item-shop-view .shop-category-row .shop-tabs{gap:4px;}.item-shop-view .shop-role-filters{gap:4px;}.item-shop-view .shop-category{width:56px;}.item-shop-view #itemGrid{grid-template-columns:repeat(auto-fill,minmax(66px,1fr));max-height:510px;}.item-shop-view #itemFilters{max-height:510px;}.item-shop-view .item-shop-results{grid-template-columns:34px minmax(0,1fr);gap:8px;}.item-shop-view .shop-filter{width:30px;height:32px;}.item-shop-view #explorerAllItems{width:36px;}.item-shop-view .item-catalog-name{font-size:10px;}}

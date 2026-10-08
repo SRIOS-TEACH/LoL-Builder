@@ -3,23 +3,23 @@
   "releaseDate": "2026-10-09",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: repair Item Explorer stylesheet loading and inline search/maps",
+  "releaseTarget": "main: compact League-style Item Explorer",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
       "count": 235,
-      "evidence": "docs/item-layout-fix-verification.json"
+      "evidence": "docs/item-shop-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/item-layout-fix-verification.json",
-      "currentSuites": 4,
-      "inheritedFullSuiteEvidence": "docs/pre-item-layout-fix-release.json",
-      "scope": "Current root/preview explorer checks with old-manifest simulation, theme suite, and real-art explorer review. Earlier full-suite coverage retained in prior evidence."
+      "evidence": "docs/item-shop-verification.json",
+      "currentSuites": 6,
+      "inheritedFullSuiteEvidence": "docs/pre-item-shop-release.json",
+      "scope": "Five current regression suites plus a generated-preview real-artwork explorer run. Historical full-suite count retained from prior evidence."
     },
     "baseline": {
       "passed": true,
@@ -65,13 +65,13 @@
       "unitTests": 235,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/item-layout-fix-verification.json"
+      "evidence": "docs/item-shop-verification.json"
     },
     "css": {
       "passed": true,
       "requiredVariablesResolve": true,
-      "evidence": "docs/item-layout-fix-verification.json",
-      "scope": "Versioned direct stylesheet loading, stat rail/grid geometry, inline search/map controls at tablet/desktop widths, actual artwork review and all-page theme regression."
+      "evidence": "docs/item-shop-verification.json",
+      "scope": "Dense tiles, 20% narrower desktop details, combined role/stat filters, fallback browsing, and responsive layouts reviewed. Shared theme regression verifies all five pages at four viewport sizes."
     }
   },
   "evidence": [
@@ -87,9 +87,7 @@
     "saved-data-verification.json",
     "coherent-theme-verification.json",
     "pre-item-shop-release.json",
-    "item-shop-verification.json",
-    "pre-item-layout-fix-release.json",
-    "item-layout-fix-verification.json"
+    "item-shop-verification.json"
   ],
   "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
   "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
@@ -133,7 +131,7 @@
     },
     {
       "path": "CSS/lolBuilder.css",
-      "sha256": "f6b8fafe573a9b4c6034a1024ab304785736c20ba615e4ba14cbbd378b39bfee"
+      "sha256": "c1b5ab279ca02fa731d03e6af471b5ac5a28e64b0b282dfc5201701c407a8a5e"
     },
     {
       "path": "CSS/pages/builder.css",
@@ -149,7 +147,7 @@
     },
     {
       "path": "CSS/pages/item-explorer.css",
-      "sha256": "49f3801c61097805b9a5c2456d22684e52209c0c4268de37bca0f96410fb6b6e"
+      "sha256": "5f0ab8326d6dcdda49aca63d2f54288051f99b7021130600e126d73d65e2f52c"
     },
     {
       "path": "CSS/shared/dialogs.css",
@@ -485,7 +483,7 @@
     },
     {
       "path": "itemLookup.html",
-      "sha256": "fb968b3c9a8611c60c2aa96c98c077b580b6253281d3ad7c66d556320169b43d"
+      "sha256": "964a65e3108f86bfdf3cb6937744cfd76a30b715b00e2b8618aeb31a86f0ba51"
     },
     {
       "path": "main.html",

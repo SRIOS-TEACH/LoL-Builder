@@ -26,7 +26,7 @@ const server=http.createServer((req,res)=>{
  let failCore=false;
  await page.route('**/*',async route=>{
    const url=new URL(route.request().url());
-   if(url.origin===base)return route.fallback();
+   if(url.origin===base){if(process.env.STALE_STYLES && url.pathname==='/CSS/lolBuilder.css')return route.fulfill({contentType:'text/css',body:fs.readFileSync(path.join(root,'CSS/lolBuilder.css'),'utf8').replace(/@import[^;]*item-explorer[^;]*;/g,'')});return route.fallback();}
    requests.push(url.href);
    if(!url.pathname.endsWith('.json') && process.env.REAL_ART)return route.continue();
    if(!url.pathname.endsWith('.json'))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#334155"/></svg>'});
@@ -70,7 +70,7 @@ const server=http.createServer((req,res)=>{
  await page.locator('#itemFilters [data-item-filter="Armor"]').click();assert.ok(await page.locator('#itemGrid button').count()>0);await page.locator('#resetItemFilters').click();
  await page.locator('#itemGrid [data-item-id="3031"]').click();assert.equal(await page.locator('#itemName').innerText(),'Infinity Edge');
  await readyArtwork();await page.screenshot({path:'test-results/explorer-design/items-desktop.png',fullPage:true});
- for(const width of [390,768,1440]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'item overflow '+width);if(width===390){await page.locator('#itemGrid [data-item-id="3031"]').click();await readyArtwork();await page.screenshot({path:'test-results/explorer-design/items-mobile.png',fullPage:true});}}
+ for(const width of [390,768,900,1100,1440]){await page.setViewportSize({width,height:900});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'item overflow '+width);if(width>=768)assert.ok(await page.evaluate(()=>{const search=document.querySelector('#itemSearch').getBoundingClientRect(),maps=document.querySelector('#mapFilters').getBoundingClientRect();return search.width<=300&&maps.left>=search.right&&Math.abs(maps.bottom-search.bottom)<3;}),'search/maps same row '+width);assert.ok(await page.evaluate(()=>{const rail=document.querySelector('#itemFilters').getBoundingClientRect(),grid=document.querySelector('#itemGrid').getBoundingClientRect();return rail.right<=grid.left&&rail.width<50;}),'stat rail beside grid '+width);if(width===390){await page.locator('#itemGrid [data-item-id="3031"]').click();await readyArtwork();await page.screenshot({path:'test-results/explorer-design/items-mobile.png',fullPage:true});}}
  failCore=true;
  for(const [file,selector] of [['champ.html','#champStatus'],['itemLookup.html','#itemCount']]){await page.goto(base+'/'+file);await page.waitForFunction(selector=>/could not/i.test(document.querySelector(selector).textContent),selector);}
  assert.deepEqual(errors,[]);console.log('PASS explorer design: search, role roster, latest selection, named items, filters, keyboard focus, empty/error states and 390/768/1440px layouts');
