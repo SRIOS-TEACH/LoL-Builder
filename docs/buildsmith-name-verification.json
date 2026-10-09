@@ -1,109 +1,19 @@
 {
-  "schemaVersion": 1,
-  "releaseDate": "2026-10-09",
-  "timezone": "Australia/Sydney",
+  "date": "2026-10-09",
   "passed": true,
-  "releaseTarget": "main: Buildsmith naming and developer disclaimer",
-  "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
-  "checks": {
-    "unit": {
-      "passed": true,
-      "count": 237,
-      "evidence": "docs/buildsmith-name-verification.json"
-    },
-    "browser": {
-      "passed": true,
-      "count": 32,
-      "routes": 2,
-      "advancedAndFallback": true,
-      "evidence": "docs/buildsmith-name-verification.json",
-      "currentSuites": 2,
-      "inheritedFullSuiteEvidence": "docs/pre-buildsmith-name-release.json",
-      "scope": "Root and preview: all five pages at 390/768/1440/1920px; fixture imagery, shared theme/navigation and bounds. No calculator modules or persistent storage keys changed."
-    },
-    "baseline": {
-      "passed": true,
-      "comparisons": 20,
-      "comparisonComplete": true,
-      "unexplainedDifferences": 0,
-      "exactBaselineMatch": false,
-      "evidence": "docs/css-refactor-verification.json",
-      "scope": "Historical numeric comparison for unchanged calculator modules; rendered theme differs intentionally."
-    },
-    "headless": {
-      "passed": true,
-      "cases": 10,
-      "inputIsolation": true,
-      "evidence": "docs/editable-comparator-verification.json"
-    },
-    "reuse": {
-      "passed": true,
-      "catalogs": true,
-      "simultaneousUIInstances": 2,
-      "immutableInputs": true,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "recovery": {
-      "passed": true,
-      "independentBackup": true,
-      "unitTests": 201,
-      "cases": 10,
-      "evidence": "docs/phase6-recovery.json",
-      "scope": "Protected pre-refactor baseline and its independent backup remain unchanged. Historical recovery proof retained; current CSS source reproduced separately."
-    },
-    "performance": {
-      "passed": true,
-      "actualEntryVisits": 40,
-      "layoutEquivalent": true,
-      "baselineCommit": "dec545072a02196260df10837258b857caa805f0",
-      "evidence": "docs/css-refactor-performance.json",
-      "note": "Controlled pre-CSS-refactor fixture benchmark; not real CDN/network performance.",
-      "scope": "Preserved historical benchmark for unchanged calculator modules; new pages are not benchmarked."
-    },
-    "cleanSource": {
-      "passed": true,
-      "unitTests": 237,
-      "build": true,
-      "generatedCopiesMatch": true,
-      "evidence": "docs/buildsmith-name-verification.json"
-    },
-    "css": {
-      "passed": true,
-      "requiredVariablesResolve": true,
-      "evidence": "docs/buildsmith-name-verification.json",
-      "scope": "Name-only HTML and disclaimer reviewed on mobile; existing styles and all-page bounds checked."
-    }
-  },
-  "evidence": [
-    "phase6-verification.json",
-    "phase6-performance.json",
-    "phase6-recovery.json",
-    "phase6-headless.json",
-    "explorer-release-verification.json",
-    "save-toolbar-verification.json",
-    "inline-toolbar-verification.json",
-    "editable-comparator-verification.json",
-    "explorer-design-verification.json",
-    "saved-data-verification.json",
-    "coherent-theme-verification.json",
-    "pre-item-shop-release.json",
-    "item-shop-verification.json",
-    "pre-item-layout-fix-release.json",
-    "item-layout-fix-verification.json",
-    "pre-champion-layout-release.json",
-    "champion-layout-verification.json",
-    "pre-champion-details-release.json",
-    "champion-details-verification.json",
-    "pre-nav-headers-release.json",
-    "nav-headers-verification.json",
-    "pre-ornn-home-release.json",
-    "ornn-home-verification.json",
-    "pre-buildsmith-name-release.json",
-    "buildsmith-name-verification.json"
+  "scope": "Complete Buildsmith rename, preserve user removal of Home tagline, add Riot developer disclaimer, recover deployment after direct HTML edits changed release fingerprints.",
+  "unitTests": 237,
+  "currentBrowserSuites": 2,
+  "browserScope": "Root and preview: all five pages at 390/768/1440/1920px; fixture imagery, shared theme/navigation and bounds. No calculator modules or persistent storage keys changed.",
+  "visualReview": [
+    "test-results/buildsmith-name/root/home-390.png"
   ],
-  "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
-  "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
-  "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
+  "styles": {
+    "passed": true,
+    "stylesheets": 18,
+    "customProperties": 296
+  },
+  "generatedCopiesMatch": true,
   "runtimeFiles": [
     {
       "path": "Builder.html",
@@ -509,5 +419,18 @@
       "path": "main.html",
       "sha256": "f78543eec183436dc8e054f234546af9cb8229608f664d63ba4da6ed6aff288d"
     }
-  ]
+  ],
+  "inheritedEvidence": "docs/pre-buildsmith-name-release.json",
+  "failureCause": {
+    "commits": [
+      "e9fdfff1c6edd141f38ba7bbc06986dcf419920d",
+      "fbf9c2aa4ea27844850da4f1aac23064f2ddcee2"
+    ],
+    "changedUnverifiedFiles": [
+      "index.html",
+      "main.html"
+    ],
+    "localReproduction": "Runtime differs from the verified release",
+    "githubFailedStep": "Verify and generate production site"
+  }
 }

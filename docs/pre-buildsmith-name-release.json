@@ -3,23 +3,23 @@
   "releaseDate": "2026-10-09",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: Buildsmith naming and developer disclaimer",
+  "releaseTarget": "main: official Ornn Runeterra artwork on Home",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
       "count": 237,
-      "evidence": "docs/buildsmith-name-verification.json"
+      "evidence": "docs/ornn-home-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/buildsmith-name-verification.json",
+      "evidence": "docs/ornn-home-verification.json",
       "currentSuites": 2,
-      "inheritedFullSuiteEvidence": "docs/pre-buildsmith-name-release.json",
-      "scope": "Root and preview: all five pages at 390/768/1440/1920px; fixture imagery, shared theme/navigation and bounds. No calculator modules or persistent storage keys changed."
+      "inheritedFullSuiteEvidence": "docs/pre-ornn-home-release.json",
+      "scope": "Current generated root/preview all-page theme checks, with real Riot art review on root. Previous full-suite behavior coverage retained; no interaction modules changed."
     },
     "baseline": {
       "passed": true,
@@ -65,13 +65,13 @@
       "unitTests": 237,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/buildsmith-name-verification.json"
+      "evidence": "docs/ornn-home-verification.json"
     },
     "css": {
       "passed": true,
       "requiredVariablesResolve": true,
-      "evidence": "docs/buildsmith-name-verification.json",
-      "scope": "Name-only HTML and disclaimer reviewed on mobile; existing styles and all-page bounds checked."
+      "evidence": "docs/ornn-home-verification.json",
+      "scope": "Reviewed Ornn hero crop/readability and credit/notice placement on desktop/mobile; theme, scrolling navigation and bounds checked at four widths."
     }
   },
   "evidence": [
@@ -97,9 +97,7 @@
     "pre-nav-headers-release.json",
     "nav-headers-verification.json",
     "pre-ornn-home-release.json",
-    "ornn-home-verification.json",
-    "pre-buildsmith-name-release.json",
-    "buildsmith-name-verification.json"
+    "ornn-home-verification.json"
   ],
   "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
   "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
@@ -107,7 +105,7 @@
   "runtimeFiles": [
     {
       "path": "Builder.html",
-      "sha256": "6917ded4c1da666e0a22ab0d494b42fdbb56b9124c2ffb48ad570375b56f7e47"
+      "sha256": "32a82af174422d6e815752b4c903253a2cafb9946729c6ca9967bad5542415ba"
     },
     {
       "path": "CSS/components/abilities.css",
@@ -183,7 +181,7 @@
     },
     {
       "path": "Comparator.html",
-      "sha256": "a52be34182c20f935e285ce720466de2cc8dedbc06a3de0cc6bf3288d1734057"
+      "sha256": "5ba120ba272df23668f10a4ab96e3ed1f251e80d536600079dca1f8055ee403d"
     },
     {
       "path": "JS/application/buildSnapshot.mjs",
@@ -495,19 +493,19 @@
     },
     {
       "path": "champ.html",
-      "sha256": "ee125bee1b374ca24a6e4b2c44799aa4e029c226e0431408c45f4a4546b8a7fc"
+      "sha256": "5bb5d15cd0d695b9fc798dea532bfe2db5257a793dcf6434b8c214c78a4162a7"
     },
     {
       "path": "index.html",
-      "sha256": "ee3360392adcf4d62fb219ad5d9fe8518d5dab332516d86e85d8921a9e6e23d6"
+      "sha256": "c6c393b67cd1b8bfe535c17632451e63b71a6edff08bf0418343a5c134a37ab4"
     },
     {
       "path": "itemLookup.html",
-      "sha256": "9f378d3ff15f6eb3d5bdfbb978defeb6de746ac11ab3c109d85cbad111a4f9bc"
+      "sha256": "276688df9d16afa0fe259d5186f45f8bbf463c1dec49f8caba20720c24abecbe"
     },
     {
       "path": "main.html",
-      "sha256": "f78543eec183436dc8e054f234546af9cb8229608f664d63ba4da6ed6aff288d"
+      "sha256": "6a5c5b2994290812807d1608188a4f0eac4ec32f89132c4015320db00c37cc2e"
     }
   ]
 }
