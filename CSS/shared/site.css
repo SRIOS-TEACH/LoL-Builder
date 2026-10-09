@@ -18,7 +18,7 @@ body.site-page.compact-dashboard {
 .site-page:not(.compact-dashboard) .page-wrapper {position:relative;height:auto;min-height:100dvh;overflow:visible;}
 .site-page:not(.compact-dashboard) .page-wrapper > .content-wrapper {position:static;height:auto;overflow:visible;}
 .site-page .page-wrapper > .navbar {
-  position:relative;
+  position:sticky;top:0;z-index:50;
   min-height:var(--navbar-height);
   height:var(--navbar-height);
   padding:0 24px;
@@ -187,3 +187,11 @@ body.site-page.compact-dashboard {
   .site-page .compare-ability {padding:8px 3px;}
 }
 @media(max-width:1050px) {.site-page.compact-dashboard .builder-dashboard {height:auto;}}
+
+/* Compact tool titles share the Champion Explorer treatment. */
+.site-page :is(.page-heading,.explorer-heading).minimal-page-heading {margin-bottom:10px;}
+.site-page :is(.page-heading,.explorer-heading).minimal-page-heading h1 {font-size:27px;margin:0;}
+.site-page:is(.item-shop-view,.comparator-view) .explorer-page {padding:20px 28px;}
+.site-page section[id],.site-page .item-inspector {scroll-margin-top:calc(var(--navbar-height) + 16px);}
+.site-page .item-inspector {top:calc(var(--navbar-height) + 20px);}
+@media(max-width:700px){.site-page:is(.item-shop-view,.comparator-view) .explorer-page{padding:20px 16px;}}

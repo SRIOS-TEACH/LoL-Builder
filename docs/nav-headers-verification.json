@@ -1,105 +1,74 @@
 {
-  "schemaVersion": 1,
-  "releaseDate": "2026-10-09",
-  "timezone": "Australia/Sydney",
+  "date": "2026-10-09",
   "passed": true,
-  "releaseTarget": "main: minimal tool titles and sticky shared navigation",
-  "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
-  "checks": {
-    "unit": {
+  "scope": "Minimal Item Explorer and Comparator title treatment matching Champion Explorer; shared sticky navigation on all five pages with item inspector/anchor offsets.",
+  "unitTests": 237,
+  "currentBrowserSuites": 4,
+  "checks": [
+    {
+      "name": "units",
       "passed": true,
-      "count": 237,
-      "evidence": "docs/nav-headers-verification.json"
+      "log": "test-results/nav-headers/units.log",
+      "summary": [
+        "ℹ tests 237",
+        "ℹ fail 0"
+      ]
     },
-    "browser": {
+    {
+      "name": "styles",
       "passed": true,
-      "count": 32,
-      "routes": 2,
-      "advancedAndFallback": true,
-      "evidence": "docs/nav-headers-verification.json",
-      "currentSuites": 4,
-      "inheritedFullSuiteEvidence": "docs/pre-nav-headers-release.json",
-      "scope": "Current generated root/preview theme scrolling checks, explorer interactions and Comparator edits. Historical full-suite count retained in prior evidence."
+      "log": "test-results/nav-headers/styles.log",
+      "summary": [
+        "PASS stylesheet dependencies: {\"stylesheets\":18,\"customProperties\":296}"
+      ]
     },
-    "baseline": {
+    {
+      "name": "theme-preview",
       "passed": true,
-      "comparisons": 20,
-      "comparisonComplete": true,
-      "unexplainedDifferences": 0,
-      "exactBaselineMatch": false,
-      "evidence": "docs/css-refactor-verification.json",
-      "scope": "Historical numeric comparison for unchanged calculator modules; rendered theme differs intentionally."
+      "log": "test-results/nav-headers/theme-preview.log",
+      "summary": [
+        "PASS coherent theme: all five native pages, matching navigation, one active link, no document/content overflow at 390/768/1440/1920px, real build cards and shared modal styling"
+      ]
     },
-    "headless": {
+    {
+      "name": "explorers",
       "passed": true,
-      "cases": 10,
-      "inputIsolation": true,
-      "evidence": "docs/editable-comparator-verification.json"
+      "log": "test-results/nav-headers/explorers.log",
+      "summary": [
+        "PASS explorer design: search, role roster, latest selection, named items, filters, keyboard focus, empty/error states and 390/768/1440px layouts"
+      ]
     },
-    "reuse": {
+    {
+      "name": "comparator",
       "passed": true,
-      "catalogs": true,
-      "simultaneousUIInstances": 2,
-      "immutableInputs": true,
-      "evidence": "docs/explorer-release-verification.json"
-    },
-    "recovery": {
-      "passed": true,
-      "independentBackup": true,
-      "unitTests": 201,
-      "cases": 10,
-      "evidence": "docs/phase6-recovery.json",
-      "scope": "Protected pre-refactor baseline and its independent backup remain unchanged. Historical recovery proof retained; current CSS source reproduced separately."
-    },
-    "performance": {
-      "passed": true,
-      "actualEntryVisits": 40,
-      "layoutEquivalent": true,
-      "baselineCommit": "dec545072a02196260df10837258b857caa805f0",
-      "evidence": "docs/css-refactor-performance.json",
-      "note": "Controlled pre-CSS-refactor fixture benchmark; not real CDN/network performance.",
-      "scope": "Preserved historical benchmark for unchanged calculator modules; new pages are not benchmarked."
-    },
-    "cleanSource": {
-      "passed": true,
-      "unitTests": 237,
-      "build": true,
-      "generatedCopiesMatch": true,
-      "evidence": "docs/nav-headers-verification.json"
-    },
-    "css": {
-      "passed": true,
-      "requiredVariablesResolve": true,
-      "evidence": "docs/nav-headers-verification.json",
-      "scope": "Minimal title styles, navbar top position while scrolling at four widths, active mobile navigation, item inspector offsets, anchor margins and all-page overflow."
+      "log": "test-results/nav-headers/comparator.log",
+      "summary": [
+        "PASS editable comparator: independent items, ranks, target, combo, cancel, pin, sort, manual order persistence and mobile layout",
+        "PASS saved data controls: cancel and Escape preserve builds, delete builds keeps preferences, full reset repairs corrupt data, only app keys removed, available on Home and Comparator",
+        "PASS actual native entry: champion, ranks, inventory, target and combo without injected test globals"
+      ]
     }
-  },
-  "evidence": [
-    "phase6-verification.json",
-    "phase6-performance.json",
-    "phase6-recovery.json",
-    "phase6-headless.json",
-    "explorer-release-verification.json",
-    "save-toolbar-verification.json",
-    "inline-toolbar-verification.json",
-    "editable-comparator-verification.json",
-    "explorer-design-verification.json",
-    "saved-data-verification.json",
-    "coherent-theme-verification.json",
-    "pre-item-shop-release.json",
-    "item-shop-verification.json",
-    "pre-item-layout-fix-release.json",
-    "item-layout-fix-verification.json",
-    "pre-champion-layout-release.json",
-    "champion-layout-verification.json",
-    "pre-champion-details-release.json",
-    "champion-details-verification.json",
-    "pre-nav-headers-release.json",
-    "nav-headers-verification.json"
   ],
-  "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
-  "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
-  "cssBaselineCommit": "dec545072a02196260df10837258b857caa805f0",
+  "rootTheme": {
+    "passed": true,
+    "realArtwork": true,
+    "widths": [
+      390,
+      768,
+      1440,
+      1920
+    ]
+  },
+  "visualReview": {
+    "passed": true,
+    "screenshots": "test-results/site-theme",
+    "reviewed": [
+      "items-1440.png",
+      "comparator-1440.png"
+    ],
+    "scrollAssertions": "Every native page at four widths: sticky navigation and top coordinate after document scroll."
+  },
+  "generatedCopiesMatch": true,
   "runtimeFiles": [
     {
       "path": "Builder.html",
@@ -505,5 +474,6 @@
       "path": "main.html",
       "sha256": "58857a6c55e29e21e4f21e016498e4d024a076c5e985f02f24f36b184b6842b1"
     }
-  ]
+  ],
+  "inheritedEvidence": "docs/pre-nav-headers-release.json"
 }
