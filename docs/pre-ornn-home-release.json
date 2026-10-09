@@ -3,23 +3,23 @@
   "releaseDate": "2026-10-09",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: official Ornn Runeterra artwork on Home",
+  "releaseTarget": "main: minimal tool titles and sticky shared navigation",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
       "count": 237,
-      "evidence": "docs/ornn-home-verification.json"
+      "evidence": "docs/nav-headers-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/ornn-home-verification.json",
-      "currentSuites": 2,
-      "inheritedFullSuiteEvidence": "docs/pre-ornn-home-release.json",
-      "scope": "Current generated root/preview all-page theme checks, with real Riot art review on root. Previous full-suite behavior coverage retained; no interaction modules changed."
+      "evidence": "docs/nav-headers-verification.json",
+      "currentSuites": 4,
+      "inheritedFullSuiteEvidence": "docs/pre-nav-headers-release.json",
+      "scope": "Current generated root/preview theme scrolling checks, explorer interactions and Comparator edits. Historical full-suite count retained in prior evidence."
     },
     "baseline": {
       "passed": true,
@@ -65,13 +65,13 @@
       "unitTests": 237,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/ornn-home-verification.json"
+      "evidence": "docs/nav-headers-verification.json"
     },
     "css": {
       "passed": true,
       "requiredVariablesResolve": true,
-      "evidence": "docs/ornn-home-verification.json",
-      "scope": "Reviewed Ornn hero crop/readability and credit/notice placement on desktop/mobile; theme, scrolling navigation and bounds checked at four widths."
+      "evidence": "docs/nav-headers-verification.json",
+      "scope": "Minimal title styles, navbar top position while scrolling at four widths, active mobile navigation, item inspector offsets, anchor margins and all-page overflow."
     }
   },
   "evidence": [
@@ -95,9 +95,7 @@
     "pre-champion-details-release.json",
     "champion-details-verification.json",
     "pre-nav-headers-release.json",
-    "nav-headers-verification.json",
-    "pre-ornn-home-release.json",
-    "ornn-home-verification.json"
+    "nav-headers-verification.json"
   ],
   "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
   "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
@@ -141,7 +139,7 @@
     },
     {
       "path": "CSS/lolBuilder.css",
-      "sha256": "adf3503f8ff637463b1796cc46e06f3ae9622668df0b4b8d066849dad234b955"
+      "sha256": "1fb99ad73418b76373f2a9c512b847e6c545006bdc6098d7db7a7827c5602331"
     },
     {
       "path": "CSS/pages/builder.css",
@@ -169,7 +167,7 @@
     },
     {
       "path": "CSS/shared/site.css",
-      "sha256": "1c365d372504515def09cba73f8f1afb5ad900d104f49b909466cacca663afa8"
+      "sha256": "d27b8f9bfe082301219c1c54a67e5cd0f2463519c9c5f6e8feaa1ca5bda3de6c"
     },
     {
       "path": "CSS/shared/state.css",
@@ -505,7 +503,7 @@
     },
     {
       "path": "main.html",
-      "sha256": "6a5c5b2994290812807d1608188a4f0eac4ec32f89132c4015320db00c37cc2e"
+      "sha256": "58857a6c55e29e21e4f21e016498e4d024a076c5e985f02f24f36b184b6842b1"
     }
   ]
 }

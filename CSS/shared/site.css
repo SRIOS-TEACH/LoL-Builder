@@ -83,7 +83,7 @@ body.site-page.compact-dashboard {
 .site-page .champion-hero {border-radius:var(--site-radius);border-color:var(--site-border-hover);}
 /* Home is an entry to the same tools and uses the same artwork treatment. */
 .site-hero {position:relative;overflow:hidden;border:1px solid var(--site-border-hover);border-radius:var(--site-radius);padding:48px;min-height:350px;display:flex;align-items:center;}
-.home-hero {background:#122239;background-image:linear-gradient(90deg,#07111ff5,#091526b0 50%,#0b172b1a),url('https://ddragon.leagueoflegends.com/cdn/img/champion/splash/Ezreal_0.jpg');background-size:cover;background-position:center,center 32%;}
+.home-hero {background:#122239;background-image:linear-gradient(90deg,#07111ff5,#091526b0 50%,#0b172b1a),url('https://dd.b.pvp.net/7_10_0/set6cde/en_us/img/cards/06FR011-full.png');background-size:cover;background-position:center,center 32%;}
 .home-hero h1 {font-size:clamp(36px,5vw,60px);font-weight:750;letter-spacing:-1.5px;margin:8px 0 18px;line-height:1.15;}
 .home-hero p:not(.site-eyebrow) {font-size:16px;line-height:1.8;color:#bfd0e5;margin-bottom:24px;}
 .home-hero .btn {display:inline-flex;align-items:center;height:40px;font-size:14px;}
@@ -195,3 +195,6 @@ body.site-page.compact-dashboard {
 .site-page section[id],.site-page .item-inspector {scroll-margin-top:calc(var(--navbar-height) + 16px);}
 .site-page .item-inspector {top:calc(var(--navbar-height) + 20px);}
 @media(max-width:700px){.site-page:is(.item-shop-view,.comparator-view) .explorer-page{padding:20px 16px;}}
+
+.home-hero .site-art-credit {max-width:calc(100% - 36px);line-height:1.4;text-align:right;}
+.fan-project-notice {margin-top:24px;padding-top:16px;border-top:1px solid var(--site-border);font-size:11px;line-height:1.7;color:var(--site-muted);}
