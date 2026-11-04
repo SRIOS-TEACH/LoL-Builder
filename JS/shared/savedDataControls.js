@@ -28,6 +28,7 @@ for (const host of document.querySelectorAll('[data-saved-data-controls]')) {
   dialog.querySelector('[data-confirm-clear]').onclick = () => {
     try {
       localStorage.removeItem(keys.builds);
+      for(const key of Object.keys(localStorage))if(key.startsWith('lol-buildsmith.defense.v1:'))localStorage.removeItem(key);
       if (scope==='all') localStorage.removeItem(keys.preferences);
       window.dispatchEvent(new CustomEvent('saved-data-cleared',{detail:{scope}}));
       host.querySelector('.saved-data-status').textContent = scope==='all' ? 'All saved builds and comparison preferences cleared.' : 'All saved builds deleted.';

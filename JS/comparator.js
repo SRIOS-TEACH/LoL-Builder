@@ -1,3 +1,5 @@
+import {defensePanel} from './ui/defensePanel.mjs';
+import {effectiveHealth,cdr} from './domain/defenseMetrics.js';
 import {pickBuilds} from './shared/buildPicker.js';
 import './shared/savedDataControls.js';
 import SavedBuilds from './shared/savedBuilds.js';
@@ -28,10 +30,16 @@ function card(build){
  el.append(button(build.state.target?.enabled?`Target: ${build.state.target.currentHp} HP · ${build.state.target.armor} armor · ${build.state.target.mr} MR`:'Target settings · Off',()=>edit(build,'target')));
  for(const [title,text]of [['Champion stats',build.stats],['Selected runes',build.runes]]){const details=document.createElement('details');details.append(node('summary',title));
   if(title==='Champion stats'&&build.metrics){for(const [key,label]of Object.entries(statLabels)){if(Number.isFinite(build.metrics[key])){const row=node('div','','compare-stat');row.append(node('span',label),node('strong',Number(build.metrics[key].toFixed(2)).toString()));details.append(row);}}}else details.append(node('div',title==='Selected runes'&&build.runeNames?build.runeNames.join('\n'):text||'No results saved','compare-results'));if(title==='Selected runes')details.append(button('Edit runes',()=>edit(build,'all')));el.append(details);}
- const abilities=node('div','','compare-abilities');for(const a of build.abilitySummary||[]){const cell=button('',()=>edit(build,'abilities',a.slot==='p'?'q':a.slot),'Edit '+a.name);cell.className='compare-ability';cell.dataset.slot=a.slot;if(a.icon){const img=document.createElement('img');img.src=a.icon;img.alt=a.name;cell.append(img);}cell.append(node('strong',a.slot.toUpperCase()),node('small',a.rank===undefined?'Passive':'Rank '+a.rank),node('span',/unavailable|See Builder/i.test(a.damage)?'—':a.damage.replace(/^Damage:\s*/,'').replace(/\b(?:physical|magic|true) damage\b/gi,'').trim()));const damageText=cell.querySelector('span');if(a.damageParts?.length){damageText.replaceChildren();a.damageParts.forEach((part,index)=>{if(index)damageText.append(document.createTextNode(' / '));const value=node('b',part.text);value.dataset.damageType=part.type;damageText.append(value);});}damageText.tabIndex=0;damageText.setAttribute('aria-label',a.name+' damage');abilities.append(cell);}const damage=node('section','','compare-damage');damage.append(node('h3','Ability damage'),abilities);el.insertBefore(damage,items);
- const metrics=node('div','','compare-metrics');for(const [label,key]of [['Attack','attackDamage'],['DPS','dps']]){const box=node('div','','compare-metric');box.append(node('small',label),node('strong',Number.isFinite(build.metrics?.[key])?build.metrics[key].toFixed(1):'—'));metrics.append(box);};el.insertBefore(metrics,damage);if(build.attackNotes?.length)el.append(node('small',build.attackNotes.join(' '),'text-muted'));
+ const abilities=node('div','','compare-abilities');for(const a of build.abilitySummary||[]){const cell=button('',()=>edit(build,'abilities',a.slot==='p'?'q':a.slot),'Edit '+a.name);cell.className='compare-ability';cell.dataset.slot=a.slot;if(a.icon){const img=document.createElement('img');img.src=a.icon;img.alt=a.name;cell.append(img);}cell.append(node('strong',a.slot.toUpperCase()),node('small',a.rank===undefined?'Passive':'Rank '+a.rank),node('span',/unavailable|See Builder/i.test(a.damage)?'—':a.damage.replace(/^Damage:\s*/,'').replace(/\b(?:physical|magic|true) damage\b/gi,'').trim()));const damageText=cell.querySelector('span');if(a.damageParts?.length){damageText.replaceChildren();a.damageParts.forEach((part,index)=>{if(index)damageText.append(document.createTextNode(' / '));const value=node('b',part.text);value.dataset.damageType=part.type;damageText.append(value);});}if(a.abilityDps?.length){damageText.append(node('small',a.abilityDps.map(row=>row.dps+' DPS').join('\n'),'ability-dps-note'));}damageText.tabIndex=0;damageText.setAttribute('aria-label',a.name+' damage');
+ if(a.charges?.outcomes?.length>1){
+  const badge=node('b','','charge-badge');cell.append(badge);cell.classList.add('has-charges');const key=build.id+':'+a.slot;let selected=Math.max(1,Math.min(a.charges.max,preferences.charges?.[key]||1));
+  const draw=()=>{const outcome=a.charges.outcomes[selected-1];badge.textContent=selected+' / '+a.charges.max;cell.setAttribute('aria-label',a.name+': '+selected+' of '+a.charges.max+' charges. Activate to cycle.');cell.title='Click to cycle charges. '+a.charges.note+' Use Edit build to change ability rank.';damageText.replaceChildren();if(!outcome.parts.length)damageText.append(node('b','—'));outcome.parts.forEach((part,index)=>{if(index)damageText.append(document.createTextNode(' + '));const value=node('b',Number.isFinite(part.value)?part.value.toFixed(1):'—');value.dataset.damageType=part.type;damageText.append(value);});damageText.append(node('small',(Number.isFinite(outcome.dps)?outcome.dps.toFixed(1):'—')+' DPS','ability-dps-note'));};
+  cell.onclick=()=>{selected=selected%a.charges.max+1;preferences.charges={...preferences.charges,[key]:selected};persist();draw();};draw();
+ }
+ abilities.append(cell);}const damage=node('section','','compare-damage');damage.append(node('h3','Ability damage'),abilities);el.insertBefore(damage,items);
+ build.metrics={...build.metrics,cdr:cdr(build.metrics?.abilityHaste)};const metrics=node('div','','compare-metrics');for(const [label,key]of [['Attack','attackDamage'],['DPS','dps'],['CDR','cdr']]){const box=node('div','','compare-metric');box.append(node('small',label),node('strong',Number.isFinite(build.metrics?.[key])?build.metrics[key].toFixed(1)+(key==='cdr'?'%':''):'—'));metrics.append(box);};el.insertBefore(metrics,damage);if(build.attackNotes?.length)el.append(node('small',build.attackNotes.join(' '),'text-muted'));
  const choices=comboChoices(build),chosen=choices[preferences.combos?.[build.id]]||choices[0];
- const combo=button('',()=>selectCombo(build),'Select combo for '+build.name);combo.className='compare-combo';combo.append(node('span','Combo '+(choices.indexOf(chosen)+1),'combo-label'),node('strong',Number.isFinite(chosen.damage)?chosen.damage.toFixed(1)+' damage':'—','combo-total'),node('span',chosen.text.split('\n').filter((line,index)=>index===0||/^Minimum time:/i.test(line)).join('\n')||'No combo saved','compare-results'));if(chosen.text.split('\n').slice(1).some(line=>line.trim()&&!/^(Total damage:|Minimum time:)/i.test(line))){const warning=node('span',' !','combo-warning');warning.title='This combo has calculation warnings. Open the combo selector to review.';warning.setAttribute('aria-label','Calculation warning');combo.querySelector('.combo-total').append(warning);}el.insertBefore(combo,damage);
+ const combo=button('',()=>selectCombo(build),'Select combo for '+build.name);combo.className='compare-combo';combo.append(node('span','Combo '+(choices.indexOf(chosen)+1),'combo-label'),node('strong',Number.isFinite(chosen.damage)?chosen.damage.toFixed(1)+' damage':'—','combo-total'),node('span',chosen.text.split('\n').filter((line,index)=>index===0||/^Minimum time:/i.test(line)).join('\n')||'No combo saved','compare-results'));if(chosen.text.split('\n').slice(1).some(line=>line.trim()&&!/^(Total damage:|Minimum time:)/i.test(line))){const warning=node('span',' !','combo-warning');warning.title='This combo has calculation warnings. Open the combo selector to review.';warning.setAttribute('aria-label','Calculation warning');combo.querySelector('.combo-total').append(warning);}combo.append(node('span','Combo cooldown: '+(Number.isFinite(chosen.cooldown)?chosen.cooldown.toFixed(1)+' s':'unavailable'),'ability-dps-note'));el.insertBefore(combo,damage);el.insertBefore(defensePanel(build),items);
  const footer=node('div','','compare-actions');footer.append(iconButton('left',()=>reorder(build.id,-1),'Move '+build.name+' left'),iconButton('right',()=>reorder(build.id,1),'Move '+build.name+' right'),iconButton('edit',()=>edit(build),'Edit build'),iconButton('copy',()=>{SavedBuilds.copy(build.id);render();},'Copy'),iconButton('delete',()=>{SavedBuilds.remove(build.id);if(preferences.pinned===build.id)preferences.pinned=null;persist();render();},'Delete'));el.append(footer,node('small',`Patch ${build.version} · ${new Date(build.savedAt).toLocaleDateString()}`));return el;
 }
 function render(){try{
@@ -51,7 +59,7 @@ window.addEventListener('saved-data-cleared',resetSavedData);
 window.addEventListener('storage',event=>{if(event.key===null||(event.key==='lol-buildsmith.builds.v1'||event.key===preferenceKey)&&event.newValue===null)resetSavedData();else render();});render();
 
 async function upgradeLegacy(refreshAll=false){
- if(upgrading)return;const legacy=SavedBuilds.read().filter(build=>refreshAll||!build.metrics||build.abilitySummary?.some(a=>!a.damageParts));if(!legacy.length)return;
+ if(upgrading)return;const legacy=SavedBuilds.read().filter(build=>refreshAll||!build.metrics||build.metricsVersion!==3);if(!legacy.length)return;
  const generation=dataGeneration;upgrading=true;render();let failed=0;
  const host=document.createElement('div');host.hidden=true;document.body.append(host);
  try{for(const build of legacy){if(generation!==dataGeneration)break;let session;try{session=await createBuildDraft(host,build);const current=SavedBuilds.read().find(b=>b.id===build.id);if(generation===dataGeneration&&current?.savedAt===build.savedAt)SavedBuilds.save(session.capture());}catch{failed++;}finally{session?.dispose();}}}
@@ -66,7 +74,7 @@ function updateScrollEdges(){
  grid.style.setProperty('--fade-right',grid.scrollLeft<grid.scrollWidth-grid.clientWidth-2?'24px':'0px');
 }
 grid.addEventListener('pointerdown',event=>{
- if(event.pointerType!=='mouse'||event.button!==0)return;
+ if(event.pointerType!=='mouse'||event.button!==0||event.target.closest('input,select,textarea'))return;
  suppressClick=false;drag={id:event.pointerId,x:event.clientX,left:grid.scrollLeft,active:false};
 });
 grid.addEventListener('pointermove',event=>{
@@ -85,7 +93,7 @@ grid.addEventListener('keydown',event=>{if(event.target===grid&&['ArrowLeft','Ar
 
 
 function comboChoices(build){
- const entries=[{text:build.combo||'',damage:build.metrics?.comboDamage,steps:build.comboSteps||[]},...(build.comboVariants||[])];
+ const entries=[{text:build.combo||'',damage:build.metrics?.comboDamage,steps:build.comboSteps||[],cooldown:build.comboCooldown},...(build.comboVariants||[])];
  return entries.filter((entry,index)=>entries.findIndex(other=>JSON.stringify(other.steps)===JSON.stringify(entry.steps))===index).sort((a,b)=>(b.damage||0)-(a.damage||0));
 }
 function selectCombo(build){

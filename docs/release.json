@@ -3,23 +3,23 @@
   "releaseDate": "2026-11-04",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: build search and duplicate overwrite/rename choices",
+  "releaseTarget": "main: survivability, cooldown metrics and ability charge cycling",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
-      "count": 237,
-      "evidence": "docs/build-management-v2-verification.json"
+      "count": 239,
+      "evidence": "docs/defense-charges-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/build-management-v2-verification.json",
-      "currentSuites": 2,
+      "evidence": "docs/defense-charges-verification.json",
+      "currentSuites": 4,
       "inheritedFullSuiteEvidence": "docs/pre-comparator-layout-release.json",
-      "scope": "Build-management and comparator regressions passed on root and generated preview; historical full suite retained."
+      "scope": "Full-health, constant damage split, one non-expiring shield activation; selectable conditional effects. Charge DPS models sequential recharge for ammo and one shared cooldown for recasts, plus execution time. Unsupported source values remain unavailable. Resets and timed trigger ordering are not simulated. Comparator and defense/charge browser suites passed on root and generated preview. Historical broad baseline remains inherited."
     },
     "baseline": {
       "passed": true,
@@ -62,10 +62,10 @@
     },
     "cleanSource": {
       "passed": true,
-      "unitTests": 237,
+      "unitTests": 239,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/build-management-v2-verification.json"
+      "evidence": "docs/defense-charges-verification.json"
     },
     "css": {
       "passed": true,
@@ -101,7 +101,8 @@
     "buildsmith-name-verification.json",
     "comparator-layout-verification.json",
     "build-management-verification.json",
-    "build-management-v2-verification.json"
+    "build-management-v2-verification.json",
+    "defense-charges-verification.json"
   ],
   "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
   "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
@@ -161,7 +162,7 @@
     },
     {
       "path": "CSS/pages/comparator.css",
-      "sha256": "d03f13481d00d3f90cecce1455a104c1ed22d8c25f8e480b8d279996c5cafd25"
+      "sha256": "76e070b61f40a29a8bfd4d8557b286c6b77f71d2284155b729112fee7b743a58"
     },
     {
       "path": "CSS/pages/explorer-design.css",
@@ -197,7 +198,7 @@
     },
     {
       "path": "JS/application/buildSnapshot.mjs",
-      "sha256": "181bea4d414c9d51827d8a572bfd324377ca369596276606f4b44a39a044b5ff"
+      "sha256": "743e762d89d282b863391c989f1850b17f9cd8912116bfffa2802177fd725318"
     },
     {
       "path": "JS/application/builderPage.mjs",
@@ -210,6 +211,10 @@
     {
       "path": "JS/application/comparisonEditor.mjs",
       "sha256": "9b1afd669c0c70aab7df86a095c1048ba8eea9c053b68e6386e041a678219010"
+    },
+    {
+      "path": "JS/application/comparisonMetrics.mjs",
+      "sha256": "fbcc55dd8e87aff2b8924934b5f0994d3917d81d4d0cb22ba5d19ac219aaef8e"
     },
     {
       "path": "JS/application/runeDefaults.mjs",
@@ -229,7 +234,7 @@
     },
     {
       "path": "JS/comparator.js",
-      "sha256": "d1f169c6349db8c34389c2f9e01f029974cb60b54947e8e14dbb9a03b5a819f6"
+      "sha256": "0cf3c69837ae99999ead8507cdac08ae6d08ab75dd298b53f9cc760a92e544aa"
     },
     {
       "path": "JS/core/records.js",
@@ -264,8 +269,16 @@
       "sha256": "0b8bba809c600dc524d3c1b4cf28968376ff5d7f2c6694f32d4bcd5906a57468"
     },
     {
+      "path": "JS/domain/chargeComparison.js",
+      "sha256": "dae53ec8f7df29ca9c3ac23c2effe0245050805b2cd0bef83285b9eb4df6bb86"
+    },
+    {
       "path": "JS/domain/comparisonOrder.js",
       "sha256": "4f95ddc9c012f6f3550cf0c208ede9c3a833fc3daa7156a808763cc58008a20d"
+    },
+    {
+      "path": "JS/domain/defenseMetrics.js",
+      "sha256": "212f2b2bdd16718f436f7f2719021539dc85f238a4270f8047508205bd867772"
     },
     {
       "path": "JS/domain/recommendations.js",
@@ -413,7 +426,7 @@
     },
     {
       "path": "JS/shared/savedDataControls.js",
-      "sha256": "070e96a4c40a5c8bede59d79cdac5ecb9c071df648ea025c7c9ac718d8e6ed6e"
+      "sha256": "11414c103791208a7567acd9c491bfbc99e6deb5f32c431c231dc1259fd2685f"
     },
     {
       "path": "JS/shared/siteNavigation.js",
@@ -438,6 +451,10 @@
     {
       "path": "JS/ui/comboControls.mjs",
       "sha256": "925f44eeeb27d02c73ae6d3639dbbd6bab042f462d85e567fb88d370d7dcba71"
+    },
+    {
+      "path": "JS/ui/defensePanel.mjs",
+      "sha256": "ce95c31622d05e4ff474292c098246c7e2281b981730896d5a1dd3342e8e92da"
     },
     {
       "path": "JS/ui/inventory.mjs",
