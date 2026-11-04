@@ -1,3 +1,4 @@
+import NeutralBuffs from '../shared/neutralBuffs.js';
 import {SHOP_FILTER_GROUPS,SHOP_ROLES} from '../presentation/shopFilters.mjs';
 import STAT_ICONS from '../presentation/statIcons.mjs';
 import {createStatsView} from '../ui/statsView.mjs';
@@ -447,7 +448,31 @@ function renderStats(){
 }
 function abilityModel(){return {...BuildInputs.readBuildInputs(state),...ScenarioInputs.createScenarioInputs(state),version:state.version,championData:state.championData,cdragonAbilityData:state.cdragonAbilityData,cdragonRaw:state.cdragonRaw};}
 function runeModel(){return {runeSelections:state.runeSelections,runeStacks:state.runeStacks,gameTimeMinutes:state.gameTimeMinutes,runesLoading:state.runesLoading};}
-function invalidate(){if(life.disposed)return;renderStats();renderAbilityCards();}
+function invalidate(){if(life.disposed)return;renderStats();renderAbilityCards();renderNeutralBuffs();}
+
+let neutralRoot;
+function renderNeutralBuffs(){
+ if(!neutralRoot)return;
+ const model=NeutralBuffs.model(state),v=state.combatValues;
+ neutralRoot.innerHTML='<h2>Map buffs</h2><div class="neutral-buffs">'+NeutralBuffs.controls.map(([key,label])=>{
+  const on=model.active(key);
+  return `<label class="neutral-buff"><input type="checkbox" data-neutral="${key}" ${on?'checked':''}> <strong>${label}</strong>${on&&NeutralBuffs.dragons[key]?`<input aria-label="${label} stacks" type="number" min="0" max="4" step="1" data-neutral-value="${key}:stacks" value="${model.count(key)}"> stacks`:''}</label>`;
+ }).join('')+'</div>'+(model.active('baron')?`<div class="combat-input-grid"><label>Baron bonus AD<input class="form-control" type="number" min="0" max="48" data-neutral-value="baron:ad" value="${Number(v['neutral:baron:ad']??12)}"></label><label>Baron bonus AP<input class="form-control" type="number" min="0" max="80" data-neutral-value="baron:ap" value="${Number(v['neutral:baron:ap']??20)}"></label></div><small>Set the bonus granted when Baron was slain; defaults to the 20-minute bonus.</small>`:'')+
+ (model.active('cloud')||model.active('red')?`<label><input type="checkbox" data-neutral="outOfCombat" ${v['neutral:outOfCombat']?'checked':''}> Out of combat</label>`:'');
+}
+function mountNeutralBuffs(){
+ neutralRoot=root.ownerDocument.createElement('section');neutralRoot.className='section-card dashboard-panel';neutralRoot.dataset.neutralBuffs='';
+ elements.runesCard.after(neutralRoot);
+ life.on(neutralRoot,'change',event=>{
+  const el=event.target;
+  if(el.dataset.neutral)state.combatValues['neutral:'+el.dataset.neutral]=el.checked;
+  else if(el.dataset.neutralValue){if(!el.checkValidity())return;state.combatValues['neutral:'+el.dataset.neutralValue]=Math.max(0,Number(el.value)||0);}
+  else return;
+  invalidate();
+ });
+ renderNeutralBuffs();
+}
+
 function mountComponents(){
  life.on(elements.passiveModalList,'click',event=>{
  const button=event.target.closest('[data-item-passive]');if(!button||!elements.passiveModalList.contains(button))return;
@@ -460,6 +485,7 @@ function mountComponents(){
     if(state.activeSlot!==null)renderModalItemDetail(state.inspectedItemId);
 
  });
+ mountNeutralBuffs();
  statsView=createStatsView({root:elements.statsTable});
  championList=createCatalogList({root:elements.modalChampGrid,kind:'champion',onInspect:renderChampionModalDetail,onSelect:setChampionFromModal});
  championDetail=createChampionDetail({root:elements.modalChampDetail,loadDetail:async name=>(await repository.loadChampionDetails(state.version,name)).record});
@@ -479,12 +505,12 @@ function renderChampionModalDetail(id){state.hoveredChampion=id;return championD
 function renderModalItemDetail(id){state.inspectedItemId=id;itemList?.select(id);renderCombatInputs();itemDetail?.update({id,item:state.items[id],version:state.version,source:itemLookup.getState().cdragonById[id],base:baseCalculationContext(getComputedChampionStatsForTooltips()),values:state.combatValues});}
 function renderItemSlots(){inventory?.update({slots:state.itemSlots,items:state.items,version:state.version});}
 function refreshSlotLabels(){renderItemSlots();}
-function renderRunePanel(){runeControls?.update(runeModel(),RUNE_DATA);}
+function renderRunePanel(){runeControls?.update(runeModel(),RUNE_DATA);renderNeutralBuffs();}
 function renderAbilityCards(){comboControls?.update(abilityModel());abilityControls?.update(abilityModel());}
 function renderCombatInputs(){abilityControls?.refreshCombat();}
 
 function dispose(){
- if(life.disposed)return;state.uiReady=false;state.championRequestId++;life.dispose();
+ if(life.disposed)return;neutralRoot?.remove();state.uiReady=false;state.championRequestId++;life.dispose();
  for(const view of [statsView,championList,championDetail,itemList,itemDetail,inventory,targetControls,runeControls,abilityControls,comboControls])view?.dispose();
  for(const name of ['champModal','itemModal','passiveModal'])elements[name]?.classList.add('hidden');
 }

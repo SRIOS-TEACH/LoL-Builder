@@ -1,3 +1,4 @@
+import NeutralBuffs from '../shared/neutralBuffs.js';
 import TextValues from '../core/text.js';
 import CalculationContext from './calculationContext.js';
 import AttackEffects from '../shared/attackEffects.js';
@@ -171,7 +172,7 @@ function computeDerivedBuildStats() {
     moveSpeed,
     passiveLedger: ledger,
   };
-  const applied = AttackEffects.model(state, advancedItems).apply(ChampionEffects.model(state).apply(computed));
+  const applied = NeutralBuffs.model(state).apply(AttackEffects.model(state, advancedItems).apply(ChampionEffects.model(state).apply(computed)),ledger.apMultiplier);
   // Rune percentage bonuses include health/resistances earned from champion stacks.
   applied.hp *= 1 + (rune.hpPct || 0) / 100;
   applied.armor *= 1 + (rune.armorPct || 0) / 100;
@@ -225,11 +226,12 @@ function getComputedChampionStatsForTooltips() {
   }
 
   return {
+    evolved:Object.fromEntries(['q','w','e','r'].map(slot=>[slot,state.combatValues['evolve:'+slot]===true])),
     ap: totalAp, baseAp: 0,
     magicDamageMultiplier:spellDamageMultiplier,trueDamageMultiplier:spellDamageMultiplier,
     itemHp: item.hp,
     ranged: computed.ranged ?? base.attackrange > 300,
-    healShieldPower: state.itemSlots.filter(Boolean).reduce((sum,id)=>sum+(advancedItems[id]?.mPercentHealingAmountMod||0),0),
+    healShieldPower: NeutralBuffs.model(state).healShieldPower + state.itemSlots.filter(Boolean).reduce((sum,id)=>sum+(advancedItems[id]?.mPercentHealingAmountMod||0),0),
     attackSpeed: computed.asTotal,
     bonusAttackSpeed: (base.attackspeedperlevel * BuildStats.growthFactor(L) + item.asPct + rune.asPct) / 100 + (computed.bonusAttackSpeedFromChampion || 0),
     moveSpeed: computed.moveSpeed, baseMoveSpeed: base.movespeed,
@@ -241,7 +243,7 @@ function getComputedChampionStatsForTooltips() {
     cooldownReduction: computed.abilityHaste / (100 + computed.abilityHaste),
     lifeSteal: (item.physicalVamp + rune.physicalVamp + (computed.championLifeSteal||0)) / 100, physicalVamp: (item.physicalVamp + rune.physicalVamp + (computed.championLifeSteal||0)) / 100, omniVamp: item.omniVamp / 100,
     magicPenFlat: computed.magicPenFlat, magicPenPct:computed.magicPenPct,
-    lethality: computed.armorPenFlat, armorPenFlat:computed.armorPenFlat, armorPenPct:computed.armorPenPct, tenacity: item.tenacity / 100,
+    lethality: computed.armorPenFlat, armorPenFlat:computed.armorPenFlat, armorPenPct:computed.armorPenPct, tenacity: 1-(1-item.tenacity/100)*(1-NeutralBuffs.model(state).tenacity),
     attackRange: computed.attackRange, baseAttackRange: base.attackrange,
     bonusAttackRange: computed.attackRange - base.attackrange,
     totalAd,

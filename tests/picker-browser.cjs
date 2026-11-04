@@ -40,6 +40,7 @@ const server = http.createServer((req, res) => {
     page.on('requestfailed', request => { if (isHeldUrl(request.url())) heldFailures.push(request.failure()?.errorText); });
     await page.route('**/*', async route => {
       const url = new URL(route.request().url());
+      if(url.hostname==='www.googletagmanager.com')return route.fulfill({contentType:'text/javascript',body:''});
       if (url.origin === base) return route.fallback();
       if (!url.pathname.endsWith('.json')) return route.fulfill({contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#334155"/></svg>'});
       if (isHeldUrl(url.href)) {

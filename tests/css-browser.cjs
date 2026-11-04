@@ -91,6 +91,7 @@ function compareSnapshots(a, b, id) {
         page.on('pageerror', error => errors.push(kind + ': ' + error.message));
         await page.route('**/*', async route => {
           const url = new URL(route.request().url());
+      if(url.hostname==='www.googletagmanager.com')return route.fulfill({contentType:'text/javascript',body:''});
           if (url.origin === base) return route.fallback();
           if (!url.pathname.endsWith('.json')) return route.fulfill({contentType:'image/svg+xml', body:'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#334155"/></svg>'});
           const name = url.pathname.endsWith('/items.cdtb.bin.json') ? 'cd-items.json' : url.pathname.endsWith('/versions.json') ? 'versions.json' : url.pathname.endsWith('/champion.json') ? 'champions.json' : url.pathname.endsWith('/item.json') ? 'items.json' : url.pathname.endsWith('/runesReforged.json') ? 'runes.json' : names.get(path.basename(url.pathname).toLowerCase());

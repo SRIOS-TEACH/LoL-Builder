@@ -46,12 +46,12 @@ test('Dead Man momentum scales its proc and obeys the supplied interval',()=>{
 });
 test('Dusk and Dawn repeats Nashor on-hit once per Spellblade proc without recursion',()=>{
   const x=model('Ahri',['2510','3115'],{'attack:spellblade':true,'attack:spellbladeInterval':2}),p=x.profile();
-  const nashor=p.rows.find(r=>r.label==='Nashor’s Tooth');near(nashor.perSecond,30*2+30/2);
-  near(p.rows.find(r=>r.spellbladeId===2510).perSecond,(.75*50+.1*100)/2);
+  const nashor=p.rows.find(r=>r.label==='Nashor’s Tooth');near(nashor.perSecond,30*2+30/1.5);
+  near(p.rows.find(r=>r.spellbladeId===2510).perSecond,(.75*50+.1*100)/1.5);
 });
 test('Rageblade and Dusk extra hits add and never multiply the base crit packet',()=>{
   const x=model('Ahri',['2510','3115','3124'],{'attack:rageStacks':4,'attack:spellblade':true,'attack:spellbladeInterval':2}),p=x.profile(),rate=2.32;
-  near(p.rate,rate);near(p.rows.find(r=>r.label==='Nashor’s Tooth').perSecond,30*(rate*4/3+.5));
+  near(p.rate,rate);near(p.rows.find(r=>r.label==='Nashor’s Tooth').perSecond,30*(rate*4/3+1/1.5));
 });
 test('Magnification scales the attack packet while Giant Slayer also scales non-true on-hits',()=>{
   const x=model('Ahri',['2523','3115'],{'attack:distance':250});near(x.profile().autoAttackDamage,132.5*1.05+30);
@@ -66,7 +66,7 @@ test('Sundered Sky and Fiendhunter do not add two forced-crit physical bonuses',
 });
 test('Viktor converts the full attack to magic without adding the normal physical attack twice',()=>{
   const x=model('Viktor',[],{'attack:siphon':true,'attack:siphonInterval':1}),p=x.profile();
-  near(p.autoAttackDamage,132.5+(120+50+100-132.5)/2);
+  near(p.autoAttackDamage,120+50+100);
   assert.ok(p.rows.some(r=>r.type==='physical'&&r.value<0));
 });
 test('Urgot Purge replaces crit damage and reduces on-hit damage, not proc count',()=>{

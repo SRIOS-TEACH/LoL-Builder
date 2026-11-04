@@ -31,6 +31,7 @@ const server = http.createServer((request, response) => {
     page.on('pageerror', error => errors.push(error.message));
     await page.route('**/*', async route => {
       const url = new URL(route.request().url());
+      if(url.hostname==='www.googletagmanager.com')return route.fulfill({contentType:'text/javascript',body:''});
       if (url.origin === base) return route.fallback();
       if (!url.pathname.endsWith('.json')) return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#334155"/></svg>' });
       const name = url.pathname.endsWith('/items.cdtb.bin.json') ? 'cd-items.json'

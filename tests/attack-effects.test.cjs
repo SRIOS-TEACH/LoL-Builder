@@ -54,7 +54,7 @@ test('Spellblade uses base AD and a proc interval bounded by its cooldown',()=>{
   const m=AttackEffects.model(state('Ahri',['3057'],v),fixtures.items).profile(s);
   near(m.rows[0].value,100);near(m.rows[0].perSecond,100/1.5);near(m.attackDps,265*2+100/1.5);
   const field=m.controls.find(c=>c.key==='attack:spellbladeInterval');
-  near(field.min,1.5);near(field.defaultValue,1.5);
+  assert.equal(field,undefined);near(m.autoAttackDamage,365);
   delete v['attack:spellbladeInterval'];near(AttackEffects.model(state('Ahri',['3057'],v),fixtures.items).profile(s).attackDps,265*2+100/1.5);
 });
 test('all Spellblade items resolve their game-authored proc formulas independently of average attack crits',()=>{
@@ -63,20 +63,20 @@ test('all Spellblade items resolve their game-authored proc formulas independent
   // Iceborn 150%, Essence Reaver 125%+50*critChance, Bloodsong100%, Dusk .75+.1AP.
   for(const [id,expected,type]of [[3057,100,'physical'],[3078,200,'physical'],[3100,165,'magic'],[6662,150,'physical'],[3508,137.5,'physical'],[3877,100,'physical'],[2510,95,'magic']]){
     const p=AttackEffects.model(state('Ahri',[String(id)],{'attack:spellblade':true}),fixtures.items).profile(s),r=p.rows.find(r=>r.spellbladeId===id);
-    near(r.value,expected);near(r.interval,1.5);near(r.perSecond,expected/1.5);near(r.perHit,expected/3);assert.equal(r.type,type);
+    near(r.value,expected);near(r.interval,1.5);near(r.perSecond,expected/1.5);near(r.perHit,expected);assert.equal(r.type,type);
     assert.match(p.breakdown,/per Spellblade proc; minimum cooldown 1.5s/);
   }
 });
-test('Spellblade accepts slower intervals and is limited by attack speed at slow attack rates',()=>{
+test('Spellblade ignores legacy intervals and is limited by attack speed at slow attack rates',()=>{
   const s=stats(),x=state('Ahri',['3100'],{'attack:spellblade':true,'attack:spellbladeInterval':4});
-  near(AttackEffects.model(x,fixtures.items).profile(s).rows[0].perSecond,120/4);
+  near(AttackEffects.model(x,fixtures.items).profile(s).rows[0].perSecond,120/1.5);
   x.combatValues['attack:spellbladeInterval']=-2;s.asTotal=.25;
   const p=AttackEffects.model(x,fixtures.items).profile(s);near(p.rows[0].interval,1.5);near(p.rows[0].perSecond,120*.25);near(p.rows[0].perHit,120);
 });
 test('Spellblade specific cooldown overrides generic cooldown and remains enforced if input is absent',()=>{
   const items=structuredClone(fixtures.items),x=state('Ahri',['3100'],{'attack:spellblade':true});
   items[3100].mDataValues.find(v=>v.mName==='SpellbladeCooldown').mValue=2;
-  const p=AttackEffects.model(x,items).profile(stats());near(p.rows[0].interval,2);near(p.controls.find(c=>c.key==='attack:spellbladeInterval').min,2);
+  const p=AttackEffects.model(x,items).profile(stats());near(p.rows[0].interval,2);assert.ok(!p.controls.some(c=>c.key==='attack:spellbladeInterval'));
 });
 test('disabling Muramana Shock on-hit leaves unrelated damage and input item stats intact',()=>{
   const x=state('Ahri',['3042','3115']),s=stats(),before=structuredClone(s),m=AttackEffects.model(x,fixtures.items);

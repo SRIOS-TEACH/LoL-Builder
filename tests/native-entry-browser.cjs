@@ -25,6 +25,7 @@ const server=http.createServer((req,res)=>{
  let failCore=false;
  await page.route('**/*',async route=>{
    const url=new URL(route.request().url());
+      if(url.hostname==='www.googletagmanager.com')return route.fulfill({contentType:'text/javascript',body:''});
    if(url.origin===base)return route.fallback();
    requests.push(url.href);
    if(!url.pathname.endsWith('.json'))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#334155"/></svg>'});

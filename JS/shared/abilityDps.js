@@ -46,7 +46,8 @@ import TargetDamage from './targetDamage.js';
       return Math.max(1.33, base * (1 - Math.min(2/3, Math.max(0, stats?.bonusAttackSpeed || 0) * 0.6)));
     }
     if (payload?.spellData?.mSpellTags?.includes('Trait_NotBenefitFromHaste')) return base;
-    return base / (1 + Math.max(0, stats?.haste || 0) / 100);
+    const refund=spell.id==='KaisaW'&&stats.evolved?.w?Number(payload?.effects?.[2]?.value?.[rank]??0)/100:0;
+    return base*(1-Math.max(0,Math.min(1,refund))) / (1 + Math.max(0, stats?.haste || 0) / 100);
   }
 
   function cycleTime(cooldown, delays = [], starts = 'last') {
@@ -226,6 +227,70 @@ import TargetDamage from './targetDamage.js';
       }
       note='Combined damage includes both casts. Enter the cast interval and whether cooldown overlaps it to calculate the full cycle. Before mitigation; excludes resets and extra procs.';
     } else switch(spell.id) {
+      case 'MissFortuneBulletTime':
+      case 'LucianR':
+      case 'KatarinaR': {
+        const count=spell.id==='MissFortuneBulletTime'?number('BaseWaves'):spell.id==='LucianR'?number('NumShots'):number('TicksPerSecond')*number('Duration');
+        const hit=spell.id==='MissFortuneBulletTime'?token('PhysicalDamagePerWave','physical'):spell.id==='LucianR'?token('DamagePerBullet','physical'):sum([token('DamageCalc','magic'),token('ADDamageCalc','physical')]);
+        add('Full channel',multiply(hit,count));
+        if(finite(count)&&count>0&&count<=100)rows.at(-1).hitPackets=Array.from({length:Math.floor(count)},()=>hit);break;
+      }
+      case 'SyndraR': {
+        const count=number('MaxSpheresToUse'),hit=token('DamageCalc','magic');add('All spheres',multiply(hit,count));
+        if(finite(count)&&count>0&&count<=10)rows.at(-1).hitPackets=Array.from({length:count},()=>hit);break;
+      }
+      case 'KaisaQ': {
+        const count=stats.evolved?.q?12:6,first=token('TotalIndividualMissileDamage','physical'),extra=multiply(first,number('ExtraHitReduction'));
+        add(stats.evolved?.q?'Evolved missiles':'Missiles',sum([first,multiply(extra,count-1)]));
+        rows.at(-1).hitPackets=[first,...Array.from({length:count-1},()=>extra)];break;
+      }
+      case 'ViktorE':
+        add('Laser',token('LaserDamage','magic'));
+        if(stats.evolved?.e)add('Laser + aftershock',sum([token('LaserDamage','magic'),token('AftershockDamage','magic')]));break;
+      case 'SyndraW':
+        add(stats.evolved?.w?'Evolved throw':'Throw',stats.evolved?.w?sum([token('ThrowDamage','magic'),token('PassiveBonusDamage','true')]):token('ThrowDamage','magic'));break;
+      case 'KhazixQ': {
+        add('Normal target',token('BaseDamage','physical'));
+        add('Isolated target',token('IsoDamage','physical'),null,stats.evolved?.q?cd*(1-number('EvolutionIsolationCDRPercentage')/100):cd);break;
+      }
+      case 'VelkozW': {
+        const hits=[token('InitialDamage','magic'),token('SecondaryDamage','magic')];
+        add('Both rift hits',sum(hits));rows.at(-1).hitPackets=hits;break;
+      }
+      case 'TaliyahQ': {
+        const first=token('RockDamage','magic'),extra=multiply(first,1-number('ExtraMissileReducedDamagePercent')/100);
+        const hits=[first,...Array.from({length:4},()=>extra)];add('All five rocks',sum(hits));rows.at(-1).hitPackets=hits;
+        add('Worked-ground boulder',token('BigRockDamage','magic'));break;
+      }
+      case 'Takedown': {
+        const hp=target?.enabled?TargetDamage.targetStats(target):null;
+        add('Takedown',multiply(token('spell.AspectOfTheCougar:TotalTakedownDamage','magic'),hp?1+hp.missingHealthPercent*number('spell.AspectOfTheCougar:TakedownDamageAmp'):null));break;
+      }
+      case 'ShyvanaQ':
+        add(stats.alternateForm?'Dragon bite':'Active strike',token(stats.alternateForm?'Calc_Dragon_Form_Damage':'Calc_Damage',stats.alternateForm?'true':'physical'));break;
+      case 'ShyvanaE': {
+        const hp=target?.enabled?target.maxHp:null;
+        const health=key=>amount(finite(hp)?hp*fraction(key):null,'Target max health × '+key,'magic');
+        const initial=sum([token('Damage','magic'),health('Calc_Max_Health_Damage')]);add('Fireball',initial);
+        if(stats.alternateForm){
+          add('Fireball + dragon explosion',sum([initial,token('Calc_Dragon_Damage','magic'),health('Calc_Max_Health_Dragon_Damage')]));
+          add('Fire trail',multiply(token('DamagePerSecond','magic'),number('GroundLingerDuration')));
+          rows.at(-1).burnDuration=number('GroundLingerDuration');
+        }break;
+      }
+      case 'CassiopeiaW':
+        add('Full cloud duration',multiply(token('DamagePerSecond','magic'),number('CloudDuration')));break;
+      case 'RumbleCarpetBomb':
+        add('Full trail duration',multiply(token('DamagePerSecond','magic'),number('TrailDuration')));break;
+      case 'KennenShurikenStorm': {
+        const count=Math.round(number('KennenRDuration')/number('KennenRTickRate')),hit=token('PerTickDamageCalculated','magic'),amp=fraction('DamageAmp');
+        if(finite(count)&&count>0&&count<=100){const hits=Array.from({length:count},(_,i)=>multiply(hit,1+i*amp));add('Full storm',sum(hits));rows.at(-1).hitPackets=hits;}break;
+      }
+      case 'RekSaiW':
+        add('Burrow',amount(0,'Change to Burrowed form','physical'));break;
+      case 'RekSaiQ':
+        add('Unburrowed attack bonus',token('TotalDamageTooltip','physical'));break;
+
       case 'VeigarR': {
         const health = target?.enabled ? TargetDamage.targetStats(target) : null;
         if (health) add('Primordial Burst',multiply(token('MinDamage'),Math.min(2,1+1.5*health.missingHealthPercent)));
@@ -311,14 +376,14 @@ import TargetDamage from './targetDamage.js';
         add('One shot / minimum',hit);
         if(finite(count)&&count>=1&&count<=10){
           const hits=Array.from({length:count},(_,i)=>sum([hit,multiply(ramp,i)]));
-          combined(sum(hits),Array(count-1).fill(number('CDPerShot')),'last');
+          combined(sum(hits),Array(count-1).fill(number('CDPerShot')),'last');rows.at(-1).hitPackets=hits;
           note+=' Assumes every shot hits the same champion, with no other champions hit.';
         }break;
       }
       case 'GarenE': {
         const hit=token('TotalDamage'),bonus=number('NearestEnemyBonus'),count=number('f1');
         add('One spin / minimum',hit,multiply(hit,finite(bonus)?1+bonus:null));
-        add('Full duration',multiply(hit,count),multiply(hit,finite(bonus)&&finite(count)?count*(1+bonus):null));
+        add('Full duration',multiply(hit,count),multiply(hit,finite(bonus)&&finite(count)?count*(1+bonus):null));if(finite(count)&&count>0&&count<=100)rows.at(-1).hitPackets=Array.from({length:Math.floor(count)},()=>hit);
         note='Damage ÷ cooldown; parentheses show nearest-target damage. Full duration uses the current build’s number of spins. Before mitigation.';break;
       }
       case 'YoneR':
@@ -326,19 +391,19 @@ import TargetDamage from './targetDamage.js';
       case 'GwenQ': {
         const minimum=sum([token('MiniSwipeDamage'),token('FinalSwipeDamage')]),maximum=token('MaxDamage'),ratio=fraction('TrueDamageConversion');
         add('No stacks / minimum',minimum,finite(ratio)?conversion(minimum,ratio,'magic'):null);
-        add('Four stacks',maximum,finite(ratio)?conversion(maximum,ratio,'magic'):null);
+        add('Four stacks',maximum,finite(ratio)?conversion(maximum,ratio,'magic'):null);rows.at(-1).hitPackets=[...Array.from({length:5},()=>token('MiniSwipeDamage')),token('FinalSwipeDamage')];
         note+=' Centre hits convert part of the damage to true damage; excludes A Thousand Cuts procs.';break;
       }
       case 'YuumiR':
-        add('One wave / minimum',token('TotalMissileDamage'));add('All waves',token('MultiMissileTotal'));break;
+        add('One wave / minimum',token('TotalMissileDamage'));add('All waves',token('MultiMissileTotal'));if(finite(number('NumberOfWaves')))rows.at(-1).hitPackets=Array.from({length:number('NumberOfWaves')},()=>token('TotalMissileDamage'));break;
       case 'AhriQ':
         add('Outgoing / minimum',token('TotalDamage','magic'));add('Return',token('TotalDamage','true'));
-        add('Combined total',sum([token('TotalDamage','magic'),token('TotalDamage','true')]));break;
+        add('Combined total',sum([token('TotalDamage','magic'),token('TotalDamage','true')]));rows.at(-1).hitPackets=[token('TotalDamage','magic'),token('TotalDamage','true')];break;
       case 'AhriW':
         add('First fox-fire / minimum',token('SingleFireDamage'));
-        add('All three fox-fires',sum([token('SingleFireDamage'),multiply(token('MultiFireDamage'),2)]));break;
+        add('All three fox-fires',sum([token('SingleFireDamage'),multiply(token('MultiFireDamage'),2)]));rows.at(-1).hitPackets=[token('SingleFireDamage'),token('MultiFireDamage'),token('MultiFireDamage')];break;
       case 'AatroxW':
-        add('Initial hit / minimum',token('WDamage'));add('Hit + pull',multiply(token('WDamage'),2));break;
+        add('Initial hit / minimum',token('WDamage'));add('Hit + pull',multiply(token('WDamage'),2));rows.at(-1).hitPackets=[token('WDamage'),token('WDamage')];break;
       case 'RenektonReignOfTheTyrant':
         add('Full duration',multiply(token('TotalDamagePerSecond'),number('BuffDuration')));break;
       case 'Bushwhack':
@@ -362,7 +427,7 @@ import TargetDamage from './targetDamage.js';
       return {status:damaging?'Damage formula unavailable':'No direct damage',rows:[]};
     }
     if(rows.some(r=>r.sweet)&&!note.includes('Parentheses')&&!note.includes('parentheses'))note+=' Parentheses show the sweet-spot outcome.';
-    rows.forEach(r=>{r.damage=mitigated(r.damage,target,stats);if(r.sweet)r.sweet=mitigated(r.sweet,target,stats);});
+    rows.forEach(r=>{if(r.hitPackets)r.hitPackets=r.hitPackets.map(p=>mitigated(p,target,stats));r.damage=mitigated(r.damage,target,stats);if(r.sweet)r.sweet=mitigated(r.sweet,target,stats);});
     rows.forEach(r=>{
       if(r.onHitTiming)r.onHitDps=onHitTiming(r.damage.value,stats.attackSpeed,r.onHitTiming);
     });

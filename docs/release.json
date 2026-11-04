@@ -3,23 +3,23 @@
   "releaseDate": "2026-11-04",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: compact survivability, unified target settings and spellshields",
+  "releaseTarget": "main: combat variants, hit and burn controls, neutral buffs and Analytics deployment repair",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
-      "count": 240,
-      "evidence": "docs/defense-layout-verification.json"
+      "count": 277,
+      "evidence": "docs/combat-mechanics-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/defense-layout-verification.json",
-      "currentSuites": 4,
+      "evidence": "docs/combat-mechanics-verification.json",
+      "currentSuites": 8,
       "inheritedFullSuiteEvidence": "docs/pre-comparator-layout-release.json",
-      "scope": "Target Apply/Cancel, shield edit/remove, source-recognized spell protection, split copying, charge and comparator regressions checked on root and preview; visual card screenshot reviewed."
+      "scope": "Four browser suites on source root and generated preview. Historical full-matrix coverage is retained separately; current controls and affected comparator behavior verified."
     },
     "baseline": {
       "passed": true,
@@ -28,7 +28,7 @@
       "unexplainedDifferences": 0,
       "exactBaselineMatch": false,
       "evidence": "docs/css-refactor-verification.json",
-      "scope": "Historical numeric comparison for unchanged calculator modules; rendered theme differs intentionally."
+      "scope": "Historical baseline retained. Intentional combat behavior changes are checked by combat-mechanics and updated attack regression tests; no claim of numeric equality with the old calculator."
     },
     "headless": {
       "passed": true,
@@ -58,14 +58,14 @@
       "baselineCommit": "dec545072a02196260df10837258b857caa805f0",
       "evidence": "docs/css-refactor-performance.json",
       "note": "Controlled pre-CSS-refactor fixture benchmark; not real CDN/network performance.",
-      "scope": "Preserved historical benchmark for unchanged calculator modules; new pages are not benchmarked."
+      "scope": "Historical benchmark retained; the new mechanics have not received a controlled performance benchmark."
     },
     "cleanSource": {
       "passed": true,
-      "unitTests": 240,
+      "unitTests": 277,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/defense-layout-verification.json"
+      "evidence": "docs/combat-mechanics-verification.json"
     },
     "css": {
       "passed": true,
@@ -111,7 +111,7 @@
   "runtimeFiles": [
     {
       "path": "Builder.html",
-      "sha256": "6e05f76bfaa33451b9bc054f1a67143d5159c461ea2e310c1e96ecc3d5d1a3c9"
+      "sha256": "c5924d5fd61a5a0284a708aa7ec75aa6a97797bbd3387e5d5d46a8192dd12cab"
     },
     {
       "path": "CSS/components/abilities.css",
@@ -155,7 +155,7 @@
     },
     {
       "path": "CSS/pages/builder.css",
-      "sha256": "1d572a0c8cbbceb0ca007dd385d06fdbcfb9a5150a52a7f0b2b460431bc51251"
+      "sha256": "657b176e7d749cfa069923c4fd3ce27bf021ed4a4a42871010f4d932b8e4359e"
     },
     {
       "path": "CSS/pages/champion-explorer.css",
@@ -195,7 +195,7 @@
     },
     {
       "path": "Comparator.html",
-      "sha256": "2c849e9de8e549b90c7f1e86a4b640ef6ce937d2b81b48c83317fc82bfe44b0b"
+      "sha256": "b722e945810e9ee6dd75a82ab8505737cea0be2ddb718c33ea3c065ff5f76656"
     },
     {
       "path": "JS/application/buildSnapshot.mjs",
@@ -203,7 +203,7 @@
     },
     {
       "path": "JS/application/builderPage.mjs",
-      "sha256": "d3349b7a4a1bbf98b78315bd0558585783cb0905f818b0d059c63fad9955b9af"
+      "sha256": "2c29e413bd9da7b5e8e1359311e5be71c13fe70dee3ad27c460c4c56f575a1e1"
     },
     {
       "path": "JS/application/catalogSession.js",
@@ -215,7 +215,7 @@
     },
     {
       "path": "JS/application/comparisonMetrics.mjs",
-      "sha256": "15741daa19195b76e845816990b4199277fbadb9719384d1866e0e7ed92c3625"
+      "sha256": "68e22e1622ef1baaba13a6424f1cd4877f533cd9ba05413963bff8ac1f977c1e"
     },
     {
       "path": "JS/application/runeDefaults.mjs",
@@ -252,6 +252,10 @@
     {
       "path": "JS/data/itemSource.js",
       "sha256": "860d2e732c8af3c8b99abeaa3dbb5521a831236a5e3f3b8e5cd08515f5d55c48"
+    },
+    {
+      "path": "JS/data/neutralBuffData.js",
+      "sha256": "21fb8a1f1f85ef165bba3842764de7bbd4b98ec21825ec1d7e5338de9b06afe1"
     },
     {
       "path": "JS/data/runeSource.js",
@@ -299,23 +303,23 @@
     },
     {
       "path": "JS/engine/buildEvaluation.js",
-      "sha256": "01fbd4ec1cdf7fa29043781e05cd943bd6ca1da60bc15abf9aa6722ed697e19a"
+      "sha256": "ab4b72328947728813a1a6e875c58d1e21bcc31eefa099354f8529fe9417794a"
     },
     {
       "path": "JS/engine/calculationContext.js",
-      "sha256": "037a5342e7671c5668435effc43e9a6387926d079d05334849648a42ffe3e451"
+      "sha256": "234a2e0fe2dcea932cdfea364c69fc9907284c59d838192b21706969dc7983f3"
     },
     {
       "path": "JS/engine/calculationPipeline.js",
-      "sha256": "ba99c146f967631e23807937eaf15153f06fdf3227e2febc3ec59428b79de96e"
+      "sha256": "91ca0228ddeae08203489695f06a73fca2541b24f580875a105dc643e93b2b62"
     },
     {
       "path": "JS/engine/combatContext.js",
-      "sha256": "7d7b4559274a7f430b03abe156cf0fe4d5675108eb89a0524f5bf6eaf512b11e"
+      "sha256": "17368f36dd025928d720164d3bcf1a0f81bceb019dc0de6c11ad4e369a0d1190"
     },
     {
       "path": "JS/engine/comboEvaluation.js",
-      "sha256": "d2ad0a8978a0a6b4f65c2fda39eb5a22c584bb374028c75c8478016967f6a2f8"
+      "sha256": "9d3ae3389fedad4521c0a36404db4aeadc0b1d5bf0b66126be50581887cbe228"
     },
     {
       "path": "JS/engine/itemEvaluation.js",
@@ -355,7 +359,7 @@
     },
     {
       "path": "JS/shared/abilityDps.js",
-      "sha256": "dde86ae09851f4803852c2ff864a835ac7a7e4c7eaa6e38e577ee301fcc0510b"
+      "sha256": "4263d7a0ab8b07e41c4392fe0bb75949d420dc34ccf3a85fb1bf19e375d6c561"
     },
     {
       "path": "JS/shared/abilityOnHit.js",
@@ -366,16 +370,20 @@
       "sha256": "a77bbc61221328f928f13f815c99edf10af1776051032997f58e23a3924e8c5e"
     },
     {
+      "path": "JS/shared/abilityVariants.js",
+      "sha256": "f4b19fe718fe113f5f3cc26556fe7c3b7db6b34043c43d46d7a22fac83f2f4ca"
+    },
+    {
       "path": "JS/shared/apiClient.js",
       "sha256": "1d82a58792da9ecf80fe9c776ecefbb6cdf830f37b2036b9ad4ee1ce1b3f8d74"
     },
     {
       "path": "JS/shared/attackChampions.js",
-      "sha256": "a3dab0a59e960d03e713028a576669c2803953ace61364186c719a2b0a91b158"
+      "sha256": "b163ae8f46fb1e3181affcd8c134ca129af028715635f7158ca7c406090d74c8"
     },
     {
       "path": "JS/shared/attackEffects.js",
-      "sha256": "7cbf2875129e09f0306857e5a19ba64467aa0f53e616c21a4a793569c81733b5"
+      "sha256": "e5a2b2b1cfe87a17c861bdfc237359413f3245d1a435c7c513ef427c9415bd9f"
     },
     {
       "path": "JS/shared/buildPicker.js",
@@ -395,11 +403,15 @@
     },
     {
       "path": "JS/shared/combatInputs.js",
-      "sha256": "49c8735c4a81e5d2bd9f1fc62c926e0695db308ff28f6c6253bffe3df8d158b4"
+      "sha256": "d04ef6bdb2611e7b4769045f1d3436f2110261fbbd2b8559354f95ad1f5ddf72"
+    },
+    {
+      "path": "JS/shared/comboAmounts.js",
+      "sha256": "966b66886dadcb71dbb6f307fbc443c747a5a489824bd66dde816c1d5817cc18"
     },
     {
       "path": "JS/shared/comboTester.js",
-      "sha256": "5098f9f7d34642976ef1482c2678af6b31838c01952e91021c555666005d75b7"
+      "sha256": "6c461b03151bbfdcf7d04e2674b9397dc7ad4a7179d2472a164b54aee501100a"
     },
     {
       "path": "JS/shared/damageText.js",
@@ -416,6 +428,10 @@
     {
       "path": "JS/shared/itemPolicy.js",
       "sha256": "1ea24bc17a399d20f077b9d08cc7c3e654415ee463d7693e8a2553eb9cd24e34"
+    },
+    {
+      "path": "JS/shared/neutralBuffs.js",
+      "sha256": "7fba10e32def689145edbfb1f6d6c6c23273cf0a1f375c3c3f7c4b2a166cc75e"
     },
     {
       "path": "JS/shared/runeEffects.js",
@@ -439,7 +455,7 @@
     },
     {
       "path": "JS/ui/abilityControls.mjs",
-      "sha256": "9375d0944dcc3c988692f22b75c470db1dfce85d533150212f9e9009283ca341"
+      "sha256": "21d24cdd8ffdbc1da0e12d792a6d8b61599575c363168e96e5d3bd679f4d55b7"
     },
     {
       "path": "JS/ui/catalogList.mjs",
@@ -451,7 +467,7 @@
     },
     {
       "path": "JS/ui/comboControls.mjs",
-      "sha256": "925f44eeeb27d02c73ae6d3639dbbd6bab042f462d85e567fb88d370d7dcba71"
+      "sha256": "6371dd306afff180c3d98dacaf14fb6704cec57eacbee0a76a18caec8ebb7132"
     },
     {
       "path": "JS/ui/defensePanel.mjs",
@@ -539,7 +555,7 @@
     },
     {
       "path": "main.html",
-      "sha256": "f78543eec183436dc8e054f234546af9cb8229608f664d63ba4da6ed6aff288d"
+      "sha256": "b07f0ae7b2a5d766af11ba077ceef659feea6b10acb902c488a24c8196e430f7"
     }
   ]
 }

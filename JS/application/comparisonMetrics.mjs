@@ -27,7 +27,7 @@ export function enrichComparison(build,evaluation){
    values=selected.map(r=>r.onHitDps?.activeDps??(finite(r.damage.value)&&finite(r.period)&&r.period>0?r.damage.value/r.period:null));
   }
   const source=context.cdragonSpell?.spellData;
-  const max=spell.id==='AhriR'?resolve('rmaxcasts')?.numeric:source?.mMaxAmmo?.[rank]??Number(spell.maxammo);
+  const max=spell.id==='SyndraQ'?(state.combatValues['evolve:q']===true?resolve('upgrade1maxammo')?.numeric:1):spell.id==='AhriR'?resolve('rmaxcasts')?.numeric:source?.mMaxAmmo?.[rank]??Number(spell.maxammo);
   if(Number.isInteger(max)&&max>1&&max<=20){
    const mode=spell.id==='AhriR'?'recast':'ammo';
    const haste=source?.mSpellTags?.includes('Trait_NotBenefitFromHaste')?0:Math.max(0,context.stats?.haste||0);

@@ -26,6 +26,7 @@ const server=http.createServer((req,res)=>{
  let failCore=false;
  await page.route('**/*',async route=>{
    const url=new URL(route.request().url());
+      if(url.hostname==='www.googletagmanager.com')return route.fulfill({contentType:'text/javascript',body:''});
    if(url.origin===base){if(process.env.STALE_STYLES && url.pathname==='/CSS/lolBuilder.css')return route.fulfill({contentType:'text/css',body:fs.readFileSync(path.join(root,'CSS/lolBuilder.css'),'utf8').replace(/@import[^;]*item-explorer[^;]*;/g,'')});return route.fallback();}
    requests.push(url.href);
    if(!url.pathname.endsWith('.json') && process.env.REAL_ART)return route.continue();

@@ -70,7 +70,7 @@ import BuildStats from './buildStats.js';
     const missing=()=>{const max=hp(),current=hp('currentHp');return finite(max)&&finite(current)?Math.max(0,max-current):null;};
     const times=(slot,key,label)=>input(slot,key,label,{min:.01});
     const proc=(slot,id,label,value,type='magic',extra={})=>{
-      const interval=times(slot,id+'Interval','Seconds between '+label+' hits');
+      const interval=a.cooldown(slot)??(slot==='p'?times(slot,id+'Interval','Passive trigger interval (s)'):null);
       row(label,value,type,1,extra.formula||label,{onHit:false,interval:finite(interval)&&interval>0?interval:null,sourceSlot:slot,...extra});
     };
     const damage=(slot,key,label,type='magic',cadence=1,extra={})=>{const r=calc(slot,key,s);row(label,r.value,type,cadence,r.text,{sourceSlot:slot,sourceKey:key,...extra});};
@@ -198,7 +198,7 @@ import BuildStats from './buildStats.js';
     if(name==='Nidalee'&&toggle('r','cougar','Cougar form')){
       if(toggle('q','takedown','Takedown enabled')){const max=hp(),current=hp('currentHp'),d=v('AspectOfTheCougar','TotalTakedownDamage',Math.max(1,rank('r'))),hunted=toggle('q','hunted','Hunted target');
         const amp=data('r','TakedownDamageAmp');
-        proc('q','takedown','Takedown replacement',finite(d)&&finite(max)&&max>0&&finite(current)?d*(1+Math.min(2,Math.max(0,1-current/max)*2))* (hunted?amp:1):null,'magic');
+        proc('q','takedown','Takedown replacement',finite(d)&&finite(max)&&max>0&&finite(current)?d*(1+Math.max(0,1-current/max)*amp)*(hunted?1.3:1):null,'magic');
         proc('q','takedown','Replaced ordinary attack',finite(base)?-base:null,'physical',{attackDamage:true,replacementDebit:true});
       }
     }
@@ -222,7 +222,11 @@ import BuildStats from './buildStats.js';
     }
     if(name==='Shyvana'){
       const dragon=toggle('r','dragon','Dragon form');
-      if(toggle('q','shyvanaQ','Shyvana Q attacks enabled')){const d=v('q',dragon?'Calc_Dragon_Form_Damage':'Calc_Damage'),max=hp(),fraction=v('q','Calc_Max_Health_Damage');proc('q','shyvanaQ','Shyvana Q replacement',finite(d)&&finite(max)&&finite(fraction)?d+max*fraction-base:null,'physical',{attackDamage:true});}
+      if(rank('q')){const max=hp(),fraction=v('q','Calc_Max_Health_Damage');row('Shyvana Q passive',finite(max)&&finite(fraction)?max*fraction:null,'magic',1,'Target maximum HP × Calc_Max_Health_Damage',{sourceSlot:'q'});}
+      if(toggle('q','shyvanaQ','Shyvana Q attacks enabled')){
+        proc('q','shyvanaQ','Shyvana Q replacement',v('q',dragon?'Calc_Dragon_Form_Damage':'Calc_Damage'),dragon?'true':'physical',{attackDamage:true});
+        proc('q','shyvanaQ','Replaced ordinary attack',finite(base)?-base:null,'physical',{attackDamage:true,replacementDebit:true});
+      }
     }
     if(name==='Urgot'){
       if(toggle('w','purge','Purge active')){base=v('w','DamagePerShot');rate=data('w','WAttacksPerSecond');onHitScale=data('w','OnHitDamageReduction');}

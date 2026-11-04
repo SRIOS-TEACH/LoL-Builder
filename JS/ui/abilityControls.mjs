@@ -1,3 +1,4 @@
+import AbilityVariants from '../shared/abilityVariants.js';
 import AbilityPresentation from '../presentation/abilityPresentation.js';
 import AbilityDps from '../shared/abilityDps.js';
 import AbilityRules from '../shared/abilityRules.js';
@@ -130,7 +131,7 @@ function renderAbilityCards() {
   <div><strong>On-attack damage:</strong> ${attack ? attackNumber(attack.autoAttackDamage,'damage') : '-'}</div>
   <div><strong>On-Attack DPS:</strong> ${attack ? attackNumber(attack.attackDps,'dps') : '-'}</div>
   <div><strong>Attack Range:</strong> ${attack ? attack.attackRange.toFixed(1) : '-'}</div>
-  <small>Average damage · ${model.target.enabled?'against target':'before target defences'}</small>
+  <small>Enabled effects included · ${model.target.enabled?'against target':'before target defences'}</small>
   <details class="dashboard-detail"><summary>Calculation breakdown</summary><div class="detail-content">${attack?.warnings.map(w=>`<p class="text-muted">${escapeAttack(w)}</p>`).join('')||''}
   <pre style="white-space:pre-wrap">${escapeAttack(attack?.breakdown||'Select a champion')}</pre></div></details></div>`;
 
@@ -167,6 +168,13 @@ function renderAbilityCards() {
     update(expanded.has(container.dataset.descriptionSlot));
     renderLife.on(button,'click',()=>update(button.getAttribute('aria-expanded')!=='true'));
   });
+  for(const slot of AbilityVariants.evolutions[model.selectedChampion]||[]){
+    const button=document.createElement('button');button.type='button';button.className='btn btn-outline';
+    const active=model.combatValues['evolve:'+slot]===true;
+    button.dataset.evolve=slot;button.setAttribute('aria-pressed',String(active));button.textContent=active?'Evolved':'Evolve';
+    renderLife.on(button,'click',()=>{model.combatValues['evolve:'+slot]=!active;notify();});
+    root.querySelector(`[data-ability-slot="${slot}"] .ability-rank-row`).append(button);
+  }
   renderCombatInputs();
   for (const control of attack?.controls || []) {
     const card = root.querySelector(`[data-ability-slot="${control.slot}"]`);
@@ -192,7 +200,7 @@ function renderAbilityCards() {
       const label = document.createElement('label'); label.textContent = control.label + ' ';
       element.type = 'number'; element.min = String(control.min ?? 0); element.step = 'any';
       if (control.max !== undefined) element.max = String(control.max);
-      element.value = model.combatValues[control.key] ?? control.defaultValue ?? ''; element.placeholder = 'Enter value';
+      element.value = model.combatValues[control.key] ?? control.defaultValue ?? (/stack|souls|mist|lavender|bonetooth|chakram|momentum/i.test(control.label+' '+control.key)?0:''); element.placeholder = 'Enter value';
       renderLife.on(element,'change', () => {
         if (element.value.trim() && Number.isFinite(Number(element.value))) model.combatValues[control.key] = Math.max(control.min??0,Math.min(Number.isFinite(control.max)?control.max:Infinity,Number(element.value)));
         else delete model.combatValues[control.key];

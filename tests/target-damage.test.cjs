@@ -54,11 +54,11 @@ test('explicit outgoing damage multipliers precede target defenses and are ignor
 test('hybrid on-attack totals mitigate each packet once and retain raw proc and DPS values',()=>{
   const x=state(['3153','3115','3179'],{'attack:umbral':true,'attack:umbralInterval':2}),p=AttackEffects.model(x,fixture.items).profile(stats());
   // 100 physical attack + 60 physical BORK + 30 magic Nashor + 50 true
-  // Umbral every 2s at 2 attacks/s (12.5 averaged true damage per attack).
-  near(p.rawAutoAttackDamage,202.5);near(p.autoAttackDamage,82.5);near(p.attackDps,165);near(p.rawAttackDps,405);
+  // Umbral adds the full 50 to one proc attack, and 25 damage/s sustained.
+  near(p.rawAutoAttackDamage,240);near(p.autoAttackDamage,120);near(p.attackDps,165);near(p.rawAttackDps,405);
   const bork=p.rows.find(r=>r.label==='Blade of the Ruined King'),nashor=p.rows.find(r=>r.label==='Nashor’s Tooth'),umbral=p.rows.find(r=>r.label==='Umbral Glaive');
   near(bork.rawValue,60);near(bork.value,24);near(nashor.rawValue,30);near(nashor.value,6);near(umbral.rawValue,50);near(umbral.value,50);
-  near(umbral.rawPerHit,12.5);near(umbral.perHit,12.5);assert.match(p.breakdown,/After target mitigation/);assert.match(p.breakdown,/effective armor/);
+  near(umbral.rawPerHit,50);near(umbral.perHit,50);assert.match(p.breakdown,/After target mitigation/);assert.match(p.breakdown,/effective armor/);
   assert.ok(!p.controls.some(c=>['attack:target:hp','attack:target:currentHp'].includes(c.key)));
 });
 test('current-health items use the shared target and discard stale per-attack target inputs',()=>{

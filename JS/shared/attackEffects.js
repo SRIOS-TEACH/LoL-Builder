@@ -1,11 +1,13 @@
+import NeutralBuffs from './neutralBuffs.js';
+import AbilityDps from './abilityDps.js';
 import AttackChampions from './attackChampions.js';
 import BuildStats from './buildStats.js';
 import Calculations from './calculations.js';
 import ChampionEffects from './championEffects.js';
 import TargetDamage from './targetDamage.js';
 /** Explicit attack-script bindings. Coefficients come from the loaded game data.
- * Damage packets are resolved against one champion. Procs are amortised over
- * their cadence; optional effects require an explicit activation/interval.
+ * Damage packets are resolved against one champion. Selected cooldown procs
+ * contribute a full proc hit and cooldown-limited sustained DPS.
  */
 
   const C=Calculations, finite=Number.isFinite, clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
@@ -42,6 +44,11 @@ import TargetDamage from './targetDamage.js';
     const read=(p,key,r=1)=>C.dataValue(normalise(p?.dataValues??p?.mDataValues),key,r,level).value;
     const data=(slot,key)=>read(payload(slot),key,Math.max(1,rank(slot)));
     const itemData=(id,key)=>read(items[id],key);
+    const abilityCooldown=(slot,s)=>{
+      const spell=state.championData?.spells?.[['q','w','e','r'].indexOf(slot)];
+      const p=payload(slot), haste=(s.abilityHaste||0)+(slot==='r'?(s.ultimateHaste||0):(s.basicHaste||0));
+      return AbilityDps.cooldown(spell||{cooldown:p?.spellData?.cooldownTime?.slice(1)},Math.max(1,rank(slot)),{haste},p);
+    };
     function abilityModifiers(s={}) {
       const value=(id,key)=>{const n=itemData(id,key);return finite(n)?n:0;};
       const basicHaste=enabled(3161,'dragonforce')?value(3161,'AHBase'):0;
@@ -95,7 +102,7 @@ import TargetDamage from './targetDamage.js';
       // callers without a managed target retain their explicit legacy inputs.
       if(state.target&&['target:hp','target:currentHp'].includes(key))return TargetDamage?.targetStats(state.target)[key.slice(7)];
       if(state.target&&!state.target.enabled&&key==='target:bonusHp')return undefined;
-      controls.push({slot,key:'attack:'+key,label,type:'number',min:0,...extra});return values['attack:'+key];
+      controls.push({slot,key:'attack:'+key,label,type:'number',min:0,...extra});return values['attack:'+key]??(/stack|souls|mist|lavender|bonetooth|chakram|momentum/i.test(label+' '+key)?0:extra.defaultValue);
     };
     const choice=(slot,key,label,options)=>{controls.push({slot,key:'attack:'+key,label,type:'select',options});return clamp(Number(values['attack:'+key])||0,0,options.length-1);};
     const speedBuff={Ashe:['q','BonusAS','Ranger’s Focus',100,'asheQ'],MasterYi:['r','RASBonus','Highlander',100],Tristana:['q','AttackSpeedMod','Rapid Fire',1],Twitch:['q','AttackSpeedMod','Ambush',1],Draven:['w','AttackSpeed','Blood Rush',1],Teemo:['p','BonusAttackSpeed','Guerrilla Warfare',1,null,true],Gwen:['e','BonusAttackSpeed','Skip ’n Slash',100,null,true]};
@@ -199,7 +206,7 @@ import TargetDamage from './targetDamage.js';
       if(conditional[name]){
         const [slot,key,label,type='magic',mode]=conditional[name];
         if(toggle(slot,'bonusAttack',label+' enabled')){
-          const interval=mode==='continuous'?undefined:input(slot,'bonusInterval','Seconds between '+label+' hits',{min:0.01});
+          const interval=mode==='continuous'?undefined:abilityCooldown(slot,s)??(slot==='p'?input(slot,'bonusInterval','Passive trigger interval (s)',{min:.01}):null);
           ability(slot,key,label,type,1,mode==='continuous'?{}:{interval:finite(interval)&&interval>0?interval:null,onHit:false});
           if(name==='Riven'&&finite(rows.at(-1).value))rows.at(-1).value=averageCrit(rows.at(-1).value,chance,crit);
         }
@@ -239,7 +246,7 @@ import TargetDamage from './targetDamage.js';
       if(active[name]){
         const [slot,key,label,type]=active[name];
         if(toggle(slot,'championOnHit',label+' active')){
-          const single=['Jax','Vayne','Sona'].includes(name),interval=single?input(slot,'onHitInterval','Seconds between '+label+' attacks',{min:0.01}):undefined;
+          const single=['Jax','Vayne','Sona'].includes(name),interval=single?abilityCooldown(slot,s):undefined;
           ability(slot,key,label,type,1,single?{interval:finite(interval)&&interval>0?interval:null,onHit:false}:{});
           if(name==='Shaco'&&finite(rows.at(-1).value))rows.at(-1).value=averageCrit(rows.at(-1).value,chance,crit);
         }
@@ -252,7 +259,7 @@ import TargetDamage from './targetDamage.js';
       if(replacement[name]){
         const [slot,key,label]=replacement[name];
         if(toggle(slot,'empowered',label+' attacks enabled')){
-          const interval=input(slot,'empoweredInterval','Seconds between '+label+' attacks',{min:0.01});
+          const interval=abilityCooldown(slot,s);
           const r=calc(slot,key,s);let total=r.value;
           if(name==='Nasus'){const critical=calc(slot,'CritDamage',s).value;total=finite(total)&&finite(critical)?total*(1-chance)+critical*chance:null;}
           row(label+' bonus over a normal attack',finite(total)?total-(name==='Nasus'?base:s.ad):null,'physical',1,r.text,{onHit:false,interval:finite(interval)&&interval>0?interval:null});
@@ -261,9 +268,10 @@ import TargetDamage from './targetDamage.js';
       if(name==='MasterYi'&&toggle('p','doubleStrike','Repeated attacks: Double Strike'))ability('p','TotalDamage','Double Strike','physical',data('p','AttackCount'),{onHit:false,extraHit:1});
       if(name==='Kayle'&&level>=11&&toggle('p','kayleWaves','Exalted: waves active'))ability('p','PassiveWaveDamage','Divine Ascent waves','magic',1,{onHit:false});
       if(['Vayne','KogMaw'].includes(name))input('attack','target:hp','Target maximum health');
-      const extended=AttackChampions?.profile({name,s,data,calc,rank,toggle,input,choice,row,values,rows,base,rate,attackCritChance:chance,averageCrit})||{base,rate,onHitScale:1,baseType:'physical',notes:[]};
+      const extended=AttackChampions?.profile({name,s,data,calc,rank,toggle,input,choice,row,values,rows,base,rate,cooldown:slot=>abilityCooldown(slot,s),attackCritChance:chance,averageCrit})||{base,rate,onHitScale:1,baseType:'physical',notes:[]};
       base=extended.base;rate=extended.rate;warnings.push(...extended.notes);
       const championRows=rows.length;
+      for(const burn of NeutralBuffs.model(state).burns())row(burn.label,burn.total/burn.duration,burn.type,1,'Refreshing burn; sustained uptime limited by attack rate',{dot:true,duration:burn.duration,onHit:false,source:'neutral'});
       let phantom=1;
       if(enabled(3032,'practice-makes-lethal'))input('attack','yunTalCrit','Yun Tal earned critical chance (%)',{max:itemData(3032,'CritMax')});
       if(enabled(3032,'flurry'))toggle('attack','flurry','Yun Tal Flurry active');
@@ -297,8 +305,7 @@ import TargetDamage from './targetDamage.js';
           const best=candidates.every(x=>finite(x.r.value))?candidates.reduce((a,b)=>a.r.value>b.r.value?a:b):candidates.find(x=>!finite(x.r.value));
           // The specific field is authoritative; older snapshots use Cooldown.
           const cooldown=[itemData(best.id,'SpellbladeCooldown'),itemData(best.id,'Cooldown'),1.5].find(value=>finite(value)&&value>0);
-          const requested=input('attack','spellbladeInterval','Seconds between Spellblade attacks',{min:cooldown,defaultValue:cooldown,step:0.1});
-          const interval=finite(requested)?Math.max(requested,cooldown):cooldown;
+          const interval=cooldown;
           row(state.items?.[best.id]?.name||'Spellblade',best.r.value,[3100,2510].includes(best.id)?'magic':'physical',1,best.r.text,{interval,onHit:false,spellbladeId:best.id,itemId:best.id,passiveKey:'spellblade',cooldown,extraHit:best.id===2510});
         }
       }
@@ -340,7 +347,7 @@ import TargetDamage from './targetDamage.js';
         row('Opening Barrage true bonus',finite(bonus)?s.ad*crit*itemCritChance*bonus:null,'true',1,'Critical chance × critical damage × Opening Barrage true-damage ratio',{onHit:false});
       }
       const amplify=(factor,predicate,label)=>{for(const r of rows)if(predicate(r)){r.value=finite(r.value)&&finite(factor)?r.value*factor:null;r.formula=`(${r.formula||r.label}) × ${finite(factor)?factor.toFixed(4):'required input'} [${label}]`;}};
-      rows.forEach((r,i)=>r.source=i<championRows?'champion':'item');
+      rows.forEach((r,i)=>r.source ||= i<championRows?'champion':'item');
       if(name==='Zeri'&&values['attack:zeriRightClick'])rows.splice(championRows);
       if(name==='Camille'&&values['attack:precisionSpellblade']){
         const conversion=rows.find(r=>r.camilleConversion!==undefined)?.camilleConversion;
@@ -398,7 +405,7 @@ import TargetDamage from './targetDamage.js';
           let perSecond=perHit===null||!finite(rate)?null:perHit*rate;
           if(Object.hasOwn(r,'interval')){
             perSecond=finite(r.interval)&&r.interval>0&&value!==null&&finite(rate)?value*Math.min(rate,1/r.interval):null;
-            perHit=perSecond!==null&&rate>0?perSecond/rate:null;
+            perHit=value;
           }
           if(r.dot){perSecond=value!==null&&finite(rate)?value*Math.min(1,rate*r.duration):null;perHit=perSecond!==null&&rate>0?perSecond/rate:null;}
           return {perHit,perSecond};
@@ -410,11 +417,11 @@ import TargetDamage from './targetDamage.js';
         dps=dps!==null&&perSecond!==null?dps+perSecond:null;
         rawDamage=rawDamage!==null&&raw.perHit!==null?rawDamage+raw.perHit:null;
         rawDps=rawDps!==null&&raw.perSecond!==null?rawDps+raw.perSecond:null;
-        const proc=r.spellbladeId?`${finite(r.value)?r.value.toFixed(2):'unavailable'} ${r.type} per Spellblade proc; minimum cooldown ${r.cooldown}s, selected interval ${r.interval}s → `:'';
-        formula.push(`${r.label}: ${r.formula||r.value} → ${proc}${perHit===null?'unavailable (enter required inputs / load data)':perHit.toFixed(2)} ${r.type} per attack${r.spellbladeId?' on average':''}${r.cadence>1?' (every '+r.cadence+' hits)':''}${multiplier!==1?' × phantom-hit average':''}`);
+        const proc=r.spellbladeId?`${finite(r.value)?r.value.toFixed(2):'unavailable'} ${r.type} per Spellblade proc; minimum cooldown ${r.cooldown}s, proc cooldown ${r.interval}s → `:'';
+        formula.push(`${r.label}: ${r.formula||r.value} → ${proc}${perHit===null?'unavailable (enter required inputs / load data)':perHit.toFixed(2)} ${r.type} per attack${r.cadence>1?' (every '+r.cadence+' hits)':''}${multiplier!==1?' × phantom-hit average':''}`);
         if(state.target?.enabled)formula.push('  '+r.targetExplanation);
       }
-      formula.push(`DPS = average on-attack damage × effective attacks per second. ${state.target?.enabled?'After target mitigation':'Before mitigation'}; constant target health; continuous attacks on one champion. Enabled procs are averaged over their specified interval. This estimate includes the effects listed above; unlisted effects are not included.`);
+      formula.push(`DPS = ordinary attacks per second + cooldown-limited procs per second. On-attack damage includes one full enabled proc. ${state.target?.enabled?'After target mitigation':'Before mitigation'}; constant target health; continuous attacks on one champion. Single-hit effects use their cooldown; enabled duration stims remain active. This estimate includes the effects listed above; unlisted effects are not included.`);
       if(phantom!==1)warnings.push('Rageblade assumes fully stacked, uninterrupted attacks.');
       formula.push(...warnings);
       return {baseAttackDamage:base,baseAttackType:extended.baseType||'physical',autoAttackDamage:damage,attackDps:dps,rawAutoAttackDamage:rawDamage,rawAttackDps:rawDps,attackRange:s.attackRange,rate,rows,controls:[...new Map(controls.map(c=>[c.key,c])).values()],warnings,partial:!!unsupported[name]&&!extended.covered,breakdown:formula.join('\n')};

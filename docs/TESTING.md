@@ -145,3 +145,10 @@ Champion explorer checks now require an initially open grid with hidden profile,
 The formula presentation unit checks ensure varying rank values preserve shared scaling coefficients and distinguish level growth from rank progression. Explorer browser checks verify level 1/18 stat changes, passive and spell toggles, rank series with AP scaling, no unresolved localization placeholders, no evaluated damage markup, summary restoration and the desktop 30/70 geometry. Optional-data failure leaves summaries usable.
 
 The theme suite asserts sticky navigation on every native page, scrolls each document and checks that the navbar remains at y=0 across all four widths. It also requires matching minimal title markup for Champion Explorer, Item Explorer and Comparator, with no introductory paragraphs or item hero banner.
+
+
+## Combat mechanics and Analytics changes
+
+Run `node --test tests/*.test.cjs`, then `node tests/mechanics-browser.cjs` with the browser environment described above. This checks upgrades, alternate kits, form ordering, partial-hit sequences, burn duration, cooldown-limited on-attacks, zero stacks and neutral buffs. The checklist and formula conventions are in [COMBAT-MECHANICS-AUDIT.md](COMBAT-MECHANICS-AUDIT.md).
+
+Analytics edits change runtime HTML. A deployment rejected by `verify:release` needs the release checks rerun and a new fingerprint/evidence record; do not bypass the verifier or delete the tag. Browser fixtures stub the tag as JavaScript to avoid both tracking requests and invalid-script errors.

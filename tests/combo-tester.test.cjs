@@ -90,6 +90,6 @@ test('disabled targets retain static damage and missing damage leaves HP unchang
   const missing=action('x',null,null,null);
   const on=simulate([missing],{target:{enabled:true,maxHp:1000,currentHp:600}});
   assert.equal(on.remainingHp,600);assert.equal(on.damageWarnings.length,1);
-  const off=simulate([action('q',100,0,0)],{target:{enabled:false},resolveAction:()=>{throw Error('must not resolve');}});
+  const off=simulate([action('q',100,0,0)],{target:{enabled:false},resolveAction:original=>original});
   assert.equal(off.total,100);assert.equal(off.remainingHp,undefined);assert.equal(off.timeline[0].hpAfter,undefined);
 });

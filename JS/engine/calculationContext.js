@@ -7,9 +7,12 @@ import TargetDamage from '../shared/targetDamage.js';
 
 function create(state,data){
 const advancedItems=data.advancedItems || {};
+const inactiveBuffs={},visited=new WeakSet();
+const visit=node=>{if(!node||typeof node!=='object'||visited.has(node))return;visited.add(node);if(node.mBuffName)inactiveBuffs[node.mBuffName]=0;for(const child of Object.values(node))if(child&&typeof child==='object')visit(child);};
+visit(state.cdragonAbilityData);visit(advancedItems);
 function baseCalculationContext(stats, dataValues = [], rank = 1, calculations = {}, effects = []) {
   return {
-    stats, dataValues, rank, calculations, effects, level: state.level,
+    buffs:{...inactiveBuffs}, stats, dataValues, rank, calculations, effects, level: state.level,
     target:state.target, targetStats:TargetDamage.targetStats(state.target), targetFormulaOnly:!state.target.enabled, managedTarget:true, automaticSelfStats:true,
     resolveExternal: (path, key) => {
       const record=Calculations.lookup(state.cdragonRaw,path);

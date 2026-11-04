@@ -27,6 +27,7 @@ const server=http.createServer((req,res)=>{
  let failCore=false;
  await page.route('**/*',async route=>{
    const url=new URL(route.request().url());
+      if(url.hostname==='www.googletagmanager.com')return route.fulfill({contentType:'text/javascript',body:''});
    if(url.origin===base)return route.fallback();
    requests.push(url.href);
    if(url.pathname.endsWith('/splash/Aatrox_3.jpg')) return route.fulfill({status:404,body:'Missing splash'});

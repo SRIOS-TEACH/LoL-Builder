@@ -34,7 +34,7 @@
     const breakdown = Object.fromEntries(types.map(type => [type,0]));
     for (const [index,original] of actions.entries()) {
       const hpBefore = remainingHp;
-      const action = targeted && resolveAction ? resolveAction(original, {...target,currentHp:remainingHp}, index) : original;
+      const action = resolveAction ? resolveAction(original, targeted?{...target,currentHp:remainingHp}:target, index) : original;
       const errors = [], group = action.group || action.id;
       const warn = (list,message) => { const text = `Step ${index+1}: ${message}`; list.push(text); errors.push(message); issues.push(text); };
       let start = cursor;

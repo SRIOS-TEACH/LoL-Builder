@@ -1,3 +1,6 @@
+import NeutralBuffs from '../shared/neutralBuffs.js';
+import AbilityVariants from '../shared/abilityVariants.js';
+import ComboAmounts from '../shared/comboAmounts.js';
 import CalculationPipeline from './calculationPipeline.js';
 import ItemEvaluation from './itemEvaluation.js';
 import AbilityDps from '../shared/abilityDps.js';
@@ -35,6 +38,7 @@ import TargetDamage from '../shared/targetDamage.js';
     const override = record?.basicAttack?.mOverrideAutoattackCastTime?.mOverrideAutoattackCastTimeCalculation;
     const overrideTime = override ? Calculations.evaluate(override,calculationContext(getComputedChampionStatsForTooltips())).value : null;
     const windup = ComboTester.attackWindup(record,computed.asTotal,computed.base.attackspeed,overrideTime);
+    const form=AbilityVariants.forms[state.selectedChampion];
     const result = ['no-crit','crit'].map(outcome => {
       const hit = AttackEffects.model(state,source).profile(computed,{critOutcome:outcome});
       return {id:`aa:${outcome}`,group:'aa',label:outcome === 'crit' ? 'AA crit' : 'AA no crit',shortcut:'AA',
@@ -45,6 +49,7 @@ import TargetDamage from '../shared/targetDamage.js';
     for (const [index, spell] of state.championData.spells.entries()) {
       const slot = ['q','w','e','r'][index], rank = state.abilityRanks[slot];
       if (!rank) continue;
+      if(form&&['Nidalee','Elise','Jayce'].includes(state.selectedChampion)&&slot===form.slot)continue;
       const context = buildAbilityContext(spell,rank,slot), payload = context.cdragonSpell;
       const cooldown = AbilityDps.cooldown(spell,rank,context.stats,payload);
       const profile = AbilityDps.profile({spell,rank,cooldown,slot,champion:state.selectedChampion,
@@ -70,18 +75,35 @@ import TargetDamage from '../shared/targetDamage.js';
         if (/^Combined/i.test(row.label) && (sequence || payload?.spellData?.mSpellTags?.includes('Trait_RecastOrReplaceSpell'))) continue;
         const stage = sequence?.stages[rowIndex] || 0;
         const entry = {id:`${slot}:${rowIndex}`, group:slot, label:`${slot.toUpperCase()}${stage ? ` recast ${stage + 1}` : ''} — ${row.label}`,
-          damage:row.damage.value,components:row.damage.components,shortcut:slot.toUpperCase()+(stage ? stage+1 : ''),icon:spell.image?.full, cooldown, stage, recastDelay:sequence?.delay ?? null,
+          ...ComboAmounts.describe({spell,row,profile,context,rank,resolve:token=>resolveAbilityToken(token,context)}),
+          formSet:(state.selectedChampion==='Shyvana'&&slot==='r')||(state.selectedChampion==='RekSai'&&slot==='w')?true:undefined,requiredForm:state.selectedChampion==='Gnar'&&slot==='r'?true:form&&index<3?false:undefined,damage:row.damage.value,components:row.damage.components,shortcut:slot.toUpperCase()+(stage ? stage+1 : ''),icon:spell.image?.full, cooldown:sequence?cooldown:row.period??cooldown, stage, recastDelay:sequence?.delay ?? null,
           recastWindow:sequence?.window ?? null,cooldownStarts:sequence?.starts,lastStage:sequence ? Math.max(...sequence.stages) : 0,
           castTime:sequence?.cast ?? (spell.id === 'AuroraQ' && stage ? castTime(rawSpell('AuroraQRecast')) : castTime(payload?.spellData,rank)),
           note:profile.note || profile.status};
         result.push(entry);
-        if (row.sweet) result.push({...entry,id:entry.id+':sweet',label:entry.label+' (sweet spot)',damage:row.sweet.value,components:row.sweet.components});
+        if (row.sweet) result.push({...entry,id:entry.id+':sweet',label:entry.label+' (sweet spot)',damage:row.sweet.value,components:row.sweet.components,hitPackets:entry.hitPackets?.map(packets=>packets.map(p=>({...p,value:p.value*row.sweet.value/row.damage.value})))});
       }
       if (!sequence && payload?.spellData?.mSpellTags?.includes('Trait_RecastOrReplaceSpell')) {
         result.push({id:`${slot}:recast`,group:slot,label:`${slot.toUpperCase()} — custom recast`,stage:1,
           damage:null,castTime:null,recastDelay:null,cooldown,cooldownStarts:'first',shortcut:slot.toUpperCase()+'2',icon:spell.image?.full,
           note:'Enter this recast’s damage, cast time and minimum interval. Cooldown starts at the initial cast; override if needed. Champion-specific recast conditions are not modeled.'});
       }
+    }
+    if(form){
+      for(const [index,spell]of state.championData.spells.slice(0,3).entries()){
+        const slot=['q','w','e'][index],rank=state.abilityRanks[slot],alternate=evaluation.evaluateAlternate(spell,rank,slot);
+        if(!alternate?.damage)continue;
+        for(const [i,row]of (alternate.damage.rows.length?alternate.damage.rows:[{label:alternate.damage.status,damage:{value:alternate.damage.status==='No direct damage'?0:null}}]).entries())result.push({
+          id:`form:${slot}:${i}`,group:`form:${slot}`,label:alternate.label+' — '+row.label,shortcut:slot.toUpperCase(),icon:spell.image?.full,
+          damage:row.damage.value,components:row.damage.components,cooldown:alternate.cooldown,
+          castTime:castTime(alternate.context.cdragonSpell?.spellData,alternate.rank),requiredForm:true,formSet:state.selectedChampion==='RekSai'&&slot==='w'?false:undefined,
+          ...ComboAmounts.describe({spell:alternate.spell,row,profile:alternate.damage,context:alternate.context,rank:alternate.rank,resolve:token=>resolveAbilityToken(token,alternate.context)})
+        });
+      }
+      const switchSpell=state.championData.spells[['q','w','e','r'].indexOf(form.slot)];
+      result.push({id:'form:switch',group:['Nidalee','Elise','Jayce'].includes(state.selectedChampion)?'r':'form:switch',label:`Switch form: ${form.names.join(' / ')}`,shortcut:form.slot.toUpperCase(),
+        damage:0,damageType:'physical',castTime:castTime(rawSpell(switchSpell?.id))??0,cooldown:['Gnar','Shyvana'].includes(state.selectedChampion)?0:AbilityDps.cooldown(switchSpell||{},Math.max(1,state.abilityRanks[form.slot]),stats.getComputedChampionStatsForTooltips(),state.cdragonAbilityData?.[form.slot])??0,formSwitch:true,
+        note:state.selectedChampion==='Gnar'?'Transform when rage is ready. Rage generation is not simulated.':'Changes the form used for subsequent attacks and abilities.'});
     }
     // A passive is an explicit proc, independent of sustained-attack toggles.
     const passive = state.championData.passive;
@@ -138,27 +160,37 @@ import TargetDamage from '../shared/targetDamage.js';
         damage:row.value,damageType:row.type,shortcut:'?',castTime:0,cooldown:row.cooldown ?? null,note:'One explicit bonus trigger, not included in AA. '+row.formula});
     }
     result.push(...RuneEffects.damageActions(state,data.runes || {},getComputedChampionStatsForTooltips(),{adaptiveAp:isApAdaptiveChampion()}));
+    for(const burn of NeutralBuffs.model(state).burns())result.push({id:'neutral:'+burn.label,group:'neutral',label:burn.label,damage:burn.total,damageType:burn.type,
+      components:[{value:burn.total,type:burn.type}],castTime:0,cooldown:burn.duration,maxBurnDuration:burn.duration,burnDuration:burn.duration,burnPackets:[{value:burn.total,type:burn.type}],
+      note:'One full burn application. Reapplication refreshes the burn; do not overlap applications. Elder execute is not included.'});
     return result;
   }
 
 function selectActions(steps,catalog,customBase){
  return steps.map(step=>{
   const entry=step.custom?{...customBase,id:step.actionId,group:step.actionId}:catalog.find(row=>row.id===step.actionId);
-  const action={...(entry || {...step.snapshot,unavailable:true}),...step.overrides};
+  const action=ComboAmounts.apply(entry || {...step.snapshot,unavailable:true},step.overrides||{});
   if(step.overrides.damageType)action.components=null;
   return action;
  });
 }
 function evaluate({build,scenario,data,steps,customBase={},presentation={}}){
  const run=CalculationPipeline.create({build,scenario,data});
- const catalog=actions(run,presentation),cache=new Map();
+ const catalog=actions(run,presentation),cache=new Map(),form=AbilityVariants.forms[run.state.selectedChampion];
+ let active=form?run.state.combatValues['attack:'+form.key]===true:false;
  const result=ComboTester.simulate(selectActions(steps,catalog,customBase),{target:run.state.target,
   resolveAction:(original,current,index)=>{
-   if(!cache.has(current.currentHp)){
-    const stepRun=CalculationPipeline.create({build,scenario:{...scenario,target:current},data});
-    cache.set(current.currentHp,selectActions(steps,actions(stepRun,presentation),customBase));
+   const key=JSON.stringify([current?.currentHp,active]);
+   if(!cache.has(key)){
+    const stepBuild={...build,combatValues:{...build.combatValues,...(form?{['attack:'+form.key]:active}:{})}};
+    const stepRun=CalculationPipeline.create({build:stepBuild,scenario:{...scenario,target:current},data});
+    cache.set(key,selectActions(steps,actions(stepRun,presentation),customBase));
    }
-   return cache.get(current.currentHp)[index];
+   const action={...cache.get(key)[index]};
+   if(form&&action.requiredForm!==undefined&&action.requiredForm!==active)action.unavailable=true;
+   if(action.formSwitch)active=!active;
+   if(action.formSet!==undefined)active=action.formSet;
+   return action;
   }});
  const unresolved=result.damageWarnings.length || result.timeWarnings.length;
  return {...result,status:unresolved?(result.timeline.some(row=>Number.isFinite(row.action.damage))?'partial':'unsupported'):'ready'};

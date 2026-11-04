@@ -76,7 +76,7 @@ export function createComboControls({elements,events,initial,evaluate}) {
     }
     catalog = actions();
     document.getElementById('comboQuick').innerHTML = ['q','w','e','r','aa'].map(key => {
-      const action = catalog.find(a => a.group === key && /Combined total/.test(a.label) && !a.stage) || catalog.find(a => a.group === key && !a.stage);
+      const action = catalog.find(a=>a.group===key && a.maxHits) || catalog.find(a => a.group === key && /Combined total/.test(a.label) && !a.stage) || catalog.find(a => a.group === key && !a.stage);
       const spell = model.championData?.spells[['q','w','e','r'].indexOf(key)];
       return `<button type="button" class="combo-quick-button" data-add="${escape(action?.id || '')}" aria-label="Add ${key === 'aa' ? 'AA no crit' : key.toUpperCase()}" title="${key === 'aa' ? 'AA no crit' : key.toUpperCase()}" ${action ? '' : 'disabled'}>${icon(action || {group:key,shortcut:key.toUpperCase(),icon:spell?.image?.full})}</button>`;
     }).join('')+`<button type="button" class="combo-quick-button" data-open-custom aria-label="Custom Action" title="Choose an action">${icon(customBase)}</button>`;
@@ -93,12 +93,12 @@ export function createComboControls({elements,events,initial,evaluate}) {
     editingId = id;
     const index = steps.findIndex(s => s.id === id), step = steps[index], action = simulate().timeline[index]?.action;
     if (!action) return;
-    const field = (key,label) => `<label>${label}<input class="form-control" type="number" min="0" step="any" data-field="${key}" value="${number(step.overrides[key])}" placeholder="${finite(action[key]) ? number(action[key]) : '0 (missing)'}"></label>`;
+    const field = (key,label) => `<label>${label}<input class="form-control" type="number" min="0" step="${key==='hitCount'?1:'any'}" ${key==='hitCount'?`max="${action.maxHits}"`:key==='burnDuration'?`max="${action.maxBurnDuration}"`:''} data-field="${key}" value="${number(step.overrides[key]??(['hitCount','burnDuration'].includes(key)?action[key]:undefined))}" placeholder="${finite(action[key]) ? number(action[key]) : '0 (missing)'}"></label>`;
     document.getElementById('comboEditTitle').textContent = step.custom ? 'Custom Action' : action.label;
     document.getElementById('comboEditFields').innerHTML = `${step.custom ? `<label>Action name<input class="form-control" data-field="label" maxlength="80" value="${escape(action.label)}"></label>` : ''}
       <p class="combo-edit-note">${escape(action.note || '')}</p><p>Blank fields use build values when available, otherwise 0. Overrides stay fixed when the build changes.</p>
       <div class="combo-fields">${field('damage','Damage')}<label>Damage type<select class="form-control" data-field="damageType" aria-label="Damage type"><option value="">${step.custom ? 'Physical (default)' : 'Use ability / item damage type'}</option>${[['physical','Physical'],['magic','Magical'],['true','True']].map(([value,label]) => `<option value="${value}" ${step.overrides.damageType === value ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
-      ${field('castTime','Cast / attack windup (s)')}${field('cooldown','Repeat cooldown (s)')}${action.stage ? field('recastDelay','Recast interval (s)')+field('recastWindow','Recast window (s)') : ''}</div>
+      ${action.maxHits?field('hitCount','Hits (max '+action.maxHits+')'):''}${action.maxBurnDuration?field('burnDuration','Burn duration (s; max '+action.maxBurnDuration+')'):''}${field('castTime','Cast / attack windup (s)')}${field('cooldown','Repeat cooldown (s)')}${action.stage ? field('recastDelay','Recast interval (s)')+field('recastWindow','Recast window (s)') : ''}</div>
       ${action.stage ? `<label>Cooldown starts<select class="form-control" data-field="cooldownStarts" aria-label="Cooldown starts"><option value="first" ${action.cooldownStarts !== 'last' ? 'selected' : ''}>First cast</option><option value="last" ${action.cooldownStarts === 'last' ? 'selected' : ''}>Last recast</option></select></label>` : ''}
       <p class="combo-edit-warnings">${escape(simulate().timeline[index].errors.join(' '))}</p>`;
     const modal = document.getElementById('comboEditModal');

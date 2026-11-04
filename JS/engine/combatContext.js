@@ -22,7 +22,7 @@ const C=Calculations;
         else label=`${kind==='target'?'Target':'Your'} ${mode==='1'?'base ':mode==='2'?'bonus ':''}${labels[name]||nice(name).toLowerCase()}`;
       }
       const percent=name==='healthPercent'||name==='missingHealthPercent'||kind==='elapsed';
-      found.set(key,{key,label:label||nice(name),kind,percent,boolean:kind==='condition'||kind==='ranged',owners:new Set([source])});
+      found.set(key,{key,label:label||nice(name),kind,percent,defaultValue:kind==='buff'?0:undefined,boolean:kind==='condition'||kind==='ranged',owners:new Set([source])});
     }
     for(const source of sources){
       const context=sourceContext(source,base);

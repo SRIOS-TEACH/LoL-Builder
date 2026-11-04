@@ -28,7 +28,7 @@ import CombatContext from '../engine/combatContext.js';
         input.step=Number.isFinite(field.step)&&field.step>0?String(field.step):['buff','level','items'].includes(field.kind)?'1':'any';
         if(field.percent)input.max='100';if(field.kind==='level')input.max='18';if(Number.isFinite(field.max))input.max=String(field.max);
         input.placeholder=field.defaultValue===undefined?'Unknown':String(field.defaultValue*(field.percent?100:1));
-        input.value=Number.isFinite(values[field.key])?String(values[field.key]*(field.percent?100:1)):'';
+        input.value=Number.isFinite(values[field.key])?String(values[field.key]*(field.percent?100:1)):field.kind==='buff'?'0':'';
       }
       life.on(input,'change',()=>{
         if(!field.boolean&&input.value!==''){
