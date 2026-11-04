@@ -5,7 +5,7 @@ import {sequenceDps} from '../domain/defenseMetrics.js';
 const finite=Number.isFinite;
 const shieldType=text=>/magic(?:al)?\s+(?:damage\s+)?shield|magic damage/i.test(text)?'magic':/physical\s+(?:damage\s+)?shield|physical damage/i.test(text)?'physical':'all';
 export function enrichComparison(build,evaluation){
- build.metricsVersion=3;build.shieldOptions=[];
+ build.metricsVersion=4;build.shieldOptions=[];
  const {state,stats,resolution,data}=evaluation;const actions=ComboEvaluation.actions(evaluation);
  for(const [index,spell]of state.championData.spells.entries()){
   const slot=['q','w','e','r'][index],rank=state.abilityRanks[slot],ability=build.abilitySummary.find(a=>a.slot===slot);if(!rank||!ability)continue;
@@ -43,7 +43,9 @@ export function enrichComparison(build,evaluation){
    ability.charges={max,mode,outcomes:chargeOutcomes({max,parts,cooldown,castTime:cast,interval,mode}),note:mode==='ammo'?'DPS includes sequential recharge of every selected charge plus cast / recast time.':'DPS includes one shared cooldown plus cast / recast time. Base charges only; takedown resets excluded.'};
   }
   ability.abilityDps=values.map(value=>({dps:finite(value)?value.toFixed(1):'—'}));
-  if(/shield|absorb/i.test(raw)){
+  const protection=/spell ?shield|wind wall|rebuttal|blade whirl|shroud of darkness/i.test(spell.name+' '+raw)||/(block|destroy|reflect)[^.]{0,70}projectile/i.test(raw);
+  if(protection){build.shieldOptions.push({id:'ability:'+slot+':block',name:spell.name,type:'spell',amount:0,source:'Ability '+slot.toUpperCase()+' · ability/projectile protection; coverage depends on the ability.'});}
+  else if(/shield|absorb/i.test(raw)){
    const chunks=[...raw.matchAll(/<shield>([\s\S]*?)<\/shield>/gi)];
    for(const [n,chunk]of chunks.entries()){const tokens=[...chunk[1].matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g)];const resolved=tokens.length===1?resolve(tokens[0][1]):null;build.shieldOptions.push({id:'ability:'+slot+':'+n,name:spell.name,type:shieldType(chunk[1]),amount:finite(resolved?.numeric)&&!resolved.isPercent?resolved.numeric:null,source:'Ability '+slot.toUpperCase()+' · rank '+rank});}
    if(!chunks.length)build.shieldOptions.push({id:'ability:'+slot,name:spell.name,type:shieldType(raw),amount:null,source:'Shield value requires manual input'});
@@ -53,6 +55,7 @@ export function enrichComparison(build,evaluation){
  for(const id of [...new Set(state.itemSlots.filter(Boolean))]){
   const item=state.items[id];if(!item)continue;
   const prepared=ItemEvaluation.prepare({id,item,source:data.advancedItems?.[id],strings:state.strings,context});const text=prepared.template.replace(/<[^>]*>/g,' ');
+  if(/spell ?shield|blocks? (?:the )?next (?:enemy )?(?:ability|spell)/i.test(text)){build.shieldOptions.push({id:'item:'+id,name:item.name,type:'spell',amount:0,source:'Equipped item · spell protection'});continue;}
   if(!/shield/i.test(text))continue;
   const matches=[...text.matchAll(/@([\w.*:-]+)@\s*(?:\([^)]*\)\s*)?(?:(?:magic|magical|physical|damage|health|point)\s+)*shield/gi)];
   const values=matches.map(m=>ItemEvaluation.resolve(prepared,m[1])).filter(v=>finite(v.numeric)&&!v.isPercent);

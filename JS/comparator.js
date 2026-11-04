@@ -21,7 +21,7 @@ async function edit(build,mode='all',slot=0){
 }
 function close(){ticket++;draft?.dispose();draft=null;dialog.close();returnFocus?.focus();}
 document.getElementById('cancelBuildChanges').onclick=close;dialog.addEventListener('cancel',event=>{event.preventDefault();close();});
-apply.onclick=()=>{try{if(!draft)return;const updated=draft.capture();updated.name=document.getElementById('editBuildName').value.trim();if(!updated.name)throw new Error('Enter a build name.');SavedBuilds.save(updated);close();render();status.textContent='Build updated.';}catch(error){editStatus.textContent='Could not save: '+error.message;}};
+apply.onclick=()=>{try{if(!draft)return;draft.validateDefense?.();const updated=draft.capture();updated.name=document.getElementById('editBuildName').value.trim();if(!updated.name)throw new Error('Enter a build name.');SavedBuilds.save(updated);draft.commitDefense?.();close();render();status.textContent='Build updated.';}catch(error){editStatus.textContent='Could not save: '+error.message;}};
 function card(build){
  const el=node('article','','compare-card');el.tabIndex=-1;el.dataset.buildId=build.id;el.style.setProperty('--card-art',`url("https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${encodeURIComponent(build.state.selectedChampion)}_0.jpg")`);
  const pin=button('♧',()=>{preferences.pinned=preferences.pinned===build.id?null:build.id;persist();render();},preferences.pinned===build.id?'Unpin':'Pin left');pin.classList.add('compare-pin');pin.setAttribute('aria-pressed',String(preferences.pinned===build.id));pin.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m16 3 5 5-3 1-4 5v3l-3-3-7 7 7-7-3-3h3l5-4z"/></svg>';el.append(pin);
@@ -59,7 +59,7 @@ window.addEventListener('saved-data-cleared',resetSavedData);
 window.addEventListener('storage',event=>{if(event.key===null||(event.key==='lol-buildsmith.builds.v1'||event.key===preferenceKey)&&event.newValue===null)resetSavedData();else render();});render();
 
 async function upgradeLegacy(refreshAll=false){
- if(upgrading)return;const legacy=SavedBuilds.read().filter(build=>refreshAll||!build.metrics||build.metricsVersion!==3);if(!legacy.length)return;
+ if(upgrading)return;const legacy=SavedBuilds.read().filter(build=>refreshAll||!build.metrics||build.metricsVersion!==4);if(!legacy.length)return;
  const generation=dataGeneration;upgrading=true;render();let failed=0;
  const host=document.createElement('div');host.hidden=true;document.body.append(host);
  try{for(const build of legacy){if(generation!==dataGeneration)break;let session;try{session=await createBuildDraft(host,build);const current=SavedBuilds.read().find(b=>b.id===build.id);if(generation===dataGeneration&&current?.savedAt===build.savedAt)SavedBuilds.save(session.capture());}catch{failed++;}finally{session?.dispose();}}}

@@ -85,3 +85,15 @@
 .comparator-view .compare-metrics{grid-template-columns:repeat(3,minmax(0,1fr));}.ability-dps-note{display:block;white-space:pre-line;font-size:11px;color:#b7c8dd;margin-top:6px}.defense-panel{border:1px solid #517e83;border-radius:8px;padding:10px;margin:10px 0}.defense-panel label{display:flex;align-items:center;justify-content:space-between;font-size:11px;margin:8px 0;gap:6px}.defense-panel input{width:80px;height:28px}.defense-panel small{font-size:10px;line-height:1.4;display:block}.defense-total{color:#8de1be;font-size:21px}.defense-panel input[type="range"]{width:60%;background:linear-gradient(90deg,#ff9d4d,#9ac0ff);border-radius:8px;height:10px}.shield-choice{display:block!important;width:100%;text-align:left;margin:6px 0;height:auto!important;white-space:normal!important}.shield-entry label,.build-picker>label{display:grid;gap:5px;margin:10px 0}.shield-entry small{display:block}.shield-error{color:#ff7373}.shield-row{display:flex;align-items:center;justify-content:space-between;gap:6px}.shield-row .btn{padding:0 8px}.selected-shields{margin:8px 0}
 .comparator-view .compare-ability .charge-badge {position:absolute;top:8px;right:8px;font-size:11px;color:var(--site-gold);background:#0b1525df;border:1px solid var(--site-gold-border);border-radius:5px;padding:2px 5px;line-height:1.2;}
 .comparator-view .compare-ability.has-charges > small {justify-self:start;font-size:10px;max-width:38px;}
+.comparator-view .defense-section {border-top:1px solid var(--site-border);padding-top:10px;margin:10px 0;}
+.comparator-view .defense-panel {margin:0;padding:12px;}
+.comparator-view .defense-panel .ability-dps-note {margin-top:2px;margin-bottom:12px;}
+.comparator-view .defense-panel .damage-split {display:grid;grid-template-columns:1fr;gap:4px;margin:0 0 4px;}
+.defense-panel .damage-split>span {font-size:11px;}.defense-panel .split-title {font-weight:600;color:var(--site-muted);}
+.comparator-view .defense-panel input[type="range"] {width:100%;margin:5px 0 3px;filter:grayscale(.6);opacity:.7;transition:filter .15s,opacity .15s;}
+.comparator-view .defense-panel input[type="range"]:is(:hover,:focus,:active) {filter:none;opacity:1;}
+.defense-panel .defense-link {border:0;background:none;color:var(--site-gold);padding:4px 0;font-size:15px;font-weight:700;cursor:pointer;text-align:left;}
+.defense-panel .defense-link:hover {text-decoration:underline;}.defense-panel .copy-split {font-size:11px;font-weight:500;}
+.defense-panel .shield-row {display:block;width:100%;padding:10px 12px;margin:6px 0;border:1px solid var(--site-border);border-radius:6px;background:var(--site-surface-inset);color:var(--site-text);font:inherit;font-size:12px;text-align:left;cursor:pointer;}
+.defense-panel .shield-row:hover {border-color:var(--site-gold-border);}.split-copy-status:empty {display:none;}
+.incoming-penetration {display:grid;grid-template-columns:1fr 1fr;gap:10px;border:1px solid var(--site-border);margin:14px 0;padding:12px;}.incoming-penetration p {grid-column:1/-1;font-size:12px;}.incoming-penetration label {display:grid;gap:5px;font-size:12px;}

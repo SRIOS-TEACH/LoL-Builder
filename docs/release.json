@@ -3,23 +3,23 @@
   "releaseDate": "2026-11-04",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: survivability, cooldown metrics and ability charge cycling",
+  "releaseTarget": "main: compact survivability, unified target settings and spellshields",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
-      "count": 239,
-      "evidence": "docs/defense-charges-verification.json"
+      "count": 240,
+      "evidence": "docs/defense-layout-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/defense-charges-verification.json",
+      "evidence": "docs/defense-layout-verification.json",
       "currentSuites": 4,
       "inheritedFullSuiteEvidence": "docs/pre-comparator-layout-release.json",
-      "scope": "Full-health, constant damage split, one non-expiring shield activation; selectable conditional effects. Charge DPS models sequential recharge for ammo and one shared cooldown for recasts, plus execution time. Unsupported source values remain unavailable. Resets and timed trigger ordering are not simulated. Comparator and defense/charge browser suites passed on root and generated preview. Historical broad baseline remains inherited."
+      "scope": "Target Apply/Cancel, shield edit/remove, source-recognized spell protection, split copying, charge and comparator regressions checked on root and preview; visual card screenshot reviewed."
     },
     "baseline": {
       "passed": true,
@@ -62,10 +62,10 @@
     },
     "cleanSource": {
       "passed": true,
-      "unitTests": 239,
+      "unitTests": 240,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/defense-charges-verification.json"
+      "evidence": "docs/defense-layout-verification.json"
     },
     "css": {
       "passed": true,
@@ -102,7 +102,8 @@
     "comparator-layout-verification.json",
     "build-management-verification.json",
     "build-management-v2-verification.json",
-    "defense-charges-verification.json"
+    "defense-charges-verification.json",
+    "defense-layout-verification.json"
   ],
   "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
   "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
@@ -162,7 +163,7 @@
     },
     {
       "path": "CSS/pages/comparator.css",
-      "sha256": "76e070b61f40a29a8bfd4d8557b286c6b77f71d2284155b729112fee7b743a58"
+      "sha256": "e29ccc52e7e0f73974aad4fc5dc76f5740e7c2bc5ef16cf65863c0ee197431c5"
     },
     {
       "path": "CSS/pages/explorer-design.css",
@@ -210,11 +211,11 @@
     },
     {
       "path": "JS/application/comparisonEditor.mjs",
-      "sha256": "9b1afd669c0c70aab7df86a095c1048ba8eea9c053b68e6386e041a678219010"
+      "sha256": "eed48532311aa9e8165585f6c2c22753a00f581632c0563f2924b2e1d1382ac1"
     },
     {
       "path": "JS/application/comparisonMetrics.mjs",
-      "sha256": "fbcc55dd8e87aff2b8924934b5f0994d3917d81d4d0cb22ba5d19ac219aaef8e"
+      "sha256": "15741daa19195b76e845816990b4199277fbadb9719384d1866e0e7ed92c3625"
     },
     {
       "path": "JS/application/runeDefaults.mjs",
@@ -234,7 +235,7 @@
     },
     {
       "path": "JS/comparator.js",
-      "sha256": "0cf3c69837ae99999ead8507cdac08ae6d08ab75dd298b53f9cc760a92e544aa"
+      "sha256": "8ee80db830fc22a2735a75995872ef51f79299ebb5a00e0b4ed1f5fc0a226b4d"
     },
     {
       "path": "JS/core/records.js",
@@ -278,7 +279,7 @@
     },
     {
       "path": "JS/domain/defenseMetrics.js",
-      "sha256": "212f2b2bdd16718f436f7f2719021539dc85f238a4270f8047508205bd867772"
+      "sha256": "6b76bd8b5049c220ec92ac918b72a2fd1742168bd87086fc71e8dec1b1388927"
     },
     {
       "path": "JS/domain/recommendations.js",
@@ -454,7 +455,7 @@
     },
     {
       "path": "JS/ui/defensePanel.mjs",
-      "sha256": "ce95c31622d05e4ff474292c098246c7e2281b981730896d5a1dd3342e8e92da"
+      "sha256": "a12b3cc4426ca205491feaf9d977d9d7d70e66de4df1e489c0d19c043e744863"
     },
     {
       "path": "JS/ui/inventory.mjs",

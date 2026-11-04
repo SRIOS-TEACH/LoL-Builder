@@ -1,3 +1,4 @@
+import {mountPenetration} from '../ui/defensePanel.mjs';
 import {createBuilderPage} from './builderPage.mjs';
 import {captureBuild,restoreBuild} from './buildSnapshot.mjs';
 let template;
@@ -15,7 +16,8 @@ export async function createBuildDraft(host,build){
  const page=createBuilderPage({root:host,elements});
  try{await page.start();if(!page.state.uiReady)throw new Error('Could not load build data. Check your connection and retry.');await restoreBuild(page,host,build);}
  catch(error){page.dispose();host.replaceChildren();throw error;}
- return {page,capture:()=>captureBuild(page,host,build,build.name),dispose(){page.dispose();host.replaceChildren();},focus(mode,slot){
+ const penetration=mountPenetration(host,build);
+ return {page,validateDefense:penetration.validate,commitDefense:penetration.commit,capture:()=>captureBuild(page,host,build,build.name),dispose(){page.dispose();host.replaceChildren();},focus(mode,slot){
   host.dataset.mode=mode;
   if(mode==='items')page.inspect.openItemModal(slot);
   if(mode==='target')elements.targetSettingsBtn.click();
