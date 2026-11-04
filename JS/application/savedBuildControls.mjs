@@ -1,23 +1,16 @@
 import {captureBuild,restoreBuild} from './buildSnapshot.mjs';
 import SavedBuilds from '../shared/savedBuilds.js';
-/* Persistence stays independent of API payloads and derived calculation state. */
+import {pickBuilds,buildNotice} from '../shared/buildPicker.js';
 export async function initSavedBuildControls(page) {
-  const BUILDER=page.state;
-  const button=document.getElementById('saveBuild'),status=document.getElementById('saveStatus');
-  let editingId=null;
-  button.disabled=false;
-  button.addEventListener('click',()=>{
-    try{
-      if(!BUILDER.championData)throw new Error('Choose a champion before saving.');
-      const build=captureBuild(page,document.body,{id:editingId||undefined},document.getElementById('buildName').value);
-      SavedBuilds.save(build);editingId=build.id;status.textContent='Build saved. Ready to compare.';
-    }catch(e){status.textContent='Could not save: '+e.message;}
-  });
-  const id=new URLSearchParams(location.search).get('build');if(!id)return;
-  try{
-    const build=SavedBuilds.read().find(b=>b.id===id);if(!build)throw new Error('Saved build was not found.');
-    await restoreBuild(page,document.body,build);
-    document.getElementById('buildName').value=build.name;editingId=id;
-    status.textContent=build.version===BUILDER.version?'Saved build loaded.':`Saved on ${build.version}; recalculated with ${BUILDER.version}.`;
-  }catch(e){status.textContent=e.message;}
+ const button=document.getElementById('saveBuild'),status=document.getElementById('saveStatus'),name=document.getElementById('buildName');button.disabled=false;
+ const load=async build=>{await restoreBuild(page,document.body,build);name.value=build.name;status.textContent=build.version===page.state.version?'Saved build loaded.':`Saved on ${build.version}; recalculated with ${page.state.version}.`;};
+ document.getElementById('loadBuild').onclick=()=>pickBuilds({onSelect:load});
+ button.addEventListener('click',()=>{try{
+  if(!page.state.championData)throw new Error('Choose a champion before saving.');
+  const build=captureBuild(page,document.body,{},name.value);
+  const save=()=>{SavedBuilds.save(build);status.textContent='Build saved. Ready to compare.';};
+  if(SavedBuilds.read().some(b=>b.name.trim().toLocaleLowerCase()===build.name.toLocaleLowerCase()))buildNotice(`A build named “${build.name}” already exists. Create another build with this name? The existing build will be kept.`,{confirm:true,onConfirm:save});
+  else{save();buildNotice(`Build “${build.name}” created.`);}
+ }catch(error){status.textContent='Could not save: '+error.message;}});
+ const id=new URLSearchParams(location.search).get('build');if(id)try{const build=SavedBuilds.read().find(b=>b.id===id);if(!build)throw new Error('Saved build was not found.');await load(build);}catch(error){status.textContent=error.message;}
 }

@@ -3,23 +3,23 @@
   "releaseDate": "2026-11-04",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: compact Build Comparator and drag scrolling",
+  "releaseTarget": "main: save/load, rename and comparison selection",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
       "count": 237,
-      "evidence": "docs/comparator-layout-verification.json"
+      "evidence": "docs/build-management-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/comparator-layout-verification.json",
+      "evidence": "docs/build-management-verification.json",
       "currentSuites": 2,
       "inheritedFullSuiteEvidence": "docs/pre-comparator-layout-release.json",
-      "scope": "Comparator presentation and saved ability damage type metadata. Damage calculations unchanged. Existing historical baseline, recovery and performance evidence retained, not rerun. Current comparator regression suite passed on root and generated preview."
+      "scope": "Build-management and comparator regressions passed on root and generated preview; historical full suite retained."
     },
     "baseline": {
       "passed": true,
@@ -65,7 +65,7 @@
       "unitTests": 237,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/comparator-layout-verification.json"
+      "evidence": "docs/build-management-verification.json"
     },
     "css": {
       "passed": true,
@@ -99,7 +99,8 @@
     "ornn-home-verification.json",
     "pre-buildsmith-name-release.json",
     "buildsmith-name-verification.json",
-    "comparator-layout-verification.json"
+    "comparator-layout-verification.json",
+    "build-management-verification.json"
   ],
   "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
   "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
@@ -107,11 +108,15 @@
   "runtimeFiles": [
     {
       "path": "Builder.html",
-      "sha256": "6917ded4c1da666e0a22ab0d494b42fdbb56b9124c2ffb48ad570375b56f7e47"
+      "sha256": "6e05f76bfaa33451b9bc054f1a67143d5159c461ea2e310c1e96ecc3d5d1a3c9"
     },
     {
       "path": "CSS/components/abilities.css",
       "sha256": "b85332d70cd17dc90f47ffdc6b531ce92c24c9ae55568aed77d86046ca2df861"
+    },
+    {
+      "path": "CSS/components/build-picker.css",
+      "sha256": "24ada98fd872e21c538d8f199adb3b43b0a4f06aa78f23594ecf128dd606ad7a"
     },
     {
       "path": "CSS/components/catalog.css",
@@ -187,7 +192,7 @@
     },
     {
       "path": "Comparator.html",
-      "sha256": "3c77cd4abb4ee6a6e60b55061e7bf1cf974079ce5090b0eb88f91778d40445a0"
+      "sha256": "2c849e9de8e549b90c7f1e86a4b640ef6ce937d2b81b48c83317fc82bfe44b0b"
     },
     {
       "path": "JS/application/buildSnapshot.mjs",
@@ -211,7 +216,7 @@
     },
     {
       "path": "JS/application/savedBuildControls.mjs",
-      "sha256": "ab78c1fcfdec06333c12495b232ad592291ac0d0204b12e878559c96c37186f2"
+      "sha256": "8f191fe495702b2725c5e16e9befe40620f1aa6dac95a6706cb6e96157436071"
     },
     {
       "path": "JS/builder.js",
@@ -223,7 +228,7 @@
     },
     {
       "path": "JS/comparator.js",
-      "sha256": "1e4f57748790eb7c856ddd6284fe12e7ab5a24bdde06b0eb6623e8165bbd3490"
+      "sha256": "7a44aeff266f75cb448b2fd156973fa8afe3f426378c9d35f843004d4534c863"
     },
     {
       "path": "JS/core/records.js",
@@ -356,6 +361,10 @@
     {
       "path": "JS/shared/attackEffects.js",
       "sha256": "7cbf2875129e09f0306857e5a19ba64467aa0f53e616c21a4a793569c81733b5"
+    },
+    {
+      "path": "JS/shared/buildPicker.js",
+      "sha256": "f1bc57bef0eb92163fbf6a01ef3a82bba329bae094e41bd8c40a62064ee0f7dd"
     },
     {
       "path": "JS/shared/buildStats.js",
