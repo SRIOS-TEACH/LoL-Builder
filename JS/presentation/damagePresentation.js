@@ -7,6 +7,7 @@ import TextValues from '../core/text.js';
  const escape=value=>text.escapeHtml(String(value));
   function render(result) {
     if (!result.rows.length) return `<div class="ability-dps"><strong>Damage:</strong> ${escape(result.status)}</div>`;
+    const type=a=>{const types=[...new Set((a.components||[]).map(c=>c.type).filter(Boolean))];return types.length===1?types[0]:'mixed';};
     const damage=a=>finite(a.value)?fmt(a.value):a.text;
     const dps=(a,period)=>!finite(period)||period<=0?'Unavailable (no repeat cooldown)':finite(a.value)?fmt(a.value/period):`(${a.text}) ÷ ${period.toFixed(2)}s`;
     const explanation=r=>[r.damage.breakdownText,r.sweet?`Sweet spot:\n${r.sweet.breakdownText}`:''].filter(Boolean).join('\n');
@@ -20,7 +21,7 @@ import TextValues from '../core/text.js';
     const renderedDps=r=>r.onHitDps
       ?`${finite(r.onHitDps.activeDps)?fmt(r.onHitDps.activeDps):'Unavailable (damage or attack speed)'}${r.onHitDps.passive?'':` / ${finite(r.onHitDps.overallDps)?fmt(r.onHitDps.overallDps):'Unavailable (damage or timing)'}`}`
       :r.timingMissing?'Enter recast timing':dps(r.dpsAmount||r.damage,r.period);
-    return `<div class="ability-dps"><strong>Damage</strong><table class="ability-dps-table"><thead><tr><th>Part</th><th>Damage</th><th>DPS</th></tr></thead><tbody>${result.rows.map(r=>`<tr><td>${escape(r.label)}</td><td title="${escape(explanation(r))}">${escape(damage(r.damage))}${r.sweet?` (${escape(damage(r.sweet))})`:''}</td><td title="${escape(explanation(r)+timingExplanation(r))}">${escape(renderedDps(r))}${r.sweet?` (${escape(dps(r.sweetDpsAmount||r.sweet,r.period))})`:''}</td></tr>`).join('')}</tbody></table><small>${escape(result.note)}</small></div>`;
+    return `<div class="ability-dps"><strong>Damage</strong><table class="ability-dps-table"><thead><tr><th>Part</th><th>Damage</th><th>DPS</th></tr></thead><tbody>${result.rows.map(r=>`<tr><td>${escape(r.label)}</td><td data-damage-type="${escape(type(r.damage))}" title="${escape(explanation(r))}">${escape(damage(r.damage))}${r.sweet?` (${escape(damage(r.sweet))})`:''}</td><td title="${escape(explanation(r)+timingExplanation(r))}">${escape(renderedDps(r))}${r.sweet?` (${escape(dps(r.sweetDpsAmount||r.sweet,r.period))})`:''}</td></tr>`).join('')}</tbody></table><small>${escape(result.note)}</small></div>`;
   }
  const DamagePresentation={render};const exportedApi = DamagePresentation;
 

@@ -6,6 +6,7 @@
 <title>Build Comparator | Buildsmith</title>
 <link rel="stylesheet" href="CSS/foundation.css">
 <link rel="stylesheet" href="CSS/lolBuilder.css?v=nav-header-2">
+<link rel="stylesheet" href="CSS/pages/comparator.css">
 </head>
 <body class="dark-mode site-page comparator-view">
 <div class="page-wrapper with-navbar">
@@ -17,12 +18,13 @@
 <label for="buildSearch">Find saved builds</label>
 <input id="buildSearch" class="form-control" type="search" placeholder="Build or champion name">
 
+<div class="comparison-tools"><label>Sort by <select id="buildSort" class="form-control"></select></label><label>Direction <select id="sortDirection" class="form-control"><option value="desc">Highest first / Z–A</option><option value="asc">Lowest first / A–Z</option></select></label><button id="refreshBuildValues" class="btn">Refresh values</button><button id="previousBuild" class="btn" aria-label="Previous build">←</button><button id="nextBuild" class="btn" aria-label="Next build">→</button></div>
 <p id="compareStatus" role="status">
 </p>
 </section>
-<p class="comparison-hint">Click an item, ability or target setting to edit a card. Apply changes to recalculate its results. Pin a reference build while cycling through the others.</p>
-<div class="comparison-tools"><label>Sort by <select id="buildSort" class="form-control"></select></label><label>Direction <select id="sortDirection" class="form-control"><option value="desc">Highest first / Z–A</option><option value="asc">Lowest first / A–Z</option></select></label><button id="refreshBuildValues" class="btn">Refresh values</button><button id="previousBuild" class="btn" aria-label="Previous build">←</button><button id="nextBuild" class="btn" aria-label="Next build">→</button></div><div class="comparison-stage"><aside id="pinnedBuild" aria-label="Pinned build" hidden></aside>
-<div id="compareGrid" class="compare-grid" aria-label="Build cards">
+<p class="comparison-hint">Drag builds sideways to compare · Pin a reference · Click items, abilities or targets to edit.</p>
+<div class="comparison-stage"><aside id="pinnedBuild" aria-label="Pinned build" hidden></aside>
+<div id="compareGrid" class="compare-grid" tabindex="0" aria-label="Build comparison. Drag to scroll or use the arrow buttons.">
 </div>
 </div>
 <section data-saved-data-controls aria-label="Manage saved data"></section>

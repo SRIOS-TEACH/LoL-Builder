@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "releaseDate": "2026-10-09",
+  "releaseDate": "2026-11-04",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: Buildsmith naming and developer disclaimer",
+  "releaseTarget": "main: compact Build Comparator and drag scrolling",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
       "count": 237,
-      "evidence": "docs/buildsmith-name-verification.json"
+      "evidence": "docs/comparator-layout-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/buildsmith-name-verification.json",
+      "evidence": "docs/comparator-layout-verification.json",
       "currentSuites": 2,
-      "inheritedFullSuiteEvidence": "docs/pre-buildsmith-name-release.json",
-      "scope": "Root and preview: all five pages at 390/768/1440/1920px; fixture imagery, shared theme/navigation and bounds. No calculator modules or persistent storage keys changed."
+      "inheritedFullSuiteEvidence": "docs/pre-comparator-layout-release.json",
+      "scope": "Comparator presentation and saved ability damage type metadata. Damage calculations unchanged. Existing historical baseline, recovery and performance evidence retained, not rerun. Current comparator regression suite passed on root and generated preview."
     },
     "baseline": {
       "passed": true,
@@ -65,13 +65,12 @@
       "unitTests": 237,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/buildsmith-name-verification.json"
+      "evidence": "docs/comparator-layout-verification.json"
     },
     "css": {
       "passed": true,
-      "requiredVariablesResolve": true,
-      "evidence": "docs/buildsmith-name-verification.json",
-      "scope": "Name-only HTML and disclaimer reviewed on mobile; existing styles and all-page bounds checked."
+      "evidence": "docs/comparator-layout-verification.json",
+      "scope": "Current comparator squares, single-line controls, summary font parity and mobile overflow assertions; other page checks inherited."
     }
   },
   "evidence": [
@@ -99,7 +98,8 @@
     "pre-ornn-home-release.json",
     "ornn-home-verification.json",
     "pre-buildsmith-name-release.json",
-    "buildsmith-name-verification.json"
+    "buildsmith-name-verification.json",
+    "comparator-layout-verification.json"
   ],
   "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
   "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
@@ -154,6 +154,10 @@
       "sha256": "5d473064778a0de200301a8e597c410fefa83f845f7fbf740507769c02cc09e9"
     },
     {
+      "path": "CSS/pages/comparator.css",
+      "sha256": "d03f13481d00d3f90cecce1455a104c1ed22d8c25f8e480b8d279996c5cafd25"
+    },
+    {
       "path": "CSS/pages/explorer-design.css",
       "sha256": "9a2561da0002fa940748d4d6b5d893af3034669587f3dcb6280266debc4d892e"
     },
@@ -183,11 +187,11 @@
     },
     {
       "path": "Comparator.html",
-      "sha256": "a52be34182c20f935e285ce720466de2cc8dedbc06a3de0cc6bf3288d1734057"
+      "sha256": "3c77cd4abb4ee6a6e60b55061e7bf1cf974079ce5090b0eb88f91778d40445a0"
     },
     {
       "path": "JS/application/buildSnapshot.mjs",
-      "sha256": "c8786b0cf75161041f71e6816dbdb712cc19f21e890384893ff15e871e98002f"
+      "sha256": "181bea4d414c9d51827d8a572bfd324377ca369596276606f4b44a39a044b5ff"
     },
     {
       "path": "JS/application/builderPage.mjs",
@@ -219,7 +223,7 @@
     },
     {
       "path": "JS/comparator.js",
-      "sha256": "017985581231a53f5bc6e319c9b0bf01bcd2f24bc8e3b492eac590c7c819d476"
+      "sha256": "1e4f57748790eb7c856ddd6284fe12e7ab5a24bdde06b0eb6623e8165bbd3490"
     },
     {
       "path": "JS/core/records.js",
@@ -319,7 +323,7 @@
     },
     {
       "path": "JS/presentation/damagePresentation.js",
-      "sha256": "94c126d0e39ab7f79236cef07912513807eca60feaf9320dfccc07a0160d12dd"
+      "sha256": "3dcec9057badcd9de492e73a31c5873d10cb63249485ded6cb15b8489fb3329e"
     },
     {
       "path": "JS/presentation/shopFilters.mjs",
@@ -411,7 +415,7 @@
     },
     {
       "path": "JS/ui/abilityControls.mjs",
-      "sha256": "6801a8ae0137f1052594d5eb620e9ff34472ca595f0e2ced63336bc78e190305"
+      "sha256": "9375d0944dcc3c988692f22b75c470db1dfce85d533150212f9e9009283ca341"
     },
     {
       "path": "JS/ui/catalogList.mjs",

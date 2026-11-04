@@ -152,7 +152,7 @@ function renderAbilityCards() {
     let dps=AbilityDps.render(abilityResult.onHitDamage);
     dps += renderAlternateAbilityDps(spell,rank,key);
     const parsed = document.createElement('div'); parsed.innerHTML=dps;
-    const damageNumbers=[...parsed.querySelectorAll('tbody tr')].map(row=>row.children[1]?.innerHTML.trim()).filter(Boolean);
+    const damageNumbers=[...parsed.querySelectorAll('tbody tr')].map(row=>row.children[1]?`<span data-damage-type="${row.children[1].dataset.damageType||'mixed'}">${row.children[1].innerHTML.trim()}</span>`:null).filter(Boolean);
     const damageSummary=damageNumbers.length ? damageNumbers.join(' / ') : '—';
     return `<div class="ability-card" data-ability-slot="${key}"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${model.version}/img/spell/${spell.image.full}" alt="${spell.name}"><strong>${key.toUpperCase()} - ${spell.name}</strong></div><div class="ability-rank-row"><label class="label">Rank<select class="form-control" id="${document.id('rank_'+key)}">${opts}</select></label></div>${description(key,spell.description,detail,abilityEffectValues(model.cdragonAbilityData?.[key],rank)+dps)}<div class="ability-inputs"></div><div class="ability-meta"><span><strong>Cooldown:</strong> ${cd}</span><span><strong>Cost:</strong> ${cost}</span><span><strong>Range:</strong> ${range}</span><span class="ability-damage-summary"><strong>Damage:</strong> ${damageSummary}</span></div></div>`;
   }).join("");

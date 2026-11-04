@@ -1,0 +1,83 @@
+/* Results-first comparison; scoped to this page. */
+.comparator-view .site-content {max-width:1800px;padding:20px 24px;margin:auto;}
+.comparator-view .minimal-page-heading {margin-bottom:14px;}
+.comparator-view .comparison-search {padding:10px 14px;}
+.comparator-view .comparison-hint {margin:8px 0;font-size:12px;}
+.comparator-view .comparison-tools {padding:10px 14px;margin:0 0 14px;gap:10px;}
+.comparator-view .comparison-stage {gap:12px;}
+.comparator-view #compareGrid {gap:12px;scroll-snap-type:none;scrollbar-width:none;cursor:grab;padding-bottom:4px;mask-image:linear-gradient(to right,transparent,#000 var(--fade-left,0px),#000 calc(100% - var(--fade-right,0px)),transparent);}
+.comparator-view #compareGrid::-webkit-scrollbar {display:none;}
+.comparator-view #compareGrid.is-dragging,.comparator-view #compareGrid.is-dragging * {cursor:grabbing;user-select:none;}
+.comparator-view #compareGrid .compare-card {flex:0 0 320px;}
+.comparator-view #pinnedBuild {flex:0 0 320px;}
+.comparator-view .compare-card {padding:12px;border-radius:10px;}
+.comparator-view .compare-card h2 {font-size:18px;margin:8px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.comparator-view .compare-hero {padding:8px;gap:8px;flex-wrap:nowrap;}
+.comparator-view .compare-hero img {width:32px;height:32px;}
+.comparator-view .compare-hero strong {font-size:14px;}
+.comparator-view .compare-card > small {margin-top:4px;}
+.comparator-view .compare-metrics {margin:10px 0;display:grid;grid-template-columns:1fr 1fr;}
+.comparator-view .compare-metrics div {white-space:pre-line;padding:12px;font-size:26px;font-weight:700;line-height:1.35;background:linear-gradient(135deg,#233746,#142331);border-color:var(--site-gold-border);}
+.comparator-view .compare-card h3 {font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--site-muted);margin:0 0 8px;}
+.comparator-view .compare-damage {min-height:166px;padding:10px 0;border-top:1px solid var(--site-border);}
+.comparator-view .compare-abilities {margin:0;gap:4px;}
+.comparator-view .compare-ability img {width:28px;height:28px;}
+.comparator-view .compare-ability span {font-weight:650;font-size:13px;}
+.comparator-view .compare-combo {min-height:166px;border-top:1px solid var(--site-border);padding:10px 0;}
+.comparator-view .combo-total {font-size:22px;color:var(--site-gold);}
+.comparator-view .compare-combo .compare-results {height:60px;margin:4px 0 8px;font-size:12px;}
+.comparator-view .compare-items {margin-top:12px;gap:4px;}
+.comparator-view .compare-card > p {margin:6px 0;}
+.comparator-view .compare-card details {padding:8px 10px;margin:8px 0;}
+.comparator-view #compareGrid:focus-visible {outline:2px solid var(--site-gold);outline-offset:3px;}
+@media(max-width:700px){.comparator-view .site-content{padding:12px;}.comparator-view #compareGrid .compare-card{flex-basis:min(320px,86vw);}.comparator-view .comparison-stage{display:block;}.comparator-view #pinnedBuild{margin-bottom:12px;}}
+.comparator-view .comparison-search {display:flex;align-items:center;flex-wrap:wrap;gap:10px;}
+.comparator-view .comparison-search > label {flex-basis:100%;}
+.comparator-view .comparison-search .comparison-tools {display:flex;margin:0;padding:0;border:0;background:none;align-items:center;flex:1;}
+.comparator-view .comparison-tools label {display:flex;align-items:center;gap:6px;}
+.comparator-view #compareStatus {flex-basis:100%;margin:0;font-size:11px;}
+.comparator-view #compareGrid {padding-top:14px;padding-right:10px;}
+.comparator-view #pinnedBuild {padding-top:14px;}
+.comparator-view .compare-card {position:relative;}
+.comparator-view .compare-card h2 {margin:0 20px 10px 0;}
+.comparator-view .compare-pin {position:absolute;right:-7px;top:-10px;border-radius:50%;width:30px;height:30px;padding:4px;background:var(--site-panel);color:var(--site-gold);border:1px solid var(--site-gold-border);z-index:2;display:grid;place-items:center;}
+.comparator-view .compare-pin[aria-pressed="true"] {background:#695323;color:#fff1bb;}
+.comparator-view .compare-combo {display:flex;flex-direction:column;gap:5px;text-align:left;width:100%;min-height:0;margin:0 0 12px;padding:12px;border:1px solid var(--site-gold-border);border-radius:8px;background:linear-gradient(135deg,#343126,#192838);color:var(--site-text);cursor:pointer;}
+.comparator-view .combo-label {font-size:10px;letter-spacing:.08em;color:var(--site-gold);}
+.comparator-view .compare-combo .compare-results {height:auto;max-height:100px;margin:0;white-space:pre-line;}
+.comparator-view .compare-abilities {grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+.comparator-view .compare-ability {position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:26px 1fr;align-content:start;align-items:center;gap:5px;padding:10px;text-align:left;min-height:92px;}
+.comparator-view .compare-ability img {position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.18;z-index:-1;border-radius:0;}
+.comparator-view .compare-ability strong {font-size:18px;}
+.comparator-view .compare-ability span {grid-column:1/-1;line-height:1.4;}
+.comparator-view .compare-ability[data-slot="q"]{order:0;}.comparator-view .compare-ability[data-slot="w"]{order:1;}.comparator-view .compare-ability[data-slot="e"]{order:2;}.comparator-view .compare-ability[data-slot="r"]{order:3;}
+.comparator-view .compare-ability[data-slot="p"] {order:4;grid-column:1/-1;min-height:48px;grid-template-columns:26px 48px 1fr;}
+.comparator-view .compare-ability[data-slot="p"] img {width:42px;height:100%;}
+.comparator-view .compare-ability[data-slot="p"] span {grid-column:auto;}
+.combo-selector {width:min(480px,90vw);max-height:80vh;overflow:auto;border:1px solid var(--site-gold-border);border-radius:12px;background:var(--site-panel);color:var(--site-text);padding:20px;}
+.combo-selector::backdrop {background:#0009;}
+.combo-selector > .btn:has(strong) {display:flex;flex-direction:column;align-items:start;gap:6px;width:100%;height:auto;text-align:left;margin-bottom:10px;padding:12px;white-space:pre-line;}
+.combo-selector strong {color:var(--site-gold);}
+/* Equal tiles: only the damage region scrolls, never the card geometry. */
+.comparator-view .compare-ability:not([data-slot="p"]) {width:100%;aspect-ratio:1;min-height:0;height:auto;grid-template-rows:24px minmax(0,1fr);align-content:stretch;box-sizing:border-box;}
+.comparator-view .compare-ability span {min-height:0;max-height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;align-self:stretch;}
+.comparator-view .compare-ability[data-slot="p"] {height:48px;min-height:0;grid-template-rows:minmax(0,1fr);}
+.comparator-view .compare-hero h2 {font-size:14px;margin:0;flex:1;min-width:0;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;}
+.comparator-view .compare-hero img,.comparator-view .compare-hero .btn {flex-shrink:0;}
+.comparator-view .compare-actions {display:flex;flex-wrap:nowrap;gap:6px;}
+.comparator-view .compare-actions .btn {display:grid;place-items:center;flex:1;min-width:0;height:34px;padding:6px;}
+.comparator-view .compare-actions .btn:focus-visible,.comparator-view .compare-ability span:focus-visible {outline:2px solid var(--site-gold);outline-offset:2px;}
+.comparator-view .comparison-search {padding:6px 10px;gap:6px 10px;}
+.comparator-view .comparison-search .form-control {height:30px;}
+.comparator-view .comparison-tools .btn {height:30px;padding:4px 8px;}
+.comparator-view #compareStatus:empty {display:none;}
+.comparator-view .compare-metrics {gap:8px;margin:8px 0;}
+.comparator-view .compare-metrics .compare-metric {padding:7px 10px;line-height:1.2;display:flex;flex-direction:column;gap:1px;white-space:normal;}
+.comparator-view .compare-metric small {align-self:flex-end;font-size:11px;font-weight:500;color:var(--site-gold);}
+.comparator-view .compare-metric strong,.comparator-view .combo-total {font-size:22px;line-height:1.25;font-weight:700;}
+.comparator-view .compare-ability span {font-size:16px;line-height:1.35;color:var(--site-text);}
+.comparator-view .compare-ability strong {font-size:20px;}
+.comparator-view .compare-ability [data-damage-type="physical"] {color:#ff9d4d;}
+.comparator-view .compare-ability [data-damage-type="magic"] {color:#9ac0ff;}
+.comparator-view .compare-ability [data-damage-type="true"] {color:#f1f1f1;}
+.comparator-view .combo-label {align-self:flex-end;text-transform:none;letter-spacing:normal;font-size:11px;}

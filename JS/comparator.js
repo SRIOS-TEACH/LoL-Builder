@@ -21,21 +21,22 @@ document.getElementById('cancelBuildChanges').onclick=close;dialog.addEventListe
 apply.onclick=()=>{try{if(!draft)return;SavedBuilds.save(draft.capture());close();render();status.textContent='Build updated.';}catch(error){editStatus.textContent='Could not save: '+error.message;}};
 function card(build){
  const el=node('article','','compare-card');el.tabIndex=-1;el.dataset.buildId=build.id;el.style.setProperty('--card-art',`url("https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${encodeURIComponent(build.state.selectedChampion)}_0.jpg")`);
- const actions=node('div','','compare-actions');actions.append(button(preferences.pinned===build.id?'Unpin':'Pin left',()=>{preferences.pinned=preferences.pinned===build.id?null:build.id;persist();render();}),button('←',()=>reorder(build.id,-1),'Move '+build.name+' left'),button('→',()=>reorder(build.id,1),'Move '+build.name+' right'));el.append(actions,node('h2',build.name));
- const hero=node('div','','compare-hero'),icon=document.createElement('img');icon.src=`https://ddragon.leagueoflegends.com/cdn/${encodeURIComponent(build.version)}/img/champion/${encodeURIComponent(build.state.selectedChampion)}.png`;icon.alt=build.championName;hero.append(icon,node('strong',build.championName),button('Level '+build.state.level,()=>edit(build,'abilities','q')));el.append(hero,node('small',`Patch ${build.version} · ${new Date(build.savedAt).toLocaleDateString()}`));
+ const pin=button('♧',()=>{preferences.pinned=preferences.pinned===build.id?null:build.id;persist();render();},preferences.pinned===build.id?'Unpin':'Pin left');pin.classList.add('compare-pin');pin.setAttribute('aria-pressed',String(preferences.pinned===build.id));pin.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m16 3 5 5-3 1-4 5v3l-3-3-7 7 7-7-3-3h3l5-4z"/></svg>';el.append(pin);
+ const hero=node('div','','compare-hero'),icon=document.createElement('img');icon.src=`https://ddragon.leagueoflegends.com/cdn/${encodeURIComponent(build.version)}/img/champion/${encodeURIComponent(build.state.selectedChampion)}.png`;icon.alt=build.championName;const name=node('h2',build.name);name.title=build.name;hero.append(icon,name,button('Level '+build.state.level,()=>edit(build,'abilities','q')));el.append(hero);
  const items=node('div','','compare-items');build.state.itemSlots.forEach((id,index)=>{const slot=button(id?'':'+',()=>edit(build,'items',index),`Edit item slot ${index+1}: ${build.itemNames?.[id]||'Empty'}`);if(id){const img=document.createElement('img');img.src=`https://ddragon.leagueoflegends.com/cdn/${encodeURIComponent(build.version)}/img/item/${encodeURIComponent(id)}.png`;img.alt=build.itemNames?.[id]||id;slot.append(img);}items.append(slot);});el.append(items,node('p',`${build.gold} gold`));
  el.append(button(build.state.target?.enabled?`Target: ${build.state.target.currentHp} HP · ${build.state.target.armor} armor · ${build.state.target.mr} MR`:'Target settings · Off',()=>edit(build,'target')));
  for(const [title,text]of [['Champion stats',build.stats],['Selected runes',build.runes]]){const details=document.createElement('details');details.append(node('summary',title));
   if(title==='Champion stats'&&build.metrics){for(const [key,label]of Object.entries(statLabels)){if(Number.isFinite(build.metrics[key])){const row=node('div','','compare-stat');row.append(node('span',label),node('strong',Number(build.metrics[key].toFixed(2)).toString()));details.append(row);}}}else details.append(node('div',title==='Selected runes'&&build.runeNames?build.runeNames.join('\n'):text||'No results saved','compare-results'));if(title==='Selected runes')details.append(button('Edit runes',()=>edit(build,'all')));el.append(details);}
- const abilities=node('div','','compare-abilities');for(const a of build.abilitySummary||[]){const cell=button('',()=>edit(build,'abilities',a.slot==='p'?'q':a.slot),'Edit '+a.name);cell.className='compare-ability';if(a.icon){const img=document.createElement('img');img.src=a.icon;img.alt=a.name;cell.append(img);}cell.append(node('strong',a.slot.toUpperCase()),node('small',a.rank===undefined?'Passive':'Rank '+a.rank),node('span',/unavailable|See Builder/i.test(a.damage)?'—':a.damage.replace(/^Damage:\s*/,'').replace(/\b(?:physical|magic|true) damage\b/gi,'').trim()));abilities.append(cell);}el.append(abilities);
- const metrics=node('div','','compare-metrics');for(const [label,key]of [['Attack','attackDamage'],['DPS','dps']])metrics.append(node('div',label+'\n'+(Number.isFinite(build.metrics?.[key])?build.metrics[key].toFixed(1):'—')));el.append(metrics);if(build.attackNotes?.length)el.append(node('small',build.attackNotes.join(' '),'text-muted'));
- const combo=document.createElement('details');combo.append(node('summary','Combo Tester'),node('div',build.combo||'No combo saved','compare-results'),button('Edit combo',()=>edit(build,'combo')));el.append(combo);
- const footer=node('div','','compare-actions');footer.append(button('Edit build',()=>edit(build)),button('Copy',()=>{SavedBuilds.copy(build.id);render();}),button('Delete',()=>{SavedBuilds.remove(build.id);if(preferences.pinned===build.id)preferences.pinned=null;persist();render();}));const link=node('a','Open & tweak','btn');link.href='Builder.html?build='+encodeURIComponent(build.id);footer.append(link);el.append(footer);return el;
+ const abilities=node('div','','compare-abilities');for(const a of build.abilitySummary||[]){const cell=button('',()=>edit(build,'abilities',a.slot==='p'?'q':a.slot),'Edit '+a.name);cell.className='compare-ability';cell.dataset.slot=a.slot;if(a.icon){const img=document.createElement('img');img.src=a.icon;img.alt=a.name;cell.append(img);}cell.append(node('strong',a.slot.toUpperCase()),node('small',a.rank===undefined?'Passive':'Rank '+a.rank),node('span',/unavailable|See Builder/i.test(a.damage)?'—':a.damage.replace(/^Damage:\s*/,'').replace(/\b(?:physical|magic|true) damage\b/gi,'').trim()));const damageText=cell.querySelector('span');if(a.damageParts?.length){damageText.replaceChildren();a.damageParts.forEach((part,index)=>{if(index)damageText.append(document.createTextNode(' / '));const value=node('b',part.text);value.dataset.damageType=part.type;damageText.append(value);});}damageText.tabIndex=0;damageText.setAttribute('aria-label',a.name+' damage');abilities.append(cell);}const damage=node('section','','compare-damage');damage.append(node('h3','Ability damage'),abilities);el.insertBefore(damage,items);
+ const metrics=node('div','','compare-metrics');for(const [label,key]of [['Attack','attackDamage'],['DPS','dps']]){const box=node('div','','compare-metric');box.append(node('small',label),node('strong',Number.isFinite(build.metrics?.[key])?build.metrics[key].toFixed(1):'—'));metrics.append(box);};el.insertBefore(metrics,damage);if(build.attackNotes?.length)el.append(node('small',build.attackNotes.join(' '),'text-muted'));
+ const chosen=comboChoices(build)[preferences.combos?.[build.id]]||comboChoices(build)[0];
+ const combo=button('',()=>selectCombo(build),'Select combo for '+build.name);combo.className='compare-combo';combo.append(node('span','Combo '+(comboChoices(build).indexOf(chosen)+1),'combo-label'),node('strong',Number.isFinite(chosen.damage)?chosen.damage.toFixed(1)+' damage':'—','combo-total'),node('span',chosen.text.split('\n').filter(line=>!/^Total damage:/i.test(line)).join('\n')||'No combo saved','compare-results'));el.insertBefore(combo,damage);
+ const footer=node('div','','compare-actions');footer.append(iconButton('left',()=>reorder(build.id,-1),'Move '+build.name+' left'),iconButton('right',()=>reorder(build.id,1),'Move '+build.name+' right'),iconButton('edit',()=>edit(build),'Edit build'),iconButton('copy',()=>{SavedBuilds.copy(build.id);render();},'Copy'),iconButton('delete',()=>{SavedBuilds.remove(build.id);if(preferences.pinned===build.id)preferences.pinned=null;persist();render();},'Delete'));el.append(footer,node('small',`Patch ${build.version} · ${new Date(build.savedAt).toLocaleDateString()}`));return el;
 }
 function render(){try{
  const all=SavedBuilds.read(),query=document.getElementById('buildSearch').value.trim().toLowerCase();preferences.order=[...preferences.order.filter(id=>all.some(b=>b.id===id)),...all.map(b=>b.id).filter(id=>!preferences.order.includes(id))];
- const builds=orderBuilds(all,preferences);grid.replaceChildren();pinnedHost.replaceChildren();for(const b of builds){if(b.id===preferences.pinned)pinnedHost.append(card(b));else if((b.name+' '+b.championName).toLowerCase().includes(query))grid.append(card(b));}pinnedHost.hidden=!pinnedHost.children.length;
- status.textContent=all.length?`${all.length} saved builds. ${all.some(b=>!b.metrics)?'Older cards gain sortable values when edited and applied.':''}`:'No saved builds yet. Create a build in Builder to start.';
+ const builds=orderBuilds(all,preferences);grid.replaceChildren();pinnedHost.replaceChildren();for(const b of builds){if(b.id===preferences.pinned)pinnedHost.append(card(b));else if((b.name+' '+b.championName).toLowerCase().includes(query))grid.append(card(b));}pinnedHost.hidden=!pinnedHost.children.length;requestAnimationFrame(updateScrollEdges);
+ status.textContent=all.length?(all.some(b=>!b.metrics)?'Older cards gain sortable values when edited and applied.':''):'No saved builds yet. Create a build in Builder to start.';
  const selector=document.getElementById('buildSort');const options={manual:'Manual order',name:'Name',comboDamage:'Combo damage',attackDamage:'Attack damage',dps:'DPS',cost:'Cost',...statLabels};for(const b of all)for(const key of Object.keys(b.metrics||{}))if(!(key in options))options[key]=key.replace(/([A-Z])/g,' $1');selector.replaceChildren(...Object.entries(options).map(([value,label])=>new Option(label,value)));selector.value=preferences.sort;document.getElementById('sortDirection').value=preferences.direction;
  if(upgrading&&all.length){status.textContent='Updating older builds for numeric comparison…';document.querySelectorAll('.comparison-stage button').forEach(button=>button.disabled=true);}
 }catch(error){status.textContent='Could not read saved builds: '+error.message;}}
@@ -49,11 +50,55 @@ window.addEventListener('saved-data-cleared',resetSavedData);
 window.addEventListener('storage',event=>{if(event.key===null||(event.key==='lol-buildsmith.builds.v1'||event.key===preferenceKey)&&event.newValue===null)resetSavedData();else render();});render();
 
 async function upgradeLegacy(refreshAll=false){
- if(upgrading)return;const legacy=SavedBuilds.read().filter(build=>refreshAll||!build.metrics);if(!legacy.length)return;
+ if(upgrading)return;const legacy=SavedBuilds.read().filter(build=>refreshAll||!build.metrics||build.abilitySummary?.some(a=>!a.damageParts));if(!legacy.length)return;
  const generation=dataGeneration;upgrading=true;render();let failed=0;
  const host=document.createElement('div');host.hidden=true;document.body.append(host);
  try{for(const build of legacy){if(generation!==dataGeneration)break;let session;try{session=await createBuildDraft(host,build);const current=SavedBuilds.read().find(b=>b.id===build.id);if(generation===dataGeneration&&current?.savedAt===build.savedAt)SavedBuilds.save(session.capture());}catch{failed++;}finally{session?.dispose();}}}
- finally{host.remove();upgrading=false;render();if(generation===dataGeneration)status.textContent=failed?'Some older builds could not be refreshed. Check your connection and use Refresh values to retry.':'Older builds refreshed using the current patch. Numeric sorting is ready.';}
+ finally{host.remove();upgrading=false;render();if(generation===dataGeneration)status.textContent=failed?'Some older builds could not be refreshed. Check your connection and use Refresh values to retry.':'';}
 }
 document.getElementById('refreshBuildValues').onclick=()=>upgradeLegacy(true).catch(error=>status.textContent=error.message);
 upgradeLegacy().catch(error=>status.textContent=error.message);
+
+let drag=null,suppressClick=false;
+function updateScrollEdges(){
+ grid.style.setProperty('--fade-left',grid.scrollLeft>2?'24px':'0px');
+ grid.style.setProperty('--fade-right',grid.scrollLeft<grid.scrollWidth-grid.clientWidth-2?'24px':'0px');
+}
+grid.addEventListener('pointerdown',event=>{
+ if(event.pointerType!=='mouse'||event.button!==0)return;
+ suppressClick=false;drag={id:event.pointerId,x:event.clientX,left:grid.scrollLeft,active:false};
+});
+grid.addEventListener('pointermove',event=>{
+ if(!drag||event.pointerId!==drag.id)return;
+ if(!drag.active&&Math.abs(event.clientX-drag.x)>6){drag.active=true;grid.setPointerCapture(event.pointerId);grid.classList.add('is-dragging');}
+ if(drag.active){event.preventDefault();grid.scrollLeft=drag.left+drag.x-event.clientX;}
+});
+function finishDrag(){if(!drag)return;suppressClick=drag.active;drag=null;grid.classList.remove('is-dragging');updateScrollEdges();}
+grid.addEventListener('pointerup',finishDrag);grid.addEventListener('pointercancel',finishDrag);grid.addEventListener('lostpointercapture',finishDrag);
+grid.addEventListener('pointerleave',()=>{if(drag&&!drag.active)drag=null;});
+grid.addEventListener('click',event=>{if(suppressClick){event.preventDefault();event.stopImmediatePropagation();suppressClick=false;}},true);
+grid.addEventListener('dragstart',event=>event.preventDefault());
+grid.addEventListener('scroll',updateScrollEdges,{passive:true});
+new ResizeObserver(updateScrollEdges).observe(grid);
+grid.addEventListener('keydown',event=>{if(event.target===grid&&['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();cycle(event.key==='ArrowLeft'?-1:1);}});
+
+
+function comboChoices(build){
+ const entries=[{text:build.combo||'',damage:build.metrics?.comboDamage,steps:build.comboSteps||[]},...(build.comboVariants||[])];
+ return entries.filter((entry,index)=>entries.findIndex(other=>JSON.stringify(other.steps)===JSON.stringify(entry.steps))===index).sort((a,b)=>(b.damage||0)-(a.damage||0));
+}
+function selectCombo(build){
+ const opener=document.activeElement,selector=node('dialog','','combo-selector');selector.setAttribute('aria-label','Select combo');
+ selector.append(node('h2','Select combo'),node('p','Saved combinations, highest damage first.'));
+ comboChoices(build).forEach((entry,index)=>{const option=button('',()=>{preferences.combos={...preferences.combos,[build.id]:index};persist();selector.close();render();},'Select combo '+(index+1));option.append(node('strong',Number.isFinite(entry.damage)?entry.damage.toFixed(1)+' damage':'No damage saved'),node('span',entry.text.split('\n').filter(line=>!/^Total damage:/i.test(line)).join('\n')));selector.append(option);});
+ selector.append(button('Edit combo',()=>{selector.close();edit(build,'combo');}),button('Close',()=>selector.close()));
+ selector.addEventListener('close',()=>{selector.remove();opener?.focus();});document.body.append(selector);selector.showModal();
+}
+
+function iconButton(kind,action,label){
+ const paths={left:'M20 9H11V4L3 12l8 8v-5h9z',right:'M4 9h9V4l8 8-8 8v-5H4z',edit:'m16 3 5 5-12 12-6 1 1-6z M13 6l5 5',copy:'M9 9h12v12H9z M15 9V3H3v12h6',delete:'M3 6h18 M9 6V3h6v3 M6 6l1 15h10l1-15 M10 10v7 M14 10v7'};
+ const control=button('',action,label);control.title=label;
+ control.innerHTML='<svg viewBox="0 0 24 24" width="19" height="19" fill="'+(['left','right'].includes(kind)?'currentColor':'none')+'" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="'+paths[kind]+'"/></svg>';
+ return control;
+}
+
