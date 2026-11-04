@@ -11,3 +11,4 @@
 .build-notice {max-width:440px;}.build-picker > .btn {margin-right:8px;}
 .combo-warning {color:#ff6363;font-weight:900;}
 @media(max-width:520px){.build-picker-list{grid-template-columns:1fr;}}
+.build-picker-tile[hidden],.build-picker [hidden] {display:none!important;}

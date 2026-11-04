@@ -3,20 +3,20 @@
   "releaseDate": "2026-11-04",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: save/load, rename and comparison selection",
+  "releaseTarget": "main: build search and duplicate overwrite/rename choices",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
       "count": 237,
-      "evidence": "docs/build-management-verification.json"
+      "evidence": "docs/build-management-v2-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/build-management-verification.json",
+      "evidence": "docs/build-management-v2-verification.json",
       "currentSuites": 2,
       "inheritedFullSuiteEvidence": "docs/pre-comparator-layout-release.json",
       "scope": "Build-management and comparator regressions passed on root and generated preview; historical full suite retained."
@@ -65,7 +65,7 @@
       "unitTests": 237,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/build-management-verification.json"
+      "evidence": "docs/build-management-v2-verification.json"
     },
     "css": {
       "passed": true,
@@ -100,7 +100,8 @@
     "pre-buildsmith-name-release.json",
     "buildsmith-name-verification.json",
     "comparator-layout-verification.json",
-    "build-management-verification.json"
+    "build-management-verification.json",
+    "build-management-v2-verification.json"
   ],
   "verification": "235 unit tests and eight browser suites: all-page theme on both generated routes with fallback/advanced data and real artwork review, editable comparator on both routes, Builder dashboard, item/champion pickers and explorers. Shared styling is intentionally redesigned; historical calculator baseline, headless, recovery and performance checks remain scoped to unchanged modules.",
   "previousReleaseEvidence": "docs/pre-coherent-theme-release.json",
@@ -116,7 +117,7 @@
     },
     {
       "path": "CSS/components/build-picker.css",
-      "sha256": "24ada98fd872e21c538d8f199adb3b43b0a4f06aa78f23594ecf128dd606ad7a"
+      "sha256": "e601544a4a528b1cb4214922e5a4eb9338079b0bf45a24634c4bbbf62f3ebf4c"
     },
     {
       "path": "CSS/components/catalog.css",
@@ -216,7 +217,7 @@
     },
     {
       "path": "JS/application/savedBuildControls.mjs",
-      "sha256": "8f191fe495702b2725c5e16e9befe40620f1aa6dac95a6706cb6e96157436071"
+      "sha256": "f6aa54f32893d7fecf5db33a1f072c85dd3f33b893f2c55215bb8bee12f2ef6e"
     },
     {
       "path": "JS/builder.js",
@@ -364,7 +365,7 @@
     },
     {
       "path": "JS/shared/buildPicker.js",
-      "sha256": "f1bc57bef0eb92163fbf6a01ef3a82bba329bae094e41bd8c40a62064ee0f7dd"
+      "sha256": "130c9aabe167628a54d752e54b7b95e046f817acea81ad466e7f20cb693f85eb"
     },
     {
       "path": "JS/shared/buildStats.js",
