@@ -67,7 +67,10 @@ function renderCombatInputs() {
   const sources=combatSources(),base=baseCalculationContext(getComputedChampionStatsForTooltips());
   const extra=ChampionEffects.model(model).fields.concat((model.championData?.spells||[])
     .flatMap((spell,i)=>AbilityDps.timingFields(spell.id,['q','w','e','r'][i])));
-  const all=CombatInputs.descriptors(sources,base).filter(f=>!extra.some(e=>e.key===f.key)).concat(extra);
+  // Kai'Sa Q evolution is owned by the checkbox, not an independent stack counter.
+  const evolveBuff=model.selectedChampion==='Kaisa'?model.cdragonAbilityData?.q?.calculations?.MaxDamageDisplay?.mConditionalCalculationRequirements?.mBuffName:null;
+  const evolveKey=evolveBuff?'buff:'+(/^\{[0-9a-f]+\}$/i.test(evolveBuff)?evolveBuff.toLowerCase():Calculations.hash(evolveBuff)):null;
+  const all=CombatInputs.descriptors(sources,base).filter(f=>f.key!==evolveKey&&!extra.some(e=>e.key===f.key)).concat(extra);
   const usage=new Map();
   for(const source of sources){
     for(const field of CombatInputs.descriptors([source],base)){

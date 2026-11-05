@@ -61,6 +61,7 @@ const server = http.createServer((request, response) => {
     const done = async () => page.locator('#closeComboEdit').click();
     const clear = async () => page.locator('#comboClear').click();
     await select('Kaisa');
+    assert.equal(await page.locator('[data-combat-key="buff:{89ae79fa}"]').count(),0);
     await page.locator('[data-evolve="q"]').click();
     assert.equal(await page.locator('[data-evolve="q"]').isChecked(),true);
     const description=page.locator('[data-ability-slot="q"] .ability-description');

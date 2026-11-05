@@ -3,7 +3,7 @@
   "releaseDate": "2026-11-05",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: inline evolution checkbox and description disclosure links",
+  "releaseTarget": "main: remove duplicate KaiSa Q evolution stack input",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
@@ -455,7 +455,7 @@
     },
     {
       "path": "JS/ui/abilityControls.mjs",
-      "sha256": "1ec8292e99e9665155b46aeb82454f29175c4b117d44a92580d618de3287c814"
+      "sha256": "e24ed297b6db6280c4ce454badf8eaa54f4868c6022f65e5416de03c4301d89a"
     },
     {
       "path": "JS/ui/catalogList.mjs",

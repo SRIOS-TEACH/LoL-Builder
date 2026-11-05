@@ -22,7 +22,8 @@
       "inline evolution checkbox",
       "no overlap with rank selector",
       "Show more / Show less below description",
-      "preserved evolution calculations and combo controls"
+      "preserved evolution calculations and combo controls",
+      "KaiSa Q evolution stacks field hidden; checkbox still changes missile count"
     ]
   },
   "styles": {
@@ -375,7 +376,7 @@
     },
     {
       "path": "JS/ui/abilityControls.mjs",
-      "sha256": "1ec8292e99e9665155b46aeb82454f29175c4b117d44a92580d618de3287c814"
+      "sha256": "e24ed297b6db6280c4ce454badf8eaa54f4868c6022f65e5416de03c4301d89a"
     },
     {
       "path": "JS/ui/catalogList.mjs",
