@@ -62,7 +62,13 @@ const server = http.createServer((request, response) => {
     const clear = async () => page.locator('#comboClear').click();
     await select('Kaisa');
     await page.locator('[data-evolve="q"]').click();
-    assert.equal(await page.locator('[data-evolve="q"]').getAttribute('aria-pressed'),'true');
+    assert.equal(await page.locator('[data-evolve="q"]').isChecked(),true);
+    const description=page.locator('[data-ability-slot="q"] .ability-description');
+    await description.getByRole('button',{name:'Show more',exact:true}).click();
+    assert.equal(await description.locator('.detailed-description').isVisible(),true);
+    await description.getByRole('button',{name:'Show less',exact:true}).click();
+    assert.equal(await description.locator('.simple-description').isVisible(),true);
+    assert.equal(await page.locator('[data-ability-slot="q"] .ability-head [data-evolve]').count(),1);
     await page.getByRole('button',{name:'Add Q',exact:true}).click();
     const full=await total();await edit(0);
     const hits=page.locator('[data-field="hitCount"]');assert.equal(await hits.inputValue(),'12');
@@ -80,7 +86,19 @@ const server = http.createServer((request, response) => {
     await page.locator('[data-neutral-value="infernal:stacks"]').fill('2');await page.locator('[data-neutral-value="infernal:stacks"]').press('Tab');
     assert.equal(await page.evaluate(()=>BUILDER.combatValues['neutral:infernal:stacks']),2);
     assert.equal(await page.locator('[data-neutral-buffs]').evaluate(el=>el.previousElementSibling.id),'runesCard');
+    await select('Khazix');
+    for(const width of [1440,768,390]){
+      await page.setViewportSize({width,height:1000});
+      const layout=await page.locator('[data-ability-slot="q"]').evaluate(card=>{
+        const evolve=card.querySelector('.ability-evolve').getBoundingClientRect(),rank=card.querySelector('.ability-rank-row').getBoundingClientRect();
+        const text=card.querySelector('.simple-description').getBoundingClientRect(),more=card.querySelector('.detail-toggle').getBoundingClientRect();
+        return {overlap:evolve.left<rank.right&&evolve.right>rank.left&&evolve.top<rank.bottom&&evolve.bottom>rank.top,below:more.top>=text.bottom-1};
+      });
+      assert.equal(layout.overlap,false,'evolve/rank overlap at '+width);assert.equal(layout.below,true,'show more below description at '+width);
+    }
+    await page.setViewportSize({width:1440,height:1000});
     fs.mkdirSync(path.join(root,'test-results'),{recursive:true});
+    await page.locator('[data-ability-slot="q"]').screenshot({path:path.join(root,'test-results/ability-controls-preview.png')});
     await page.screenshot({path:path.join(root,'test-results/combat-mechanics-preview.png'),fullPage:true});
     assert.deepEqual(errors,[]);console.log('PASS evolve toggle, default/partial hits, default/partial burn, form switch, map buffs and Analytics page load.');
   } finally {await browser.close();server.close();}

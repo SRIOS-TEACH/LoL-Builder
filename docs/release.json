@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
-  "releaseDate": "2026-11-04",
+  "releaseDate": "2026-11-05",
   "timezone": "Australia/Sydney",
   "passed": true,
-  "releaseTarget": "main: combat variants, hit and burn controls, neutral buffs and Analytics deployment repair",
+  "releaseTarget": "main: inline evolution checkbox and description disclosure links",
   "runtimeFingerprintPolicy": "CRLF/LF normalized for runtime text; binary bytes exact",
   "checks": {
     "unit": {
       "passed": true,
       "count": 277,
-      "evidence": "docs/combat-mechanics-verification.json"
+      "evidence": "docs/ability-controls-verification.json"
     },
     "browser": {
       "passed": true,
       "count": 32,
       "routes": 2,
       "advancedAndFallback": true,
-      "evidence": "docs/combat-mechanics-verification.json",
-      "currentSuites": 8,
-      "inheritedFullSuiteEvidence": "docs/pre-comparator-layout-release.json",
-      "scope": "Four browser suites on source root and generated preview. Historical full-matrix coverage is retained separately; current controls and affected comparator behavior verified."
+      "evidence": "docs/ability-controls-verification.json",
+      "currentSuites": 2,
+      "inheritedFullSuiteEvidence": "docs/combat-mechanics-verification.json",
+      "scope": "Ability controls checked on source and preview at desktop/tablet/mobile widths; other browser coverage inherited from the preceding combat release."
     },
     "baseline": {
       "passed": true,
@@ -65,7 +65,7 @@
       "unitTests": 277,
       "build": true,
       "generatedCopiesMatch": true,
-      "evidence": "docs/combat-mechanics-verification.json"
+      "evidence": "docs/ability-controls-verification.json"
     },
     "css": {
       "passed": true,
@@ -115,7 +115,7 @@
     },
     {
       "path": "CSS/components/abilities.css",
-      "sha256": "b85332d70cd17dc90f47ffdc6b531ce92c24c9ae55568aed77d86046ca2df861"
+      "sha256": "31f75b920ac471ab3334f4743e19957ff713e5ff909f476d2d920ad15745ccde"
     },
     {
       "path": "CSS/components/build-picker.css",
@@ -155,7 +155,7 @@
     },
     {
       "path": "CSS/pages/builder.css",
-      "sha256": "657b176e7d749cfa069923c4fd3ce27bf021ed4a4a42871010f4d932b8e4359e"
+      "sha256": "ac9d72ae3227663828fb08a3e04b59ef4b3f55f34eff1f31ff92aad4852fae3f"
     },
     {
       "path": "CSS/pages/champion-explorer.css",
@@ -455,7 +455,7 @@
     },
     {
       "path": "JS/ui/abilityControls.mjs",
-      "sha256": "21d24cdd8ffdbc1da0e12d792a6d8b61599575c363168e96e5d3bd679f4d55b7"
+      "sha256": "1ec8292e99e9665155b46aeb82454f29175c4b117d44a92580d618de3287c814"
     },
     {
       "path": "JS/ui/catalogList.mjs",

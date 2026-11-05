@@ -123,7 +123,7 @@ function renderAbilityCards() {
   const attack = computed ? computeAutoAttackProfile(computed) : null;
   const passiveText = buildDetailedPassiveText();
   const passiveDps = AbilityDps.passiveProfile(attack);
-  const description = (slot,simple,detailed,values='') => `<div class="ability-description" data-description-slot="${slot}"><div class="simple-description">${model.target.enabled?DamageText.render(simple,token=>({html:'{{'+token+'}}',numeric:null}),{target:model.target,stats:getComputedChampionStatsForTooltips()}):simple||''}</div><div class="detailed-description" hidden>${detailed}${values}</div><button type="button" class="btn btn-sm detail-toggle" aria-expanded="false">Detailed view</button></div>`;
+  const description = (slot,simple,detailed,values='') => `<div class="ability-description" data-description-slot="${slot}"><div class="simple-description">${model.target.enabled?DamageText.render(simple,token=>({html:'{{'+token+'}}',numeric:null}),{target:model.target,stats:getComputedChampionStatsForTooltips()}):simple||''}</div><div class="detailed-description" hidden>${detailed}${values}</div><button type="button" class="detail-toggle" aria-expanded="false">Show more</button></div>`;
   const passive = `<div class="ability-card ability-passive-card" data-ability-slot="p"><div class="ability-head"><img class="ability-icon" src="https://ddragon.leagueoflegends.com/cdn/${model.version}/img/passive/${champ.passive.image.full}" alt="${champ.passive.name}"><strong>Passive - ${champ.passive.name}</strong></div>${description("p",champ.passive.description,passiveText,passiveDps.rows.length?AbilityDps.render(passiveDps):'')}<div class="ability-inputs"></div></div>`;
   const escapeAttack = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const attackNumber = (value, key) => `<span class="attack-result" data-attack-result="${key}" tabindex="0" title="${escapeAttack(attack.breakdown)}">${Number.isFinite(value) ? value.toFixed(1) + (attack.partial ? ' (partial)' : '') : 'Unavailable — see calculation'}</span>`;
@@ -163,17 +163,20 @@ function renderAbilityCards() {
   root.innerHTML = passive + attackCard + spells;
   root.querySelectorAll('.detail-toggle').forEach(button=>{
     const container=button.parentElement;
-    container.closest('.ability-card').querySelector('.ability-head').append(button);
-    const update=active=>{button.setAttribute('aria-expanded',String(active));button.textContent=active?'Simple view':'Detailed view';container.querySelector('.simple-description').hidden=active;container.querySelector('.detailed-description').hidden=!active;};
+    const update=active=>{button.setAttribute('aria-expanded',String(active));button.textContent=active?'Show less':'Show more';container.querySelector('.simple-description').hidden=active;container.querySelector('.detailed-description').hidden=!active;};
     update(expanded.has(container.dataset.descriptionSlot));
     renderLife.on(button,'click',()=>update(button.getAttribute('aria-expanded')!=='true'));
   });
   for(const slot of AbilityVariants.evolutions[model.selectedChampion]||[]){
-    const button=document.createElement('button');button.type='button';button.className='btn btn-outline';
-    const active=model.combatValues['evolve:'+slot]===true;
-    button.dataset.evolve=slot;button.setAttribute('aria-pressed',String(active));button.textContent=active?'Evolved':'Evolve';
-    renderLife.on(button,'click',()=>{model.combatValues['evolve:'+slot]=!active;notify();});
-    root.querySelector(`[data-ability-slot="${slot}"] .ability-rank-row`).append(button);
+    const heading=root.querySelector(`[data-ability-slot="${slot}"] .ability-head`);
+    const name=heading.querySelector('strong'),title=document.createElement('div');title.className='ability-title';
+    name.replaceWith(title);title.append(name);
+    const label=document.createElement('label');label.className='ability-evolve';
+    const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.dataset.evolve=slot;
+    checkbox.checked=model.combatValues['evolve:'+slot]===true;
+    checkbox.setAttribute('aria-label','Evolve '+slot.toUpperCase());
+    label.append(checkbox,'Evolve');title.append(label);
+    renderLife.on(checkbox,'change',()=>{model.combatValues['evolve:'+slot]=checkbox.checked;notify();});
   }
   renderCombatInputs();
   for (const control of attack?.controls || []) {

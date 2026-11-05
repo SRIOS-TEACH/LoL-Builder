@@ -205,3 +205,12 @@
   padding-top: 10px;
   border-top: 1px solid #34445a;
 }
+
+/* Keep upgrade controls in normal heading flow, clear of the rank selector. */
+.ability-title { flex: 1; min-width: 0; }
+.ability-evolve { display: inline-flex; align-items: center; gap: 5px; margin: 0 0 0 8px; font-size: 12px; font-weight: 600; white-space: nowrap; cursor: pointer; vertical-align: middle; }
+.ability-evolve input { margin: 0; width: 14px; height: 14px; accent-color: var(--site-gold, #e5c889); }
+.ability-head .ability-icon { flex-shrink: 0; }
+.ability-description > .detail-toggle { display: block; border: 0; background: none; color: var(--site-gold, #e5c889); padding: 4px 0; margin-top: 4px; font-size: 15px; font-weight: 700; cursor: pointer; text-align: left; }
+.ability-description > .detail-toggle:hover { text-decoration: underline; }
+.ability-description > .detail-toggle:focus-visible { outline: 2px solid var(--site-gold, #e5c889); outline-offset: 3px; }
